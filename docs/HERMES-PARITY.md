@@ -33,8 +33,8 @@ Pixel chat attach failed; only legacy sidecars worked.
 |---|---|---|---|
 | Discovery | `client.capabilities`, `gateway.capabilities`, `runtime.describe` | ✅ | ✅ |
 | Profiles / Pixels | `profiles.list`, `profiles.create`, `profiles.configure` | ✅ | ✅ |
-| Chat | `session.create/resume/list/history`, `prompt.submit`, `session.interrupt` | ✅ | ✅ |
-| Events | `message.*`, `reasoning.*`, `tool.*`, `approval.*`, `clarify`, `session.usage` | ✅ | ✅ |
+| Chat | `session.create/resume/list`, transcript from resume, `prompt.submit`, `session.interrupt` | ✅ | ✅ |
+| Events | `message.*`, `reasoning.*`, `tool.*`, `approval.*`, `clarify` | ✅ | ✅ |
 | Approvals | inline approval + multi-question clarify | ✅ | ✅ |
 | Tools | `toolsets.list`, `tools.list`, `tools.configure` | ✅ | ✅ |
 | Rooms | `groups.capabilities/list/create/log/send` | ✅ | ✅ |
