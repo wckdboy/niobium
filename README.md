@@ -124,8 +124,8 @@ tools/          sprite/icon generators
 ## Site and project ledger
 
 - Site: **[niobium.sh](https://niobium.sh/)** — deployed on Cloudflare Workers
-  Static Assets from `site/`; `www.niobium.sh` route is registered (DNS
-  propagation may lag).
+  Static Assets from `site/`. The apex is verified; `www.niobium.sh` still needs
+  a DNS record on the zone.
 - Plane: **[Niobium v2](https://app.plane.so/wckd/projects/2fbcf987-20de-43dc-80ac-0a6bab7ec03a/issues/)**
   in the `wckd` workspace; 24 issues imported from `plane/issues.csv`.
 

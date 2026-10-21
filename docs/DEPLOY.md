@@ -35,7 +35,9 @@ npm run dry                               # already passes
 npm run deploy                            # niobium.sh + www.niobium.sh
 ```
 
-Deployed 2026-10-22; apex verified at `https://niobium.sh/` (200).
+Deployed 2026-10-22; apex verified at `https://niobium.sh/` (200). The `www`
+host also needs a DNS record (CNAME to `niobium.sh`, proxied) before its Worker
+route can answer.
 
 `CLOUDFLARE_API_TOKEN` needs Workers Scripts, Workers Routes and Zone read for
 the `niobium.sh` zone. `CLOUDFLARE_ACCOUNT_ID` is the account that owns the zone.
