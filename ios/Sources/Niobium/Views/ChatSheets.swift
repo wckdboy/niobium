@@ -149,6 +149,10 @@ struct BotInfoSheet: View {
                         .background(RoundedRectangle(cornerRadius: 18).fill(NB.surface.opacity(0.7)))
                         .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(NB.line, lineWidth: 1))
 
+                        if let usage = store.usage {
+                            usageCard(usage)
+                        }
+
                         if !store.toolsets.isEmpty {
                             VStack(alignment: .leading, spacing: 10) {
                                 NBSectionHeader(title: "Enabled toolsets")
@@ -175,6 +179,50 @@ struct BotInfoSheet: View {
         }
         .presentationDetents([.large])
         .presentationBackground(NB.ink)
+        .task { await store.loadUsage() }
+    }
+
+    private func usageCard(_ usage: UsageStats) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            NBSectionHeader(title: "Usage", detail: usage.model.isEmpty ? nil : usage.model)
+            HStack(spacing: 10) {
+                ZStack {
+                    Circle().stroke(NB.line, lineWidth: 6)
+                    Circle().trim(from: 0, to: usage.contextFraction)
+                        .stroke(NB.ion, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                    Text("\(Int(usage.contextFraction * 100))%")
+                        .font(.nbMono(9, weight: .semibold)).foregroundStyle(NB.text)
+                }
+                .frame(width: 58, height: 58)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Context").font(.nbBody(11, weight: .medium)).foregroundStyle(NB.text)
+                    Text("\(usage.contextTokens.formatted()) / \(usage.contextLength?.formatted() ?? "—") tokens")
+                        .font(.nbMono(8)).foregroundStyle(NB.tertiary)
+                    Text("\(usage.apiCalls) calls · \(usage.compressionCount) compressions")
+                        .font(.nbMono(8)).foregroundStyle(NB.tertiary)
+                }
+                Spacer()
+            }
+            HStack(spacing: 0) {
+                usageStat("\(usage.inputTokens.formatted())", "in")
+                usageStat("\(usage.outputTokens.formatted())", "out")
+                usageStat("\(usage.cacheRead.formatted())", "cache")
+                usageStat(usage.avgLatency.map { String(format: "%.1fs", $0) } ?? "—", "latency")
+                usageStat("\(usage.activeSubagents)", "agents")
+            }
+        }
+        .padding(13)
+        .background(RoundedRectangle(cornerRadius: 16).fill(NB.surface.opacity(0.7)))
+        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(NB.line, lineWidth: 1))
+    }
+
+    private func usageStat(_ value: String, _ label: String) -> some View {
+        VStack(spacing: 2) {
+            Text(value).font(.nbMono(9, weight: .medium)).foregroundStyle(NB.text)
+            Text(label).font(.nbBody(8)).foregroundStyle(NB.tertiary)
+        }
+        .frame(maxWidth: .infinity)
     }
 
     private func infoRow(_ label: String, _ value: String) -> some View {

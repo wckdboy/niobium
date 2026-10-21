@@ -31,6 +31,7 @@ data class NbState(
     val routines: List<Routine> = emptyList(),
     val modelChoices: List<ModelChoice> = emptyList(),
     val sessions: List<SessionRow> = emptyList(),
+    val usage: UsageStats? = null,
     val sessionRevision: Int = 0,
     val activities: List<ActivityItem> = emptyList(),
     val activeBot: BotProfile? = null,
@@ -302,7 +303,7 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
 
     fun closeBot() {
         state = state.copy(activeBot = null, sessionId = null, sessionRevision = 0, modelChoices = emptyList(),
-            messages = emptyList(), approvals = emptyList(), turnActive = false)
+            usage = null, messages = emptyList(), approvals = emptyList(), turnActive = false)
     }
 
     fun send(text: String, imageBase64: String? = null, mime: String = "image/jpeg") {
@@ -335,6 +336,18 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
                     .put("session_id", sessionId).put("profile", bot.name).put("text", value), 30_000)
             } catch (e: Exception) {
                 state = state.copy(turnActive = false, error = "Message failed. ${e.message}")
+            }
+        }
+    }
+
+    fun loadUsage() {
+        val client = gateway ?: return
+        val sid = state.sessionId ?: return
+        if (state.demo) return
+        viewModelScope.launch {
+            runCatching {
+                val result = client.request("session.stats", JSONObject().put("session_id", sid), 15_000)
+                state = state.copy(usage = UsageStats.parse(result))
             }
         }
     }

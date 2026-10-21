@@ -114,6 +114,17 @@ IDs matching this plan. The bootstrap script reads `PLANE_API_KEY` and
 `PLANE_WORKSPACE_SLUG`; without credentials it validates the payload and writes a
 dry-run JSON. No secrets are committed.
 
+## Status (2026-10-22)
+
+- **M0 Foundation** — done. v2 branch/PR #1, README/plan, legal.
+- **M1 Art** — done. 32×32 cast + companions, hero, n icon.
+- **M2 Home** — done. Five tabs, Home, Local, cast grid.
+- **M3 Builder** — done in code; live-model path needs a configured provider.
+- **M4 Parity** — in progress. Canonical fixes, model picker, chats, usage done; skills/MCP/subagents/vault/attachments remain.
+- **M5 Local** — done. iOS local DSH, both remote.
+- **M6 Site** — deployed at niobium.sh; Plane project NIO created.
+- **M7 Release** — 2.0 preview APK/IPA built and installed; stable release pending.
+
 ## Milestones
 
 - **M0 Foundation** — v2 branch, tokens, README, Plane import, disclaimers.

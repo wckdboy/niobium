@@ -19,6 +19,7 @@ final class AppStore: ObservableObject {
     @Published var gatewayCapabilities: JSONObject?
     @Published var modelChoices: [ModelChoice] = []
     @Published var sessions: [SessionRow] = []
+    @Published var usage: UsageStats?
     @Published var chatRevision = 0
     var chatSource = "gui"
     @Published var activity: [ActivityItem] = []
@@ -374,6 +375,12 @@ final class AppStore: ObservableObject {
             isTurnActive = false
             showError("Message failed. \(error.localizedDescription)")
         }
+    }
+
+    func loadUsage() async {
+        guard !isDemo, let api, let sessionID = chatSessionID else { usage = nil; return }
+        guard let result = try? await api.request("session.stats", params: ["session_id": sessionID], timeout: 15) as? JSONObject else { return }
+        usage = UsageStats.parse(result)
     }
 
     func loadSessions(for bot: BotProfile) async {

@@ -445,3 +445,43 @@ struct SessionRow: Identifiable, Equatable {
                           running: json.bool("running") ?? false)
     }
 }
+
+struct UsageStats: Equatable {
+    var inputTokens: Int
+    var outputTokens: Int
+    var cacheRead: Int
+    var cacheWrite: Int
+    var totalTokens: Int
+    var apiCalls: Int
+    var contextTokens: Int
+    var contextLength: Int?
+    var compressionCount: Int
+    var avgLatency: Double?
+    var tokensPerSecond: Double?
+    var activeSubagents: Int
+    var model: String
+    var provider: String
+
+    var contextFraction: Double {
+        guard let contextLength, contextLength > 0 else { return 0 }
+        return min(1, Double(contextTokens) / Double(contextLength))
+    }
+
+    static func parse(_ json: JSONObject) -> UsageStats? {
+        guard json.int("total_tokens") != nil || json.int("input_tokens") != nil else { return nil }
+        return UsageStats(inputTokens: json.int("input_tokens") ?? 0,
+                          outputTokens: json.int("output_tokens") ?? 0,
+                          cacheRead: json.int("cache_read_tokens") ?? 0,
+                          cacheWrite: json.int("cache_write_tokens") ?? 0,
+                          totalTokens: json.int("total_tokens") ?? 0,
+                          apiCalls: json.int("api_calls") ?? 0,
+                          contextTokens: json.int("context_tokens") ?? 0,
+                          contextLength: json.int("context_length"),
+                          compressionCount: json.int("compression_count") ?? 0,
+                          avgLatency: json.double("avg_latency_s"),
+                          tokensPerSecond: json.double("tokens_per_s"),
+                          activeSubagents: json.int("active_subagents") ?? 0,
+                          model: json.string("model") ?? "",
+                          provider: json.string("provider") ?? "")
+    }
+}

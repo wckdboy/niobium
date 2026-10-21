@@ -41,7 +41,10 @@ Pixel chat attach failed; only legacy sidecars worked.
 | Routines | `cron.manage` list/add/remove | ✅ | ✅ (new) |
 | Photos | `image.attach_bytes` | ✅ | ✅ (new) |
 | Dictation | on-device speech → `prompt.submit` | ✅ | ✅ (new, system recognizer) |
-| Remote DSH | `Settings → Harness`, arbitrary DSH web UI over http(s) | ✅ | ✅ (new) |
+| Remote DSH | `Settings → Harness`, arbitrary DSH web UI over http(s) | ✅ | ✅ |
+| Model picker | `model.options`, `session.mutate operation=model` | ✅ | ✅ |
+| Chats | `session.list {scope:"stored"}`, `session.resume` | ✅ | ✅ |
+| Usage | `session.stats` context/tokens/latency | ✅ | ✅ |
 | Local DSH | embedded iSH-ARM64 + Alpine + `dsh-serve` | ✅ (full build) | — (platform limit) |
 | Light/dark | System/Light/Dark palette | ✅ (new) | ✅ (new) |
 | Mascots | chosen/random/custom 8×8 per profile | ✅ (new) | ✅ (new) |

@@ -62,6 +62,7 @@ fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = 
     var showCast by remember { mutableStateOf(false) }
     var showModels by remember { mutableStateOf(false) }
     var showChats by remember { mutableStateOf(false) }
+    var showUsage by remember { mutableStateOf(false) }
     var showRoutines by remember { mutableStateOf(false) }
     var attachment by remember { mutableStateOf<Pair<String, String>?>(null) }
     val context = LocalContext.current
@@ -88,7 +89,7 @@ fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = 
     Column(Modifier.fillMaxSize().background(Nb.Void).statusBarsPadding().imePadding()) {
         ChatHeader(bot, state, onOpenTools = onOpenTools, onOpenMascot = { showCast = true },
             onOpenRoutines = { showRoutines = true }, onOpenModels = { showModels = true },
-            onOpenChats = { showChats = true }) { vm.closeBot() }
+            onOpenChats = { showChats = true }, onOpenUsage = { showUsage = true }) { vm.closeBot() }
         Box(Modifier.fillMaxWidth().height(1.dp).background(Nb.Line))
         Box(Modifier.weight(1f)) {
             if (state.messages.isEmpty() && state.loadingChat) {
@@ -161,6 +162,9 @@ fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = 
     state.clarify?.let { request ->
         ClarifyDialog(request) { answers -> vm.resolveClarify(answers) }
     }
+    if (showUsage) {
+        UsageSheet(vm) { showUsage = false }
+    }
     if (showChats) {
         ChatsSheet(vm, bot) { showChats = false }
     }
@@ -178,7 +182,8 @@ fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = 
 @Composable
 private fun ChatHeader(bot: BotProfile, state: NbState, onOpenTools: () -> Unit,
                        onOpenMascot: () -> Unit, onOpenRoutines: () -> Unit,
-                       onOpenModels: () -> Unit, onOpenChats: () -> Unit, onBack: () -> Unit) {
+                       onOpenModels: () -> Unit, onOpenChats: () -> Unit, onOpenUsage: () -> Unit,
+                       onBack: () -> Unit) {
     var menuOpen by remember { mutableStateOf(false) }
     val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
     Row(Modifier.fillMaxWidth().background(Nb.Ink.copy(alpha = 0.92f)).padding(horizontal = 14.dp, vertical = 10.dp),
@@ -214,6 +219,10 @@ private fun ChatHeader(bot: BotProfile, state: NbState, onOpenTools: () -> Unit,
                 DropdownMenuItem(
                     text = { Text("Toolbox", color = Nb.Text, fontSize = 13.sp) },
                     onClick = { menuOpen = false; onOpenTools() }
+                )
+                DropdownMenuItem(
+                    text = { Text("Usage", color = Nb.Text, fontSize = 13.sp) },
+                    onClick = { menuOpen = false; onOpenUsage() }
                 )
                 DropdownMenuItem(
                     text = { Text("All chats", color = Nb.Text, fontSize = 13.sp) },
@@ -434,6 +443,7 @@ fun GroupChatScreen(vm: NiobiumViewModel, room: GroupRoom) {
     var showCast by remember { mutableStateOf(false) }
     var showModels by remember { mutableStateOf(false) }
     var showChats by remember { mutableStateOf(false) }
+    var showUsage by remember { mutableStateOf(false) }
     var showRoutines by remember { mutableStateOf(false) }
     var attachment by remember { mutableStateOf<Pair<String, String>?>(null) }
     val context = LocalContext.current
