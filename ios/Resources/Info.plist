@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleDisplayName</key><string>Niobium</string>
+  <key>CFBundleName</key><string>Niobium</string>
+  <key>CFBundleIdentifier</key><string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+  <key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>
+  <key>CFBundlePackageType</key><string>APPL</string>
+  <key>CFBundleShortVersionString</key><string>$(MARKETING_VERSION)</string>
+  <key>CFBundleVersion</key><string>$(CURRENT_PROJECT_VERSION)</string>
+  <key>CFBundleDevelopmentRegion</key><string>$(DEVELOPMENT_LANGUAGE)</string>
+  <key>LSRequiresIPhoneOS</key><true/>
+  <key>UIApplicationSceneManifest</key>
+  <dict><key>UIApplicationSupportsMultipleScenes</key><true/></dict>
+  <key>UILaunchScreen</key>
+  <dict>
+    <key>UIColorName</key><string>LaunchBackground</string>
+    <key>UIImageName</key><string>LaunchMark</string>
+    <key>UIImageRespectsSafeAreaInsets</key><false/>
+  </dict>
+  <key>UIUserInterfaceStyle</key><string>Dark</string>
+  <key>UISupportedInterfaceOrientations</key>
+  <array><string>UIInterfaceOrientationPortrait</string><string>UIInterfaceOrientationLandscapeLeft</string><string>UIInterfaceOrientationLandscapeRight</string></array>
+  <key>UISupportedInterfaceOrientations~ipad</key>
+  <array><string>UIInterfaceOrientationPortrait</string><string>UIInterfaceOrientationPortraitUpsideDown</string><string>UIInterfaceOrientationLandscapeLeft</string><string>UIInterfaceOrientationLandscapeRight</string></array>
+  <key>NSAppTransportSecurity</key>
+  <dict>
+    <key>NSAllowsArbitraryLoads</key><true/>
+    <key>NSAllowsLocalNetworking</key><true/>
+  </dict>
+  <key>NSLocalNetworkUsageDescription</key>
+  <string>Niobium connects to your self-hosted Hermes gateway on your local network.</string>
+  <key>NSPhotoLibraryUsageDescription</key>
+  <string>Attach images to messages for your Hermes agents.</string>
+  <key>NSCameraUsageDescription</key>
+  <string>Take a photo to send to your Hermes agents.</string>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>Dictate messages to your Hermes agents.</string>
+  <key>NSSpeechRecognitionUsageDescription</key>
+  <string>Turn your voice into messages for your Hermes agents.</string>
+  <key>ITSAppUsesNonExemptEncryption</key><false/>
+</dict>
+</plist>

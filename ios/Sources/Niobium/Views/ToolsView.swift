@@ -1,0 +1,177 @@
+import SwiftUI
+
+struct ToolsView: View {
+    @EnvironmentObject private var store: AppStore
+    var onClose: (() -> Void)? = nil
+    @State private var search = ""
+    @State private var showOnlyEnabled = false
+
+    private var filtered: [Toolset] {
+        store.toolsets.filter { toolset in
+            if showOnlyEnabled && !toolset.enabled { return false }
+            guard !search.isEmpty else { return true }
+            return toolset.name.localizedCaseInsensitiveContains(search)
+                || toolset.description.localizedCaseInsensitiveContains(search)
+                || toolset.tools.contains { $0.localizedCaseInsensitiveContains(search) }
+        }
+    }
+
+    private var totalTools: Int { store.toolsets.reduce(0) { $0 + $1.tools.count } }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack {
+                    if let onClose {
+                        NBIconButton(symbol: "chevron.left", size: 36, tint: NB.secondary) { onClose() }
+                        Spacer().frame(width: 10)
+                    }
+                    Wordmark()
+                    Spacer()
+                    Button { Task { await store.loadToolsets() } } label: {
+                        Image(systemName: "arrow.clockwise").font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(NB.secondary)
+                            .frame(width: 38, height: 38)
+                            .background(Circle().fill(.white.opacity(0.055)))
+                            .overlay(Circle().strokeBorder(NB.line, lineWidth: 1))
+                    }
+                }
+                .padding(.horizontal, 20).padding(.top, 6)
+
+                NBScreenHeader(eyebrow: "Everything the agent can touch", title: "Toolbox")
+                    .padding(.top, 24)
+
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("\(totalTools)")
+                        .font(.nbDisplay(52))
+                        .tracking(-2)
+                        .foregroundStyle(
+                            LinearGradient(colors: [NB.text, NB.secondary], startPoint: .top, endPoint: .bottom)
+                        )
+                    Text("tools across \(store.toolsets.count) toolsets on this gateway")
+                        .font(.nbBody(12.5))
+                        .foregroundStyle(NB.secondary)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 10)
+
+                if !store.isDemo && store.chatSessionID == nil {
+                    HStack(spacing: 8) {
+                        Image(systemName: "info.circle").font(.system(size: 11)).foregroundStyle(NB.amber)
+                        Text("Open a pixel chat to enable or disable a toolset for that live session.")
+                            .font(.nbBody(11)).foregroundStyle(NB.amber.opacity(0.9))
+                    }
+                    .padding(11)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(RoundedRectangle(cornerRadius: 11).fill(NB.amber.opacity(0.07)))
+                    .padding(.horizontal, 20)
+                    .padding(.top, 16)
+                }
+
+                HStack(spacing: 8) {
+                    HStack(spacing: 7) {
+                        Image(systemName: "magnifyingglass").font(.system(size: 11)).foregroundStyle(NB.tertiary)
+                        TextField("Search the toolbox", text: $search)
+                            .font(.nbBody(13)).foregroundStyle(NB.text)
+                    }
+                    .padding(.horizontal, 12).frame(height: 38)
+                    .background(RoundedRectangle(cornerRadius: 11).fill(NB.surface))
+                    .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(NB.line, lineWidth: 1))
+
+                    Button {
+                        withAnimation(.easeOut(duration: 0.2)) { showOnlyEnabled.toggle() }
+                    } label: {
+                        Image(systemName: showOnlyEnabled ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+                            .font(.system(size: 17))
+                            .foregroundStyle(showOnlyEnabled ? NB.ion : NB.tertiary)
+                            .frame(width: 38, height: 38)
+                            .background(RoundedRectangle(cornerRadius: 11).fill(NB.surface))
+                            .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(NB.line, lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
+
+                VStack(spacing: 9) {
+                    ForEach(filtered) { toolset in
+                        toolsetRow(toolset)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 14)
+                .padding(.bottom, 36)
+            }
+        }
+        .scrollIndicators(.hidden)
+        .refreshable { await store.loadToolsets() }
+        .task { if store.toolsets.isEmpty { await store.loadToolsets() } }
+    }
+
+    private func toolsetRow(_ toolset: Toolset) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 11) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 11, style: .continuous)
+                        .fill((toolset.enabled ? NB.ion : NB.tertiary).opacity(0.10))
+                    Image(systemName: toolset.icon)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(toolset.enabled ? NB.ion : NB.tertiary)
+                }
+                .frame(width: 36, height: 36)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 7) {
+                        Text(toolset.name)
+                            .font(.nbMono(11.5, weight: .semibold))
+                            .foregroundStyle(NB.text)
+                        Text("\(toolset.tools.count)")
+                            .font(.nbMono(8))
+                            .foregroundStyle(NB.tertiary)
+                    }
+                    Text(toolset.description)
+                        .font(.nbBody(11.5))
+                        .foregroundStyle(NB.secondary)
+                        .lineLimit(2)
+                }
+                Spacer()
+                Button {
+                    Task { await store.toggleToolset(toolset) }
+                } label: {
+                    ZStack(alignment: toolset.enabled ? .trailing : .leading) {
+                        Capsule().fill(toolset.enabled ? NB.ion : Color.white.opacity(0.10))
+                            .frame(width: 38, height: 22)
+                        Circle().fill(toolset.enabled ? Color(hex: 0x0A0D14) : NB.tertiary)
+                            .frame(width: 17, height: 17)
+                            .padding(.horizontal, 2.5)
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+            if !toolset.tools.isEmpty {
+                FlowLayout(spacing: 5) {
+                    ForEach(toolset.tools.prefix(6), id: \.self) { tool in
+                        Text(tool)
+                            .font(.nbMono(7.5))
+                            .foregroundStyle(toolset.enabled ? NB.secondary : NB.tertiary)
+                            .padding(.horizontal, 7).padding(.vertical, 3)
+                            .background(Capsule().fill(.white.opacity(0.04)))
+                    }
+                    if toolset.tools.count > 6 {
+                        Text("+\(toolset.tools.count - 6)")
+                            .font(.nbMono(7.5)).foregroundStyle(NB.tertiary)
+                            .padding(.horizontal, 7).padding(.vertical, 3)
+                    }
+                }
+                .padding(.leading, 47)
+            }
+        }
+        .padding(13)
+        .background(
+            RoundedRectangle(cornerRadius: 17, style: .continuous)
+                .fill(toolset.enabled ? NB.surface.opacity(0.8) : NB.surface.opacity(0.4))
+                .overlay(RoundedRectangle(cornerRadius: 17).strokeBorder(toolset.enabled ? NB.ion.opacity(0.14) : NB.line, lineWidth: 1))
+        )
+        .opacity(toolset.enabled ? 1 : 0.72)
+    }
+}

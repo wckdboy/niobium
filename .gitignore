@@ -1,0 +1,16 @@
+# Build outputs
+ios/build/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/keystore.properties
+android/*.jks
+dist/*.xcarchive/
+.DS_Store
+# Secrets
+*.p12
+*.mobileprovision
+
+# Local release artifacts (published as GitHub release assets)
+dist/

@@ -1,0 +1,39 @@
+name: Niobium
+options:
+  bundleIdPrefix: io.sovware
+  deploymentTarget:
+    iOS: "18.0"
+  xcodeVersion: "27.0"
+  groupSortPosition: top
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "18.0"
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+    SWIFT_STRICT_CONCURRENCY: minimal
+targets:
+  Niobium:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources/Niobium
+      - path: Resources
+        excludes:
+          - Info.plist
+          - Niobium.entitlements
+    settings:
+      base:
+        INFOPLIST_FILE: Resources/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: io.sovware.niobium
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        TARGETED_DEVICE_FAMILY: "1,2"
+        CODE_SIGN_ENTITLEMENTS: Resources/Niobium.entitlements
+        GENERATE_INFOPLIST_FILE: NO
+        SUPPORTS_MACCATALYST: NO
+    scheme:
+      testTargets: []
