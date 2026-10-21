@@ -15,6 +15,9 @@ final class AppStore: ObservableObject {
     @Published var groups: [GroupRoom] = []
     @Published var toolsets: [Toolset] = []
     @Published var routines: [Routine] = []
+    @Published var runtimeInfo: JSONObject?
+    @Published var gatewayCapabilities: JSONObject?
+    var chatSource = "gui"
     @Published var activity: [ActivityItem] = []
 
     @Published var activeBot: BotProfile?
@@ -90,6 +93,7 @@ final class AppStore: ObservableObject {
             isDemo = false
             needsConnection = false
             connectionState = .connected(version: version)
+            await loadRuntimeInfo()
             await refreshAll()
             toastMessage("Connected to \(saved.name)")
             presentLaunchBotIfRequested()
@@ -185,6 +189,18 @@ final class AppStore: ObservableObject {
                 self.connectionState = .failed(message)
                 self.showError("Connection lost. \(message)")
             }
+        }
+    }
+
+    private func loadRuntimeInfo() async {
+        guard let api, !isDemo else { return }
+        if let runtime = try? await api.request("runtime.describe", params: [:], timeout: 10) as? JSONObject {
+            runtimeInfo = runtime
+            let sources = runtime.dict("session_create")?.array("sources")?.compactMap { $0 as? String } ?? []
+            chatSource = sources.contains("gui") ? "gui" : (sources.contains("tui") ? "tui" : "gui")
+        }
+        if let caps = try? await api.request("gateway.capabilities", params: [:], timeout: 6) as? JSONObject {
+            gatewayCapabilities = caps
         }
     }
 
@@ -285,13 +301,13 @@ final class AppStore: ObservableObject {
                 result = try await api.request("session.resume", params: [
                     "session_id": storedID,
                     "profile": bot.name,
-                    "inline_images": false
+                    "source": chatSource
                 ], timeout: 90) as? JSONObject
             } else {
                 result = try await api.request("session.create", params: [
                     "profile": bot.name,
                     "title": "Bot Chat",
-                    "source": "desktop"
+                    "source": chatSource
                 ], timeout: 90) as? JSONObject
             }
             guard let result else { throw RPCError.malformed }
@@ -340,7 +356,8 @@ final class AppStore: ObservableObject {
                     "session_id": sessionID,
                     "profile": bot.name,
                     "data": base64,
-                    "filename": "niobium-photo.jpg"
+                    "filename": "niobium-photo.jpg",
+                    "mime": "image/jpeg"
                 ])
             }
             _ = try await api.request("prompt.submit", params: [

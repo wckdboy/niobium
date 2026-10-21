@@ -1,7 +1,7 @@
 # Niobium
 
 <p align="center">
-  <img src="brand/app-icon-rounded.png" width="112" alt="Niobium pixel-art app icon" />
+  <img src="brand/app-icon-ore-rounded.png" width="112" alt="Niobium purple ore pixel-art app icon" />
 </p>
 
 **Nb · 41 · Hermes, in your pocket.**
@@ -34,12 +34,12 @@ driver stay on your machine. Niobium is the window and the approve button.
 
 ```sh
 # Android
-adb install -r Niobium-1.0.apk
+adb install -r Niobium-1.1.apk
 
 # Verify an APK
 JAVA_HOME=/opt/homebrew/opt/openjdk@17 \
   "$HOME/Library/Android/sdk/build-tools/36.0.0/apksigner" verify --print-certs \
-  Niobium-1.0.apk
+  Niobium-1.1.apk
 ```
 
 ## The idea: Pixels
@@ -57,6 +57,30 @@ credentials and chat history. In Niobium that agent is a **Pixel**.
   desktop and the CLI share the same relationship.
 - Every pixel has a deterministic 8×8 face tile. The pixel-art **Nb** mark and
   face system are the visual language, not decoration pasted on top.
+
+## Light mode, mascots and the ore icon
+
+The interface now has a full **System / Light / Dark** appearance setting on both
+platforms. The light theme is a lavender-white version of the same command deck,
+not an inverted afterthought: dark violet text, white cards, the same single
+accent, and no loss of contrast in chat, approvals, rooms or the toolbox.
+
+Every Pixel can have its own **8×8 mascot**:
+
+- **Chosen** from eight curated faces (ghost, cat, owl, robot, slime, bloom,
+  comet, ore).
+- **Randomised** with a dice action.
+- **Drawn** cell by cell in the Mascot studio, with an ink palette and a
+  name-seeded default. The choice is stored per profile on the device.
+
+The app icon is a new **16×16 niobium-ore crystal, purple on white**, shipped in
+iOS `AppIcon` and Android adaptive/monochrome icon slots. The icon is deliberately
+rough and mineral, not another letterform.
+
+<p align="center">
+  <img src="screenshots/ios-light.png" width="320" alt="Niobium light mode" />
+  <img src="screenshots/android-light.png" width="160" alt="Niobium light mode on Android" />
+</p>
 
 ## DeepSeek Harness, locally on iOS
 
@@ -82,6 +106,11 @@ boots a bundled Alpine 3.21 image with Node 22 and `@deepseek-ai/dsh`, supervise
 This is the excellent [DSH iOS/iSH integration by everettjf](https://github.com/everettjf/dsh-ios),
 vendored as a pinned submodule. The full iOS app is GPLv3 because it links iSH.
 It is a local development build, not an App Store submission.
+
+**Remote Harness (both platforms):** Settings → Harness opens any DSH web UI
+running on a computer or VPS. Android connects remotely; iOS can use the embedded
+guest or the remote URL. This is the cross-platform path for DSH when iSH's
+AArch64 emulator is not available.
 
 ## Features
 
@@ -179,11 +208,14 @@ arrive live instead of waiting out the gateway's deadline.
 
 - **Palette:** near-black `#07050C`, ink `#0B0812`, chroma only from a
   `#A78BFA → #7C3AED` purple gradient and a very soft `#3B0764` bloom.
-- **Mark:** a hand-built 16×16 raster of a porcelain **N** and lavender **b**,
-  scaled nearest-neighbor. One pixel spark. It is the app icon, launch mark,
-  Android adaptive foreground and in-app wordmark.
-- **Pixels:** each agent has an 8×8 face tile driven by its accent colour. Teams
-  stack the faces. No circles with initials.
+- **Mark:** the app/launch icon is a rough 16×16 purple **niobium-ore crystal**
+  on white, scaled nearest-neighbor. Inside the app the wordmark keeps the
+  porcelain **N** / lavender **b** glyph. Never add an orbit ring.
+- **Pixels:** each agent has an 8×8 face tile — chosen, randomised or drawn in
+  the Mascot studio — driven by its accent colour. Teams stack the faces. No
+  circles with initials.
+- **Light mode:** lavender-white canvas, white cards, violet text and the same
+  single purple accent; System/Light/Dark on both platforms.
 - **Type:** system sans, tight display headings, sentence-case labels. Mono only
   for tool names and identifiers.
 - Full tokens and rules: [`brand/tokens.json`](brand/tokens.json),
@@ -345,8 +377,8 @@ group delivery, TestFlight/App Store distribution.
   connects to one at a time.
 - **Rooms are read/poll + send.** Room membership, text messaging and the log are
   supported; room-level approvals are not.
-- **Android input parity.** Photo attachment and dictation are iOS-only in 1.0.
-- **Routines are iOS-only** in 1.0.
+- **Android input parity.** Photo attach and dictation now exist on Android; PDF
+  and arbitrary file attach remain missing on both.
 - **Pixel avatars** are deterministic generated faces. Uploaded Hermes avatars are
   not fetched yet.
 - **Cleartext HTTP** is allowed for self-hosted LAN gateways. Use HTTPS/Tailscale
@@ -375,6 +407,19 @@ group delivery, TestFlight/App Store distribution.
   gateway you enter.
 - The agent runs with the gateway's privileges. Use a strong token, TLS and a
   network boundary.
+
+## Hermes parity audit
+
+The client has been audited against the canonical `hermes-gateway-v1` contracts
+and the authority/legacy wire split. The audit that drove this pass is in
+[`docs/HERMES-PARITY.md`](docs/HERMES-PARITY.md). It records what is implemented,
+what is deliberately out of scope, and the remaining gaps. The canonical
+`session.resume`/`session.create` payloads were corrected in this pass; without
+that fix, authority-backed gateways returned `4001 invalid_params`.
+
+This is **not** 277-method parity. It is parity for the primary mobile flows:
+roster, chat, tools, approvals, rooms, routines, attachments, usage, and remote
+harness. The matrix is honest about the rest.
 
 ## License
 

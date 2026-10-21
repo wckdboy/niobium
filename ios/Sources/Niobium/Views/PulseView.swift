@@ -59,7 +59,7 @@ struct PulseView: View {
                         .padding(13)
                         .background(
                             RoundedRectangle(cornerRadius: 17, style: .continuous)
-                                .fill(LinearGradient(colors: [NB.ion.opacity(0.13), Color.white.opacity(0.025)],
+                                .fill(LinearGradient(colors: [NB.ion.opacity(0.13), NB.fillSoft],
                                                      startPoint: .leading, endPoint: .trailing))
                                 .overlay(RoundedRectangle(cornerRadius: 17).strokeBorder(NB.ion.opacity(0.22), lineWidth: 1))
                         )
@@ -96,7 +96,7 @@ struct PulseView: View {
                         }
                     }
                     .padding(.horizontal, 14)
-                    .background(RoundedRectangle(cornerRadius: 18).fill(Color.white.opacity(0.025)))
+                    .background(RoundedRectangle(cornerRadius: 18).fill(NB.fillSoft))
                     .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(NB.line, lineWidth: 1))
                     .padding(.horizontal, 16)
                 }

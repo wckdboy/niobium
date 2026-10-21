@@ -10,6 +10,7 @@ struct ChatView: View {
     @State private var attachment: UIImage?
     @State private var showTools = false
     @State private var showRoutines = false
+    @State private var showMascot = false
     @State private var showInfo = false
     @State private var showClarify = false
     @State private var appeared = false
@@ -31,7 +32,6 @@ struct ChatView: View {
                 loadingOverlay
             }
         }
-        .preferredColorScheme(.dark)
         .task {
             if store.activeBot?.name != bot.name || store.chatSessionID == nil {
                 store.openBot(bot)
@@ -44,6 +44,10 @@ struct ChatView: View {
         }
         .sheet(isPresented: $showRoutines) {
             RoutinesView(bot: bot).environmentObject(store)
+        }
+        .sheet(isPresented: $showMascot) {
+            MascotStudioView(profile: bot.name, title: bot.title,
+                             initialAccent: bot.accentHex ?? "#A78BFA", onSave: { _ in })
         }
         .sheet(isPresented: $showInfo) {
             BotInfoSheet(bot: bot).environmentObject(store)
@@ -89,7 +93,7 @@ struct ChatView: View {
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(NB.secondary)
                     .frame(width: 34, height: 34)
-                    .background(Circle().fill(.white.opacity(0.05)))
+                    .background(Circle().fill(NB.fill))
             }
             .buttonStyle(.plain)
 
@@ -111,6 +115,7 @@ struct ChatView: View {
             Menu {
                 Button { showTools = true } label: { Label("Tools & capabilities", systemImage: "hammer") }
                 Button { showRoutines = true } label: { Label("Routines", systemImage: "clock.arrow.circlepath") }
+                Button { showMascot = true } label: { Label("Mascot studio", systemImage: "paintpalette") }
                 Button { showInfo = true } label: { Label("Pixel details", systemImage: "info.circle") }
                 Divider()
                 Button {
@@ -126,7 +131,7 @@ struct ChatView: View {
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(NB.secondary)
                     .frame(width: 34, height: 34)
-                    .background(Circle().fill(.white.opacity(0.05)))
+                    .background(Circle().fill(NB.fill))
             }
         }
         .padding(.horizontal, 14)
@@ -285,7 +290,7 @@ struct ChatView: View {
                     }
                     .padding(.vertical, 11)
                     .padding(.horizontal, 13)
-                    .background(RoundedRectangle(cornerRadius: 13).fill(Color.white.opacity(0.025)))
+                    .background(RoundedRectangle(cornerRadius: 13).fill(NB.fillSoft))
                 }
                 .buttonStyle(.plain)
             }
@@ -351,7 +356,7 @@ struct ChatView: View {
                             .font(.system(size: 16, weight: .medium))
                             .foregroundStyle(NB.secondary)
                             .frame(width: 34, height: 34)
-                            .background(Circle().fill(.white.opacity(0.055)))
+                            .background(Circle().fill(NB.fill))
                             .overlay(Circle().strokeBorder(NB.line, lineWidth: 1))
                     }
 
@@ -408,7 +413,7 @@ struct ChatView: View {
                         } label: {
                             ZStack {
                                 Circle()
-                                    .fill(canSend ? NB.ion : Color.white.opacity(0.07))
+                                    .fill(canSend ? NB.ion : NB.fill)
                                     .frame(width: 33, height: 33)
                                 Image(systemName: "arrow.up")
                                     .font(.system(size: 14, weight: .bold))
@@ -430,7 +435,7 @@ struct ChatView: View {
                         RoundedRectangle(cornerRadius: 22, style: .continuous)
                             .strokeBorder(inputFocused ? NB.ion.opacity(0.35) : NB.line, lineWidth: 1)
                     )
-                    .shadow(color: .black.opacity(0.3), radius: 18, y: 8)
+                    .shadow(color: NB.shade, radius: 18, y: 8)
             )
             .padding(.horizontal, 12)
             .padding(.bottom, 8)
@@ -495,7 +500,7 @@ struct ApprovalCard: View {
                 .lineLimit(showDetails ? 8 : 3)
                 .padding(10)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(RoundedRectangle(cornerRadius: 9).fill(.black.opacity(0.3)))
+                .background(RoundedRectangle(cornerRadius: 9).fill(NB.shade))
                 .onTapGesture { withAnimation { showDetails.toggle() } }
             if !approval.description.isEmpty && approval.description != approval.command {
                 Text(approval.description)
@@ -521,7 +526,7 @@ struct ApprovalCard: View {
                             .foregroundStyle(NB.text)
                             .padding(.horizontal, 13)
                             .frame(height: 38)
-                            .background(Capsule().fill(.white.opacity(0.055)))
+                            .background(Capsule().fill(NB.fill))
                             .overlay(Capsule().strokeBorder(NB.line, lineWidth: 1))
                     }
                 }
@@ -540,7 +545,7 @@ struct ApprovalCard: View {
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
                         .strokeBorder(NB.amber.opacity(0.3), lineWidth: 1)
                 )
-                .shadow(color: .black.opacity(0.35), radius: 20, y: 8)
+                .shadow(color: NB.shade, radius: 20, y: 8)
         )
     }
 }
@@ -613,6 +618,5 @@ struct ClarifySheet: View {
         }
         .presentationDetents([.medium, .large])
         .presentationBackground(NB.ink)
-        .preferredColorScheme(.dark)
     }
 }

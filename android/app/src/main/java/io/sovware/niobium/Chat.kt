@@ -1,6 +1,9 @@
 package io.sovware.niobium
 
 import androidx.compose.animation.AnimatedVisibility
+import android.util.Base64
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -49,12 +52,29 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.sp
 
 @Composable
 fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = {}) {
     val state = vm.state
     var draft by remember { mutableStateOf("") }
+    var showMascot by remember { mutableStateOf(false) }
+    var showRoutines by remember { mutableStateOf(false) }
+    var attachment by remember { mutableStateOf<Pair<String, String>?>(null) }
+    val context = LocalContext.current
+    val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri ?: return@rememberLauncherForActivityResult
+        runCatching {
+            val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return@runCatching
+            val mime = context.contentResolver.getType(uri) ?: "image/jpeg"
+            attachment = Base64.encodeToString(bytes, Base64.NO_WRAP) to mime
+        }
+    }
+    val dictation = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val spoken = result.data?.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
+        if (!spoken.isNullOrBlank()) draft = if (draft.isBlank()) spoken else "$draft $spoken"
+    }
     val listState = rememberLazyListState()
 
     LaunchedEffect(state.messages.size, state.messages.lastOrNull()?.text?.length) {
@@ -64,7 +84,8 @@ fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = 
     }
 
     Column(Modifier.fillMaxSize().background(Nb.Void).statusBarsPadding().imePadding()) {
-        ChatHeader(bot, state, onOpenTools = onOpenTools) { vm.closeBot() }
+        ChatHeader(bot, state, onOpenTools = onOpenTools, onOpenMascot = { showMascot = true },
+            onOpenRoutines = { showRoutines = true }) { vm.closeBot() }
         Box(Modifier.fillMaxWidth().height(1.dp).background(Nb.Line))
         Box(Modifier.weight(1f)) {
             if (state.messages.isEmpty() && state.loadingChat) {
@@ -114,27 +135,48 @@ fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = 
             turnActive = state.turnActive,
             onSend = {
                 val text = draft
+                val image = attachment
                 draft = ""
-                vm.send(text)
+                attachment = null
+                vm.send(text, image?.first, image?.second ?: "image/jpeg")
             },
-            onStop = { vm.stopTurn() }
+            onStop = { vm.stopTurn() },
+            onAttach = { photoPicker.launch("image/*") },
+            onDictate = {
+                val intent = android.content.Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                    putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                        android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                    putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT, "Speak to ${bot.title}")
+                }
+                runCatching { dictation.launch(intent) }
+            },
+            hasAttachment = attachment != null,
+            onClearAttachment = { attachment = null }
         )
     }
 
     state.clarify?.let { request ->
         ClarifyDialog(request) { answers -> vm.resolveClarify(answers) }
     }
+    if (showRoutines) {
+        RoutinesSheet(vm, bot) { showRoutines = false }
+    }
+    if (showMascot) {
+        MascotStudioSheet(profile = bot.name, title = bot.title,
+            initialAccent = bot.accentHex ?: "#A78BFA", onDismiss = { showMascot = false })
+    }
 }
 
 @Composable
-private fun ChatHeader(bot: BotProfile, state: NbState, onOpenTools: () -> Unit, onBack: () -> Unit) {
+private fun ChatHeader(bot: BotProfile, state: NbState, onOpenTools: () -> Unit,
+                       onOpenMascot: () -> Unit, onOpenRoutines: () -> Unit, onBack: () -> Unit) {
     var menuOpen by remember { mutableStateOf(false) }
     val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
     Row(Modifier.fillMaxWidth().background(Nb.Ink.copy(alpha = 0.92f)).padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically) {
         NbIconButton("‹", onBack, size = 34)
         Spacer(Modifier.width(11.dp))
-        BotAvatar(bot.title, bot.accent, 36.dp, bot.isLive, showStatus = false)
+        BotAvatar(bot.title, bot.accent, 36.dp, bot.isLive, showStatus = false, profileName = bot.name)
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -164,6 +206,14 @@ private fun ChatHeader(bot: BotProfile, state: NbState, onOpenTools: () -> Unit,
                     onClick = { menuOpen = false; onOpenTools() }
                 )
                 DropdownMenuItem(
+                    text = { Text("Routines", color = Nb.Text, fontSize = 13.sp) },
+                    onClick = { menuOpen = false; onOpenRoutines() }
+                )
+                DropdownMenuItem(
+                    text = { Text("Mascot studio", color = Nb.Text, fontSize = 13.sp) },
+                    onClick = { menuOpen = false; onOpenMascot() }
+                )
+                DropdownMenuItem(
                     text = { Text("Copy pixel details", color = Nb.Text, fontSize = 13.sp) },
                     onClick = {
                         menuOpen = false
@@ -178,7 +228,7 @@ private fun ChatHeader(bot: BotProfile, state: NbState, onOpenTools: () -> Unit,
 @Composable
 private fun ChatPreamble(bot: BotProfile, state: NbState) {
     Column(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        BotAvatar(bot.title, bot.accent, 60.dp, false, showStatus = false)
+        BotAvatar(bot.title, bot.accent, 60.dp, false, showStatus = false, profileName = bot.name)
         Spacer(Modifier.height(10.dp))
         Text(bot.title, color = Nb.Text, style = NbTitle, fontSize = 20.sp)
         Spacer(Modifier.height(4.dp))
@@ -268,7 +318,7 @@ private fun ApprovalCard(approval: Approval, onChoice: (String) -> Unit) {
         Spacer(Modifier.height(9.dp))
         Text(approval.command.ifBlank { approval.description }, color = Nb.Text, style = NbMono, fontSize = 11.5.sp,
             lineHeight = 16.sp, maxLines = 4,
-            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(9.dp)).background(Color.Black.copy(alpha = 0.3f)).padding(10.dp))
+            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(9.dp)).background(Nb.Shade).padding(10.dp))
         if (approval.description.isNotBlank() && approval.description != approval.command) {
             Spacer(Modifier.height(7.dp))
             Text(approval.description, color = Nb.Secondary, fontSize = 11.sp, maxLines = 2)
@@ -289,7 +339,7 @@ private fun ApprovalCard(approval: Approval, onChoice: (String) -> Unit) {
 private fun ChoiceButton(label: String, tint: Color, filled: Boolean, onClick: () -> Unit) {
     Box(
         Modifier.clip(CircleShape)
-            .background(if (filled) tint else Color.White.copy(alpha = 0.055f))
+            .background(if (filled) tint else Nb.Fill)
             .border(1.dp, if (filled) Color.Transparent else Nb.Line, CircleShape)
             .clickable { onClick() }.padding(horizontal = 12.dp, vertical = 8.dp)
     ) {
@@ -305,16 +355,29 @@ fun Composer(
     turnActive: Boolean,
     onSend: () -> Unit,
     onStop: () -> Unit,
-    accent: Color = Nb.Ion
+    accent: Color = Nb.Ion,
+    onAttach: () -> Unit = {},
+    onDictate: () -> Unit = {},
+    hasAttachment: Boolean = false,
+    onClearAttachment: () -> Unit = {}
 ) {
     Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 12.dp).padding(bottom = 8.dp, top = 4.dp)) {
+        if (hasAttachment) {
+            Row(Modifier.padding(bottom = 6.dp).clip(CircleShape).background(Nb.Ion.copy(alpha = 0.10f))
+                .clickable { onClearAttachment() }.padding(horizontal = 10.dp, vertical = 5.dp),
+                verticalAlignment = Alignment.CenterVertically) {
+                Text("▣ photo attached", color = Nb.Ion, fontSize = 10.sp)
+                Spacer(Modifier.width(7.dp))
+                Text("×", color = Nb.Tertiary, fontSize = 11.sp)
+            }
+        }
         Row(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(Nb.Raised.copy(alpha = 0.96f))
                 .border(1.dp, Nb.Line, RoundedCornerShape(22.dp)).padding(horizontal = 10.dp, vertical = 8.dp),
             verticalAlignment = Alignment.Bottom
         ) {
-            Box(Modifier.size(34.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.055f))
-                .border(1.dp, Nb.Line, CircleShape), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(34.dp).clip(CircleShape).background(Nb.Fill)
+                .border(1.dp, Nb.Line, CircleShape).clickable { onAttach() }, contentAlignment = Alignment.Center) {
                 Text("+", color = Nb.Secondary, fontSize = 17.sp)
             }
             Spacer(Modifier.width(8.dp))
@@ -332,10 +395,14 @@ fun Composer(
                     cursorColor = accent
                 )
             )
-            Spacer(Modifier.width(6.dp))
+            Spacer(Modifier.width(4.dp))
+            Box(Modifier.size(33.dp).clip(CircleShape).clickable { onDictate() }, contentAlignment = Alignment.Center) {
+                Text("◉", color = Nb.Tertiary, fontSize = 14.sp)
+            }
+            Spacer(Modifier.width(4.dp))
             Box(
                 Modifier.size(33.dp).clip(CircleShape)
-                    .background(if (turnActive) Nb.Text else if (value.isNotBlank()) accent else Color.White.copy(alpha = 0.07f))
+                    .background(if (turnActive) Nb.Text else if (value.isNotBlank()) accent else Nb.Fill)
                     .clickable { if (turnActive) onStop() else onSend() },
                 contentAlignment = Alignment.Center
             ) {
@@ -350,6 +417,22 @@ fun Composer(
 fun GroupChatScreen(vm: NiobiumViewModel, room: GroupRoom) {
     val state = vm.state
     var draft by remember { mutableStateOf("") }
+    var showMascot by remember { mutableStateOf(false) }
+    var showRoutines by remember { mutableStateOf(false) }
+    var attachment by remember { mutableStateOf<Pair<String, String>?>(null) }
+    val context = LocalContext.current
+    val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri ?: return@rememberLauncherForActivityResult
+        runCatching {
+            val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return@runCatching
+            val mime = context.contentResolver.getType(uri) ?: "image/jpeg"
+            attachment = Base64.encodeToString(bytes, Base64.NO_WRAP) to mime
+        }
+    }
+    val dictation = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val spoken = result.data?.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
+        if (!spoken.isNullOrBlank()) draft = if (draft.isBlank()) spoken else "$draft $spoken"
+    }
     val listState = rememberLazyListState()
     LaunchedEffect(state.roomEvents.size) {
         if (state.roomEvents.isNotEmpty()) listState.animateScrollToItem(state.roomEvents.size + 1)

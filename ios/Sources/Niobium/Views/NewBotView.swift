@@ -9,6 +9,7 @@ struct NewBotView: View {
     @State private var color = "#A78BFA"
     @State private var saving = false
     @State private var error: String?
+    @State private var showMascot = false
 
     private let colors: [(String, String)] = [
         ("Ion", "#A78BFA"), ("Orchid", "#F0ABFC"), ("Mint", "#5EEAD4"),
@@ -39,7 +40,7 @@ struct NewBotView: View {
                                         Circle()
                                             .fill(Color(hex: UInt32(item.1.dropFirst(), radix: 16) ?? 0x7C9CFF))
                                             .frame(width: 30, height: 30)
-                                            .overlay(Circle().strokeBorder(.white.opacity(color == item.1 ? 0.9 : 0.14), lineWidth: color == item.1 ? 2 : 1))
+                                            .overlay(Circle().strokeBorder(color == item.1 ? NB.onIon : NB.lineStrong, lineWidth: color == item.1 ? 2 : 1))
                                             .scaleEffect(color == item.1 ? 1.08 : 1)
                                     }
                                     .buttonStyle(.plain)
@@ -69,7 +70,7 @@ struct NewBotView: View {
                             }
                         } label: {
                             HStack {
-                                if saving { ProgressView().tint(.black).scaleEffect(0.8) }
+                                if saving { ProgressView().tint(NB.onIon).scaleEffect(0.8) }
                                 Text(saving ? "Creating pixel…" : "Create pixel").frame(maxWidth: .infinity)
                             }
                         }
@@ -90,7 +91,6 @@ struct NewBotView: View {
         }
         .presentationDetents([.large])
         .presentationBackground(NB.ink)
-        .preferredColorScheme(.dark)
     }
 
     private var preview: some View {
@@ -108,8 +108,21 @@ struct NewBotView: View {
             Text(profile.title).font(.nbTitle(20)).foregroundStyle(NB.text)
             Text(profile.role).font(.nbBody(11.5)).foregroundStyle(NB.secondary)
                 .multilineTextAlignment(.center).frame(maxWidth: 280)
+            Button {
+                showMascot = true
+            } label: {
+                Label("Customise mascot", systemImage: "paintpalette")
+                    .font(.nbBody(11, weight: .medium))
+                    .foregroundStyle(NB.ion)
+            }
+            .buttonStyle(.plain)
         }
         .padding(.vertical, 12)
+        .sheet(isPresented: $showMascot) {
+            MascotStudioView(profile: name.isEmpty ? "niobium" : name,
+                             title: title.isEmpty ? (name.isEmpty ? "New Pixel" : name.capitalized) : title,
+                             initialAccent: color, onSave: { _ in })
+        }
     }
 
     private func input(_ label: String, placeholder: String, text: Binding<String>, multiline: Bool = false, hint: String? = nil) -> some View {

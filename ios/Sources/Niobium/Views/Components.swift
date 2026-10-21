@@ -14,7 +14,7 @@ struct AtomicMark: View {
             .clipShape(RoundedRectangle(cornerRadius: size * 0.29, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: size * 0.29, style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.14), lineWidth: 0.8)
+                    .strokeBorder(NB.lineStrong, lineWidth: 0.8)
             )
             .shadow(color: NB.ion.opacity(animated && glow ? 0.34 : 0.18), radius: size * 0.34, y: size * 0.12)
             .onAppear {
@@ -38,61 +38,19 @@ struct Wordmark: View {
 
 struct PixelFace: View {
     var accent: Color
-    private let rows = [
-        "..A..A..",
-        ".AAAAAA.",
-        "AAAAAAAA",
-        "AADAADAA",
-        "AAAAAAAA",
-        "AAADDAAA",
-        ".AAAAAA.",
-        "..A..A.."
-    ]
+    var pattern: Mascot? = nil
 
     var body: some View {
-        Canvas { context, size in
-            let cell = min(size.width, size.height) / 8
-            for (row, string) in rows.enumerated() {
-                for (col, char) in string.enumerated() {
-                    guard char != "." else { continue }
-                    let rect = CGRect(x: CGFloat(col) * cell, y: CGFloat(row) * cell, width: cell, height: cell)
-                    let color: Color
-                    if char == "D" {
-                        color = Color(hex: 0x0B0712)
-                    } else if row >= 6 {
-                        color = accent.opacity(0.72)
-                    } else {
-                        color = accent
-                    }
-                    context.fill(Path(rect), with: .color(color))
-                }
-            }
-        }
+        MascotFace(pattern: pattern ?? Mascot.seeded("niobium"), accent: accent)
     }
 }
 
 struct PixelTile: View {
     var accent: Color
     var size: CGFloat
+    var pattern: Mascot? = nil
     var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: size * 0.28, style: .continuous)
-                .fill(
-                    LinearGradient(colors: [accent.opacity(0.28), NB.ink],
-                                   startPoint: .topLeading, endPoint: .bottomTrailing)
-                )
-            PixelFace(accent: accent)
-                .padding(size * 0.10)
-        }
-        .frame(width: size, height: size)
-        .overlay(
-            RoundedRectangle(cornerRadius: size * 0.28, style: .continuous)
-                .strokeBorder(
-                    LinearGradient(colors: [.white.opacity(0.26), .white.opacity(0.03)],
-                                   startPoint: .topLeading, endPoint: .bottomTrailing),
-                    lineWidth: 1
-                )
-        )
+        MascotTile(mascot: pattern ?? Mascot.seeded("niobium"), accent: accent, size: size)
     }
 }
 
@@ -100,10 +58,12 @@ struct BotAvatar: View {
     var bot: BotProfile
     var size: CGFloat = 48
     var showStatus = true
+    @ObservedObject private var mascots = MascotStore.shared
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
-            PixelTile(accent: bot.accent, size: size)
+            MascotTile(mascot: mascots.mascot(for: bot.name, accentHex: bot.accentHex),
+                       accent: bot.accent, size: size)
             if showStatus {
                 RoundedRectangle(cornerRadius: size * 0.05, style: .continuous)
                     .fill(bot.isLive ? NB.mint : NB.tertiary)
@@ -121,11 +81,13 @@ struct BotAvatar: View {
 struct GroupAvatar: View {
     var members: [GroupMember]
     var size: CGFloat = 46
+    @ObservedObject private var mascots = MascotStore.shared
     var body: some View {
         let shown = Array(members.prefix(3))
         ZStack {
             ForEach(Array(shown.enumerated()), id: \.offset) { index, member in
-                PixelTile(accent: NB.color(for: member.profile), size: size * 0.58)
+                MascotTile(mascot: mascots.mascot(for: member.profile),
+                           accent: NB.color(for: member.profile), size: size * 0.58)
                     .overlay(
                         RoundedRectangle(cornerRadius: size * 0.17, style: .continuous)
                             .strokeBorder(NB.ink, lineWidth: 2)
@@ -177,7 +139,7 @@ struct BotRow: View {
                     .fill(bot.isLive ? AnyShapeStyle(
                         LinearGradient(colors: [NB.ion.opacity(0.10), NB.surface.opacity(0.55)],
                                        startPoint: .topLeading, endPoint: .bottomTrailing))
-                          : AnyShapeStyle(Color.white.opacity(0.028)))
+                          : AnyShapeStyle(NB.fillSoft))
                     .overlay(
                         RoundedRectangle(cornerRadius: 18, style: .continuous)
                             .strokeBorder(bot.isLive ? NB.ion.opacity(0.22) : NB.line, lineWidth: 1)
@@ -217,7 +179,7 @@ struct GroupRow: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 11)
-            .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Color.white.opacity(0.028)))
+            .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(NB.fillSoft))
             .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(NB.line, lineWidth: 1))
         }
         .buttonStyle(.plain)
@@ -265,7 +227,7 @@ struct MarkdownText: View {
                         .foregroundStyle(Color(hex: 0xC9D6F0))
                         .padding(12)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(.black.opacity(0.28)))
+                        .background(RoundedRectangle(cornerRadius: 12).fill(NB.code))
                         .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(NB.line, lineWidth: 1))
                         .textSelection(.enabled)
                 }
@@ -408,7 +370,7 @@ struct ToolCallCard: View {
                     .padding(9)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(RoundedRectangle(cornerRadius: 9).fill(.black.opacity(0.22)))
+            .background(RoundedRectangle(cornerRadius: 9).fill(NB.code))
         }
     }
 
@@ -528,7 +490,7 @@ struct NBToast: View {
             Capsule(style: .continuous)
                 .fill(NB.raised.opacity(0.96))
                 .overlay(Capsule().strokeBorder(isError ? NB.rose.opacity(0.3) : NB.lineStrong, lineWidth: 1))
-                .shadow(color: .black.opacity(0.45), radius: 22, y: 10)
+                .shadow(color: NB.shade, radius: 22, y: 10)
         )
         .padding(.horizontal, 18)
     }

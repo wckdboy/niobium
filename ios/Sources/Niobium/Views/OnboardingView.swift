@@ -164,7 +164,7 @@ struct OnboardingView: View {
             content()
                 .padding(.horizontal, 12)
                 .frame(height: 46)
-                .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.white.opacity(0.035)))
+                .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(NB.fillSoft))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .strokeBorder(NB.line, lineWidth: 1)

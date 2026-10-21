@@ -2,6 +2,7 @@ import SwiftUI
 
 struct RootView: View {
     @EnvironmentObject private var store: AppStore
+    @AppStorage("niobium.appearance") private var appearance = NBAppearance.system.rawValue
     @State private var splash = !ProcessInfo.processInfo.arguments.contains("--no-splash")
 
     var body: some View {
@@ -40,7 +41,7 @@ struct RootView: View {
             .animation(.spring(response: 0.45, dampingFraction: 0.86), value: store.errorBanner)
             .zIndex(30)
         }
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(NBAppearance(rawValue: appearance)?.colorScheme)
         .fullScreenCover(item: $store.activeBot, onDismiss: { store.closeBot() }) { bot in
             ChatView(bot: bot)
                 .environmentObject(store)

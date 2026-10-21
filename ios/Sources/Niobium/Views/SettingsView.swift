@@ -5,11 +5,13 @@ struct SettingsView: View {
     var onOpenTools: () -> Void = {}
     @AppStorage("niobium.haptics") private var haptics = true
     @AppStorage("niobium.showReasoning") private var showReasoning = true
+    @AppStorage("niobium.appearance") private var appearance = NBAppearance.system.rawValue
     @State private var confirmForget = false
     @State private var showDiagnostics = false
 #if NIOBIUM_LOCAL_DSH
     @State private var showDSH = false
 #endif
+    @State private var showRemoteHarness = false
 
     private var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.1"
@@ -40,6 +42,10 @@ struct SettingsView: View {
 
 #if NIOBIUM_LOCAL_DSH
                 localHarnessSection
+                    .padding(.horizontal, 20)
+                    .padding(.top, 26)
+#else
+                remoteHarnessSection
                     .padding(.horizontal, 20)
                     .padding(.top, 26)
 #endif
@@ -86,6 +92,9 @@ struct SettingsView: View {
             DSHLocalScreen()
         }
 #endif
+        .sheet(isPresented: $showRemoteHarness) {
+            RemoteHarnessView()
+        }
     }
 
     private var connectionSection: some View {
@@ -121,7 +130,7 @@ struct SettingsView: View {
                             .foregroundStyle(NB.text)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 9)
-                            .background(RoundedRectangle(cornerRadius: 9).fill(.white.opacity(0.045)))
+                            .background(RoundedRectangle(cornerRadius: 9).fill(NB.fillSoft))
                     }
                     .buttonStyle(.plain)
                     if store.isDemo {
@@ -131,7 +140,7 @@ struct SettingsView: View {
                                 .foregroundStyle(NB.secondary)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 9)
-                                .background(RoundedRectangle(cornerRadius: 9).fill(.white.opacity(0.03)))
+                                .background(RoundedRectangle(cornerRadius: 9).fill(NB.fillSoft))
                         }
                         .buttonStyle(.plain)
                     } else {
@@ -141,7 +150,7 @@ struct SettingsView: View {
                                 .foregroundStyle(NB.secondary)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 9)
-                                .background(RoundedRectangle(cornerRadius: 9).fill(.white.opacity(0.03)))
+                                .background(RoundedRectangle(cornerRadius: 9).fill(NB.fillSoft))
                         }
                         .buttonStyle(.plain)
                     }
@@ -176,17 +185,32 @@ struct SettingsView: View {
                 }
                 .buttonStyle(.plain)
                 NBDivider()
-                HStack(spacing: 11) {
-                    Image(systemName: "moon.stars").font(.system(size: 12)).foregroundStyle(NB.violet)
-                        .frame(width: 24)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Appearance").font(.nbBody(13, weight: .medium)).foregroundStyle(NB.text)
-                        Text("Niobium black, always").font(.nbBody(10.5)).foregroundStyle(NB.tertiary)
+                Menu {
+                    ForEach(NBAppearance.allCases) { option in
+                        Button {
+                            appearance = option.rawValue
+                            Haptics.tap()
+                        } label: {
+                            Label(option.title, systemImage: option.icon)
+                        }
                     }
-                    Spacer()
-                    NBPill(text: "dark", tint: NB.violet)
+                } label: {
+                    HStack(spacing: 11) {
+                        Image(systemName: NBAppearance(rawValue: appearance)?.icon ?? "circle.lefthalf.filled")
+                            .font(.system(size: 12)).foregroundStyle(NB.violet)
+                            .frame(width: 24)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Appearance").font(.nbBody(13, weight: .medium)).foregroundStyle(NB.text)
+                            Text(NBAppearance(rawValue: appearance)?.title ?? "System")
+                                .font(.nbBody(10.5)).foregroundStyle(NB.tertiary)
+                        }
+                        Spacer()
+                        NBPill(text: (NBAppearance(rawValue: appearance)?.title ?? "System").lowercased(), tint: NB.violet)
+                        Image(systemName: "chevron.up.chevron.down").font(.system(size: 9)).foregroundStyle(NB.tertiary)
+                    }
+                    .padding(14)
                 }
-                .padding(14)
+                .buttonStyle(.plain)
             }
             .background(RoundedRectangle(cornerRadius: 18).fill(NB.surface.opacity(0.65)))
             .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(NB.line, lineWidth: 1))
@@ -243,10 +267,50 @@ struct SettingsView: View {
                 .foregroundStyle(NB.tertiary)
                 .lineSpacing(2)
                 .padding(.horizontal, 2)
+
+            Button { showRemoteHarness = true } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "network").font(.system(size: 13)).foregroundStyle(NB.ion)
+                        .frame(width: 38, height: 38)
+                        .background(RoundedRectangle(cornerRadius: 11).fill(NB.fillSoft))
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Remote harness").font(.nbBody(13, weight: .semibold)).foregroundStyle(NB.text)
+                        Text("Open DSH on your computer or VPS").font(.nbBody(11)).foregroundStyle(NB.tertiary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right").font(.system(size: 10)).foregroundStyle(NB.tertiary)
+                }
+                .padding(14)
+                .background(RoundedRectangle(cornerRadius: 18).fill(NB.surface.opacity(0.65)))
+                .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(NB.line, lineWidth: 1))
+            }
+            .buttonStyle(.plain)
         }
     }
-
 #endif
+
+    private var remoteHarnessSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            NBSectionHeader(title: "Harness")
+            Button { showRemoteHarness = true } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "network").font(.system(size: 13)).foregroundStyle(NB.ion)
+                        .frame(width: 38, height: 38)
+                        .background(RoundedRectangle(cornerRadius: 11).fill(NB.fillSoft))
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Remote DeepSeek Harness").font(.nbBody(13, weight: .semibold)).foregroundStyle(NB.text)
+                        Text("Computer or VPS · works on both platforms").font(.nbBody(11)).foregroundStyle(NB.tertiary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right").font(.system(size: 10)).foregroundStyle(NB.tertiary)
+                }
+                .padding(14)
+                .background(RoundedRectangle(cornerRadius: 18).fill(NB.surface.opacity(0.65)))
+                .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(NB.line, lineWidth: 1))
+            }
+            .buttonStyle(.plain)
+        }
+    }
 
     private var privacySection: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -309,7 +373,7 @@ struct SettingsView: View {
             }
             .foregroundStyle(NB.secondary)
             .padding(.horizontal, 10).padding(.vertical, 8)
-            .background(Capsule().fill(.white.opacity(0.04)))
+            .background(Capsule().fill(NB.fillSoft))
             .overlay(Capsule().strokeBorder(NB.line, lineWidth: 1))
         }
         .buttonStyle(.plain)
@@ -368,7 +432,6 @@ struct DiagnosticsSheet: View {
         }
         .presentationDetents([.medium])
         .presentationBackground(NB.ink)
-        .preferredColorScheme(.dark)
     }
 
     private func diag(_ label: String, _ value: String) -> some View {

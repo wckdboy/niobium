@@ -28,6 +28,11 @@ object DemoData {
         ), now - 7200, 2, "Hermes: Overnight sweep complete. Nothing on fire.")
     )
 
+    val routines = listOf(
+        Routine("morning-brief", "Morning brief", "Every day at 08:00", "Summarise overnight signals and the top three things I need to decide.", true, "Tomorrow, 08:00", "athena"),
+        Routine("release-check", "Release check", "Every Friday at 16:00", "Run the release checklist and report anything that would block shipping.", true, "Friday, 16:00", "forge")
+    )
+
     val toolsets = listOf(
         Toolset("terminal", "Run commands, manage background processes and work on the host.", listOf("terminal", "process_manage"), true),
         Toolset("web", "Search, extract and read the live web.", listOf("web_search", "web_extract"), true),

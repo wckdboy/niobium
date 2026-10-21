@@ -31,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
@@ -48,7 +49,7 @@ private fun TopBar(state: NbState, trailing: (@Composable () -> Unit)? = null) {
         Wordmark()
         Spacer(Modifier.weight(1f))
         Row(
-            Modifier.clip(CircleShape).background(Color.White.copy(alpha = 0.045f)).border(1.dp, Nb.Line, CircleShape)
+            Modifier.clip(CircleShape).background(Nb.FillSoft).border(1.dp, Nb.Line, CircleShape)
                 .padding(horizontal = 10.dp, vertical = 7.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -120,7 +121,7 @@ fun PixelsScreen(vm: NiobiumViewModel, state: NbState, onNewPixel: () -> Unit) {
                             Modifier.width(68.dp).clickable { vm.openBot(pixel) },
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            BotAvatar(pixel.title, pixel.accent, 54.dp, true)
+                            BotAvatar(pixel.title, pixel.accent, 54.dp, true, profileName = pixel.name)
                             Spacer(Modifier.height(7.dp))
                             Text(pixel.title, color = Nb.Secondary, fontSize = 10.5.sp, maxLines = 1)
                         }
@@ -189,7 +190,7 @@ fun RoomsScreen(vm: NiobiumViewModel, state: NbState, onNewGroup: () -> Unit) {
         item {
             Box(Modifier.padding(horizontal = 16.dp).padding(top = 16.dp)) {
                 Row(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color.White.copy(alpha = 0.028f))
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Nb.FillSoft)
                         .border(1.dp, Nb.Ion.copy(alpha = 0.16f), RoundedCornerShape(18.dp))
                         .clickable { onNewGroup() }.padding(15.dp), verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -231,11 +232,11 @@ fun ActivityScreen(vm: NiobiumViewModel, state: NbState) {
                 Box(Modifier.padding(horizontal = 16.dp).padding(top = 16.dp)) {
                     Row(
                         Modifier.fillMaxWidth().clip(RoundedCornerShape(17.dp))
-                            .background(Brush.linearGradient(listOf(Nb.Ion.copy(alpha = 0.14f), Color.White.copy(alpha = 0.025f))))
+                            .background(Brush.linearGradient(listOf(Nb.Ion.copy(alpha = 0.14f), Nb.FillSoft)))
                             .border(1.dp, Nb.Ion.copy(alpha = 0.22f), RoundedCornerShape(17.dp))
                             .clickable { vm.openBot(pixel) }.padding(13.dp), verticalAlignment = Alignment.CenterVertically
                     ) {
-                        BotAvatar(pixel.title, pixel.accent, 42.dp, true)
+                        BotAvatar(pixel.title, pixel.accent, 42.dp, true, profileName = pixel.name)
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
                             Text(pixel.title, color = Nb.Text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
@@ -252,7 +253,7 @@ fun ActivityScreen(vm: NiobiumViewModel, state: NbState) {
             Spacer(Modifier.height(9.dp))
             Column(
                 Modifier.padding(horizontal = 16.dp).clip(RoundedCornerShape(18.dp))
-                    .background(Color.White.copy(alpha = 0.025f)).border(1.dp, Nb.Line, RoundedCornerShape(18.dp))
+                    .background(Nb.FillSoft).border(1.dp, Nb.Line, RoundedCornerShape(18.dp))
                     .padding(horizontal = 14.dp)
             ) {
                 if (state.activities.isEmpty()) {
@@ -405,7 +406,7 @@ private fun ToolsetRow(toolset: Toolset, onToggle: () -> Unit) {
             Spacer(Modifier.width(8.dp))
             Box(
                 Modifier.width(38.dp).height(22.dp).clip(CircleShape)
-                    .background(if (toolset.enabled) Nb.Ion else Color.White.copy(alpha = 0.10f))
+                    .background(if (toolset.enabled) Nb.Ion else Nb.FillStrong)
                     .clickable { onToggle() },
                 contentAlignment = if (toolset.enabled) Alignment.CenterEnd else Alignment.CenterStart
             ) {
@@ -418,7 +419,7 @@ private fun ToolsetRow(toolset: Toolset, onToggle: () -> Unit) {
             Row(Modifier.padding(start = 47.dp), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                 toolset.tools.take(4).forEach {
                     Text(it, color = if (toolset.enabled) Nb.Secondary else Nb.Tertiary, style = NbMono, fontSize = 7.5.sp,
-                        modifier = Modifier.clip(CircleShape).background(Color.White.copy(alpha = 0.04f)).padding(horizontal = 7.dp, vertical = 3.dp))
+                        modifier = Modifier.clip(CircleShape).background(Nb.FillSoft).padding(horizontal = 7.dp, vertical = 3.dp))
                 }
                 if (toolset.tools.size > 4) {
                     Text("+${toolset.tools.size - 4}", color = Nb.Tertiary, style = NbMono, fontSize = 7.5.sp,
@@ -443,7 +444,9 @@ private fun toolGlyph(name: String): String = when (name) {
 
 @Composable
 fun SettingsScreen(vm: NiobiumViewModel, state: NbState, onOpenTools: () -> Unit) {
+    val context = LocalContext.current
     var confirmForget by remember { mutableStateOf(false) }
+    var showHarness by remember { mutableStateOf(false) }
     if (confirmForget) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { confirmForget = false },
@@ -455,6 +458,10 @@ fun SettingsScreen(vm: NiobiumViewModel, state: NbState, onOpenTools: () -> Unit
             dismissButton = { Text("Cancel", color = Nb.Secondary, modifier = Modifier.clickable { confirmForget = false }.padding(10.dp)) },
             containerColor = Nb.Raised
         )
+    }
+    if (showHarness) {
+        RemoteHarnessScreen { showHarness = false }
+        return
     }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 36.dp)) {
         item { TopBar(state) }
@@ -478,13 +485,13 @@ fun SettingsScreen(vm: NiobiumViewModel, state: NbState, onOpenTools: () -> Unit
                 }
                 Box(Modifier.fillMaxWidth().height(1.dp).background(Nb.Line))
                 Row(Modifier.padding(10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Box(Modifier.weight(1f).clip(RoundedCornerShape(9.dp)).background(Color.White.copy(alpha = 0.045f))
+                    Box(Modifier.weight(1f).clip(RoundedCornerShape(9.dp)).background(Nb.FillSoft)
                         .clickable { if (state.demo) vm.leaveDemoToConnect() else vm.reconnect() }.padding(vertical = 10.dp),
                         contentAlignment = Alignment.Center) {
                         Text(if (state.demo) "Connect a gateway" else "Reconnect", color = Nb.Text, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                     }
                     if (state.demo) {
-                        Box(Modifier.weight(1f).clip(RoundedCornerShape(9.dp)).background(Color.White.copy(alpha = 0.03f))
+                        Box(Modifier.weight(1f).clip(RoundedCornerShape(9.dp)).background(Nb.FillSoft)
                             .clickable { vm.enterDemo() }.padding(vertical = 10.dp), contentAlignment = Alignment.Center) {
                             Text("Reset demo", color = Nb.Secondary, fontSize = 12.sp)
                         }
@@ -510,6 +517,65 @@ fun SettingsScreen(vm: NiobiumViewModel, state: NbState, onOpenTools: () -> Unit
                     Text("Inspect and toggle the tools available to your pixels", color = Nb.Tertiary, fontSize = 10.5.sp)
                 }
                 Text("›", color = Nb.Tertiary, fontSize = 16.sp)
+            }
+        }
+        item {
+            Spacer(Modifier.height(26.dp))
+            SectionHeader("Harness", modifier = Modifier.padding(horizontal = 20.dp))
+            Row(
+                Modifier.padding(horizontal = 20.dp).padding(top = 12.dp).fillMaxWidth()
+                    .clip(RoundedCornerShape(18.dp)).background(Nb.Surface.copy(alpha = 0.65f))
+                    .border(1.dp, Nb.Line, RoundedCornerShape(18.dp)).clickable { showHarness = true }.padding(14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(Modifier.size(36.dp).clip(RoundedCornerShape(11.dp)).background(Nb.Ion.copy(alpha = 0.10f)), contentAlignment = Alignment.Center) {
+                    Text(">_", color = Nb.Ion, style = NbMono, fontSize = 11.sp)
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text("Remote DeepSeek Harness", color = Nb.Text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Open DSH on your computer or VPS", color = Nb.Tertiary, fontSize = 10.5.sp)
+                }
+                Text("›", color = Nb.Tertiary, fontSize = 16.sp)
+            }
+        }
+        item {
+            Spacer(Modifier.height(26.dp))
+            SectionHeader("Experience", modifier = Modifier.padding(horizontal = 20.dp))
+            Column(
+                Modifier.padding(horizontal = 20.dp).padding(top = 12.dp).fillMaxWidth()
+                    .clip(RoundedCornerShape(18.dp)).background(Nb.Surface.copy(alpha = 0.65f))
+                    .border(1.dp, Nb.Line, RoundedCornerShape(18.dp)).padding(14.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("◐", color = Nb.Violet, fontSize = 13.sp)
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text("Appearance", color = Nb.Text, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        Text("System, light or dark", color = Nb.Tertiary, fontSize = 10.5.sp)
+                    }
+                }
+                Spacer(Modifier.height(10.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                    listOf("system" to "System", "light" to "Light", "dark" to "Dark").forEach { (key, label) ->
+                        val active = Nb.appearance == key
+                        Box(
+                            Modifier.weight(1f).clip(RoundedCornerShape(10.dp))
+                                .background(if (active) Nb.Ion.copy(alpha = 0.14f) else Nb.FillSoft)
+                                .border(1.dp, if (active) Nb.Ion.copy(alpha = 0.35f) else Nb.Line, RoundedCornerShape(10.dp))
+                                .clickable {
+                                    Nb.appearance = key
+                                    context.getSharedPreferences("niobium", android.content.Context.MODE_PRIVATE)
+                                        .edit().putString("niobium.appearance", key).apply()
+                                }
+                                .padding(vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(label, color = if (active) Nb.Ion else Nb.Secondary, fontSize = 11.sp,
+                                fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal)
+                        }
+                    }
+                }
             }
         }
         item {
@@ -541,7 +607,7 @@ fun SettingsScreen(vm: NiobiumViewModel, state: NbState, onOpenTools: () -> Unit
                 Column {
                     Text("Niobium", color = Nb.Text, style = NbTitle, fontSize = 18.sp)
                     Text("The pocket command deck for Hermes Agent.", color = Nb.Secondary, fontSize = 11.5.sp)
-                    Text("v1.0 (1) · Nb 41", color = Nb.Tertiary, style = NbMono, fontSize = 8.5.sp)
+                    Text("v1.1 (2) · Nb 41", color = Nb.Tertiary, style = NbMono, fontSize = 8.5.sp)
                 }
             }
         }

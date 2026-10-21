@@ -32,7 +32,7 @@ struct ToolsView: View {
                         Image(systemName: "arrow.clockwise").font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(NB.secondary)
                             .frame(width: 38, height: 38)
-                            .background(Circle().fill(.white.opacity(0.055)))
+                            .background(Circle().fill(NB.fill))
                             .overlay(Circle().strokeBorder(NB.line, lineWidth: 1))
                     }
                 }
@@ -139,7 +139,7 @@ struct ToolsView: View {
                     Task { await store.toggleToolset(toolset) }
                 } label: {
                     ZStack(alignment: toolset.enabled ? .trailing : .leading) {
-                        Capsule().fill(toolset.enabled ? NB.ion : Color.white.opacity(0.10))
+                        Capsule().fill(toolset.enabled ? NB.ion : NB.fillStrong)
                             .frame(width: 38, height: 22)
                         Circle().fill(toolset.enabled ? Color(hex: 0x0A0D14) : NB.tertiary)
                             .frame(width: 17, height: 17)
@@ -155,7 +155,7 @@ struct ToolsView: View {
                             .font(.nbMono(7.5))
                             .foregroundStyle(toolset.enabled ? NB.secondary : NB.tertiary)
                             .padding(.horizontal, 7).padding(.vertical, 3)
-                            .background(Capsule().fill(.white.opacity(0.04)))
+                            .background(Capsule().fill(NB.fillSoft))
                     }
                     if toolset.tools.count > 6 {
                         Text("+\(toolset.tools.count - 6)")

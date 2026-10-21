@@ -64,7 +64,6 @@ struct ChatToolsSheet: View {
         }
         .presentationDetents([.large])
         .presentationBackground(NB.ink)
-        .preferredColorScheme(.dark)
     }
 
     private func toolsetRow(_ toolset: Toolset) -> some View {
@@ -90,7 +89,7 @@ struct ChatToolsSheet: View {
                     }
                     Spacer()
                     ZStack(alignment: toolset.enabled ? .trailing : .leading) {
-                        Capsule().fill(toolset.enabled ? NB.ion : Color.white.opacity(0.10))
+                        Capsule().fill(toolset.enabled ? NB.ion : NB.fillStrong)
                             .frame(width: 38, height: 22)
                         Circle().fill(toolset.enabled ? Color(hex: 0x0A0D14) : NB.tertiary)
                             .frame(width: 17, height: 17)
@@ -176,7 +175,6 @@ struct BotInfoSheet: View {
         }
         .presentationDetents([.large])
         .presentationBackground(NB.ink)
-        .preferredColorScheme(.dark)
     }
 
     private func infoRow(_ label: String, _ value: String) -> some View {
@@ -267,7 +265,6 @@ struct RoutinesView: View {
         }
         .presentationDetents([.large])
         .presentationBackground(NB.ink)
-        .preferredColorScheme(.dark)
         .sheet(isPresented: $showCreate) {
             NewRoutineView(bot: bot).environmentObject(store)
         }
@@ -305,7 +302,7 @@ struct NewRoutineView: View {
                                             .font(.nbBody(11.5, weight: .medium))
                                             .foregroundStyle(schedule == preset.1 ? NB.ion : NB.secondary)
                                             .padding(.horizontal, 11).padding(.vertical, 7)
-                                            .background(Capsule().fill(schedule == preset.1 ? NB.ion.opacity(0.12) : .white.opacity(0.045)))
+                                            .background(Capsule().fill(schedule == preset.1 ? NB.ion.opacity(0.12) : NB.fillSoft))
                                             .overlay(Capsule().strokeBorder(schedule == preset.1 ? NB.ion.opacity(0.35) : NB.line, lineWidth: 1))
                                     }.buttonStyle(.plain)
                                 }
@@ -329,7 +326,7 @@ struct NewRoutineView: View {
                             }
                         } label: {
                             HStack {
-                                if saving { ProgressView().tint(.black).scaleEffect(0.8) }
+                                if saving { ProgressView().tint(NB.onIon).scaleEffect(0.8) }
                                 Text(saving ? "Creating…" : "Create routine").frame(maxWidth: .infinity)
                             }
                         }
@@ -349,7 +346,6 @@ struct NewRoutineView: View {
             .toolbarBackground(NB.ink, for: .navigationBar)
         }
         .presentationBackground(NB.ink)
-        .preferredColorScheme(.dark)
     }
 
     private func field(_ label: String, placeholder: String, text: Binding<String>, multiline: Bool = false) -> some View {

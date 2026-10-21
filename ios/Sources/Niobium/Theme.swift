@@ -2,23 +2,42 @@ import SwiftUI
 import UIKit
 
 enum NB {
-    static let void = Color(hex: 0x07050C)
-    static let ink = Color(hex: 0x0B0812)
-    static let surface = Color(hex: 0x120E1B)
-    static let raised = Color(hex: 0x191324)
-    static let hover = Color(hex: 0x22192F)
-    static let line = Color.white.opacity(0.07)
-    static let lineStrong = Color.white.opacity(0.13)
-    static let text = Color(hex: 0xF6F2FF)
-    static let secondary = Color(hex: 0xADA3BD)
-    static let tertiary = Color(hex: 0x736A82)
-    static let ion = Color(hex: 0xA78BFA)
-    static let ionDeep = Color(hex: 0x7C3AED)
-    static let violet = Color(hex: 0xE9D5FF)
-    static let mint = Color(hex: 0x5EEAD4)
-    static let amber = Color(hex: 0xFBBF24)
-    static let rose = Color(hex: 0xFB7185)
-    static let orbPalette: [Color] = [ion, Color(hex: 0xF0ABFC), mint, amber, Color(hex: 0xFDA4AF), Color(hex: 0xC4B5FD)]
+    private static func dynamic(_ dark: UInt32, _ light: UInt32) -> Color {
+        Color(uiColor: UIColor { trait in
+            UIColor(hex: trait.userInterfaceStyle == .light ? light : dark)
+        })
+    }
+
+    private static func dynamicAlpha(dark: (UInt32, Double), light: (UInt32, Double)) -> Color {
+        Color(uiColor: UIColor { trait in
+            let value = trait.userInterfaceStyle == .light ? light : dark
+            return UIColor(hex: value.0, alpha: value.1)
+        })
+    }
+
+    static let void = dynamic(0x07050C, 0xF7F4FC)
+    static let ink = dynamic(0x0B0812, 0xFFFFFF)
+    static let surface = dynamic(0x120E1B, 0xFFFFFF)
+    static let raised = dynamic(0x191324, 0xF2ECFA)
+    static let hover = dynamic(0x22192F, 0xEDE6F8)
+    static let line = dynamicAlpha(dark: (0xFFFFFF, 0.07), light: (0x1B1326, 0.08))
+    static let lineStrong = dynamicAlpha(dark: (0xFFFFFF, 0.13), light: (0x1B1326, 0.14))
+    static let fill = dynamicAlpha(dark: (0xFFFFFF, 0.055), light: (0x1B1326, 0.045))
+    static let fillSoft = dynamicAlpha(dark: (0xFFFFFF, 0.028), light: (0x1B1326, 0.025))
+    static let fillStrong = dynamicAlpha(dark: (0xFFFFFF, 0.10), light: (0x1B1326, 0.075))
+    static let shade = dynamicAlpha(dark: (0x000000, 0.32), light: (0x2A1745, 0.12))
+    static let code = dynamicAlpha(dark: (0x000000, 0.26), light: (0x1B1326, 0.045))
+    static let text = dynamic(0xF6F2FF, 0x1B1326)
+    static let secondary = dynamic(0xADA3BD, 0x625671)
+    static let tertiary = dynamic(0x736A82, 0x9387A3)
+    static let ion = dynamic(0xA78BFA, 0x7C3AED)
+    static let ionDeep = dynamic(0x7C3AED, 0x6D28D9)
+    static let violet = dynamic(0xE9D5FF, 0x5B21B6)
+    static let mint = dynamic(0x5EEAD4, 0x0F9F8A)
+    static let amber = dynamic(0xFBBF24, 0xB77900)
+    static let rose = dynamic(0xFB7185, 0xD9485F)
+    static let onIon = Color.white
+    static let orbPalette: [Color] = [ion, dynamic(0xF0ABFC, 0xC026D3), mint, amber, dynamic(0xFDA4AF, 0xE11D48), dynamic(0xC4B5FD, 0x8B5CF6)]
 
     static func color(for name: String?) -> Color {
         guard let name, !name.isEmpty else { return ion }
@@ -28,14 +47,40 @@ enum NB {
         }
         switch trimmed.lowercased() {
         case "athena": return ion
-        case "forge": return Color(hex: 0xF5C97A)
+        case "forge": return dynamic(0xF5C97A, 0xB77900)
         case "scout": return mint
-        case "hermes": return Color(hex: 0xC4B5FD)
+        case "hermes": return dynamic(0xC4B5FD, 0x8B5CF6)
         default: break
         }
         var hash: UInt64 = 41
         for scalar in trimmed.unicodeScalars { hash = hash &* 31 &+ UInt64(scalar.value) }
         return orbPalette[Int(hash % UInt64(orbPalette.count))]
+    }
+}
+
+enum NBAppearance: String, CaseIterable, Identifiable {
+    case system, light, dark
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .system: return "System"
+        case .light: return "Light"
+        case .dark: return "Dark"
+        }
+    }
+    var icon: String {
+        switch self {
+        case .system: return "circle.lefthalf.filled"
+        case .light: return "sun.max"
+        case .dark: return "moon.stars"
+        }
+    }
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system: return nil
+        case .light: return .light
+        case .dark: return .dark
+        }
     }
 }
 
@@ -51,6 +96,15 @@ enum Haptics {
     static func warning() {
         guard enabled else { return }
         UINotificationFeedbackGenerator().notificationOccurred(.warning)
+    }
+}
+
+extension UIColor {
+    convenience init(hex: UInt32, alpha: CGFloat = 1) {
+        self.init(red: CGFloat((hex >> 16) & 0xFF) / 255,
+                  green: CGFloat((hex >> 8) & 0xFF) / 255,
+                  blue: CGFloat(hex & 0xFF) / 255,
+                  alpha: alpha)
     }
 }
 
@@ -81,15 +135,15 @@ struct NBMeshBackground: View {
                 let w = max(proxy.size.width, 1)
                 let h = max(proxy.size.height, 1)
                 ZStack {
-                    RadialGradient(colors: [NB.ion.opacity(0.20 * intensity), .clear],
+                    RadialGradient(colors: [NB.ion.opacity(0.16 * intensity), .clear],
                                    center: UnitPoint(x: 0.78, y: -0.04), startRadius: 0, endRadius: w * 0.95)
-                    RadialGradient(colors: [NB.ionDeep.opacity(0.15 * intensity), .clear],
+                    RadialGradient(colors: [NB.ionDeep.opacity(0.10 * intensity), .clear],
                                    center: UnitPoint(x: 0.02, y: 0.48), startRadius: 0, endRadius: h * 0.55)
-                    RadialGradient(colors: [Color(hex: 0x3B0764).opacity(0.18 * intensity), .clear],
+                    RadialGradient(colors: [NB.violet.opacity(0.10 * intensity), .clear],
                                    center: UnitPoint(x: 0.6, y: 1.02), startRadius: 0, endRadius: w * 0.8)
                 }
             }
-            LinearGradient(colors: [Color.white.opacity(0.015), .clear, Color.black.opacity(0.12)],
+            LinearGradient(colors: [NB.fillSoft.opacity(0.6), .clear, NB.shade.opacity(0.35)],
                            startPoint: .top, endPoint: .bottom)
         }
         .ignoresSafeArea()
@@ -111,7 +165,7 @@ struct NBCard<Content: View>: View {
                     .overlay(
                         RoundedRectangle(cornerRadius: radius, style: .continuous)
                             .strokeBorder(
-                                LinearGradient(colors: [.white.opacity(0.10), .white.opacity(0.025)],
+                                LinearGradient(colors: [NB.fillStrong, NB.fillSoft],
                                                startPoint: .topLeading, endPoint: .bottomTrailing),
                                 lineWidth: 1)
                     )
@@ -132,7 +186,7 @@ struct NBPrimaryButtonStyle: ButtonStyle {
                 Capsule(style: .continuous)
                     .fill(LinearGradient(colors: [tint, NB.ionDeep],
                                          startPoint: .topLeading, endPoint: .bottomTrailing))
-                    .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 1))
+                    .overlay(Capsule().strokeBorder(NB.onIon.opacity(0.22), lineWidth: 1))
                     .shadow(color: tint.opacity(configuration.isPressed ? 0.1 : 0.32), radius: 22, y: 8)
             )
             .opacity(configuration.isPressed ? 0.82 : 1)
@@ -149,7 +203,7 @@ struct NBQuietButtonStyle: ButtonStyle {
             .foregroundStyle(NB.text)
             .padding(.horizontal, compact ? 14 : 20)
             .frame(height: compact ? 38 : 50)
-            .background(Capsule().fill(.white.opacity(configuration.isPressed ? 0.10 : 0.055)))
+            .background(Capsule().fill(configuration.isPressed ? NB.fillStrong : NB.fill))
             .overlay(Capsule().strokeBorder(NB.line, lineWidth: 1))
             .opacity(configuration.isPressed ? 0.75 : 1)
     }
@@ -166,7 +220,7 @@ struct NBIconButton: View {
                 .font(.system(size: size * 0.38, weight: .semibold))
                 .foregroundStyle(tint)
                 .frame(width: size, height: size)
-                .background(Circle().fill(.white.opacity(0.055)))
+                .background(Circle().fill(NB.fill))
                 .overlay(Circle().strokeBorder(NB.line, lineWidth: 1))
         }
         .buttonStyle(.plain)
@@ -180,7 +234,7 @@ struct NBPill: View {
     var body: some View {
         Text(text)
             .font(.nbBody(10.5, weight: .medium))
-            .foregroundStyle(filled ? Color(hex: 0x0A0C12) : tint)
+            .foregroundStyle(filled ? NB.onIon : tint)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(
@@ -238,7 +292,7 @@ struct StatusDot: View {
                     .animation(.easeOut(duration: 1.6).repeatForever(autoreverses: false), value: animate)
             }
             Circle().fill(color).frame(width: 7, height: 7)
-                .overlay(Circle().strokeBorder(.black.opacity(0.25), lineWidth: 0.5))
+                .overlay(Circle().strokeBorder(NB.shade, lineWidth: 0.5))
         }
         .onAppear { animate = true }
     }
@@ -280,7 +334,7 @@ struct ShimmerText: View {
     var body: some View {
         Text(text)
             .overlay(
-                LinearGradient(colors: [.clear, .white.opacity(0.8), .clear], startPoint: .leading, endPoint: .trailing)
+                LinearGradient(colors: [.clear, NB.fillStrong, .clear], startPoint: .leading, endPoint: .trailing)
                     .frame(width: 80)
                     .offset(x: phase * 280)
                     .mask(Text(text))
@@ -297,10 +351,10 @@ struct NBSkeleton: View {
     @State private var shimmer = false
     var body: some View {
         RoundedRectangle(cornerRadius: height / 2)
-            .fill(.white.opacity(0.055))
+            .fill(NB.fill)
             .frame(width: width, height: height)
             .overlay(
-                LinearGradient(colors: [.clear, .white.opacity(0.07), .clear], startPoint: .leading, endPoint: .trailing)
+                LinearGradient(colors: [.clear, NB.fill, .clear], startPoint: .leading, endPoint: .trailing)
                     .offset(x: shimmer ? 180 : -180)
             )
             .clipped()

@@ -60,7 +60,7 @@ fun OnboardingScreen(state: NbState, onConnect: (String, String, String) -> Unit
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 AtomicMark(42.dp, animated = true)
                 Spacer(Modifier.weight(1f))
-                Box(Modifier.clip(CircleShape).background(Color.White.copy(alpha = 0.04f)).padding(horizontal = 9.dp, vertical = 5.dp)) {
+                Box(Modifier.clip(CircleShape).background(Nb.FillSoft).padding(horizontal = 9.dp, vertical = 5.dp)) {
                     Text("Nb · 41", color = Nb.Tertiary, style = NbMono, fontSize = 9.sp)
                 }
             }
@@ -78,7 +78,7 @@ fun OnboardingScreen(state: NbState, onConnect: (String, String, String) -> Unit
             Column(
                 Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp))
                     .background(Nb.Ink.copy(alpha = 0.78f))
-                    .border(1.dp, Color.White.copy(alpha = 0.11f), RoundedCornerShape(24.dp))
+                    .border(1.dp, Nb.LineStrong, RoundedCornerShape(24.dp))
                     .padding(18.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -143,7 +143,7 @@ fun OnboardingScreen(state: NbState, onConnect: (String, String, String) -> Unit
                 }
                 Spacer(Modifier.height(14.dp))
                 Box(
-                    Modifier.fillMaxWidth().height(50.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.055f))
+                    Modifier.fillMaxWidth().height(50.dp).clip(CircleShape).background(Nb.Fill)
                         .border(1.dp, Nb.Line, CircleShape).clickable { onDemo() },
                     contentAlignment = Alignment.Center
                 ) {
@@ -171,7 +171,7 @@ private fun FieldLabel(text: String) {
 private fun nbFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedBorderColor = Nb.Ion.copy(alpha = 0.45f),
     unfocusedBorderColor = Nb.LineStrong,
-    focusedContainerColor = Color.White.copy(alpha = 0.045f),
-    unfocusedContainerColor = Color.White.copy(alpha = 0.045f),
+    focusedContainerColor = Nb.FillSoft,
+    unfocusedContainerColor = Nb.FillSoft,
     cursorColor = Nb.Ion
 )

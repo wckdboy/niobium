@@ -28,6 +28,7 @@ data class NbState(
     val bots: List<BotProfile> = emptyList(),
     val groups: List<GroupRoom> = emptyList(),
     val toolsets: List<Toolset> = emptyList(),
+    val routines: List<Routine> = emptyList(),
     val activities: List<ActivityItem> = emptyList(),
     val activeBot: BotProfile? = null,
     val activeGroup: GroupRoom? = null,
@@ -48,6 +49,7 @@ data class NbState(
 class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
     private val prefs = SecurePrefs(app)
     private var gateway: GatewayClient? = null
+    private var chatSource = "gui"
     private var readySignal: CompletableDeferred<Unit>? = null
     private var streamingId: String? = null
     private var groupPoll: Job? = null
@@ -118,6 +120,13 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
                 runCatching {
                     client.request("client.capabilities", JSONObject().put("server_requests", true), 5_000)
                 }
+                runCatching {
+                    val runtime = client.request("runtime.describe", JSONObject(), 10_000)
+                    val sourcesArray = runtime.o("session_create")?.a("sources")
+                    val sources = if (sourcesArray != null) (0 until sourcesArray.length()).map { sourcesArray.optString(it) } else emptyList()
+                    chatSource = if ("gui" in sources) "gui" else if ("tui" in sources) "tui" else "gui"
+                }
+                runCatching { client.request("gateway.capabilities", JSONObject(), 6_000) }
                 val saved = Connection(name.ifBlank { "My Hermes" }, normalized, token)
                 if (remember) prefs.saveConnection(saved)
                 state = state.copy(
@@ -163,7 +172,7 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
             connection = Connection("Nb Studio", "demo://niobium", "", isDemo = true),
             connected = true, demo = true, gatewayVersion = "Demo workspace",
             bots = DemoData.bots, groups = DemoData.groups, toolsets = DemoData.toolsets,
-            activities = DemoData.activity, lastSync = System.currentTimeMillis()
+            routines = DemoData.routines, activities = DemoData.activity, lastSync = System.currentTimeMillis()
         )
         prefs.saveConnection(Connection("Nb Studio", "demo://niobium", "", isDemo = true))
         botName?.let { n -> state.bots.firstOrNull { it.name == n }?.let { openBot(it) } }
@@ -266,10 +275,10 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
             }
             val result = if (stored != null) {
                 client.request("session.resume", JSONObject()
-                    .put("session_id", stored).put("profile", bot.name).put("inline_images", false), 90_000)
+                    .put("session_id", stored).put("profile", bot.name).put("source", chatSource), 90_000)
             } else {
                 client.request("session.create", JSONObject()
-                    .put("profile", bot.name).put("title", "Bot Chat").put("source", "desktop"), 90_000)
+                    .put("profile", bot.name).put("title", "Bot Chat").put("source", chatSource), 90_000)
             }
             val sessionId = result.s("session_id")
             val messages = parseTranscript(result.objects("messages"))
@@ -290,18 +299,19 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
         state = state.copy(activeBot = null, sessionId = null, messages = emptyList(), approvals = emptyList(), turnActive = false)
     }
 
-    fun send(text: String) {
+    fun send(text: String, imageBase64: String? = null, mime: String = "image/jpeg") {
         val value = text.trim()
-        if (value.isEmpty()) return
+        if (value.isEmpty() && imageBase64 == null) return
         if (!state.demo && state.sessionId == null) {
             showError("This chat isn’t attached to a session yet.")
             return
         }
-        state = state.copy(messages = state.messages + ChatMessage(UUID.randomUUID().toString(), "user", value),
+        val displayed = value.ifBlank { "Look at this image." }
+        state = state.copy(messages = state.messages + ChatMessage(UUID.randomUUID().toString(), "user", displayed),
             turnActive = true, turnStatus = "")
         if (state.demo) {
             demoTurn?.cancel()
-            demoTurn = viewModelScope.launch { demoReply(value) }
+            demoTurn = viewModelScope.launch { demoReply(displayed) }
             return
         }
         val client = gateway ?: return
@@ -309,6 +319,12 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
         val bot = state.activeBot ?: return
         viewModelScope.launch {
             try {
+                if (imageBase64 != null) {
+                    client.request("image.attach_bytes", JSONObject()
+                        .put("session_id", sessionId).put("profile", bot.name)
+                        .put("data", imageBase64).put("mime", mime)
+                        .put("filename", "niobium-photo.jpg"), 30_000)
+                }
                 client.request("prompt.submit", JSONObject()
                     .put("session_id", sessionId).put("profile", bot.name).put("text", value), 30_000)
             } catch (e: Exception) {
@@ -645,6 +661,53 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
                 onCreated()
             } catch (e: Exception) {
                 state = state.copy(error = "Could not create bot. ${e.message}")
+            }
+        }
+    }
+
+    fun loadRoutines(bot: BotProfile) {
+        if (state.demo) {
+            state = state.copy(routines = DemoData.routines.filter { it.bot == bot.name || it.bot.isEmpty() })
+            return
+        }
+        val client = gateway ?: return
+        viewModelScope.launch {
+            runCatching {
+                val result = client.request("cron.manage", JSONObject()
+                    .put("action", "list").put("profile", bot.name).put("include_disabled", true), 20_000)
+                val jobs = result.a("jobs")?.let { arr -> (0 until arr.length()).mapNotNull { arr.optJSONObject(it) } } ?: emptyList()
+                state = state.copy(routines = jobs.mapNotNull { Routine.parse(it, bot.name) })
+            }.onFailure { state = state.copy(routines = emptyList()) }
+        }
+    }
+
+    fun createRoutine(name: String, schedule: String, prompt: String, bot: BotProfile, done: () -> Unit = {}) {
+        if (state.demo) {
+            state = state.copy(routines = state.routines + Routine(name, name, schedule, prompt, true, "Tomorrow, 08:00", bot.name))
+            done(); return
+        }
+        val client = gateway ?: return
+        viewModelScope.launch {
+            runCatching {
+                client.request("cron.manage", JSONObject().put("action", "add").put("name", name)
+                    .put("schedule", schedule).put("prompt", prompt).put("profile", bot.name), 20_000)
+                loadRoutines(bot)
+                done()
+            }.onFailure { showError("Could not create routine. ${it.message}") }
+        }
+    }
+
+    fun deleteRoutine(routine: Routine, bot: BotProfile) {
+        if (state.demo) {
+            state = state.copy(routines = state.routines.filterNot { it.id == routine.id })
+            return
+        }
+        val client = gateway ?: return
+        viewModelScope.launch {
+            runCatching {
+                client.request("cron.manage", JSONObject().put("action", "remove")
+                    .put("name", routine.id).put("profile", bot.name), 20_000)
+                loadRoutines(bot)
             }
         }
     }

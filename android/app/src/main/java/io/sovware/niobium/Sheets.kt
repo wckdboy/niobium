@@ -70,7 +70,8 @@ fun NewBotSheet(vm: NiobiumViewModel, onDone: () -> Unit) {
             color = Nb.Secondary, fontSize = 12.sp, lineHeight = 17.sp)
         Spacer(Modifier.height(18.dp))
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            BotAvatar(title.ifBlank { name.ifBlank { "New Pixel" } }, Nb.colorFor(color), 72.dp, false, showStatus = false)
+            BotAvatar(title.ifBlank { name.ifBlank { "New Pixel" } }, Nb.colorFor(color), 72.dp, false,
+                showStatus = false, profileName = name.ifBlank { "niobium" })
             Spacer(Modifier.height(9.dp))
             Text(title.ifBlank { "New Pixel" }, color = Nb.Text, style = NbTitle, fontSize = 20.sp)
             Text(role.ifBlank { "A new specialist on your Hermes team." }, color = Nb.Secondary, fontSize = 11.5.sp)
@@ -89,7 +90,7 @@ fun NewBotSheet(vm: NiobiumViewModel, onDone: () -> Unit) {
                 Box(
                     Modifier.size(31.dp).clip(CircleShape).background(Nb.colorFor(hex))
                         .border(if (color == hex) 2.dp else 1.dp,
-                            if (color == hex) Color.White.copy(alpha = 0.9f) else Color.White.copy(alpha = 0.14f), CircleShape)
+                            if (color == hex) Color.White.copy(alpha = 0.9f) else Nb.LineStrong, CircleShape)
                         .clickable { color = hex }
                 )
             }
@@ -137,7 +138,7 @@ fun NewGroupSheet(vm: NiobiumViewModel, state: NbState, onDone: () -> Unit) {
                     }.padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                BotAvatar(bot.title, bot.accent, 38.dp, false, showStatus = false)
+                BotAvatar(bot.title, bot.accent, 38.dp, false, showStatus = false, profileName = bot.name)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Text(bot.title, color = Nb.Text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)

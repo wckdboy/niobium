@@ -20,6 +20,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,23 +44,41 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 object Nb {
-    val Void = Color(0xFF07050C)
-    val Ink = Color(0xFF0B0812)
-    val Surface = Color(0xFF120E1B)
-    val Raised = Color(0xFF191324)
-    val Hover = Color(0xFF22192F)
-    val Line = Color(0x12FFFFFF)
-    val LineStrong = Color(0x21FFFFFF)
-    val Text = Color(0xFFF6F2FF)
-    val Secondary = Color(0xFFADA3BD)
-    val Tertiary = Color(0xFF736A82)
-    val Ion = Color(0xFFA78BFA)
-    val IonDeep = Color(0xFF7C3AED)
-    val Violet = Color(0xFFE9D5FF)
-    val Mint = Color(0xFF5EEAD4)
-    val Amber = Color(0xFFFBBF24)
-    val Rose = Color(0xFFFB7185)
-    val OrbPalette = listOf(Ion, Color(0xFFF0ABFC), Mint, Amber, Color(0xFFFDA4AF), Color(0xFFC4B5FD))
+    var appearance by mutableStateOf("system")
+    var systemDark by mutableStateOf(false)
+    val light: Boolean
+        get() = when (appearance) {
+            "light" -> true
+            "dark" -> false
+            else -> !systemDark
+        }
+
+    val Void: Color get() = if (light) Color(0xFFF7F4FC) else Color(0xFF07050C)
+    val Ink: Color get() = if (light) Color(0xFFFFFFFF) else Color(0xFF0B0812)
+    val Surface: Color get() = if (light) Color(0xFFFFFFFF) else Color(0xFF120E1B)
+    val Raised: Color get() = if (light) Color(0xFFF2ECFA) else Color(0xFF191324)
+    val Hover: Color get() = if (light) Color(0xFFEDE6F8) else Color(0xFF22192F)
+    val Line: Color get() = if (light) Color(0x141B1326) else Color(0x12FFFFFF)
+    val LineStrong: Color get() = if (light) Color(0x241B1326) else Color(0x21FFFFFF)
+    val Fill: Color get() = if (light) Color(0x0C1B1326) else Color(0x0EFFFFFF)
+    val FillSoft: Color get() = if (light) Color(0x081B1326) else Color(0x07FFFFFF)
+    val FillStrong: Color get() = if (light) Color(0x141B1326) else Color(0x1AFFFFFF)
+    val Shade: Color get() = if (light) Color(0x1F2A1745) else Color(0x52000000)
+    val Code: Color get() = if (light) Color(0x0C1B1326) else Color(0x42000000)
+    val Text: Color get() = if (light) Color(0xFF1B1326) else Color(0xFFF6F2FF)
+    val Secondary: Color get() = if (light) Color(0xFF625671) else Color(0xFFADA3BD)
+    val Tertiary: Color get() = if (light) Color(0xFF9387A3) else Color(0xFF736A82)
+    val Ion: Color get() = if (light) Color(0xFF7C3AED) else Color(0xFFA78BFA)
+    val IonDeep: Color get() = if (light) Color(0xFF6D28D9) else Color(0xFF7C3AED)
+    val Violet: Color get() = if (light) Color(0xFF5B21B6) else Color(0xFFE9D5FF)
+    val Mint: Color get() = if (light) Color(0xFF0F9F8A) else Color(0xFF5EEAD4)
+    val Amber: Color get() = if (light) Color(0xFFB77900) else Color(0xFFFBBF24)
+    val Rose: Color get() = if (light) Color(0xFFD9485F) else Color(0xFFFB7185)
+    val OnIon: Color = Color.White
+    val OrbPalette: List<Color>
+        get() = listOf(Ion, if (light) Color(0xFFC026D3) else Color(0xFFF0ABFC), Mint, Amber,
+            if (light) Color(0xFFE11D48) else Color(0xFFFDA4AF),
+            if (light) Color(0xFF8B5CF6) else Color(0xFFC4B5FD))
 
     fun colorFor(name: String?): Color {
         if (name.isNullOrBlank()) return Ion
@@ -67,9 +88,9 @@ object Nb {
         }
         when (trimmed.lowercase()) {
             "athena" -> return Ion
-            "forge" -> return Color(0xFFF5C97A)
+            "forge" -> return if (light) Color(0xFFB77900) else Color(0xFFF5C97A)
             "scout" -> return Mint
-            "hermes" -> return Color(0xFFC4B5FD)
+            "hermes" -> return if (light) Color(0xFF8B5CF6) else Color(0xFFC4B5FD)
         }
         var hash = 41L
         for (c in trimmed) hash = hash * 31 + c.code
@@ -89,7 +110,7 @@ fun NbBackground(intensity: Float = 1f, content: @Composable () -> Unit) {
         Canvas(Modifier.fillMaxSize()) {
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(Nb.Ion.copy(alpha = 0.22f * intensity), Color.Transparent),
+                    colors = listOf(Nb.Ion.copy(alpha = (if (Nb.light) 0.12f else 0.22f) * intensity), Color.Transparent),
                     center = Offset(this.size.width * 0.80f, -this.size.height * 0.04f),
                     radius = this.size.width * 0.95f
                 ),
@@ -98,7 +119,7 @@ fun NbBackground(intensity: Float = 1f, content: @Composable () -> Unit) {
             )
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(Nb.IonDeep.copy(alpha = 0.16f * intensity), Color.Transparent),
+                    colors = listOf(Nb.IonDeep.copy(alpha = (if (Nb.light) 0.08f else 0.16f) * intensity), Color.Transparent),
                     center = Offset(this.size.width * 0.02f, this.size.height * 0.48f),
                     radius = this.size.width * 0.72f
                 ),
@@ -107,7 +128,7 @@ fun NbBackground(intensity: Float = 1f, content: @Composable () -> Unit) {
             )
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(Color(0xFF3B0764).copy(alpha = 0.20f * intensity), Color.Transparent),
+                    colors = listOf((if (Nb.light) Color(0xFF8B5CF6) else Color(0xFF3B0764)).copy(alpha = (if (Nb.light) 0.08f else 0.20f) * intensity), Color.Transparent),
                     center = Offset(this.size.width * 0.55f, this.size.height * 1.02f),
                     radius = this.size.width * 0.85f
                 ),
@@ -129,7 +150,7 @@ fun AtomicMark(size: Dp = 36.dp, animated: Boolean = false) {
             .size(size)
             .shadow(size * 0.22f, RoundedCornerShape(size * 0.29f), spotColor = Nb.Ion.copy(alpha = 0.35f))
             .clip(RoundedCornerShape(size * 0.29f))
-            .border(0.8.dp, Color.White.copy(alpha = 0.13f), RoundedCornerShape(size * 0.29f))
+            .border(0.8.dp, Nb.LineStrong, RoundedCornerShape(size * 0.29f))
     )
 }
 
@@ -167,7 +188,7 @@ fun NbPill(text: String, tint: Color = Nb.Ion, filled: Boolean = false) {
             .border(1.dp, if (filled) Color.Transparent else tint.copy(alpha = 0.26f), CircleShape)
             .padding(horizontal = 8.dp, vertical = 4.dp)
     ) {
-        Text(text, color = if (filled) Color(0xFF0A0C12) else tint,
+        Text(text, color = if (filled) Nb.OnIon else tint,
             fontSize = 10.5.sp, fontWeight = FontWeight.Medium)
     }
 }
@@ -189,51 +210,28 @@ fun SectionHeader(title: String, detail: String? = null, action: String? = null,
 fun Modifier.clickableNoRipple(onClick: () -> Unit): Modifier = this.clickable { onClick() }
 
 @Composable
-fun PixelFace(accent: Color, modifier: Modifier = Modifier) {
-    val rows = listOf(
-        "..A..A..",
-        ".AAAAAA.",
-        "AAAAAAAA",
-        "AADAADAA",
-        "AAAAAAAA",
-        "AAADDAAA",
-        ".AAAAAA.",
-        "..A..A.."
-    )
-    Canvas(modifier) {
-        val cell = minOf(size.width, size.height) / 8f
-        rows.forEachIndexed { row, line ->
-            line.forEachIndexed { col, ch ->
-                if (ch == '.') return@forEachIndexed
-                val color = when {
-                    ch == 'D' -> Color(0xFF0B0712)
-                    row >= 6 -> accent.copy(alpha = 0.72f)
-                    else -> accent
-                }
-                drawRect(color, topLeft = Offset(col * cell, row * cell), size = Size(cell, cell))
-            }
-        }
-    }
+fun PixelFace(accent: Color, pattern: Mascot = Mascots.seeded("niobium"), modifier: Modifier = Modifier) {
+    MascotFace(pattern, accent, modifier)
 }
 
 @Composable
-fun PixelTile(accent: Color, size: Dp) {
-    Box(
-        Modifier
-            .size(size)
-            .clip(RoundedCornerShape(size * 0.28f))
-            .background(Brush.linearGradient(listOf(accent.copy(alpha = 0.28f), Nb.Ink)))
-            .border(1.dp, Color.White.copy(alpha = 0.14f), RoundedCornerShape(size * 0.28f)),
-        contentAlignment = Alignment.Center
-    ) {
-        PixelFace(accent, Modifier.size(size * 0.78f))
-    }
+fun PixelTile(accent: Color, size: Dp, pattern: Mascot? = null) {
+    MascotTile(pattern ?: Mascots.seeded("niobium"), accent, size)
 }
 
 @Composable
-fun BotAvatar(title: String, accent: Color, size: Dp = 48.dp, isLive: Boolean = true, showStatus: Boolean = true) {
+fun BotAvatar(
+    title: String,
+    accent: Color,
+    size: Dp = 48.dp,
+    isLive: Boolean = true,
+    showStatus: Boolean = true,
+    profileName: String = title,
+    accentHex: String? = null
+) {
+    val mascot = MascotStore.get(androidx.compose.ui.platform.LocalContext.current, profileName)
     Box(contentAlignment = Alignment.BottomEnd) {
-        PixelTile(accent, size)
+        MascotTile(mascot, accent, size)
         if (showStatus) {
             Box(
                 Modifier
@@ -248,6 +246,7 @@ fun BotAvatar(title: String, accent: Color, size: Dp = 48.dp, isLive: Boolean = 
 
 @Composable
 fun GroupAvatar(members: List<GroupMember>, size: Int = 46) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     Box(Modifier.size(size.dp)) {
         members.take(3).forEachIndexed { index, member ->
             Box(
@@ -261,7 +260,7 @@ fun GroupAvatar(members: List<GroupMember>, size: Int = 46) {
                     )
                     .border(2.dp, Nb.Ink, RoundedCornerShape((size * 0.58f * 0.28f).dp))
             ) {
-                PixelTile(accent = Nb.colorFor(member.profile), size = (size * 0.58f).dp)
+                MascotTile(MascotStore.get(context, member.profile), Nb.colorFor(member.profile), (size * 0.58f).dp)
             }
         }
     }

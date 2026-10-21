@@ -9,7 +9,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.LaunchedEffect
 import androidx.activity.viewModels
 
 class MainActivity : ComponentActivity() {
@@ -19,6 +22,8 @@ class MainActivity : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.dark(AndroidColor.TRANSPARENT)
         )
         super.onCreate(savedInstanceState)
+        Nb.appearance = getSharedPreferences("niobium", MODE_PRIVATE)
+            .getString("niobium.appearance", "system") ?: "system"
         val vm: NiobiumViewModel by viewModels()
         val demo = intent.getBooleanExtra("demo", false) || intent.getBooleanExtra("NIOBIUM_DEMO", false)
         val bot = intent.getStringExtra("bot")
@@ -38,6 +43,12 @@ class MainActivity : ComponentActivity() {
             }
         }
         setContent {
+            Nb.systemDark = isSystemInDarkTheme()
+            LaunchedEffect(Nb.appearance, Nb.systemDark) {
+                val controller = androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
+                controller.isAppearanceLightStatusBars = !Nb.light
+                controller.isAppearanceLightNavigationBars = !Nb.light
+            }
             NiobiumTheme {
                 NiobiumApp(vm, tab, intent.getBooleanExtra("tools", false))
             }
@@ -47,18 +58,28 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun NiobiumTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = darkColorScheme(
+    val scheme = if (Nb.light) {
+        lightColorScheme(
             primary = Nb.Ion,
-            onPrimary = androidx.compose.ui.graphics.Color(0xFF090C13),
+            onPrimary = Nb.OnIon,
             background = Nb.Void,
             onBackground = Nb.Text,
             surface = Nb.Surface,
             onSurface = Nb.Text,
             secondary = Nb.Violet,
             error = Nb.Rose
-        ),
-        typography = Typography(),
-        content = content
-    )
+        )
+    } else {
+        darkColorScheme(
+            primary = Nb.Ion,
+            onPrimary = Nb.OnIon,
+            background = Nb.Void,
+            onBackground = Nb.Text,
+            surface = Nb.Surface,
+            onSurface = Nb.Text,
+            secondary = Nb.Violet,
+            error = Nb.Rose
+        )
+    }
+    MaterialTheme(colorScheme = scheme, typography = Typography(), content = content)
 }

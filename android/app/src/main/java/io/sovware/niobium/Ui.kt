@@ -52,7 +52,7 @@ fun GlassCard(modifier: Modifier = Modifier, padding: Int = 16, content: @Compos
             .background(
                 Brush.linearGradient(listOf(Nb.Surface, Nb.Ink.copy(alpha = 0.88f)))
             )
-            .border(1.dp, Brush.linearGradient(listOf(Color.White.copy(alpha = 0.10f), Color.White.copy(alpha = 0.02f))), RoundedCornerShape(20.dp))
+            .border(1.dp, Brush.linearGradient(listOf(Nb.FillStrong, Color.White.copy(alpha = 0.02f))), RoundedCornerShape(20.dp))
             .padding(padding.dp)
     ) { content() }
 }
@@ -60,7 +60,7 @@ fun GlassCard(modifier: Modifier = Modifier, padding: Int = 16, content: @Compos
 @Composable
 fun NbIconButton(icon: String, onClick: () -> Unit, tint: Color = Nb.Secondary, size: Int = 38) {
     Box(
-        Modifier.size(size.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.055f))
+        Modifier.size(size.dp).clip(CircleShape).background(Nb.Fill)
             .border(1.dp, Nb.Line, CircleShape).clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
@@ -89,15 +89,15 @@ fun BotRow(bot: BotProfile, onClick: () -> Unit) {
             .fillMaxWidth()
             .clip(RoundedCornerShape(18.dp))
             .background(
-                if (bot.isLive) Brush.linearGradient(listOf(Nb.Ion.copy(alpha = 0.10f), Color.White.copy(alpha = 0.025f)))
-                else Brush.linearGradient(listOf(Color.White.copy(alpha = 0.028f), Color.White.copy(alpha = 0.028f)))
+                if (bot.isLive) Brush.linearGradient(listOf(Nb.Ion.copy(alpha = 0.10f), Nb.FillSoft))
+                else Brush.linearGradient(listOf(Nb.FillSoft, Nb.FillSoft))
             )
             .border(1.dp, if (bot.isLive) Nb.Ion.copy(alpha = 0.22f) else Nb.Line, RoundedCornerShape(18.dp))
             .clickable { onClick() }
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        BotAvatar(bot.title, bot.accent, 50.dp, bot.isLive)
+        BotAvatar(bot.title, bot.accent, 50.dp, bot.isLive, profileName = bot.name)
         Spacer(Modifier.width(13.dp))
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -120,7 +120,7 @@ fun BotRow(bot: BotProfile, onClick: () -> Unit) {
 @Composable
 fun GroupRow(room: GroupRoom, onClick: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color.White.copy(alpha = 0.028f))
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Nb.FillSoft)
             .border(1.dp, Nb.Line, RoundedCornerShape(18.dp)).clickable { onClick() }
             .padding(horizontal = 14.dp, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -231,7 +231,7 @@ fun Markdown(text: String, color: Color = Nb.Text, fontSize: Int = 15) {
                     Text(styledInline(block.text, color), color = color.copy(alpha = 0.92f), fontSize = (fontSize - 0.5f).sp, lineHeight = (fontSize + 5).sp)
                 }
                 is MdBlock.Code -> Box(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(11.dp)).background(Color.Black.copy(alpha = 0.28f))
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(11.dp)).background(Nb.Code)
                         .border(1.dp, Nb.Line, RoundedCornerShape(11.dp)).padding(11.dp)
                 ) {
                     Text(block.text, color = Color(0xFFC9D6F0), style = NbMono, fontSize = 11.sp, lineHeight = 16.sp)
@@ -292,14 +292,14 @@ fun ToolCallCard(message: ChatMessage) {
                 Spacer(Modifier.height(9.dp))
                 message.toolArgs?.takeIf { it.isNotBlank() }?.let {
                     Text("INPUT", color = Nb.Tertiary, style = NbMono, fontSize = 8.sp, letterSpacing = 1.2.sp)
-                    Box(Modifier.fillMaxWidth().padding(top = 4.dp).clip(RoundedCornerShape(8.dp)).background(Color.Black.copy(alpha = 0.22f)).padding(8.dp)) {
+                    Box(Modifier.fillMaxWidth().padding(top = 4.dp).clip(RoundedCornerShape(8.dp)).background(Nb.Code).padding(8.dp)) {
                         Text(it.take(2000), color = Color(0xFFB9C6DE), style = NbMono, fontSize = 10.sp, lineHeight = 14.sp)
                     }
                     Spacer(Modifier.height(8.dp))
                 }
                 message.toolResult?.takeIf { it.isNotBlank() }?.let {
                     Text("OUTPUT", color = Nb.Tertiary, style = NbMono, fontSize = 8.sp, letterSpacing = 1.2.sp)
-                    Box(Modifier.fillMaxWidth().padding(top = 4.dp).clip(RoundedCornerShape(8.dp)).background(Color.Black.copy(alpha = 0.22f)).padding(8.dp)) {
+                    Box(Modifier.fillMaxWidth().padding(top = 4.dp).clip(RoundedCornerShape(8.dp)).background(Nb.Code).padding(8.dp)) {
                         Text(it.take(4000), color = Color(0xFFB9C6DE), style = NbMono, fontSize = 10.sp, lineHeight = 14.sp)
                     }
                 }
@@ -333,7 +333,7 @@ fun EmptyState(icon: String, title: String, detail: String, action: String? = nu
             modifier = Modifier.widthIn(max = 300.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
         if (action != null && onAction != null) {
             Spacer(Modifier.height(14.dp))
-            Box(Modifier.clip(CircleShape).background(Color.White.copy(alpha = 0.055f)).border(1.dp, Nb.Line, CircleShape)
+            Box(Modifier.clip(CircleShape).background(Nb.Fill).border(1.dp, Nb.Line, CircleShape)
                 .clickable { onAction() }.padding(horizontal = 16.dp, vertical = 9.dp)) {
                 Text(action, color = Nb.Text, fontSize = 13.sp, fontWeight = FontWeight.Medium)
             }
@@ -347,7 +347,7 @@ fun NbToast(text: String, isError: Boolean = false) {
         Modifier.padding(horizontal = 18.dp, vertical = 8.dp).clip(CircleShape)
             .background(Nb.Raised.copy(alpha = 0.97f))
             .border(1.dp, if (isError) Nb.Rose.copy(alpha = 0.3f) else Nb.LineStrong, CircleShape)
-            .shadow(18.dp, CircleShape, spotColor = Color.Black.copy(alpha = 0.5f))
+            .shadow(18.dp, CircleShape, spotColor = Nb.Shade)
             .padding(horizontal = 15.dp, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

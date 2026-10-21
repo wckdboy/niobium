@@ -215,6 +215,15 @@ data class ActivityItem(
     val success: Boolean = true
 )
 
-data class Routine(val id: String, val name: String, val schedule: String, val prompt: String, val enabled: Boolean, val nextRun: String, val bot: String)
+data class Routine(val id: String, val name: String, val schedule: String, val prompt: String, val enabled: Boolean, val nextRun: String, val bot: String) {
+    companion object {
+        fun parse(j: JSONObject, bot: String): Routine? {
+            val name = j.s("name") ?: j.s("job_id") ?: j.s("id") ?: return null
+            return Routine(name, name, j.s("schedule") ?: j.s("schedule_display") ?: "",
+                j.s("prompt") ?: "", j.optBoolean("enabled", !j.optBoolean("paused", false)),
+                j.s("next_run") ?: j.s("next_run_display") ?: "", bot)
+        }
+    }
+}
 
 fun clockTime(epochMillis: Long): String = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(epochMillis))

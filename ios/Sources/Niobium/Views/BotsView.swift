@@ -154,7 +154,7 @@ struct BotsView: View {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .background(Capsule().fill(.white.opacity(0.035)))
+            .background(Capsule().fill(NB.fillSoft))
             .overlay(Capsule().strokeBorder(NB.line, lineWidth: 1))
         }
         .padding(.horizontal, 20)

@@ -58,7 +58,7 @@ struct RoomsView: View {
                         Text("2–6 pixels").font(.nbBody(11)).foregroundStyle(NB.tertiary)
                     }
                     .padding(15)
-                    .background(RoundedRectangle(cornerRadius: 18).fill(Color.white.opacity(0.028)))
+                    .background(RoundedRectangle(cornerRadius: 18).fill(NB.fillSoft))
                     .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(NB.ion.opacity(0.16), lineWidth: 1))
                 }
                 .buttonStyle(.plain)
@@ -103,7 +103,6 @@ struct GroupChatView: View {
                 composer
             }
         }
-        .preferredColorScheme(.dark)
         .task {
             if store.activeGroup?.roomID != room.roomID {
                 store.openGroup(room)
@@ -118,7 +117,7 @@ struct GroupChatView: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(NB.secondary)
                     .frame(width: 34, height: 34)
-                    .background(Circle().fill(.white.opacity(0.05)))
+                    .background(Circle().fill(NB.fill))
             }
             .buttonStyle(.plain)
             GroupAvatar(members: room.members, size: 38)
@@ -133,7 +132,7 @@ struct GroupChatView: View {
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(NB.secondary)
                     .frame(width: 34, height: 34)
-                    .background(Circle().fill(.white.opacity(0.05)))
+                    .background(Circle().fill(NB.fill))
             }
             .buttonStyle(.plain)
         }
@@ -207,7 +206,7 @@ struct GroupChatView: View {
                             .fill(isUser
                                   ? AnyShapeStyle(LinearGradient(colors: [NB.ion, NB.ionDeep],
                                                                  startPoint: .topLeading, endPoint: .bottomTrailing))
-                                  : AnyShapeStyle(Color.white.opacity(0.035)))
+                                  : AnyShapeStyle(NB.fillSoft))
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -233,7 +232,7 @@ struct GroupChatView: View {
             } label: {
                 ZStack {
                     Circle()
-                        .fill(draft.trimmingCharacters(in: .whitespaces).isEmpty ? Color.white.opacity(0.06) : NB.ion)
+                        .fill(draft.trimmingCharacters(in: .whitespaces).isEmpty ? NB.fill : NB.ion)
                         .frame(width: 34, height: 34)
                     Image(systemName: "arrow.up")
                         .font(.system(size: 14, weight: .bold))
@@ -276,7 +275,7 @@ struct NewGroupView: View {
                                 .font(.nbTitle(18))
                                 .foregroundStyle(NB.text)
                                 .padding(13)
-                                .background(RoundedRectangle(cornerRadius: 13).fill(Color.white.opacity(0.035)))
+                                .background(RoundedRectangle(cornerRadius: 13).fill(NB.fillSoft))
                                 .overlay(RoundedRectangle(cornerRadius: 13).strokeBorder(NB.line, lineWidth: 1))
                         }
 
@@ -307,7 +306,7 @@ struct NewGroupView: View {
                                         .foregroundStyle(selected.contains(pixel.name) ? NB.ion : NB.tertiary)
                                 }
                                 .padding(12)
-                                .background(RoundedRectangle(cornerRadius: 14).fill(selected.contains(pixel.name) ? NB.ion.opacity(0.09) : Color.white.opacity(0.025)))
+                                .background(RoundedRectangle(cornerRadius: 14).fill(selected.contains(pixel.name) ? NB.ion.opacity(0.09) : NB.fillSoft))
                                 .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(selected.contains(pixel.name) ? NB.ion.opacity(0.25) : NB.line, lineWidth: 1))
                             }
                             .buttonStyle(.plain)
@@ -354,6 +353,5 @@ struct NewGroupView: View {
         }
         .presentationDetents([.large])
         .presentationBackground(NB.ink)
-        .preferredColorScheme(.dark)
     }
 }

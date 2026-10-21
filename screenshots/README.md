@@ -15,6 +15,7 @@ Final captures from the iOS 27 simulator (iPhone 18 Pro) and Android 37 emulator
 | Toolbox | [ios-tools.png](ios-tools.png) | [android-tools.png](android-tools.png) |
 | Settings | [ios-settings.png](ios-settings.png) | [android-settings.png](android-settings.png) |
 | Local DeepSeek Harness (iOS 1.1) | [ios-dsh.png](ios-dsh.png) | — |
+| Light mode | [ios-light.png](ios-light.png) | [android-light.png](android-light.png) |
 
 The demo is built into both apps (`--demo` / `--ez demo true`), so every flow can
 be exercised without a gateway or model provider.
