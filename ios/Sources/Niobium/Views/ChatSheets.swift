@@ -390,3 +390,75 @@ struct FlowLayout: Layout {
         }
     }
 }
+
+struct ModelPickerView: View {
+    @EnvironmentObject private var store: AppStore
+    @Environment(\.dismiss) private var dismiss
+    let bot: BotProfile
+
+    private var grouped: [(String, [ModelChoice])] {
+        Dictionary(grouping: store.modelChoices, by: \.providerName)
+            .sorted { $0.key.localizedCaseInsensitiveCompare($1.key) == .orderedAscending }
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                NBMeshBackground(intensity: 0.4)
+                if store.modelChoices.isEmpty {
+                    VStack(spacing: 10) {
+                        Image(systemName: "cpu").font(.system(size: 24)).foregroundStyle(NB.tertiary)
+                        Text("No model catalog").font(.nbTitle(18)).foregroundStyle(NB.text)
+                        Text("This gateway did not return model.options for the session. The profile default stays in use.")
+                            .font(.nbBody(11)).foregroundStyle(NB.tertiary).multilineTextAlignment(.center)
+                            .frame(maxWidth: 300)
+                        Button("Refresh") { Task { await store.loadModels() } }
+                            .font(.nbBody(12, weight: .medium)).foregroundStyle(NB.ion)
+                    }
+                } else {
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 16) {
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("Model").font(.nbDisplay(28)).foregroundStyle(NB.text)
+                                Text("The next turn runs on this provider and model. The session revision is fenced.")
+                                    .font(.nbBody(11)).foregroundStyle(NB.secondary)
+                            }
+                            ForEach(grouped, id: \.0) { group in
+                                VStack(alignment: .leading, spacing: 7) {
+                                    Text(group.0.uppercased()).font(.nbLabel(9)).tracking(1.4).foregroundStyle(NB.tertiary)
+                                    ForEach(group.1) { choice in
+                                        Button {
+                                            Task { await store.switchModel(choice); dismiss() }
+                                        } label: {
+                                            HStack(spacing: 9) {
+                                                VStack(alignment: .leading, spacing: 2) {
+                                                    Text(choice.label).font(.nbBody(12.5, weight: .medium)).foregroundStyle(NB.text)
+                                                    Text(choice.model).font(.nbMono(8)).foregroundStyle(NB.tertiary).lineLimit(1)
+                                                }
+                                                Spacer()
+                                                if choice.current {
+                                                    Image(systemName: "checkmark.circle.fill").foregroundStyle(NB.ion)
+                                                }
+                                            }
+                                            .padding(11)
+                                            .background(RoundedRectangle(cornerRadius: 12).fill(choice.current ? NB.ion.opacity(0.10) : NB.fillSoft))
+                                            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(choice.current ? NB.ion.opacity(0.35) : NB.line, lineWidth: 1))
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
+                            }
+                        }
+                        .padding(18)
+                    }
+                }
+            }
+            .navigationTitle("Models")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() }.foregroundStyle(NB.ion) }
+            }
+        }
+        .task { await store.loadModels() }
+    }
+}

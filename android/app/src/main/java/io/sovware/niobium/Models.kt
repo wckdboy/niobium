@@ -227,3 +227,8 @@ data class Routine(val id: String, val name: String, val schedule: String, val p
 }
 
 fun clockTime(epochMillis: Long): String = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(epochMillis))
+
+data class ModelChoice(val provider: String, val providerName: String, val model: String, val current: Boolean) {
+    val id get() = "$provider/$model"
+    val label get() = model.substringAfterLast('/')
+}

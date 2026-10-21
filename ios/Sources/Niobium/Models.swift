@@ -412,3 +412,15 @@ enum GatewayState: Equatable {
         }
     }
 }
+
+struct ModelChoice: Identifiable, Equatable {
+    var provider: String
+    var providerName: String
+    var model: String
+    var current: Bool
+    var reasoning: Bool
+    var id: String { "\(provider)/\(model)" }
+    var label: String {
+        model.split(separator: "/").last.map(String.init) ?? model
+    }
+}

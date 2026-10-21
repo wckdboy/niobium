@@ -59,7 +59,8 @@ import androidx.compose.ui.unit.sp
 fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = {}) {
     val state = vm.state
     var draft by remember { mutableStateOf("") }
-    var showMascot by remember { mutableStateOf(false) }
+    var showCast by remember { mutableStateOf(false) }
+    var showModels by remember { mutableStateOf(false) }
     var showRoutines by remember { mutableStateOf(false) }
     var attachment by remember { mutableStateOf<Pair<String, String>?>(null) }
     val context = LocalContext.current
@@ -84,8 +85,8 @@ fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = 
     }
 
     Column(Modifier.fillMaxSize().background(Nb.Void).statusBarsPadding().imePadding()) {
-        ChatHeader(bot, state, onOpenTools = onOpenTools, onOpenMascot = { showMascot = true },
-            onOpenRoutines = { showRoutines = true }) { vm.closeBot() }
+        ChatHeader(bot, state, onOpenTools = onOpenTools, onOpenMascot = { showCast = true },
+            onOpenRoutines = { showRoutines = true }, onOpenModels = { showModels = true }) { vm.closeBot() }
         Box(Modifier.fillMaxWidth().height(1.dp).background(Nb.Line))
         Box(Modifier.weight(1f)) {
             if (state.messages.isEmpty() && state.loadingChat) {
@@ -158,18 +159,21 @@ fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = 
     state.clarify?.let { request ->
         ClarifyDialog(request) { answers -> vm.resolveClarify(answers) }
     }
+    if (showModels) {
+        ModelSheet(vm, bot) { showModels = false }
+    }
     if (showRoutines) {
         RoutinesSheet(vm, bot) { showRoutines = false }
     }
-    if (showMascot) {
-        MascotStudioSheet(profile = bot.name, title = bot.title,
-            initialAccent = bot.accentHex ?: "#A78BFA", onDismiss = { showMascot = false })
+    if (showCast) {
+        CastStudioSheet(profile = bot.name, title = bot.title) { showCast = false }
     }
 }
 
 @Composable
 private fun ChatHeader(bot: BotProfile, state: NbState, onOpenTools: () -> Unit,
-                       onOpenMascot: () -> Unit, onOpenRoutines: () -> Unit, onBack: () -> Unit) {
+                       onOpenMascot: () -> Unit, onOpenRoutines: () -> Unit,
+                       onOpenModels: () -> Unit, onBack: () -> Unit) {
     var menuOpen by remember { mutableStateOf(false) }
     val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
     Row(Modifier.fillMaxWidth().background(Nb.Ink.copy(alpha = 0.92f)).padding(horizontal = 14.dp, vertical = 10.dp),
@@ -190,7 +194,8 @@ private fun ChatHeader(bot: BotProfile, state: NbState, onOpenTools: () -> Unit,
                 Box(Modifier.size(4.5.dp).clip(CircleShape).background(if (state.turnActive) Nb.Mint else Nb.Tertiary))
                 Spacer(Modifier.width(5.dp))
                 Text(if (state.turnActive) "Working" else (bot.model.ifBlank { "Ready" }), color = Nb.Tertiary,
-                    style = NbMono, fontSize = 8.5.sp, maxLines = 1)
+                    style = NbMono, fontSize = 8.5.sp, maxLines = 1,
+                    modifier = Modifier.clickable { onOpenModels() })
             }
         }
         Box {
@@ -417,7 +422,8 @@ fun Composer(
 fun GroupChatScreen(vm: NiobiumViewModel, room: GroupRoom) {
     val state = vm.state
     var draft by remember { mutableStateOf("") }
-    var showMascot by remember { mutableStateOf(false) }
+    var showCast by remember { mutableStateOf(false) }
+    var showModels by remember { mutableStateOf(false) }
     var showRoutines by remember { mutableStateOf(false) }
     var attachment by remember { mutableStateOf<Pair<String, String>?>(null) }
     val context = LocalContext.current

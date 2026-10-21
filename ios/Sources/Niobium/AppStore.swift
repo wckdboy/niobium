@@ -17,6 +17,8 @@ final class AppStore: ObservableObject {
     @Published var routines: [Routine] = []
     @Published var runtimeInfo: JSONObject?
     @Published var gatewayCapabilities: JSONObject?
+    @Published var modelChoices: [ModelChoice] = []
+    @Published var chatRevision = 0
     var chatSource = "gui"
     @Published var activity: [ActivityItem] = []
 
@@ -312,7 +314,9 @@ final class AppStore: ObservableObject {
             }
             guard let result else { throw RPCError.malformed }
             chatSessionID = result.string("session_id")
+            chatRevision = result.int("revision") ?? chatRevision
             messages = parseTranscript(result.objects("messages"))
+            await loadModels()
             if let inflight = result.dict("inflight") {
                 isTurnActive = inflight.bool("streaming") ?? false
                 let text = inflight.string("assistant") ?? ""
@@ -368,6 +372,55 @@ final class AppStore: ObservableObject {
         } catch {
             isTurnActive = false
             showError("Message failed. \(error.localizedDescription)")
+        }
+    }
+
+    func loadModels() async {
+        guard !isDemo, let api, let sessionID = chatSessionID else {
+            modelChoices = []
+            return
+        }
+        guard let result = try? await api.request("model.options", params: [
+            "profile": activeBot?.name ?? "default",
+            "session_id": sessionID
+        ], timeout: 20) as? JSONObject else { return }
+        var rows: [ModelChoice] = []
+        for provider in result.objects("providers") {
+            let slug = provider.string("slug") ?? provider.string("id") ?? ""
+            let name = provider.string("name") ?? slug.capitalized
+            let currentProvider = provider.bool("is_current") ?? false
+            let models = provider.array("models")?.compactMap { $0 as? String } ?? []
+            for model in models {
+                rows.append(ModelChoice(provider: slug, providerName: name, model: model,
+                                        current: currentProvider && (result.string("model") == model),
+                                        reasoning: true))
+            }
+        }
+        modelChoices = rows
+    }
+
+    func switchModel(_ choice: ModelChoice) async {
+        guard !isDemo, let api, let sessionID = chatSessionID else { return }
+        do {
+            let result = try await api.request("session.mutate", params: [
+                "session_id": sessionID,
+                "request_id": UUID().uuidString,
+                "expected_revision": chatRevision,
+                "operation": "model",
+                "payload": ["model": choice.model, "provider": choice.provider]
+            ], timeout: 30) as? JSONObject
+            if let revision = result?.int("revision") { chatRevision = revision }
+            if let index = bots.firstIndex(where: { $0.name == activeBot?.name }) {
+                bots[index].model = choice.model
+                bots[index].provider = choice.provider
+                activeBot = bots[index]
+            }
+            modelChoices = modelChoices.map { item in
+                var copy = item; copy.current = item.id == choice.id; return copy
+            }
+            toastMessage("Model switched to \(choice.label)")
+        } catch {
+            showError("Could not switch model. \(error.localizedDescription)")
         }
     }
 

@@ -29,6 +29,8 @@ data class NbState(
     val groups: List<GroupRoom> = emptyList(),
     val toolsets: List<Toolset> = emptyList(),
     val routines: List<Routine> = emptyList(),
+    val modelChoices: List<ModelChoice> = emptyList(),
+    val sessionRevision: Int = 0,
     val activities: List<ActivityItem> = emptyList(),
     val activeBot: BotProfile? = null,
     val activeGroup: GroupRoom? = null,
@@ -281,22 +283,25 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
                     .put("profile", bot.name).put("title", "Bot Chat").put("source", chatSource), 90_000)
             }
             val sessionId = result.s("session_id")
+            val revision = result.optInt("revision", state.sessionRevision)
             val messages = parseTranscript(result.objects("messages"))
             val inflight = result.o("inflight")
             val withInflight = if (inflight != null) {
                 messages + ChatMessage("inflight", "assistant", inflight.s("assistant") ?: "",
                     timestamp = System.currentTimeMillis())
             } else messages
-            state = state.copy(sessionId = sessionId, messages = withInflight,
+            state = state.copy(sessionId = sessionId, sessionRevision = revision, messages = withInflight,
                 loadingChat = false, turnActive = inflight?.b("streaming") ?: false)
             loadToolsets()
+            loadModels()
         } catch (e: Exception) {
             state = state.copy(loadingChat = false, error = "Could not open ${bot.title}. ${e.message}")
         }
     }
 
     fun closeBot() {
-        state = state.copy(activeBot = null, sessionId = null, messages = emptyList(), approvals = emptyList(), turnActive = false)
+        state = state.copy(activeBot = null, sessionId = null, sessionRevision = 0, modelChoices = emptyList(),
+            messages = emptyList(), approvals = emptyList(), turnActive = false)
     }
 
     fun send(text: String, imageBase64: String? = null, mime: String = "image/jpeg") {
@@ -330,6 +335,56 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
             } catch (e: Exception) {
                 state = state.copy(turnActive = false, error = "Message failed. ${e.message}")
             }
+        }
+    }
+
+    fun loadModels() {
+        val client = gateway ?: return
+        val sessionId = state.sessionId ?: return
+        if (state.demo) return
+        viewModelScope.launch {
+            runCatching {
+                val result = client.request("model.options", JSONObject()
+                    .put("profile", state.activeBot?.name ?: "default")
+                    .put("session_id", sessionId), 20_000)
+                val rows = mutableListOf<ModelChoice>()
+                val providers = result.a("providers") ?: JSONArray()
+                for (i in 0 until providers.length()) {
+                    val p = providers.optJSONObject(i) ?: continue
+                    val slug = p.s("slug") ?: p.s("id") ?: ""
+                    val name = p.s("name") ?: slug.replaceFirstChar { it.uppercase() }
+                    val currentProvider = p.optBoolean("is_current", false)
+                    val models = p.a("models") ?: JSONArray()
+                    for (j in 0 until models.length()) {
+                        val model = models.optString(j)
+                        if (model.isBlank()) continue
+                        rows += ModelChoice(slug, name, model, currentProvider && result.s("model") == model)
+                    }
+                }
+                state = state.copy(modelChoices = rows)
+            }.onFailure { state = state.copy(modelChoices = emptyList()) }
+        }
+    }
+
+    fun switchModel(choice: ModelChoice) {
+        val client = gateway ?: return
+        val sessionId = state.sessionId ?: return
+        viewModelScope.launch {
+            runCatching {
+                val result = client.request("session.mutate", JSONObject()
+                    .put("session_id", sessionId)
+                    .put("request_id", UUID.randomUUID().toString())
+                    .put("expected_revision", state.sessionRevision)
+                    .put("operation", "model")
+                    .put("payload", JSONObject().put("model", choice.model).put("provider", choice.provider)), 30_000)
+                val revision = result.optInt("revision", state.sessionRevision)
+                val bot = state.activeBot
+                state = state.copy(sessionRevision = revision,
+                    bots = state.bots.map { if (it.name == bot?.name) it.copy(model = choice.model, provider = choice.provider) else it },
+                    activeBot = bot?.copy(model = choice.model, provider = choice.provider),
+                    modelChoices = state.modelChoices.map { it.copy(current = it.id == choice.id) })
+                showToast("Model switched to ${choice.label}")
+            }.onFailure { showError("Could not switch model. ${it.message}") }
         }
     }
 

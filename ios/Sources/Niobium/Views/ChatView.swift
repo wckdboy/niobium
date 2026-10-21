@@ -11,6 +11,7 @@ struct ChatView: View {
     @State private var showTools = false
     @State private var showRoutines = false
     @State private var showCast = false
+    @State private var showModels = false
     @State private var showInfo = false
     @State private var showClarify = false
     @State private var appeared = false
@@ -102,13 +103,19 @@ struct ChatView: View {
                     Text(bot.title).font(.nbTitle(16)).foregroundStyle(NB.text)
                     if store.isDemo { NBPill(text: "demo", tint: NB.violet) }
                 }
-                HStack(spacing: 5) {
-                    Circle().fill(store.isTurnActive ? NB.mint : NB.tertiary).frame(width: 4.5, height: 4.5)
-                    Text(store.isTurnActive ? "Working" : (bot.model.isEmpty ? "Ready" : bot.model))
-                        .font(.nbMono(8.5))
-                        .foregroundStyle(NB.tertiary)
-                        .lineLimit(1)
+                Button { showModels = true } label: {
+                    HStack(spacing: 5) {
+                        Circle().fill(store.isTurnActive ? NB.mint : NB.tertiary).frame(width: 4.5, height: 4.5)
+                        Text(store.isTurnActive ? "Working" : (bot.model.isEmpty ? "Ready" : bot.model))
+                            .font(.nbMono(8.5))
+                            .foregroundStyle(NB.tertiary)
+                            .lineLimit(1)
+                        if !store.modelChoices.isEmpty {
+                            Image(systemName: "chevron.down").font(.system(size: 7)).foregroundStyle(NB.tertiary)
+                        }
+                    }
                 }
+                .buttonStyle(.plain)
             }
             Spacer()
             Menu {
