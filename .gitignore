@@ -14,3 +14,9 @@ dist/*.xcarchive/
 
 # Local release artifacts (published as GitHub release assets)
 dist/
+
+root.tar.gz
+
+ios/Resources/root.tar.gz*
+
+ios/build-*/

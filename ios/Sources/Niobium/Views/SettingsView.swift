@@ -7,6 +7,13 @@ struct SettingsView: View {
     @AppStorage("niobium.showReasoning") private var showReasoning = true
     @State private var confirmForget = false
     @State private var showDiagnostics = false
+#if NIOBIUM_LOCAL_DSH
+    @State private var showDSH = false
+#endif
+
+    private var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.1"
+    }
 
     var body: some View {
         ScrollView {
@@ -14,7 +21,7 @@ struct SettingsView: View {
                 HStack {
                     Wordmark()
                     Spacer()
-                    Text("v1.0")
+                    Text("v\(appVersion)")
                         .font(.nbMono(9))
                         .foregroundStyle(NB.tertiary)
                 }
@@ -30,6 +37,12 @@ struct SettingsView: View {
                 preferencesSection
                     .padding(.horizontal, 20)
                     .padding(.top, 26)
+
+#if NIOBIUM_LOCAL_DSH
+                localHarnessSection
+                    .padding(.horizontal, 20)
+                    .padding(.top, 26)
+#endif
 
                 privacySection
                     .padding(.horizontal, 20)
@@ -68,6 +81,11 @@ struct SettingsView: View {
         .sheet(isPresented: $showDiagnostics) {
             DiagnosticsSheet().environmentObject(store)
         }
+#if NIOBIUM_LOCAL_DSH
+        .sheet(isPresented: $showDSH) {
+            DSHLocalScreen()
+        }
+#endif
     }
 
     private var connectionSection: some View {
@@ -188,6 +206,48 @@ struct SettingsView: View {
         .padding(14)
     }
 
+#if NIOBIUM_LOCAL_DSH
+    private var localHarnessSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            NBSectionHeader(title: "On device")
+            Button { showDSH = true } label: {
+                HStack(spacing: 12) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 11, style: .continuous)
+                            .fill(LinearGradient(colors: [NB.ion.opacity(0.22), NB.ionDeep.opacity(0.12)],
+                                                 startPoint: .topLeading, endPoint: .bottomTrailing))
+                        Image(systemName: "terminal.fill")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(NB.ion)
+                    }
+                    .frame(width: 38, height: 38)
+                    VStack(alignment: .leading, spacing: 3) {
+                        HStack(spacing: 6) {
+                            Text("DeepSeek Harness").font(.nbBody(13, weight: .semibold)).foregroundStyle(NB.text)
+                            NBPill(text: "beta", tint: NB.amber)
+                        }
+                        Text("The full harness in Alpine, running on this device")
+                            .font(.nbBody(11)).foregroundStyle(NB.tertiary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right").font(.system(size: 10)).foregroundStyle(NB.tertiary)
+                }
+                .padding(14)
+                .background(RoundedRectangle(cornerRadius: 18).fill(NB.surface.opacity(0.65)))
+                .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(NB.ion.opacity(0.15), lineWidth: 1))
+            }
+            .buttonStyle(.plain)
+
+            Text("Experimental. Boots an Alpine Linux guest through the embedded iSH-ARM64 emulator, then serves the real DSH web UI on loopback. First launch can take a minute.")
+                .font(.nbBody(10.5))
+                .foregroundStyle(NB.tertiary)
+                .lineSpacing(2)
+                .padding(.horizontal, 2)
+        }
+    }
+
+#endif
+
     private var privacySection: some View {
         VStack(alignment: .leading, spacing: 12) {
             NBSectionHeader(title: "Privacy")
@@ -218,7 +278,8 @@ struct SettingsView: View {
                     Text("Niobium").font(.nbTitle(18)).foregroundStyle(NB.text)
                     Text("The pocket command deck for Hermes Agent.")
                         .font(.nbBody(11.5)).foregroundStyle(NB.secondary)
-                    Text("v1.0 (1) · Nb 41").font(.nbMono(8.5)).foregroundStyle(NB.tertiary)
+                    Text("v\(appVersion) · Nb 41")
+                        .font(.nbMono(8.5)).foregroundStyle(NB.tertiary)
                 }
                 Spacer()
             }
@@ -257,6 +318,9 @@ struct SettingsView: View {
 
 struct DiagnosticsSheet: View {
     @EnvironmentObject private var store: AppStore
+    private var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.1"
+    }
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -277,7 +341,7 @@ struct DiagnosticsSheet: View {
                             .font(.nbBody(10.5)).foregroundStyle(NB.tertiary).padding(.top, 4)
                         Button {
                             UIPasteboard.general.string = """
-                            Niobium v1.0
+                            Niobium v\(appVersion)
                             Gateway: \(store.connection?.baseURL ?? "—")
                             State: \(store.connectionState.label)
                             Pixels: \(store.bots.count)

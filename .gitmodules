@@ -1,0 +1,3 @@
+[submodule "ios/ThirdParty/dsh-ios"]
+	path = ios/ThirdParty/dsh-ios
+	url = https://github.com/everettjf/dsh-ios.git

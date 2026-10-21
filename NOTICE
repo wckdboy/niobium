@@ -1,0 +1,25 @@
+Niobium — iOS local DeepSeek Harness build
+==========================================
+
+This distribution includes and statically links the following components:
+
+- iSH / iSH-ARM64 — GPLv3 with the additional iOS terms in
+  `ios/ThirdParty/dsh-ios/ish-arm64/LICENSE.IOS`.
+- DSH iOS host code — Copyright the DSH contributors, GPLv3, from
+  https://github.com/everettjf/dsh-ios.
+- Alpine Linux userland and packages — various free software licenses, shipped
+  inside the generated guest image `root.tar.gz`.
+- DeepSeek Harness (`@deepseek-ai/dsh`) and npm dependencies — MIT and other
+  licenses, shipped inside the generated guest image.
+- hterm and libapps — BSD-3-Clause.
+- libarchive — BSD-2-Clause.
+
+Because the app links iSH, the combined iOS application is distributed under the
+GNU General Public License version 3. The source for the complete corresponding
+application is this repository, including the `ios/ThirdParty/dsh-ios`
+submodule. The guest image is reproducibly built by
+`ios/scripts/build-local-dsh.sh`; the exact DSH submodule revision is recorded
+by git.
+
+The Android application does not link iSH and remains MIT-licensed; see
+`android/` and the root license history.

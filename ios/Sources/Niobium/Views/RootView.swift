@@ -117,6 +117,9 @@ struct MainShell: View {
     @State private var newBot = false
     @State private var newGroup = false
     @State private var showToolbox = ProcessInfo.processInfo.arguments.contains("--toolbox")
+#if NIOBIUM_LOCAL_DSH
+    @State private var showDSH = ProcessInfo.processInfo.arguments.contains("--dsh")
+#endif
 
     static var initialTab: AppTab {
         let args = ProcessInfo.processInfo.arguments
@@ -155,6 +158,11 @@ struct MainShell: View {
             ToolsView(onClose: { showToolbox = false })
                 .environmentObject(store)
         }
+#if NIOBIUM_LOCAL_DSH
+        .sheet(isPresented: $showDSH) {
+            DSHLocalScreen()
+        }
+#endif
     }
 }
 

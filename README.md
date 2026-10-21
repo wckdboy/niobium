@@ -12,6 +12,11 @@ your gateway and turns every Hermes profile into a **Pixel** — a small, durabl
 agent with its own memory, model and tools. One quiet, purple-lit place for the
 roster, real tool calls, approvals, rooms and the work in flight.
 
+On iOS/iPadOS, **1.1 adds an optional full DeepSeek Harness on the device**: a
+bundled Alpine Linux guest, Node 22 and `@deepseek-ai/dsh`, served on loopback
+and shown in the real DSH web UI. It is an independent harness, not a Hermes
+profile; open **Settings → On device → DeepSeek Harness**.
+
 There is no cloud in the middle. The agent, tools, memory, profiles and room
 driver stay on your machine. Niobium is the window and the approve button.
 
@@ -24,7 +29,8 @@ driver stay on your machine. Niobium is the window and the approve button.
 | Platform | Artifact | Notes |
 | --- | --- | --- |
 | Android 9+ | [GitHub Releases](https://github.com/wckdboy/niobium/releases/latest) | Signed release APK. Certificate SHA-256 `2f44d7e7316de46bf7d81a126bff456950a77df5c1e295afb753832aa1891b5d`. |
-| iOS 18+ | Build from source | The development-signed IPA is kept out of the public repo because its provisioning profile embeds device identifiers. See [`ios/README.md`](ios/README.md); archive with your own team for TestFlight. |
+| iOS 18+ (Hermes only) | Build from source | [`Niobium.xcodeproj`](ios/Niobium.xcodeproj); no iSH, no guest image, no GPL code. |
+| iOS 18+ (full local DSH) | Build from source | [`NiobiumDSH.xcodeproj`](ios/NiobiumDSH.xcodeproj); 82 MB IPA, GPLv3, requires the dsh-ios submodule and generated `root.tar.gz`. See [`ios/README.md`](ios/README.md). The development-signed IPA is kept out of the public repo because its provisioning profile embeds device identifiers. |
 
 ```sh
 # Android
@@ -51,6 +57,31 @@ credentials and chat history. In Niobium that agent is a **Pixel**.
   desktop and the CLI share the same relationship.
 - Every pixel has a deterministic 8×8 face tile. The pixel-art **Nb** mark and
   face system are the visual language, not decoration pasted on top.
+
+## DeepSeek Harness, locally on iOS
+
+The full DeepSeek Harness can run on an iPhone or iPad without a Mac, server or
+jailbreak. Niobium embeds [iSH-ARM64](https://github.com/OpenMinis/ish-arm64),
+boots a bundled Alpine 3.21 image with Node 22 and `@deepseek-ai/dsh`, supervises
+`dsh-serve`, and presents the harness's own web UI in a WebKit surface.
+
+- **Settings → On device → DeepSeek Harness** starts the guest on demand.
+- A boot screen shows image import, kernel boot, server readiness and a live log;
+  once ready, the DSH workspace, sessions, tools, permissions, settings and
+  terminal are the stock harness UI.
+- The server is loopback-only (`127.0.0.1`, automatically selected port).
+- The guest image persists sessions, credentials and workspace; a new image
+  migrates `~/.dsh` and the workspace on upgrade.
+- iOS only, arm64. Apple Silicon simulator or a physical iPhone/iPad; x86_64
+  simulators are not supported by the AArch64 guest.
+
+<p align="center">
+  <img src="screenshots/ios-dsh.png" width="320" alt="DeepSeek Harness booting inside Niobium on iOS" />
+</p>
+
+This is the excellent [DSH iOS/iSH integration by everettjf](https://github.com/everettjf/dsh-ios),
+vendored as a pinned submodule. The full iOS app is GPLv3 because it links iSH.
+It is a local development build, not an App Store submission.
 
 ## Features
 
@@ -200,21 +231,38 @@ Release signing reads `android/keystore.properties` (`storeFile`,
 git-ignored. R8 minification and resource shrinking are on; there are no
 analytics or third-party SDKs.
 
-### iOS
+### iOS (Hermes-only)
 
 ```sh
 cd ios
 xcodegen generate
 xcodebuild -project Niobium.xcodeproj -scheme Niobium \
   -destination 'platform=iOS Simulator,name=iPhone 18 Pro' build
+```
 
-xcodebuild -project Niobium.xcodeproj -scheme Niobium -configuration Release \
-  -destination 'generic/platform=iOS' -archivePath build/Niobium.xcarchive archive \
+### iOS full build (embedded DeepSeek Harness)
+
+```sh
+git submodule update --init --recursive
+cd ios
+scripts/build-local-dsh.sh          # Alpine + Node 22 + dsh → Resources/root.tar.gz (~6 min)
+xcodebuild -project NiobiumDSH.xcodeproj -scheme Niobium \
+  -destination 'platform=iOS Simulator,name=iPhone 18 Pro' build
+
+# archive
+xcodebuild -project NiobiumDSH.xcodeproj -scheme Niobium -configuration Release \
+  -destination 'generic/platform=iOS' -archivePath build/Niobium-DSH.xcarchive archive \
   -allowProvisioningUpdates DEVELOPMENT_TEAM=<YOUR_TEAM_ID>
 ```
 
-The `.xcodeproj` is generated. Edit `project.yml` and re-run `xcodegen`. App Store
-and TestFlight distribution are not configured in this repo.
+`NiobiumDSH.xcodeproj` references the pinned `ios/ThirdParty/dsh-ios` submodule
+through three symlinks (`ish-arm64`, `app`, `tests`). The generated guest image
+is **not committed**; `scripts/build-local-dsh.sh` builds it inside the emulator
+from the pinned Alpine and npm inputs. The standard `Niobium.xcodeproj` continues
+to build without the submodule, the guest image, or GPL code.
+
+App Store/TestFlight distribution is not configured. See the DSH project's
+license notes before shipping iSH.
 
 ### Demo / screenshot flags
 
@@ -274,6 +322,9 @@ What was exercised:
 
 - Connected to a real `hermes serve` (v2026.9.24) from the iOS simulator and an
   Android emulator; loaded the live four-profile roster and 60-toolset catalog.
+- Booted the bundled DeepSeek Harness in the iOS simulator: Alpine guest imported
+  and booted (~24 s first run), Node 22 / dsh `0.1.0-rc.7` started `dsh-serve` on
+  port 3080, and the stock DSH web UI loaded inside Niobium.
 - Opened the canonical `Bot Chat` for a profile on both clients. Android
   surfaced the expected agent-init/provider error because the isolated test
   backend had no model configured; iOS reached the same live session.
@@ -300,6 +351,9 @@ group delivery, TestFlight/App Store distribution.
   not fetched yet.
 - **Cleartext HTTP** is allowed for self-hosted LAN gateways. Use HTTPS/Tailscale
   off-LAN. The token is a bearer credential for an agent with terminal access.
+- **Local DSH is experimental and heavy.** First boot imports an 81 MB guest and
+  can take 20–60 s; expect memory/CPU pressure. It is iOS-only, arm64-only, and
+  the combined app is GPLv3. It is not an App Store target.
 
 ## Roadmap
 
@@ -324,7 +378,19 @@ group delivery, TestFlight/App Store distribution.
 
 ## License
 
-MIT. See [LICENSE](LICENSE). Hermes Agent is a separate project by Nous Research
-and is not bundled here. Not affiliated with Nous Research.
+**The combined iOS app is GPLv3**, because it statically links iSH/iSH-ARM64
+(GPLv3 plus the additional iOS terms) and includes the DSH iOS host code. See
+[LICENSE](LICENSE) and [NOTICE](NOTICE), and the upstream
+[dsh-ios](https://github.com/everettjf/dsh-ios) repository. The corresponding
+source includes the pinned `ios/ThirdParty/dsh-ios` submodule and the guest-image
+build script.
+
+**Android** remains MIT-licensed: see [`android/LICENSE`](android/LICENSE). The
+Hermes-only iOS target (`Niobium.xcodeproj`) does not compile or link iSH, but the
+repository as a whole is distributed under GPLv3.
+
+Hermes Agent is a separate project by Nous Research and is not bundled here.
+DSH / DeepSeek Harness is a separate project by its contributors. Not affiliated
+with Nous Research or DeepSeek.
 
 Built by [Sovware](https://sovware.io).
