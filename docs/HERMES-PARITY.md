@@ -59,7 +59,7 @@ Pixel chat attach failed; only legacy sidecars worked.
 | Models | `model.options` picker; model/reasoning switches via `session.mutate` |
 | Usage | `session.stats`, context breakdown, token ring |
 | Attachments | `pdf.attach`, `file.attach`, `image.attach` from a path |
-| Skills | `skills.manage`, `skills.reload`, `commands.catalog`, slash autocomplete |
+| Skills | `skills.manage {action:"list"}` and `skills.reload` implemented; `commands.catalog`/slash autocomplete remain |
 | MCP | `mcp.servers.list/status/test/oauth` |
 | Memory | `learning.frames/detail/edit/delete` (journey/memory UI) |
 | Projects | `projects.*`, workspace switch via `session.mutate` |

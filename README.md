@@ -30,7 +30,8 @@ Five tabs: **Home · Pixels · Local · Activity · Settings**.
   latency, local bots), a two-column cast with companions, and the Local DSH card.
 - **Pixels** — the full roster, active rail, rooms, AI builder and new Pixel.
 - **Local** — local DeepSeek Harness on iOS full builds; remote DSH on both.
-- **Chats** — stored session browser, revision-fenced model picker, cast studio.
+- **Chats** — stored session browser, revision-fenced model picker, usage card,
+  skills list, cast studio.
 - **AI builder** — one sentence → personality, permissions, toolsets, connectors,
   character and companion; `bot-build.md` is the skill.
 - **Activity** — turns, tools, approvals and the work in flight.
@@ -72,8 +73,8 @@ new Pixel. If no model is configured, it falls back to a labelled local template
 
 Local preview artifacts (not a public release yet):
 
-- `dist/Niobium-2.0-preview.apk` — SHA-256 `2600486b04e151bdb8fc22145a468f4d5b09c63ac9b279a90d55a4f1b2435b40`
-- `dist/Niobium-2.0-preview.ipa` (development-signed, not published) — SHA-256 `f2603b4e9c665a4e278e83e421cbf954f354a9e9a530b0b48b82de5ea39fd258`
+- `dist/Niobium-2.0-preview.apk` — SHA-256 `764b075b49c5a0f4d2b210e8e1dbceb5a32d72ab6656f496c75dbf5961b2edab`
+- `dist/Niobium-2.0-preview.ipa` (development-signed, not published) — SHA-256 `9df5862a33f14f2c725ef4d011cb1b8675b81c93f1bbcc3cdd4b1a03f00717b9`
 
 The stable v1.1 release remains on GitHub. v2 is on the `v2` branch and PR #1.
 

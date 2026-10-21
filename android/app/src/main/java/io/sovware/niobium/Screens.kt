@@ -332,6 +332,11 @@ private fun ActivityRow(item: ActivityItem) {
 @Composable
 fun ToolsScreen(vm: NiobiumViewModel, state: NbState, onClose: (() -> Unit)? = null) {
     var query by remember { mutableStateOf("") }
+    var showSkills by remember { mutableStateOf(false) }
+    if (showSkills) {
+        SkillsSheet(vm) { showSkills = false }
+        return
+    }
     var onlyEnabled by remember { mutableStateOf(false) }
     val filtered = state.toolsets.filter {
         (!onlyEnabled || it.enabled) && (query.isBlank() || it.name.contains(query, true)
@@ -347,6 +352,10 @@ fun ToolsScreen(vm: NiobiumViewModel, state: NbState, onClose: (() -> Unit)? = n
                 }
                 Wordmark()
                 Spacer(Modifier.weight(1f))
+                Box(Modifier.size(38.dp).clip(RoundedCornerShape(10.dp)).background(Nb.FillSoft)
+                    .border(1.dp, Nb.Line, RoundedCornerShape(10.dp)).clickable { showSkills = true },
+                    contentAlignment = Alignment.Center) { Text("✦", color = Nb.Ion, fontSize = 13.sp) }
+                Spacer(Modifier.width(7.dp))
                 NbIconButton("↻", { vm.refreshAllAsync() }, size = 38)
             }
         }

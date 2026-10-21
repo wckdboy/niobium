@@ -32,6 +32,7 @@ data class NbState(
     val modelChoices: List<ModelChoice> = emptyList(),
     val sessions: List<SessionRow> = emptyList(),
     val usage: UsageStats? = null,
+    val skills: Map<String, List<String>> = emptyMap(),
     val sessionRevision: Int = 0,
     val activities: List<ActivityItem> = emptyList(),
     val activeBot: BotProfile? = null,
@@ -336,6 +337,35 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
                     .put("session_id", sessionId).put("profile", bot.name).put("text", value), 30_000)
             } catch (e: Exception) {
                 state = state.copy(turnActive = false, error = "Message failed. ${e.message}")
+            }
+        }
+    }
+
+    fun loadSkills() {
+        val client = gateway ?: return
+        if (state.demo) { state = state.copy(skills = emptyMap()); return }
+        viewModelScope.launch {
+            runCatching {
+                val result = client.request("skills.manage", JSONObject()
+                    .put("action", "list").put("profile", state.activeBot?.name ?: "default"), 20_000)
+                val obj = result.o("skills") ?: JSONObject()
+                val map = mutableMapOf<String, List<String>>()
+                obj.keys().forEach { key ->
+                    val arr = obj.optJSONArray(key) ?: return@forEach
+                    map[key] = (0 until arr.length()).map { arr.optString(it) }
+                }
+                state = state.copy(skills = map)
+            }
+        }
+    }
+
+    fun reloadSkills() {
+        val client = gateway ?: return
+        viewModelScope.launch {
+            runCatching {
+                client.request("skills.reload", JSONObject().put("profile", state.activeBot?.name ?: "default"), 30_000)
+                loadSkills()
+                showToast("Skills reloaded")
             }
         }
     }

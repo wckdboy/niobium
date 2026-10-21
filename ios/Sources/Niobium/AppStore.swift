@@ -20,6 +20,7 @@ final class AppStore: ObservableObject {
     @Published var modelChoices: [ModelChoice] = []
     @Published var sessions: [SessionRow] = []
     @Published var usage: UsageStats?
+    @Published var skills: [String: [String]] = [:]
     @Published var chatRevision = 0
     var chatSource = "gui"
     @Published var activity: [ActivityItem] = []
@@ -375,6 +376,26 @@ final class AppStore: ObservableObject {
             isTurnActive = false
             showError("Message failed. \(error.localizedDescription)")
         }
+    }
+
+    func loadSkills() async {
+        guard !isDemo, let api else { skills = [:]; return }
+        let profile = activeBot?.name ?? "default"
+        guard let result = try? await api.request("skills.manage", params: ["action": "list", "profile": profile], timeout: 20) as? JSONObject else { return }
+        guard let raw = result.dict("skills") else { skills = [:]; return }
+        var parsed: [String: [String]] = [:]
+        for (key, value) in raw {
+            if let names = value as? [String] { parsed[key] = names }
+        }
+        skills = parsed
+    }
+
+    func reloadSkills() async {
+        guard !isDemo, let api else { return }
+        let profile = activeBot?.name ?? "default"
+        _ = try? await api.request("skills.reload", params: ["profile": profile], timeout: 30)
+        await loadSkills()
+        toastMessage("Skills reloaded")
     }
 
     func loadUsage() async {
