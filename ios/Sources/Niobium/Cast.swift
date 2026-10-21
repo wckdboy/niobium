@@ -39,13 +39,31 @@ final class CastStore: ObservableObject {
     }
 
     func member(for profile: String, title: String = "") -> CastMember {
-        if let id = all()[profile.lowercased()], let m = CastMember.all.first(where: { $0.id == id }) { return m }
-        return .seeded(profile, title: title)
+        let id = all()[profile.lowercased()]
+        var member = id.flatMap { chosen in CastMember.all.first(where: { $0.id == chosen }) } ?? .seeded(profile, title: title)
+        let companions = UserDefaults.standard.dictionary(forKey: "niobium.companions.v1") as? [String: String] ?? [:]
+        if let kind = companions[profile.lowercased()] {
+            member = CastMember(id: member.id, name: member.name, companion: kind,
+                                companionName: CastMember.all.first(where: { $0.companion == kind })?.companionName ?? member.companionName,
+                                accentHex: member.accentHex)
+        }
+        return member
     }
 
     func select(_ member: CastMember, for profile: String) {
         var map = all(); map[profile.lowercased()] = member.id
-        UserDefaults.standard.set(map, forKey: key); revision += 1
+        UserDefaults.standard.set(map, forKey: key)
+        var companions = UserDefaults.standard.dictionary(forKey: "niobium.companions.v1") as? [String: String] ?? [:]
+        companions[profile.lowercased()] = member.companion
+        UserDefaults.standard.set(companions, forKey: "niobium.companions.v1")
+        revision += 1
+    }
+
+    func setCompanion(_ kind: String, name: String?, for profile: String) {
+        var companions = UserDefaults.standard.dictionary(forKey: "niobium.companions.v1") as? [String: String] ?? [:]
+        companions[profile.lowercased()] = kind
+        UserDefaults.standard.set(companions, forKey: "niobium.companions.v1")
+        revision += 1
     }
 
     func random(for profile: String) -> CastMember {
@@ -156,6 +174,29 @@ struct CastStudioView: View {
                             .buttonStyle(.plain)
                         }
                     }
+                    VStack(alignment: .leading, spacing: 9) {
+                        NBSectionHeader(title: "Companion")
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 9) {
+                            ForEach(Array(Set(CastMember.all.map(\.companion))).sorted(), id: \.self) { kind in
+                                Button {
+                                    selected = CastMember(id: selected.id, name: selected.name, companion: kind,
+                                                          companionName: CastMember.all.first(where: { $0.companion == kind })?.companionName ?? selected.companionName,
+                                                          accentHex: selected.accentHex)
+                                    CastStore.shared.select(selected, for: profile)
+                                } label: {
+                                    VStack(spacing: 4) {
+                                        Image("Comp_\(kind)").resizable().interpolation(.none).frame(width: 34, height: 34)
+                                        Text(kind).font(.nbMono(7.5)).foregroundStyle(NB.tertiary)
+                                    }
+                                    .frame(maxWidth: .infinity).padding(7)
+                                    .background(RoundedRectangle(cornerRadius: 10).fill(selected.companion == kind ? NB.ion.opacity(0.10) : NB.fillSoft))
+                                    .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(selected.companion == kind ? NB.ion.opacity(0.35) : NB.line, lineWidth: 1))
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+
                     Button {
                         selected = CastStore.shared.random(for: profile)
                     } label: { Label("Surprise me", systemImage: "dice").frame(maxWidth: .infinity) }

@@ -739,7 +739,11 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val (spec, usedModel) = PixelBuilder.build(context, if (state.demo) null else gateway, prompt)
             val slug = spec.name.lowercase().replace(" ", "-")
-            val member = Cast.all.firstOrNull { it.id == spec.archetype } ?: Cast.seeded(slug)
+            var member = Cast.all.firstOrNull { it.id == spec.archetype } ?: Cast.seeded(slug)
+            if (Cast.all.any { it.companion == spec.companion }) {
+                member = member.copy(companion = spec.companion,
+                    companionName = Cast.all.firstOrNull { it.companion == spec.companion }?.companionName ?: member.companionName)
+            }
             if (state.demo) {
                 val bot = BotProfile(slug, spec.title, spec.role, "", "Hermes", spec.skills.size, "demo-$slug",
                     "Built by the Pixel builder.", System.currentTimeMillis() / 1000, false, false, false,

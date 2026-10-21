@@ -7,6 +7,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -53,10 +54,18 @@ object CastStore {
     private const val PREFS = "niobium_cast"
     fun get(context: Context, profile: String): CastMember {
         val id = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(profile.lowercase(), null)
-        return Cast.all.firstOrNull { it.id == id } ?: Cast.seeded(profile)
+        var member = Cast.all.firstOrNull { it.id == id } ?: Cast.seeded(profile)
+        val companion = context.getSharedPreferences("niobium_companions", Context.MODE_PRIVATE)
+            .getString(profile.lowercase(), null)
+        if (!companion.isNullOrBlank()) {
+            val known = Cast.all.firstOrNull { it.companion == companion }
+            member = member.copy(companion = companion, companionName = known?.companionName ?: member.companionName)
+        }
+        return member
     }
     fun put(context: Context, profile: String, member: CastMember) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(profile.lowercase(), member.id).apply()
+        context.getSharedPreferences("niobium_companions", Context.MODE_PRIVATE).edit().putString(profile.lowercase(), member.companion).apply()
     }
 }
 
@@ -157,6 +166,31 @@ fun CastStudioSheet(profile: String, title: String, onDismiss: () -> Unit) {
                             CastPortrait(member, 62.dp, showCompanion = false)
                             androidx.compose.material3.Text(member.name, color = Nb.Text, fontSize = 11.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium)
                             androidx.compose.material3.Text(member.companionName, color = Nb.Tertiary, style = NbMono, fontSize = 8.sp)
+                        }
+                    }
+                }
+            }
+            item {
+                SectionHeader("Companion")
+                androidx.compose.foundation.layout.Spacer(androidx.compose.ui.Modifier.height(7.dp))
+                androidx.compose.foundation.layout.Row(
+                    androidx.compose.ui.Modifier.fillMaxWidth(),
+                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(5.dp)
+                ) {
+                    Cast.all.map { it.companion }.distinct().forEach { kind ->
+                        androidx.compose.foundation.layout.Column(
+                            androidx.compose.ui.Modifier.weight(1f).clip(RoundedCornerShape(9.dp))
+                                .background(if (selected.companion == kind) Nb.Ion.copy(alpha = 0.10f) else Nb.FillSoft)
+                                .border(1.dp, if (selected.companion == kind) Nb.Ion.copy(alpha = 0.35f) else Nb.Line, RoundedCornerShape(9.dp))
+                                .clickable {
+                                    selected = selected.copy(companion = kind,
+                                        companionName = Cast.all.firstOrNull { it.companion == kind }?.companionName ?: selected.companionName)
+                                    CastStore.put(context, profile, selected)
+                                }.padding(5.dp),
+                            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+                        ) {
+                            Image(painterResource(compRes(kind)), null, modifier = androidx.compose.ui.Modifier.size(30.dp))
+                            androidx.compose.material3.Text(kind, color = Nb.Tertiary, style = NbMono, fontSize = 6.5.sp)
                         }
                     }
                 }

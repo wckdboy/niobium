@@ -834,7 +834,12 @@ final class AppStore: ObservableObject {
         defer { isBuildingPixel = false }
         let (spec, usedModel) = await PixelBuilder.shared.spec(for: clean, api: isDemo ? nil : api)
         let slug = spec.name.lowercased().replacingOccurrences(of: " ", with: "-")
-        let member = CastMember.all.first(where: { $0.id == spec.character.archetype }) ?? CastMember.seeded(slug, title: spec.title)
+        var member = CastMember.all.first(where: { $0.id == spec.character.archetype }) ?? CastMember.seeded(slug, title: spec.title)
+        if CastMember.all.contains(where: { $0.companion == spec.companion.kind }) {
+            member = CastMember(id: member.id, name: member.name, companion: spec.companion.kind,
+                                companionName: spec.companion.name.isEmpty ? member.companionName : spec.companion.name,
+                                accentHex: member.accentHex)
+        }
         if isDemo {
             let bot = BotProfile(name: slug, title: spec.title, role: spec.role, provider: "", model: "Hermes",
                                  skillCount: spec.skills.count, canonicalSessionID: "demo-\(slug)",
