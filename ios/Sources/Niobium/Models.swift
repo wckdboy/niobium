@@ -424,3 +424,24 @@ struct ModelChoice: Identifiable, Equatable {
         model.split(separator: "/").last.map(String.init) ?? model
     }
 }
+
+struct SessionRow: Identifiable, Equatable {
+    var sessionID: String
+    var title: String
+    var messageCount: Int
+    var model: String
+    var startedAt: Date?
+    var running: Bool
+    var id: String { sessionID }
+
+    static func parse(_ json: JSONObject) -> SessionRow? {
+        let id = json.string("session_id") ?? json.string("id")
+        guard let id, !id.isEmpty else { return nil }
+        return SessionRow(sessionID: id,
+                          title: json.string("title") ?? "Untitled",
+                          messageCount: json.int("message_count") ?? 0,
+                          model: json.string("model") ?? "",
+                          startedAt: epochDate(json.double("started_at")),
+                          running: json.bool("running") ?? false)
+    }
+}

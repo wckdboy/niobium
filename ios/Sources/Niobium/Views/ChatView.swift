@@ -12,6 +12,7 @@ struct ChatView: View {
     @State private var showRoutines = false
     @State private var showCast = false
     @State private var showModels = false
+    @State private var showChats = false
     @State private var showInfo = false
     @State private var showClarify = false
     @State private var appeared = false
@@ -121,6 +122,7 @@ struct ChatView: View {
             Menu {
                 Button { showTools = true } label: { Label("Tools & capabilities", systemImage: "hammer") }
                 Button { showRoutines = true } label: { Label("Routines", systemImage: "clock.arrow.circlepath") }
+                Button { showChats = true } label: { Label("All chats", systemImage: "bubble.left.and.bubble.right") }
                 Button { showCast = true } label: { Label("Cast studio", systemImage: "person.crop.artframe") }
                 Button { showInfo = true } label: { Label("Pixel details", systemImage: "info.circle") }
                 Divider()

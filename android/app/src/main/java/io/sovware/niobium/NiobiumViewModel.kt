@@ -30,6 +30,7 @@ data class NbState(
     val toolsets: List<Toolset> = emptyList(),
     val routines: List<Routine> = emptyList(),
     val modelChoices: List<ModelChoice> = emptyList(),
+    val sessions: List<SessionRow> = emptyList(),
     val sessionRevision: Int = 0,
     val activities: List<ActivityItem> = emptyList(),
     val activeBot: BotProfile? = null,
@@ -335,6 +336,36 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
             } catch (e: Exception) {
                 state = state.copy(turnActive = false, error = "Message failed. ${e.message}")
             }
+        }
+    }
+
+    fun loadSessions(bot: BotProfile) {
+        val client = gateway ?: return
+        if (state.demo) { state = state.copy(sessions = emptyList()); return }
+        viewModelScope.launch {
+            runCatching {
+                val result = client.request("session.list", JSONObject()
+                    .put("profile", bot.name).put("scope", "stored").put("limit", 60), 20_000)
+                val arr = result.a("sessions") ?: JSONArray()
+                state = state.copy(sessions = (0 until arr.length()).mapNotNull { SessionRow.parse(arr.optJSONObject(it) ?: return@mapNotNull null) })
+            }.onFailure { state = state.copy(sessions = emptyList()) }
+        }
+    }
+
+    fun resumeSession(row: SessionRow, bot: BotProfile) {
+        val client = gateway ?: return
+        viewModelScope.launch {
+            runCatching {
+                val result = client.request("session.resume", JSONObject()
+                    .put("session_id", row.sessionId).put("profile", bot.name).put("source", chatSource), 90_000)
+                val sid = result.s("session_id") ?: row.sessionId
+                val revision = result.optInt("revision", state.sessionRevision)
+                val messages = parseTranscript(result.objects("messages"))
+                state = state.copy(sessionId = sid, sessionRevision = revision, messages = messages,
+                    turnActive = result.o("inflight")?.optBoolean("streaming", false) ?: false,
+                    loadingChat = false)
+                loadModels(); loadToolsets()
+            }.onFailure { showError("Could not open chat. ${it.message}") }
         }
     }
 

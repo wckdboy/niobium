@@ -462,3 +462,62 @@ struct ModelPickerView: View {
         .task { await store.loadModels() }
     }
 }
+
+struct ChatsView: View {
+    @EnvironmentObject private var store: AppStore
+    @Environment(\.dismiss) private var dismiss
+    let bot: BotProfile
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                NBMeshBackground(intensity: 0.4)
+                ScrollView {
+                    LazyVStack(spacing: 8) {
+                        if store.sessions.isEmpty {
+                            VStack(spacing: 8) {
+                                Text("No stored chats").font(.nbTitle(18)).foregroundStyle(NB.text)
+                                Text("Start a conversation and it will appear here. The gateway keeps the history.")
+                                    .font(.nbBody(11)).foregroundStyle(NB.tertiary).multilineTextAlignment(.center)
+                            }
+                            .padding(.top, 60)
+                        }
+                        ForEach(store.sessions) { row in
+                            Button {
+                                Task {
+                                    await store.resumeSession(row, for: bot)
+                                    dismiss()
+                                }
+                            } label: {
+                                HStack(spacing: 10) {
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text(row.title).font(.nbBody(13, weight: .medium)).foregroundStyle(NB.text).lineLimit(1)
+                                        HStack(spacing: 6) {
+                                            Text(row.startedAt?.formatted(.dateTime.month().day().hour().minute()) ?? "—")
+                                            Text("· \\(row.messageCount) messages")
+                                            if row.running { Text("· running").foregroundStyle(NB.mint) }
+                                        }
+                                        .font(.nbMono(8)).foregroundStyle(NB.tertiary)
+                                    }
+                                    Spacer()
+                                    Image(systemName: "chevron.right").font(.system(size: 9)).foregroundStyle(NB.tertiary)
+                                }
+                                .padding(12)
+                                .background(RoundedRectangle(cornerRadius: 13).fill(NB.fillSoft))
+                                .overlay(RoundedRectangle(cornerRadius: 13).strokeBorder(NB.line, lineWidth: 1))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(18)
+                }
+            }
+            .navigationTitle("Chats")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() }.foregroundStyle(NB.ion) }
+            }
+        }
+        .task { await store.loadSessions(for: bot) }
+    }
+}

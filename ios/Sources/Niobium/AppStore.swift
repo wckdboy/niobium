@@ -18,6 +18,7 @@ final class AppStore: ObservableObject {
     @Published var runtimeInfo: JSONObject?
     @Published var gatewayCapabilities: JSONObject?
     @Published var modelChoices: [ModelChoice] = []
+    @Published var sessions: [SessionRow] = []
     @Published var chatRevision = 0
     var chatSource = "gui"
     @Published var activity: [ActivityItem] = []
@@ -372,6 +373,48 @@ final class AppStore: ObservableObject {
         } catch {
             isTurnActive = false
             showError("Message failed. \(error.localizedDescription)")
+        }
+    }
+
+    func loadSessions(for bot: BotProfile) async {
+        guard !isDemo, let api else {
+            sessions = []
+            return
+        }
+        guard let result = try? await api.request("session.list", params: [
+            "profile": bot.name, "scope": "stored", "limit": 60
+        ], timeout: 20) as? JSONObject else {
+            sessions = []
+            return
+        }
+        sessions = result.objects("sessions").compactMap(SessionRow.parse)
+    }
+
+    func resumeSession(_ row: SessionRow, for bot: BotProfile) async {
+        guard !isDemo, let api else { return }
+        do {
+            let result = try await api.request("session.resume", params: [
+                "session_id": row.sessionID,
+                "profile": bot.name,
+                "source": chatSource
+            ], timeout: 90) as? JSONObject
+            guard let result else { throw RPCError.malformed }
+            chatSessionID = result.string("session_id") ?? row.sessionID
+            chatRevision = result.int("revision") ?? chatRevision
+            messages = parseTranscript(result.objects("messages"))
+            if let inflight = result.dict("inflight") {
+                isTurnActive = inflight.bool("streaming") ?? false
+                if let text = inflight.string("assistant"), !text.isEmpty {
+                    messages.append(ChatMessage(id: "inflight", role: .assistant, text: text,
+                                                timestamp: Date(), toolStatus: .completed))
+                }
+            } else {
+                isTurnActive = false
+            }
+            await loadModels()
+            toastMessage("Opened \(row.title)")
+        } catch {
+            showError("Could not open chat. \(error.localizedDescription)")
         }
     }
 

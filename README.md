@@ -30,6 +30,9 @@ Five tabs: **Home · Pixels · Local · Activity · Settings**.
   latency, local bots), a two-column cast with companions, and the Local DSH card.
 - **Pixels** — the full roster, active rail, rooms, AI builder and new Pixel.
 - **Local** — local DeepSeek Harness on iOS full builds; remote DSH on both.
+- **Chats** — stored session browser, revision-fenced model picker, cast studio.
+- **AI builder** — one sentence → personality, permissions, toolsets, connectors,
+  character and companion; `bot-build.md` is the skill.
 - **Activity** — turns, tools, approvals and the work in flight.
 - **Settings** — appearance, connection, toolbox, harness, privacy.
 
@@ -64,6 +67,15 @@ new Pixel. If no model is configured, it falls back to a labelled local template
 - iOS full build embeds iSH-ARM64 + Alpine 3.21 + Node 22 + DSH and boots on demand;
   it is GPLv3, 82 MB and not an App Store build.
 - Android (and iOS) can open a remote DSH web UI from a computer or VPS.
+
+## v2 preview
+
+Local preview artifacts (not a public release yet):
+
+- `dist/Niobium-2.0-preview.apk`
+- `dist/Niobium-2.0-preview.ipa` (development-signed, not published)
+
+The stable v1.1 release remains on GitHub. v2 is on the `v2` branch and PR #1.
 
 ## Build
 

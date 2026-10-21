@@ -232,3 +232,14 @@ data class ModelChoice(val provider: String, val providerName: String, val model
     val id get() = "$provider/$model"
     val label get() = model.substringAfterLast('/')
 }
+
+data class SessionRow(val sessionId: String, val title: String, val messageCount: Int, val model: String, val startedAt: Long?, val running: Boolean) {
+    val id get() = sessionId
+    companion object {
+        fun parse(j: JSONObject): SessionRow? {
+            val id = j.s("session_id") ?: j.s("id") ?: return null
+            return SessionRow(id, j.s("title") ?: "Untitled", j.optInt("message_count", 0),
+                j.s("model") ?: "", epochDate(j.d("started_at")), j.optBoolean("running", false))
+        }
+    }
+}
