@@ -72,8 +72,8 @@ new Pixel. If no model is configured, it falls back to a labelled local template
 
 Local preview artifacts (not a public release yet):
 
-- `dist/Niobium-2.0-preview.apk` — SHA-256 `65ed41b4a892b79d2fd6fba189a571709ed9b188bcb7b9e993b4508f589ad584`
-- `dist/Niobium-2.0-preview.ipa` (development-signed, not published) — SHA-256 `20dc83bef5d0351d1450de40bce92944448abb1f1bfeea64879de0d21b28460b`
+- `dist/Niobium-2.0-preview.apk` — SHA-256 `2600486b04e151bdb8fc22145a468f4d5b09c63ac9b279a90d55a4f1b2435b40`
+- `dist/Niobium-2.0-preview.ipa` (development-signed, not published) — SHA-256 `f2603b4e9c665a4e278e83e421cbf954f354a9e9a530b0b48b82de5ea39fd258`
 
 The stable v1.1 release remains on GitHub. v2 is on the `v2` branch and PR #1.
 
