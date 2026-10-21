@@ -58,12 +58,12 @@ struct BotAvatar: View {
     var bot: BotProfile
     var size: CGFloat = 48
     var showStatus = true
-    @ObservedObject private var mascots = MascotStore.shared
+    @ObservedObject private var cast = CastStore.shared
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
-            MascotTile(mascot: mascots.mascot(for: bot.name, accentHex: bot.accentHex),
-                       accent: bot.accent, size: size)
+            CastPortrait(member: cast.member(for: bot.name, title: bot.title),
+                         size: size, showCompanion: size >= 48, showGlow: false)
             if showStatus {
                 RoundedRectangle(cornerRadius: size * 0.05, style: .continuous)
                     .fill(bot.isLive ? NB.mint : NB.tertiary)
@@ -81,13 +81,13 @@ struct BotAvatar: View {
 struct GroupAvatar: View {
     var members: [GroupMember]
     var size: CGFloat = 46
-    @ObservedObject private var mascots = MascotStore.shared
+    @ObservedObject private var cast = CastStore.shared
     var body: some View {
         let shown = Array(members.prefix(3))
         ZStack {
             ForEach(Array(shown.enumerated()), id: \.offset) { index, member in
-                MascotTile(mascot: mascots.mascot(for: member.profile),
-                           accent: NB.color(for: member.profile), size: size * 0.58)
+                CastPortrait(member: cast.member(for: member.profile, title: member.name),
+                             size: size * 0.58, showCompanion: false, showGlow: false)
                     .overlay(
                         RoundedRectangle(cornerRadius: size * 0.17, style: .continuous)
                             .strokeBorder(NB.ink, lineWidth: 2)

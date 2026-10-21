@@ -1,0 +1,12 @@
+{
+  "name": "niobium-site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "npm run build && wrangler dev",
+    "deploy": "npm run build && wrangler deploy",
+    "dry": "npm run build && wrangler deploy --dry-run"
+  },
+  "devDependencies": { "wrangler": "^4.151.1" }
+}

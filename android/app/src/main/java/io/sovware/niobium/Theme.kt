@@ -229,9 +229,9 @@ fun BotAvatar(
     profileName: String = title,
     accentHex: String? = null
 ) {
-    val mascot = MascotStore.get(androidx.compose.ui.platform.LocalContext.current, profileName)
+    val member = CastStore.get(androidx.compose.ui.platform.LocalContext.current, profileName)
     Box(contentAlignment = Alignment.BottomEnd) {
-        MascotTile(mascot, accent, size)
+        CastPortrait(member, size, showCompanion = size >= 48.dp)
         if (showStatus) {
             Box(
                 Modifier
@@ -260,7 +260,7 @@ fun GroupAvatar(members: List<GroupMember>, size: Int = 46) {
                     )
                     .border(2.dp, Nb.Ink, RoundedCornerShape((size * 0.58f * 0.28f).dp))
             ) {
-                MascotTile(MascotStore.get(context, member.profile), Nb.colorFor(member.profile), (size * 0.58f).dp)
+                CastPortrait(CastStore.get(context, member.profile), (size * 0.58f).dp, showCompanion = false)
             }
         }
     }

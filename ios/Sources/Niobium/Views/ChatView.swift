@@ -10,7 +10,7 @@ struct ChatView: View {
     @State private var attachment: UIImage?
     @State private var showTools = false
     @State private var showRoutines = false
-    @State private var showMascot = false
+    @State private var showCast = false
     @State private var showInfo = false
     @State private var showClarify = false
     @State private var appeared = false
@@ -45,9 +45,8 @@ struct ChatView: View {
         .sheet(isPresented: $showRoutines) {
             RoutinesView(bot: bot).environmentObject(store)
         }
-        .sheet(isPresented: $showMascot) {
-            MascotStudioView(profile: bot.name, title: bot.title,
-                             initialAccent: bot.accentHex ?? "#A78BFA", onSave: { _ in })
+        .sheet(isPresented: $showCast) {
+            CastStudioView(profile: bot.name, title: bot.title)
         }
         .sheet(isPresented: $showInfo) {
             BotInfoSheet(bot: bot).environmentObject(store)
@@ -115,7 +114,7 @@ struct ChatView: View {
             Menu {
                 Button { showTools = true } label: { Label("Tools & capabilities", systemImage: "hammer") }
                 Button { showRoutines = true } label: { Label("Routines", systemImage: "clock.arrow.circlepath") }
-                Button { showMascot = true } label: { Label("Mascot studio", systemImage: "paintpalette") }
+                Button { showCast = true } label: { Label("Cast studio", systemImage: "person.crop.artframe") }
                 Button { showInfo = true } label: { Label("Pixel details", systemImage: "info.circle") }
                 Divider()
                 Button {

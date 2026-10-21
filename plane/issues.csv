@@ -1,0 +1,25 @@
+id,module,title,priority,estimate,description
+NIO-001,Foundation,v2 branch and product plan,urgent,2,Create PLAN.md and README v2; no affiliation copy.
+NIO-002,Foundation,WCKD design tokens and legal copy,high,2,Dark/light palette, mature adult content policy, disclaimers in app/site.
+NIO-003,Art,32x32 cast of eight adults,urgent,8,Generate 32x32 sprites with four men and four women; companions; asset pipeline.
+NIO-004,Art,Unique lowercase n ore icon,high,3,16x16 purple-on-white WCKD letter mark; iOS/Android/launch/site.
+NIO-005,Art,Pixel hero landscape,medium,3,Home hero with floating islands and castle; accessibility contrast.
+NIO-006,Home,Five-tab shell,urgent,5,Home/Pixels/Local/Activity/Settings on iOS and Android.
+NIO-007,Home,Instance card and roster grid,urgent,8,Host/latency/tools/access/local stats; two-column character cards.
+NIO-008,Home,Local DSH card,high,5,On-device iOS / remote both; runtime stats and open action.
+NIO-009,Builder,bot-build.md skill,urgent,5,Portable agentskills skill with strict PixelSpec schema and safety.
+NIO-010,Builder,AI PixelSpec generation,urgent,8,llm.oneshot + JSON parsing + deterministic fallback; both platforms.
+NIO-011,Builder,Create/configure Pixel,urgent,5,profiles.create + profiles.configure with soul/toolsets/ui_meta.
+NIO-012,Builder,Cast/companion selection,high,5,Store chosen cast, companion, randomizer, studio.
+NIO-013,Parity,Canonical session payload fixes,urgent,2,Remove inline_images; source gui/runtime.describe.
+NIO-014,Parity,Session browser and mutations,high,8,session.list stored/history/mutate rename/archive/delete/export.
+NIO-015,Parity,Model and reasoning picker,high,8,model.options + session.mutate model/reasoning.
+NIO-016,Parity,Usage and context,medium,5,session.stats/context breakdown/usage ring.
+NIO-017,Parity,Skills and command catalog,high,8,skills.manage/reload/commands.catalog + slash UI.
+NIO-018,Parity,MCP status,medium,5,mcp.servers.list/status/test.
+NIO-019,Parity,Approval recovery,high,5,approval.pending/received/clarify.lock/request.answer.
+NIO-020,Parity,Attachments parity,high,5,PDF/file/image attach; Android/iOS composer.
+NIO-021,Local,Remote DSH both platforms,high,5,Settings -> Harness URL, WebView/WebKit.
+NIO-022,Local,Local DSH iOS polish,medium,5,status/resources/terminal; on-demand boot.
+NIO-023,Site,WCKD static site,high,8,Home/system/local/build/releases/legal; wrangler dry run.
+NIO-024,Release,Screenshots and signed artifacts,urgent,5,iOS standard/full; Android debug/release; checksums.

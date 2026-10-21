@@ -636,6 +636,41 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
 
     // ── Bots and tools ───────────────────────────────────────────────────────
 
+    fun buildPixel(context: android.content.Context, prompt: String, onCreated: (BotProfile) -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            val (spec, usedModel) = PixelBuilder.build(context, if (state.demo) null else gateway, prompt)
+            val slug = spec.name.lowercase().replace(" ", "-")
+            val member = Cast.all.firstOrNull { it.id == spec.archetype } ?: Cast.seeded(slug)
+            if (state.demo) {
+                val bot = BotProfile(slug, spec.title, spec.role, "", "Hermes", spec.skills.size, "demo-$slug",
+                    "Built by the Pixel builder.", System.currentTimeMillis() / 1000, false, false, false,
+                    member.accentHex, false)
+                CastStore.put(context, slug, member)
+                state = state.copy(bots = listOf(bot) + state.bots)
+                openBot(bot); onCreated(bot)
+                return@launch
+            }
+            val client = gateway ?: run { onError("Connect a gateway first."); return@launch }
+            runCatching {
+                client.request("profiles.create", JSONObject().put("name", slug)
+                    .put("description", spec.role).put("no_skills", false), 120_000)
+                client.request("profiles.configure", JSONObject().put("name", slug)
+                    .put("description", spec.role).put("soul", spec.soul)
+                    .put("enabled_toolsets", JSONArray(spec.toolsets))
+                    .put("ui_meta", JSONObject().put("hermes-bots", JSONObject()
+                        .put("title", spec.title).put("description", spec.role)
+                        .put("color", member.accentHex).put("hidden", false)
+                        .put("companion", spec.companion)
+                        .put("builder", if (usedModel) "model" else "template"))), 120_000)
+                CastStore.put(context, slug, member)
+                refreshRoster()
+                val created = state.bots.firstOrNull { it.name == slug }
+                if (created != null) { openBot(created); onCreated(created) }
+                showToast(if (usedModel) "Built ${spec.title} with AI" else "Built ${spec.title} from a template")
+            }.onFailure { onError("Could not build Pixel. ${it.message}") }
+        }
+    }
+
     fun createBot(name: String, title: String, role: String, color: String, onCreated: () -> Unit) {
         val slug = name.trim().lowercase().replace(" ", "-")
         if (slug.isBlank()) return

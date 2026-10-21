@@ -720,6 +720,58 @@ final class AppStore: ObservableObject {
         groups.insert(room, at: 0)
     }
 
+    // MARK: - AI Pixel builder
+
+    @Published var isBuildingPixel = false
+
+    func buildPixel(prompt: String) async throws -> BotProfile {
+        let clean = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !clean.isEmpty else { throw RPCError.transport("Describe what the Pixel should do.") }
+        isBuildingPixel = true
+        defer { isBuildingPixel = false }
+        let (spec, usedModel) = await PixelBuilder.shared.spec(for: clean, api: isDemo ? nil : api)
+        let slug = spec.name.lowercased().replacingOccurrences(of: " ", with: "-")
+        let member = CastMember.all.first(where: { $0.id == spec.character.archetype }) ?? CastMember.seeded(slug, title: spec.title)
+        if isDemo {
+            let bot = BotProfile(name: slug, title: spec.title, role: spec.role, provider: "", model: "Hermes",
+                                 skillCount: spec.skills.count, canonicalSessionID: "demo-\(slug)",
+                                 canonicalResolvedID: nil, lastSessionID: nil,
+                                 preview: "Built by the Pixel builder.", activityAt: Date(),
+                                 workerActive: false, isDefault: false, hidden: false,
+                                 accentHex: member.accentHex, hasAvatar: false)
+            bots.insert(bot, at: 0)
+            CastStore.shared.select(member, for: slug)
+            return bot
+        }
+        guard let api else { throw RPCError.notConnected }
+        _ = try await api.request("profiles.create", params: [
+            "name": slug,
+            "description": spec.role,
+            "no_skills": false
+        ], timeout: 120)
+        var uiMeta: JSONObject = [
+            "title": spec.title,
+            "description": spec.role,
+            "color": member.accentHex,
+            "hidden": false,
+            "companion": spec.companion.kind,
+            "builder": usedModel ? "model" : "template"
+        ]
+        var configure: JSONObject = [
+            "name": slug,
+            "description": spec.role,
+            "soul": spec.soul,
+            "enabled_toolsets": spec.toolsets,
+            "ui_meta": ["hermes-bots": uiMeta]
+        ]
+        _ = try await api.request("profiles.configure", params: configure, timeout: 120)
+        CastStore.shared.select(member, for: slug)
+        await refreshRoster()
+        guard let created = bots.first(where: { $0.name == slug }) else { throw RPCError.malformed }
+        toastMessage(usedModel ? "Built \(created.title) with AI" : "Built \(created.title) from a template")
+        return created
+    }
+
     // MARK: - Create bot
 
     func createBot(name: String, title: String, role: String, colorHex: String) async throws {

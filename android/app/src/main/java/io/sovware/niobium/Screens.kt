@@ -1,5 +1,6 @@
 package io.sovware.niobium
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -36,6 +38,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -62,7 +66,7 @@ private fun TopBar(state: NbState, trailing: (@Composable () -> Unit)? = null) {
 }
 
 @Composable
-fun PixelsScreen(vm: NiobiumViewModel, state: NbState, onNewPixel: () -> Unit) {
+fun PixelsScreen(vm: NiobiumViewModel, state: NbState, onNewPixel: () -> Unit, onBuildAI: () -> Unit = {}, onOpenRooms: () -> Unit = {}) {
     val active = state.bots.filter { it.isLive }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 30.dp)) {
         item { TopBar(state) }
@@ -74,6 +78,16 @@ fun PixelsScreen(vm: NiobiumViewModel, state: NbState, onNewPixel: () -> Unit) {
                         Spacer(Modifier.height(5.dp))
                         Text("Your agents, close at hand.", color = Nb.Secondary, fontSize = 14.sp)
                     }
+                    Box(Modifier.size(38.dp).clip(CircleShape).background(Nb.FillSoft)
+                        .border(1.dp, Nb.Line, CircleShape).clickable { onOpenRooms() }, contentAlignment = Alignment.Center) {
+                        Text("◎", color = Nb.Secondary, fontSize = 13.sp)
+                    }
+                    Spacer(Modifier.width(7.dp))
+                    Box(Modifier.size(38.dp).clip(CircleShape).background(Nb.FillSoft)
+                        .border(1.dp, Nb.Line, CircleShape).clickable { onBuildAI() }, contentAlignment = Alignment.Center) {
+                        Text("✦", color = Nb.Ion, fontSize = 13.sp)
+                    }
+                    Spacer(Modifier.width(7.dp))
                     NbIconButton("+", onNewPixel, tint = Nb.Ion, size = 42)
                 }
                 Spacer(Modifier.height(14.dp))
@@ -166,11 +180,13 @@ fun PixelsScreen(vm: NiobiumViewModel, state: NbState, onNewPixel: () -> Unit) {
 }
 
 @Composable
-fun RoomsScreen(vm: NiobiumViewModel, state: NbState, onNewGroup: () -> Unit) {
+fun RoomsScreen(vm: NiobiumViewModel, state: NbState, onNewGroup: () -> Unit, onClose: () -> Unit = {}) {
     LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 30.dp)) {
         item { TopBar(state, trailing = { NbIconButton("+", onNewGroup, tint = Nb.Ion, size = 38) }) }
         item {
-            Column(Modifier.padding(horizontal = 20.dp).padding(top = 28.dp)) {
+            Text("‹ Home", color = Nb.Secondary, fontSize = 12.sp,
+                modifier = Modifier.padding(horizontal = 20.dp).padding(top = 8.dp).clickable { onClose() })
+            Column(Modifier.padding(horizontal = 20.dp).padding(top = 18.dp)) {
                 Text("Rooms", color = Nb.Text, style = NbDisplay, fontSize = 44.sp, letterSpacing = (-1.8).sp)
                 Spacer(Modifier.height(5.dp))
                 Text("A few pixels, thinking together.", color = Nb.Secondary, fontSize = 14.sp)
@@ -607,7 +623,7 @@ fun SettingsScreen(vm: NiobiumViewModel, state: NbState, onOpenTools: () -> Unit
                 Column {
                     Text("Niobium", color = Nb.Text, style = NbTitle, fontSize = 18.sp)
                     Text("The pocket command deck for Hermes Agent.", color = Nb.Secondary, fontSize = 11.5.sp)
-                    Text("v1.1 (2) · Nb 41", color = Nb.Tertiary, style = NbMono, fontSize = 8.5.sp)
+                    Text("v2.0 (4) · Nb 41", color = Nb.Tertiary, style = NbMono, fontSize = 8.5.sp)
                 }
             }
         }
@@ -616,6 +632,237 @@ fun SettingsScreen(vm: NiobiumViewModel, state: NbState, onOpenTools: () -> Unit
                 .background(Nb.Rose.copy(alpha = 0.06f)).border(1.dp, Nb.Rose.copy(alpha = 0.15f), RoundedCornerShape(13.dp))
                 .clickable { confirmForget = true }.padding(vertical = 13.dp), contentAlignment = Alignment.Center) {
                 Text("Forget this gateway", color = Nb.Rose, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+            }
+        }
+    }
+}
+
+@Composable
+fun HomeScreen(vm: NiobiumViewModel, state: NbState, onNewPixel: () -> Unit) {
+    val context = LocalContext.current
+    var showHarness by remember { mutableStateOf(false) }
+    if (showHarness) {
+        RemoteHarnessScreen { showHarness = false }
+        return
+    }
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 30.dp)) {
+        item {
+            Box(Modifier.fillMaxWidth().height(190.dp)) {
+                Image(
+                    painter = painterResource(R.drawable.hero_pixels),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+                Box(Modifier.fillMaxSize().background(
+                    Brush.verticalGradient(listOf(Nb.Void.copy(alpha = 0.97f), Nb.Void.copy(alpha = 0.55f), Nb.Void.copy(alpha = 0.10f), Nb.Void))
+                ))
+                Row(
+                    Modifier.fillMaxWidth().align(Alignment.TopStart).padding(horizontal = 18.dp).padding(top = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    AtomicMark(36.dp)
+                    Spacer(Modifier.width(9.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text("Niobium", color = Nb.Text, style = NbDisplay, fontSize = 24.sp)
+                        Text("YOUR PIXELS, EVERYWHERE.", color = Nb.Secondary, style = NbMono, fontSize = 7.5.sp, letterSpacing = 1.4.sp)
+                    }
+                    Box(Modifier.clip(CircleShape).background(Nb.Ink.copy(alpha = 0.65f))
+                        .border(1.dp, Nb.Line, CircleShape).padding(horizontal = 9.dp, vertical = 7.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            LiveDot(if (state.connected) Nb.Mint else Nb.Tertiary)
+                            Spacer(Modifier.width(5.dp))
+                            Text(if (state.connected) "Connected" else "Offline",
+                                color = Nb.Secondary, fontSize = 10.sp, maxLines = 1)
+                            Spacer(Modifier.width(3.dp))
+                            Text("›", color = Nb.Tertiary, fontSize = 12.sp)
+                        }
+                    }
+                }
+            }
+        }
+        item {
+            Column(Modifier.padding(horizontal = 16.dp).offset(y = (-2).dp)) {
+                InstanceCard(state)
+                Spacer(Modifier.height(20.dp))
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Your Pixels", color = Nb.Text, style = NbTitle, fontSize = 21.sp)
+                        Text("Autonomous agents, each with a purpose.", color = Nb.Tertiary, fontSize = 11.sp)
+                    }
+                    Box(Modifier.clip(CircleShape).background(Nb.Ion).clickable { onNewPixel() }
+                        .padding(horizontal = 11.dp, vertical = 7.dp)) {
+                        Text("+ New Pixel", color = Nb.OnIon, fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+                Spacer(Modifier.height(10.dp))
+                state.bots.chunked(2).forEach { row ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                        row.forEach { bot ->
+                            HomePixelCard(context, bot, Modifier.weight(1f)) { vm.openBot(bot) }
+                        }
+                        if (row.size == 1) Spacer(Modifier.weight(1f))
+                    }
+                    Spacer(Modifier.height(9.dp))
+                }
+                Spacer(Modifier.height(8.dp))
+                LocalDSHCard(state) { showHarness = true }
+            }
+        }
+    }
+}
+
+@Composable
+private fun InstanceCard(state: NbState) {
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Nb.Surface.copy(alpha = 0.82f))
+        .border(1.dp, Nb.Line, RoundedCornerShape(20.dp)).padding(14.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).background(Nb.Ion.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
+                Text("▤", color = Nb.Ion, fontSize = 18.sp)
+            }
+            Spacer(Modifier.width(11.dp))
+            Column(Modifier.weight(1f)) {
+                Text("Hermes Instance", color = Nb.Text, style = NbTitle, fontSize = 16.sp)
+                Text(state.connection?.url?.removePrefix("http://")?.removePrefix("https://") ?: "self-hosted",
+                    color = Nb.Secondary, style = NbMono, fontSize = 9.sp, maxLines = 1)
+                Text(if (state.demo) "Demo · local" else "VPS · self-hosted", color = Nb.Tertiary, style = NbMono, fontSize = 8.5.sp)
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    LiveDot(if (state.connected) Nb.Mint else Nb.Tertiary)
+                    Spacer(Modifier.width(5.dp))
+                    Text(if (state.connected) "Online" else "Offline", color = if (state.connected) Nb.Mint else Nb.Tertiary, fontSize = 10.sp)
+                }
+                Text("live", color = Nb.Tertiary, style = NbMono, fontSize = 8.5.sp)
+                Spacer(Modifier.width(2.dp))
+                Text("›", color = Nb.Tertiary, fontSize = 13.sp)
+            }
+        }
+        Spacer(Modifier.height(11.dp))
+        Box(Modifier.fillMaxWidth().height(1.dp).background(Nb.Line))
+        Spacer(Modifier.height(11.dp))
+        Row {
+            HomeStat("${state.toolsets.size}", "Tools", "◈", Modifier.weight(1f))
+            HomeStat("Full", "Access", "◇", Modifier.weight(1f))
+            HomeStat("—", "Latency", "⌁", Modifier.weight(1f))
+            HomeStat("${state.bots.count { it.isLive }}/${state.bots.size}", "Local bots", "▦", Modifier.weight(1f))
+        }
+    }
+}
+
+@Composable
+private fun HomeStat(value: String, label: String, glyph: String, modifier: Modifier = Modifier) {
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(glyph, color = Nb.Ion, fontSize = 14.sp)
+        Text(value, color = Nb.Text, style = NbTitle, fontSize = 13.sp)
+        Text(label, color = Nb.Tertiary, fontSize = 9.sp)
+    }
+}
+
+@Composable
+private fun HomePixelCard(context: android.content.Context, bot: BotProfile, modifier: Modifier = Modifier, onTap: () -> Unit) {
+    val member = CastStore.get(context, bot.name)
+    Column(modifier.clip(RoundedCornerShape(16.dp)).background(Nb.Surface.copy(alpha = 0.72f))
+        .border(1.dp, Nb.Line, RoundedCornerShape(16.dp)).clickable { onTap() }.padding(9.dp)) {
+        Row(verticalAlignment = Alignment.Top) {
+            CastPortrait(member, 58.dp, showCompanion = true)
+            Spacer(Modifier.width(8.dp))
+            Column(Modifier.weight(1f)) {
+                Text(bot.title, color = Nb.Text, style = NbTitle, fontSize = 12.5.sp, maxLines = 1)
+                Text(bot.subtitle, color = Nb.Tertiary, fontSize = 8.5.sp, maxLines = 2)
+                Spacer(Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    LiveDot(if (bot.isLive) Nb.Mint else Nb.Tertiary)
+                    Spacer(Modifier.width(4.dp))
+                    Text(bot.statusLine, color = if (bot.isLive) Nb.Mint else Nb.Tertiary, style = NbMono, fontSize = 7.5.sp, maxLines = 1)
+                }
+            }
+            Text("…", color = Nb.Tertiary, fontSize = 11.sp)
+        }
+        Spacer(Modifier.height(7.dp))
+        Text(bot.preview.ifBlank { bot.role }, color = Nb.Secondary, fontSize = 9.sp, maxLines = 2, lineHeight = 13.sp)
+    }
+}
+
+@Composable
+private fun LocalDSHCard(state: NbState, onOpen: () -> Unit) {
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Nb.Surface.copy(alpha = 0.82f))
+        .border(1.dp, Nb.Line, RoundedCornerShape(20.dp)).padding(14.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("Local DSH", color = Nb.Text, style = NbTitle, fontSize = 18.sp)
+                Text("Run local Pixels through DSH on your device.", color = Nb.Tertiary, fontSize = 10.sp)
+            }
+            Box(Modifier.clip(CircleShape).background(Nb.Ion.copy(alpha = 0.16f))
+                .border(1.dp, Nb.Ion.copy(alpha = 0.35f), CircleShape).clickable { onOpen() }
+                .padding(horizontal = 11.dp, vertical = 7.dp)) {
+                Text(">_ Open DSH", color = Nb.Ion, fontSize = 10.sp, fontWeight = FontWeight.Medium)
+            }
+        }
+        Spacer(Modifier.height(9.dp))
+        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Nb.FillSoft).padding(10.dp),
+            verticalAlignment = Alignment.CenterVertically) {
+            Text("◈", color = Nb.Ion, fontSize = 14.sp)
+            Spacer(Modifier.width(8.dp))
+            Column(Modifier.weight(1f)) {
+                Text("Local Runtime", color = Nb.Text, fontSize = 11.5.sp, fontWeight = FontWeight.Medium)
+                Text("Remote · computer or VPS", color = Nb.Tertiary, style = NbMono, fontSize = 8.sp)
+            }
+            LiveDot(Nb.Mint)
+            Spacer(Modifier.width(5.dp))
+            Text("on demand", color = Nb.Mint, style = NbMono, fontSize = 8.sp)
+        }
+        Spacer(Modifier.height(9.dp))
+        Row {
+            HomeStat("DSH", "Model", "▣", Modifier.weight(1f))
+            HomeStat("shared", "Resources", "▤", Modifier.weight(1f))
+            HomeStat("device", "GPU", "▥", Modifier.weight(1f))
+            HomeStat("${state.bots.count { it.isLive }} running", "Local Pixels", "▦", Modifier.weight(1f))
+        }
+        Spacer(Modifier.height(7.dp))
+        Text("DSH is separate from Hermes. The local guest is iOS-only; remote works everywhere.",
+            color = Nb.Tertiary, fontSize = 8.5.sp, lineHeight = 12.sp)
+    }
+}
+
+@Composable
+fun LocalScreen(vm: NiobiumViewModel, state: NbState) {
+    var showHarness by remember { mutableStateOf(false) }
+    if (showHarness) {
+        RemoteHarnessScreen { showHarness = false }
+        return
+    }
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp, 28.dp, 20.dp, 32.dp)) {
+        item {
+            Text("Harness · computer · VPS", color = Nb.Tertiary, style = NbLabel, fontSize = 9.sp, letterSpacing = 1.2.sp)
+            Text("Local", color = Nb.Text, style = NbDisplay, fontSize = 38.sp)
+            Spacer(Modifier.height(6.dp))
+            Text("Run a full harness next to your Pixels. The iOS full build embeds Alpine + iSH; both platforms can open DSH on a computer or VPS.",
+                color = Nb.Secondary, fontSize = 12.sp, lineHeight = 18.sp)
+            Spacer(Modifier.height(16.dp))
+            Box(Modifier.fillMaxWidth().clip(CircleShape).background(Brush.linearGradient(listOf(Nb.Ion, Nb.IonDeep)))
+                .clickable { showHarness = true }.padding(vertical = 14.dp), contentAlignment = Alignment.Center) {
+                Text(">_ Open DSH", color = Nb.OnIon, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            }
+            Spacer(Modifier.height(8.dp))
+            Box(Modifier.fillMaxWidth().clip(CircleShape).background(Nb.FillSoft)
+                .clickable { showHarness = true }.padding(vertical = 13.dp), contentAlignment = Alignment.Center) {
+                Text("Connect to remote DSH", color = Nb.Text, fontSize = 13.sp)
+            }
+            Spacer(Modifier.height(18.dp))
+            Text("Pixels available to the harness", color = Nb.Text, style = NbTitle, fontSize = 18.sp)
+        }
+        items(state.bots.take(4).size) { index ->
+            val bot = state.bots[index]
+            Row(Modifier.fillMaxWidth().padding(bottom = 8.dp).clip(RoundedCornerShape(12.dp)).background(Nb.FillSoft)
+                .padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                CastPortrait(CastStore.get(LocalContext.current, bot.name), 38.dp, showCompanion = false)
+                Spacer(Modifier.width(9.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(bot.title, color = Nb.Text, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    Text("Hermes pixel · ${bot.model.ifBlank { "inherited model" }}", color = Nb.Tertiary, style = NbMono, fontSize = 8.sp)
+                }
+                Text(if (bot.isLive) "Running" else "Available", color = if (bot.isLive) Nb.Mint else Nb.Tertiary, style = NbMono, fontSize = 8.sp)
             }
         }
     }

@@ -17,12 +17,12 @@ A pixel is a teammate, not a toy.
 
 ## Mark
 
-The app icon is a hand-built 16×16 pixel raster: a rough purple niobium-ore
-crystal on a clean white field. It is intentionally
-low-resolution — nearest-neighbor scaling, no anti-aliasing. The ore raster is
-used as the app icon, launch mark and the Android adaptive/monochrome icon. The
-in-app wordmark keeps the separate **Nb** glyph. Never add an orbit ring or
-recolor the metal.
+The app icon is a hand-built 16×16 pixel raster: a lowercase ore-cut **n** with a
+tiny mint companion pixel, purple on a clean white field. It follows WCKD's
+one-letter/one-colour system. It is intentionally
+low-resolution — nearest-neighbor scaling, no anti-aliasing. The n raster is used
+as the app icon, launch mark, wordmark and the Android adaptive/monochrome icon.
+Never add an orbit ring or recolor the letter.
 
 `41` may appear as small annotation text, never inside the icon.
 
@@ -55,6 +55,6 @@ names use monospace. No custom fonts.
 
 Each Pixel has a deterministic 8×8 face tile. The body is the Pixel's accent;
 eyes and mouth are cut out to Void. The tile has a soft violet-black fill and a
-one-pixel border. Pixels use chosen, randomised or hand-drawn 8×8 mascots; the
-default is stable per profile name. Live Pixels carry a small mint square status light. Team rooms
+one-pixel border. Pixels use 32×32 adult characters with a 16×16 companion;
+chosen, randomised or AI-designed, stable per profile name. Live Pixels carry a small mint square status light. Team rooms
 stack two or three faces.

@@ -9,7 +9,8 @@ struct NewBotView: View {
     @State private var color = "#A78BFA"
     @State private var saving = false
     @State private var error: String?
-    @State private var showMascot = false
+    @State private var showCast = false
+    @State private var showAI = false
 
     private let colors: [(String, String)] = [
         ("Ion", "#A78BFA"), ("Orchid", "#F0ABFC"), ("Mint", "#5EEAD4"),
@@ -109,19 +110,35 @@ struct NewBotView: View {
             Text(profile.role).font(.nbBody(11.5)).foregroundStyle(NB.secondary)
                 .multilineTextAlignment(.center).frame(maxWidth: 280)
             Button {
-                showMascot = true
+                showAI = true
             } label: {
-                Label("Customise mascot", systemImage: "paintpalette")
+                Label("Build with AI", systemImage: "sparkles")
+                    .font(.nbBody(11, weight: .semibold))
+                    .foregroundStyle(NB.onIon)
+                    .padding(.horizontal, 12).padding(.vertical, 7)
+                    .background(Capsule().fill(NB.ion))
+            }
+            .buttonStyle(.plain)
+            Button {
+                showCast = true
+            } label: {
+                Label("Choose cast", systemImage: "person.crop.artframe")
                     .font(.nbBody(11, weight: .medium))
                     .foregroundStyle(NB.ion)
             }
             .buttonStyle(.plain)
         }
         .padding(.vertical, 12)
-        .sheet(isPresented: $showMascot) {
-            MascotStudioView(profile: name.isEmpty ? "niobium" : name,
-                             title: title.isEmpty ? (name.isEmpty ? "New Pixel" : name.capitalized) : title,
-                             initialAccent: color, onSave: { _ in })
+        .sheet(isPresented: $showAI) {
+            AIBuildView { bot in
+                dismiss()
+                store.openBot(bot)
+            }
+            .environmentObject(store)
+        }
+        .sheet(isPresented: $showCast) {
+            CastStudioView(profile: name.isEmpty ? "niobium" : name,
+                           title: title.isEmpty ? (name.isEmpty ? "New Pixel" : name.capitalized) : title)
         }
     }
 

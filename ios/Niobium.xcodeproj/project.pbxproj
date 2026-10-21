@@ -16,6 +16,7 @@
 		3B5D7DB9A04D07F561590266 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = F647741BA6B0932DB234342B /* Models.swift */; };
 		48DBA559639C4DC337E2716B /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF3CEFC9C0EC54DC634DFF0 /* Components.swift */; };
 		509A4E671F6E68A871DC6804 /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60029D35B25833C97FB3EE35 /* AppStore.swift */; };
+		55ADD8B9BD5D57FC91E0A453 /* PixelSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0BD636CA46D4C02C57B8406 /* PixelSpec.swift */; };
 		6D2775B4258739F7CF2B4A84 /* NewBotView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E52F80CBF3907A307D7266D /* NewBotView.swift */; };
 		729B3290783DD31B41BBB098 /* DSHLocalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2071CB229CBC0CC7853AF958 /* DSHLocalView.swift */; };
 		7A433DA37FFE804525816BCC /* ToolsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19BCD2792FD6DE0F11367BF7 /* ToolsView.swift */; };
@@ -24,15 +25,19 @@
 		7FEBC27F6E852EAF94812DF3 /* NiobiumApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41196FDE9CF372B07CDC3D5A /* NiobiumApp.swift */; };
 		8B95B674ADE0585F7049B74E /* RemoteHarnessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3BFA967917BA7D913DCD694 /* RemoteHarnessView.swift */; };
 		90694DD2EB755CDC5C559B4B /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A73453351829E3FFB57BF67 /* SettingsView.swift */; };
+		963E259EB5A04F98028AA9C2 /* AIBuildView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C55B0D736E31F7FB52F44C2 /* AIBuildView.swift */; };
+		9A989906327CB4BB829218DE /* Cast.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8273CAA1922CA7D96927FEAC /* Cast.swift */; };
 		B56C999C035DC8EED69892AE /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 03DDC2C567BD154F7B787F7C /* PrivacyInfo.xcprivacy */; };
 		BFB3799D4EE79F918EEF91F6 /* Connection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7881BF04B81903578F406EAE /* Connection.swift */; };
 		C17232758B3098EBF00DDA63 /* Speech.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78C7DCBA2FAED667AAA3E0B3 /* Speech.swift */; };
 		D1E7BD349940934F25DB3D5F /* Mascot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64F32D9115F33BE49C715624 /* Mascot.swift */; };
 		D45C51613CB4CB18B345CFF2 /* GroupsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05A3A26E6798DCAE73848B78 /* GroupsView.swift */; };
+		D4F170BF6D4B3E6D749F3C5F /* bot-build.md in Resources */ = {isa = PBXBuildFile; fileRef = 623D954C5930F945CC968714 /* bot-build.md */; };
 		D9F87DE931CDF1E6396926B0 /* ChatSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EFC7420AC0F58E58F3CC658 /* ChatSheets.swift */; };
 		E8DBAB18000A20347C28129C /* DemoData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110D1522BB2728DAA3278BAA /* DemoData.swift */; };
 		F90AD3B99A38B7D1B1FF68B2 /* root.tar.gz in Resources */ = {isa = PBXBuildFile; fileRef = 2FA8138EF6A96A6EC561FB71 /* root.tar.gz */; };
 		FAECABBDDAB7061AD24EB493 /* NiobiumSceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C22F988531A89583ECB5D3D /* NiobiumSceneDelegate.swift */; };
+		FDB4611D1727E194BD250159 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD5A8D72D3F2FD723D9AAC2A /* HomeView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -40,6 +45,7 @@
 		05A3A26E6798DCAE73848B78 /* GroupsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupsView.swift; sourceTree = "<group>"; };
 		063319FA4EED8BEB522CC64B /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		07A95B778EAAA3C963220A5C /* PulseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PulseView.swift; sourceTree = "<group>"; };
+		0C55B0D736E31F7FB52F44C2 /* AIBuildView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIBuildView.swift; sourceTree = "<group>"; };
 		110D1522BB2728DAA3278BAA /* DemoData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoData.swift; sourceTree = "<group>"; };
 		19BCD2792FD6DE0F11367BF7 /* ToolsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolsView.swift; sourceTree = "<group>"; };
 		1E5C16B81C787644093F1ED4 /* Niobium.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Niobium.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -52,16 +58,20 @@
 		4A73453351829E3FFB57BF67 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		4EFC7420AC0F58E58F3CC658 /* ChatSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatSheets.swift; sourceTree = "<group>"; };
 		60029D35B25833C97FB3EE35 /* AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStore.swift; sourceTree = "<group>"; };
+		623D954C5930F945CC968714 /* bot-build.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "bot-build.md"; sourceTree = "<group>"; };
 		64F32D9115F33BE49C715624 /* Mascot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mascot.swift; sourceTree = "<group>"; };
 		6E704B906D738908DBF1156D /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		7881BF04B81903578F406EAE /* Connection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Connection.swift; sourceTree = "<group>"; };
 		78C7DCBA2FAED667AAA3E0B3 /* Speech.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Speech.swift; sourceTree = "<group>"; };
 		7DF3CEFC9C0EC54DC634DFF0 /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
+		8273CAA1922CA7D96927FEAC /* Cast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cast.swift; sourceTree = "<group>"; };
 		A12F3E948B506AC256E4A96B /* Info-DSH.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Info-DSH.plist"; sourceTree = "<group>"; };
 		A3BFA967917BA7D913DCD694 /* RemoteHarnessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteHarnessView.swift; sourceTree = "<group>"; };
 		A8FAE52FE38FEF029F62C7B9 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
 		B5C551A6F8A4092D6F86964E /* Niobium-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Niobium-Bridging-Header.h"; sourceTree = "<group>"; };
 		B8A6C18F7A70DB585CADF863 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		BD5A8D72D3F2FD723D9AAC2A /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		E0BD636CA46D4C02C57B8406 /* PixelSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelSpec.swift; sourceTree = "<group>"; };
 		E3A6FBE565A3A6026443339B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F647741BA6B0932DB234342B /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -70,11 +80,13 @@
 		48CD69214E8FB8AEEB34DC22 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				0C55B0D736E31F7FB52F44C2 /* AIBuildView.swift */,
 				3D65FE4758CBAF210B2115AA /* BotsView.swift */,
 				4EFC7420AC0F58E58F3CC658 /* ChatSheets.swift */,
 				A8FAE52FE38FEF029F62C7B9 /* ChatView.swift */,
 				7DF3CEFC9C0EC54DC634DFF0 /* Components.swift */,
 				05A3A26E6798DCAE73848B78 /* GroupsView.swift */,
+				BD5A8D72D3F2FD723D9AAC2A /* HomeView.swift */,
 				3E52F80CBF3907A307D7266D /* NewBotView.swift */,
 				063319FA4EED8BEB522CC64B /* OnboardingView.swift */,
 				07A95B778EAAA3C963220A5C /* PulseView.swift */,
@@ -98,6 +110,7 @@
 			children = (
 				48CD69214E8FB8AEEB34DC22 /* Views */,
 				60029D35B25833C97FB3EE35 /* AppStore.swift */,
+				8273CAA1922CA7D96927FEAC /* Cast.swift */,
 				7881BF04B81903578F406EAE /* Connection.swift */,
 				110D1522BB2728DAA3278BAA /* DemoData.swift */,
 				2071CB229CBC0CC7853AF958 /* DSHLocalView.swift */,
@@ -106,6 +119,7 @@
 				B5C551A6F8A4092D6F86964E /* Niobium-Bridging-Header.h */,
 				41196FDE9CF372B07CDC3D5A /* NiobiumApp.swift */,
 				2C22F988531A89583ECB5D3D /* NiobiumSceneDelegate.swift */,
+				E0BD636CA46D4C02C57B8406 /* PixelSpec.swift */,
 				A3BFA967917BA7D913DCD694 /* RemoteHarnessView.swift */,
 				78C7DCBA2FAED667AAA3E0B3 /* Speech.swift */,
 				6E704B906D738908DBF1156D /* Theme.swift */,
@@ -127,6 +141,7 @@
 			isa = PBXGroup;
 			children = (
 				E3A6FBE565A3A6026443339B /* Assets.xcassets */,
+				623D954C5930F945CC968714 /* bot-build.md */,
 				A12F3E948B506AC256E4A96B /* Info-DSH.plist */,
 				03DDC2C567BD154F7B787F7C /* PrivacyInfo.xcprivacy */,
 				2FA8138EF6A96A6EC561FB71 /* root.tar.gz */,
@@ -197,6 +212,7 @@
 				398B759D798DDA67DECD7DAE /* Assets.xcassets in Resources */,
 				7CF70C329DE1B31E268FFFCB /* Info-DSH.plist in Resources */,
 				B56C999C035DC8EED69892AE /* PrivacyInfo.xcprivacy in Resources */,
+				D4F170BF6D4B3E6D749F3C5F /* bot-build.md in Resources */,
 				F90AD3B99A38B7D1B1FF68B2 /* root.tar.gz in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -208,8 +224,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				963E259EB5A04F98028AA9C2 /* AIBuildView.swift in Sources */,
 				509A4E671F6E68A871DC6804 /* AppStore.swift in Sources */,
 				30BF5F4627D0D1CAA403A285 /* BotsView.swift in Sources */,
+				9A989906327CB4BB829218DE /* Cast.swift in Sources */,
 				D9F87DE931CDF1E6396926B0 /* ChatSheets.swift in Sources */,
 				7D16A2386F60B968A0629201 /* ChatView.swift in Sources */,
 				48DBA559639C4DC337E2716B /* Components.swift in Sources */,
@@ -217,12 +235,14 @@
 				729B3290783DD31B41BBB098 /* DSHLocalView.swift in Sources */,
 				E8DBAB18000A20347C28129C /* DemoData.swift in Sources */,
 				D45C51613CB4CB18B345CFF2 /* GroupsView.swift in Sources */,
+				FDB4611D1727E194BD250159 /* HomeView.swift in Sources */,
 				D1E7BD349940934F25DB3D5F /* Mascot.swift in Sources */,
 				3B5D7DB9A04D07F561590266 /* Models.swift in Sources */,
 				6D2775B4258739F7CF2B4A84 /* NewBotView.swift in Sources */,
 				7FEBC27F6E852EAF94812DF3 /* NiobiumApp.swift in Sources */,
 				FAECABBDDAB7061AD24EB493 /* NiobiumSceneDelegate.swift in Sources */,
 				2D34E9368C50EB82EA9C7628 /* OnboardingView.swift in Sources */,
+				55ADD8B9BD5D57FC91E0A453 /* PixelSpec.swift in Sources */,
 				068A51895F2CAB120697507A /* PulseView.swift in Sources */,
 				8B95B674ADE0585F7049B74E /* RemoteHarnessView.swift in Sources */,
 				0C71937DE535F00ED332DD62 /* RootView.swift in Sources */,
@@ -310,14 +330,14 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Resources/Niobium.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = io.sovware.niobium;
 				SDKROOT = iphoneos;
 				SUPPORTS_MACCATALYST = NO;
@@ -332,14 +352,14 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Resources/Niobium.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = io.sovware.niobium;
 				SDKROOT = iphoneos;
 				SUPPORTS_MACCATALYST = NO;

@@ -14,8 +14,8 @@ android {
         applicationId = "io.sovware.niobium"
         minSdk = 28
         targetSdk = 37
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = 4
+        versionName = "2.0"
     }
 
     signingConfigs {
