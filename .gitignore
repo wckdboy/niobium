@@ -24,3 +24,10 @@ ios/build-*/
 site/node_modules/
 site/dist/
 site/.wrangler/
+
+# Local credentials / Wrangler secrets
+.env
+.env.*
+!.env.example
+.secrets/
+site/.dev.vars
