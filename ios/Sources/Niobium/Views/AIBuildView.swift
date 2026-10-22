@@ -136,7 +136,7 @@ struct AIBuildView: View {
                 }
             }.buttonStyle(NBPrimaryButtonStyle()).disabled(working || spec.validationError != nil)
             if let validation = spec.validationError { Text(validation).font(.nbBody(11)).foregroundStyle(NB.rose) }
-        }
+        }.disabled(working)
     }
     private func design() {
         working = true; error = nil
