@@ -45,12 +45,13 @@ xcodebuild -project Niobium.xcodeproj -scheme Niobium \
   CODE_SIGNING_ALLOWED=NO test
 ```
 
-Thirty-three unit tests cover URL/auth handling, JSON-RPC IDs, cancellation,
+Thirty-nine unit tests cover URL/auth handling, JSON-RPC IDs, cancellation,
 PixelSpec validation, reversed chat-selection responses, resumed streaming,
 recovered clarification dismissal, provisioning access and failed appearance saves.
 Attachment regressions cover duplicate opens, obsolete lookups and rejected handoffs.
-Four UI tests launch only the labelled demo, verify the dashboard and
-review flow plus coherent native Engines navigation, and retain screenshots in the xcresult. Native tests live in
+Five UI tests launch only the labelled demo, verify the dashboard and
+review flow plus coherent native Engines navigation, and capture screenshots during the run. Reviewed CLI captures are stored under
+`docs/evidence/clean-pixels-*`; xcresult attachment export is not assumed. Native tests live in
 NativeTests; the lowercase tests symlink belongs to the DSH submodule.
 
 The full DSH target has a separate device archive gate; do not regenerate it
@@ -137,8 +138,10 @@ Android runtime tests require an ARM64 Android device/emulator:
     ./gradlew :app:connectedDebugAndroidTest
     python3 ../tools/check-android-runtime.py app/build/outputs/apk/debug/app-debug.apk
 
-An Android Compose workshop test pins hair, closes and reopens the appearance
-section, remixes, and verifies the retained style and mimic selection. Espresso
+An Android Compose workshop test verifies portrait selection through garment
+remix, undo, tab changes and creature selection. The iOS UI suite also checks
+that a local preview appears within two seconds without an AI request.
+Espresso
 is pinned to 3.7.0: Compose’s old transitive version reflects an InputManager
 method removed on Android 16. The stable fix uses getSystemService
 ([Android Test release notes](https://developer.android.com/jetpack/androidx/releases/test#espresso-3.7.0)). Two additional on-device renderer checks verify shared RGBA pixels and that changing
@@ -153,20 +156,24 @@ See DSH-PROVIDER.md and ANDROID-DSH.md for limits.
 
 ## Modular portrait quality
 
-`python3 -m unittest discover -s tests -p 'test_*.py' -v` runs eleven checks.
+`python3 -m unittest discover -s tests -p 'test_*.py' -v` runs fourteen checks.
 The art-specific checks inspect 288 hair/headwear/build combinations for
 readable eyes, all 24 outfit cuts for opaque chest coverage, and 864
 build/outfit/expression/detail combinations for stable silhouettes across
 open/blink frames. Colors stay on the hard 48×48 grid. These structural checks
 complement visual review; they do not measure attractiveness.
 
-`python3 tools/character_engine48.py --check` verifies all 56 generated files.
+`python3 tools/character_engine48.py --check` verifies 55 legacy generated files.
 The source layers live in `tools/portrait_layers48.py`; drawing primitives are
 in `tools/pixel_canvas.py`. The original generated reference and exact prompt
 are retained alongside the actual custom gallery, all outfit cuts, recipe list
 and open/blink sheet in `brand/pixel-studio-v3-*`. The reference is visual
-direction, not the runtime source atlas. The website custom sheet uses the same
-code-native recipes as the app.
+direction, not the runtime source atlas. The legacy gallery is retained for compatibility review. New designs use the
+authored-look catalog built by `python3 tools/portrait_looks.py [--check]`.
+Sixteen portable RGBA fixtures are checked by the actual Swift and Android
+renderers. Python checks exact original pixels, unchanged alpha and identities,
+bounded garment masks, native catalog equality and fixture drift. The website
+custom sheet uses the same new garment variants.
 
 Swift and on-device Kotlin compare both rendered frames with shared RGBA
 fixtures and verify independent cache entries. Android also exercises the actual
@@ -177,3 +184,29 @@ roster portraits stay still. Both caches remain bounded to 192 images.
 
 Native demo captures and the contact sheets are reviewed visually before
 release. Current device/account limitations remain in PLAN.md.
+
+
+## Instant previews and authored looks
+
+New previews use eight prebuilt adult 48×48 silhouettes, restricted garment
+colors, twelve independent creatures and a bounded twelve-entry look undo stack.
+No model or image request is needed for the initial preview. The optional
+persona model call has a 35-second timeout and 1,800-token budget; the preceding
+catalog request is separately bounded to 12 seconds. AI completion merges only
+unchanged persona fields and preserves reviewed appearance and permissions.
+Creation intersects the reviewed tool catalog with the current engine catalog.
+
+Both native renderers hash sixteen authored-look fixtures, including garment
+variants. Python checks that recolors preserve identity and alpha; atlas checks
+reject a stray divider line above a head. The remaining original layered engine
+and its blink tests are compatibility coverage. Static modern previews do not
+run the decorative blink loop. Android status pixels no longer run an infinite
+animation while idle.
+
+The separately sandboxed full Debug iPhone acceptance passed an actual DSH
+model stream, eight seconds in the background and a cold-launch history restore:
+[evidence](evidence/ios-build10-iphone-model.json). The production Release sandbox
+still fails its DSH event-stream connection. A build-12 archive must reapply the
+changed adapter overlay; repeated diagnostic build-11 archives share an overlay
+version and are not a substitute for that replacement build. No production data
+was erased. Real-account model turns and production release acceptance remain open.

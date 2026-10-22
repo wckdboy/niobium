@@ -29,6 +29,47 @@ final class NiobiumTests: XCTestCase {
             XCTAssertEqual(bytes, CharacterEngine.shared.image(for: recipe)?.cgImage?.dataProvider?.data as Data?)
         }
     }
+    func testAuthoredLooksMatchPortablePixelsAndKeepIdentityDuringRemix() throws {
+        struct Fixture: Decodable { let look: PixelLook; let rgba_sha256: String }
+        let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "portrait-looks", withExtension: "json"))
+        let fixtures = try JSONDecoder().decode([Fixture].self, from: Data(contentsOf: url))
+        for fixture in fixtures {
+            let image = try XCTUnwrap(CharacterEngine.shared.image(for: fixture.look))
+            let cg = try XCTUnwrap(image.cgImage)
+            XCTAssertEqual(cg.width, 48); XCTAssertEqual(cg.height, 48)
+            let raw = try XCTUnwrap(cg.dataProvider?.data as Data?)
+            XCTAssertEqual(SHA256.hash(data: raw).map { String(format: "%02x", $0) }.joined(), fixture.rgba_sha256)
+            XCTAssertTrue(image === CharacterEngine.shared.image(for: fixture.look))
+            let changed = fixture.look.remixed(seed: "different")
+            XCTAssertEqual(changed.portrait, fixture.look.portrait)
+            XCTAssertNotEqual(changed.accent, fixture.look.accent)
+        }
+    }
+    func testNewLooksRoundTripAndRejectUnknownValuesAndInvalidTypes() throws {
+        let original = PixelLook(portrait: "nyx", accent: "astra")
+        XCTAssertEqual(try JSONDecoder().decode(PixelLook.self, from: JSONEncoder().encode(original)), original)
+        XCTAssertFalse(PixelLook(portrait: "https://example.org/image.png").isValid)
+        XCTAssertFalse(PixelLook(portrait: "nyx", accent: "unknown").isValid)
+        XCTAssertThrowsError(try JSONDecoder().decode(PixelLook.self, from: Data(#"{"portrait":"nyx","accent":null}"#.utf8)))
+        XCTAssertThrowsError(try JSONDecoder().decode(PixelLook.self, from: Data(#"{"portrait":"nyx","accent":false}"#.utf8)))
+        var spec = PixelBuilder.shared.preview(for: "security witch").spec
+        XCTAssertEqual(spec.character.look?.body, "woman")
+        XCTAssertFalse(spec.permissions.shell)
+        spec.character.look = original
+        XCTAssertEqual(PixelSpec.parse(String(decoding: try JSONEncoder().encode(spec), as: UTF8.self))?.character.look, original)
+        spec.character.look = nil
+        XCTAssertNotNil(PixelSpec.parse(String(decoding: try JSONEncoder().encode(spec), as: UTF8.self)))
+    }
+    func testLookPersistenceKeepsCompanionsAndExplicitLegacyChoiceWins() {
+        let profile = "dsh:test-look-" + UUID().uuidString
+        var member = CastMember.all[0]
+        member.look = PixelLook(portrait: "nyx", accent: "astra")
+        CastStore.shared.select(member, for: profile)
+        CastStore.shared.setCompanion("mimic", name: "Bite", for: profile)
+        XCTAssertEqual(CastStore.shared.member(for: profile).look, member.look)
+        CastStore.shared.restore(profile: profile, metadata: ["appearance": ["archetype": "orion", "look": NSNull()]])
+        XCTAssertNil(CastStore.shared.member(for: profile).look)
+    }
     func testLegacyRecipesDecodeAndRejectInvalidOptionalTypes() throws {
         let legacy = #"{"body":"woman","palette":"nyx","hair":"cat_black","face":"fierce","outfit":"rogue","accessory":"cat_ears"}"#
         let recipe = try JSONDecoder().decode(CharacterRecipe.self, from: Data(legacy.utf8))

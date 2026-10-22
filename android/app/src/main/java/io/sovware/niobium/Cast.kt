@@ -46,7 +46,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.isActive
 
-data class CastMember(val id: String, val name: String, val portrait: String, val companion: String, val companionName: String, val accentHex: String, val recipe: CharacterRecipe? = null)
+data class CastMember(val id: String, val name: String, val portrait: String, val companion: String, val companionName: String, val accentHex: String, val recipe: CharacterRecipe? = null, val look: PixelLook? = null)
 
 object Cast {
     val all = listOf(
@@ -92,6 +92,9 @@ object CastStore {
             }
         }
         saved.getString("companionName." + profile.lowercase(), null)?.let { member = member.copy(companionName = it) }
+        saved.getString("look." + profile.lowercase(), null)?.let { raw ->
+            runCatching { PixelLook.parse(org.json.JSONObject(raw)) }.getOrNull()?.takeIf { it.valid }?.let { member = member.copy(look = it) }
+        }
         return member
     }
     fun restore(context: Context, profile: String, metadata: org.json.JSONObject) {
@@ -102,6 +105,8 @@ object CastStore {
         var member = Cast.all.firstOrNull { it.id == archetype } ?: return
         val recipe = appearance?.o("recipe") ?: character?.o("recipe")
         if (recipe != null) runCatching { CharacterRecipe.parse(recipe) }.getOrNull()?.takeIf { it.valid }?.let { member = member.copy(recipe = it) }
+        val look = if (appearance?.has("look") == true) appearance.o("look") else character?.o("look")
+        if (look != null) runCatching { PixelLook.parse(look) }.getOrNull()?.takeIf { it.valid }?.let { member = member.copy(look = it) }
         val companion = appearance?.s("companion") ?: spec?.o("companion")?.s("kind") ?: member.companion
         val name = appearance?.s("companion_name") ?: spec?.o("companion")?.s("name") ?: member.companionName
         if (companion !in PixelBuilder.companions || name.isEmpty() || name.length > 24) return
@@ -111,6 +116,7 @@ object CastStore {
     fun put(context: Context, profile: String, member: CastMember) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .putString("recipe." + profile.lowercase(), member.recipe?.toJson()?.toString())
+            .putString("look." + profile.lowercase(), member.look?.toJson()?.toString())
             .putString("companionName." + profile.lowercase(), member.companionName).apply()
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(profile.lowercase(), member.id).apply()
         context.getSharedPreferences("niobium_portraits", Context.MODE_PRIVATE).edit().putString(profile.lowercase(), member.portrait).apply()
@@ -121,13 +127,12 @@ object CastStore {
 @Composable
 fun CastPortrait(member: CastMember, size: Dp = 64.dp, showCompanion: Boolean = true) {
     val accent = Nb.colorFor(member.accentHex)
-    val blink = portraitBlink(member.recipe, size >= 96.dp && !CharacterEngine.usesAuthored(member))
-    Box(Modifier.size(size).clip(RoundedCornerShape(size * 0.20f))
-        .background(Brush.linearGradient(listOf(accent.copy(alpha = 0.24f), Nb.Surface)))
-        .border(1.dp, Nb.Line, RoundedCornerShape(size * 0.20f))) {
+    val blink = portraitBlink(member.recipe, member.look == null && size >= 96.dp && !CharacterEngine.usesAuthored(member))
+    Box(Modifier.size(size).clip(PixelButtonShape).background(accent.copy(alpha = 0.08f))) {
         val context = androidx.compose.ui.platform.LocalContext.current
-        val sprite = remember(member.id, member.recipe, blink) {
-            CharacterEngine.authoredImage(context, member) ?: member.recipe?.let { CharacterEngine.image(context, it, blink) }
+        val sprite = remember(member.id, member.look, member.recipe, blink) {
+            member.look?.let { CharacterEngine.image(context, it) }
+                ?: CharacterEngine.authoredImage(context, member) ?: member.recipe?.let { CharacterEngine.image(context, it, blink) }
         }
         val spriteSide = with(androidx.compose.ui.platform.LocalDensity.current) {
             (kotlin.math.floor(size.toPx() / 48f).toInt().coerceAtLeast(1) * 48).toDp()
@@ -141,8 +146,8 @@ fun CastPortrait(member: CastMember, size: Dp = 64.dp, showCompanion: Boolean = 
                 contentScale = ContentScale.Fit, modifier = Modifier.size(spriteSide).align(Alignment.Center))
         }
         if (showCompanion) {
-            Box(Modifier.align(Alignment.BottomEnd).padding(size * 0.02f).size(size * 0.30f).clip(CircleShape)
-                .background(Nb.Ink).border(1.dp, accent.copy(alpha = 0.5f), CircleShape)) {
+            Box(Modifier.align(Alignment.BottomEnd).padding(size * 0.02f).size(size * 0.30f).clip(PixelButtonShape)
+                .background(Nb.Surface).border(1.dp, Nb.LineStrong, PixelButtonShape)) {
                 Box(Modifier.align(Alignment.Center)) { FamiliarSprite(member.companion, size * 0.26f) }
             }
         }
@@ -249,6 +254,62 @@ internal fun characterValueLabel(value: String, field: String): String {
 }
 
 @Composable
+fun PixelLookEditor(look: PixelLook, history: List<PixelLook>, enabled: Boolean = true,
+                    onHistoryChange: (List<PixelLook>) -> Unit, onChange: (PixelLook) -> Unit) {
+    fun choose(next: PixelLook) {
+        if (next != look) { onHistoryChange((history + look).takeLast(12)); onChange(next) }
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        PixelLook.portraits.chunked(4).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                row.forEach { id ->
+                    val base = Cast.all.first { it.id == id }
+                    Column(Modifier.weight(1f).clip(PixelButtonShape)
+                        .background(if (look.portrait == id) Nb.Ion.copy(alpha = 0.12f) else Nb.FillSoft)
+                        .border(1.dp, if (look.portrait == id) Nb.Ion else androidx.compose.ui.graphics.Color.Transparent, PixelButtonShape)
+                        .selectable(look.portrait == id, enabled, Role.RadioButton) { choose(look.copy(portrait = id)) }
+                        .semantics { contentDescription = base.name + " look" }.testTag("look." + id).padding(vertical = 6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        CastPortrait(base.copy(look = PixelLook(id)), 54.dp, showCompanion = false)
+                        Text(base.name, color = Nb.Text, fontSize = 10.sp, maxLines = 1)
+                    }
+                }
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            LookColorMenu("Outfit", listOf("auto") + PixelLook.portraits, look.accent, Modifier.weight(1f), enabled) { choose(look.copy(accent = it)) }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            PixelButton("Remix", PixelGlyph.SPARK, Modifier.weight(1f).testTag("look.remix"), secondary = true, enabled = enabled) {
+                choose(look.remixed(java.util.UUID.randomUUID().toString()))
+            }
+            PixelButton("Undo", PixelGlyph.BACK, Modifier.weight(1f).testTag("look.undo"), secondary = true, enabled = enabled && history.isNotEmpty()) {
+                history.lastOrNull()?.let { onChange(it); onHistoryChange(history.dropLast(1)) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LookColorMenu(title: String, options: List<String>, value: String, modifier: Modifier, enabled: Boolean, onChange: (String) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    Box(modifier) {
+        Column(Modifier.fillMaxWidth().heightIn(min = 44.dp).clip(PixelButtonShape).background(Nb.FillSoft)
+            .clickable(enabled, role = Role.Button) { expanded = true }.semantics { contentDescription = title + " color"; stateDescription = value }
+            .testTag("look.color." + title.lowercase()).padding(6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(title, color = Nb.Secondary, fontSize = 11.sp)
+            Text(if (value == "auto") "Original" else value.replaceFirstChar { it.uppercase() }, color = Nb.Text, fontSize = 11.sp, maxLines = 1)
+        }
+        DropdownMenu(expanded && enabled, { expanded = false }) {
+            options.forEach { option ->
+                DropdownMenuItem(text = { Text(if (option == "auto") "Original" else option.replaceFirstChar { it.uppercase() }) },
+                    onClick = { onChange(option); expanded = false })
+            }
+        }
+    }
+}
+
+@Composable
 fun CharacterCustomizer(recipe: CharacterRecipe, archetype: String, pinned: Set<String>, enabled: Boolean = true,
                         onPinsChange: (Set<String>) -> Unit, onChange: (CharacterRecipe) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -327,6 +388,8 @@ fun CastStudioSheet(vm: NiobiumViewModel, profile: String, title: String, onDism
     var saving by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf(CastStore.get(context, if (vm.state.engine == AgentEngine.DSH) "dsh:" + profile else profile)) }
     var pinned by remember { mutableStateOf(setOf("body", "skin")) }
+    var lookHistory by remember { mutableStateOf(emptyList<PixelLook>()) }
+    var originalControls by remember { mutableStateOf(false) }
     ModalBottomSheet(onDismissRequest = { if (!saving) onDismiss() }, containerColor = Nb.Ink,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true,
             confirmValueChange = { !saving || it != SheetValue.Hidden })) {
@@ -341,11 +404,19 @@ fun CastStudioSheet(vm: NiobiumViewModel, profile: String, title: String, onDism
             item {
                 SectionHeader("Make it yours", "48 × 48")
                 Spacer(Modifier.height(10.dp))
-                CharacterCustomizer(selected.recipe ?: CharacterRecipe.cast.getValue(selected.id), selected.id, pinned,
-                    enabled = !saving, onPinsChange = { pinned = it }) { selected = selected.copy(recipe = it) }
+                if (selected.look != null) {
+                    PixelLookEditor(selected.look!!, lookHistory, !saving, { lookHistory = it }) { selected = selected.copy(look = it) }
+                } else {
+                    PixelButton("Choose a new portrait", PixelGlyph.SPARK, Modifier.fillMaxWidth(), secondary = true, enabled = !saving) {
+                        selected = selected.copy(look = PixelLook(selected.id))
+                    }
+                    TextButton(onClick = { originalControls = !originalControls }) { Text("Original controls", color = Nb.Secondary) }
+                    if (originalControls) CharacterCustomizer(selected.recipe ?: CharacterRecipe.cast.getValue(selected.id), selected.id, pinned,
+                        enabled = !saving, onPinsChange = { pinned = it }) { selected = selected.copy(recipe = it) }
+                }
             }
             item {
-                SectionHeader("Companion", "small creature, big ideas")
+                SectionHeader("Creature")
                 Spacer(Modifier.height(10.dp))
                 FamiliarPicker(selected.companion, !saving) { selected = selected.copy(companion = it) }
             }

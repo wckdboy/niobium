@@ -865,6 +865,7 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
                 val meta = row.o("ui_meta")?.o("niobium") ?: JSONObject()
                 val appearance = JSONObject().put("archetype", member.id).put("companion", member.companion).put("companion_name", member.companionName)
                 member.recipe?.let { appearance.put("recipe", it.toJson()) }
+                appearance.put("look", member.look?.toJson() ?: JSONObject.NULL)
                 meta.put("appearance", appearance)
                 val revision = row.o("ui_meta_revisions")?.optInt("niobium") ?: 0
                 val result = client.request("profiles.configure", JSONObject().put("name", profile)
@@ -1193,7 +1194,7 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
             val slug = spec.name
             if (state.bots.any { it.name == slug }) { onError("That Pixel name already exists. Choose another name."); return@launch }
             val base = Cast.all.first { it.id == spec.character.archetype }
-            val member = base.copy(companion = spec.companion.kind, companionName = spec.companion.name, recipe = spec.character.recipe)
+            val member = base.copy(companion = spec.companion.kind, companionName = spec.companion.name, recipe = spec.character.recipe, look = spec.character.look)
             if (state.demo) {
                 val bot = BotProfile(slug, spec.title, spec.role, "", "Demo", spec.skills.size, "demo-$slug",
                     spec.companion.name + " and I are ready. What trouble are we solving?", System.currentTimeMillis() / 1000,
@@ -1205,13 +1206,16 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
             val client = gateway ?: run { onError("Connect a gateway first."); return@launch }
             var created = false
             try {
+                val catalog = client.request("profiles.describe", JSONObject().put("name", "default"), 12_000)
+                check(gateway === client) { "The engine changed. Try creating the Pixel again." }
+                val reviewed = draft.copy(availableToolsets = draft.availableToolsets.intersect(catalog.objects("toolsets").mapNotNull { it.s("name") }.toSet()))
                 if (state.engine == AgentEngine.DSH) {
                     val result = client.request("pixel.create", JSONObject().put("spec", spec.toJson())
-                        .put("enabled_toolsets", JSONArray(draft.enabledToolsets)).put("briefing", spec.soul + spec.policyBriefing)
+                        .put("enabled_toolsets", JSONArray(reviewed.enabledToolsets)).put("briefing", spec.soul + spec.policyBriefing)
                         .put("accent", member.accentHex).put("builder", if (draft.usedModel) "model" else "template"), 120_000)
                     check(result.optBoolean("ok")) { "The local engine did not confirm creation." }
                     created = true
-                } else PixelProvisioner.provision(draft, member.accentHex, client::request) { created = true }
+                } else PixelProvisioner.provision(reviewed, member.accentHex, client::request) { created = true }
                 CastStore.put(context, if (state.engine == AgentEngine.DSH) "dsh:" + slug else slug, member)
                 refreshRoster()
                 val bot = state.bots.firstOrNull { it.name == slug } ?: error("The roster has not refreshed. Refresh before trying again.")

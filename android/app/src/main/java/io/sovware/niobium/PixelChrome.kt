@@ -14,11 +14,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.floor
@@ -58,13 +63,18 @@ fun PixelIcon(glyph: PixelGlyph, tint: Color = Nb.Ion, size: Dp = 24.dp, descrip
     }
 }
 
-val PixelButtonShape = GenericShape { size, _ ->
-    val step = floor(size.height / 12f)
-    moveTo(step, 0f); lineTo(size.width-step, 0f); lineTo(size.width-step, step)
-    lineTo(size.width, step); lineTo(size.width, size.height-step); lineTo(size.width-step, size.height-step)
-    lineTo(size.width-step, size.height); lineTo(step, size.height); lineTo(step, size.height-step)
-    lineTo(0f, size.height-step); lineTo(0f, step); lineTo(step, step); close()
+private class PixelCornerShape : Shape {
+    override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline {
+        val step = minOf(with(density) { 4.dp.roundToPx().toFloat() }, size.width / 3, size.height / 3)
+        return Outline.Generic(Path().apply {
+            moveTo(step, 0f); lineTo(size.width-step, 0f); lineTo(size.width-step, step)
+            lineTo(size.width, step); lineTo(size.width, size.height-step); lineTo(size.width-step, size.height-step)
+            lineTo(size.width-step, size.height); lineTo(step, size.height); lineTo(step, size.height-step)
+            lineTo(0f, size.height-step); lineTo(0f, step); lineTo(step, step); close()
+        })
+    }
 }
+val PixelButtonShape: Shape = PixelCornerShape()
 
 @Composable
 fun PixelButton(label: String, glyph: PixelGlyph, modifier: Modifier = Modifier,

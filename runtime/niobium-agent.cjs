@@ -423,7 +423,17 @@ function install() {
       } catch { ws.close(1011, 'Invalid DSH event'); }
     });
     upstream.on('open', () => send({jsonrpc: '2.0', method: 'event', params: {type: 'gateway.ready', payload: {provider: 'dsh'}}}));
-    upstream.on('error', () => ws.close(1011, 'DSH event stream unavailable'));
+    // Preserve a bounded, non-sensitive cause. Never include URLs, headers or
+    // exception messages here: those may contain credentials or private data.
+    upstream.on('unexpected-response', (_request, response) => {
+      response.resume();
+      ws.close(1011, 'DSH event stream HTTP ' + response.statusCode);
+      upstream.terminate();
+    });
+    upstream.on('error', error => {
+      const code = /^[A-Z][A-Z0-9_]{0,30}$/.test(error.code || '') ? ' (' + error.code + ')' : '';
+      ws.close(1011, 'DSH event stream unavailable' + code);
+    });
     upstream.on('close', () => ws.close(1011, 'DSH event stream closed'));
     ws.on('close', () => upstream.close());
     ws.on('error', () => upstream.close());

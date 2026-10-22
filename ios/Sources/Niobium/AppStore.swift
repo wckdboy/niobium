@@ -1011,6 +1011,7 @@ final class AppStore: ObservableObject {
             if let recipe = member.recipe {
                 appearance["recipe"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(recipe))
             }
+            appearance["look"] = try member.look.map { try JSONSerialization.jsonObject(with: JSONEncoder().encode($0)) } ?? NSNull()
             metadata["appearance"] = appearance
             let revision = row.dict("ui_meta_revisions")?.int("niobium") ?? 0
             let result = try await api.request("profiles.configure", params: ["name": profile,
@@ -1306,7 +1307,8 @@ final class AppStore: ObservableObject {
         try await PixelBuilder.shared.draft(for: prompt, api: isDemo ? nil : api)
     }
 
-    func buildPixel(draft: PixelDraft) async throws -> BotProfile {
+    func buildPixel(draft input: PixelDraft) async throws -> BotProfile {
+        var draft = input
         let spec = draft.spec
         if let error = spec.validationError { throw RPCError.transport(error) }
         let slug = spec.name
@@ -1314,7 +1316,7 @@ final class AppStore: ObservableObject {
         guard let base = CastMember.all.first(where: { $0.id == spec.character.archetype }) else { throw RPCError.malformed }
         let member = CastMember(id: base.id, name: base.name, portrait: base.portrait,
                                 companion: spec.companion.kind, companionName: spec.companion.name,
-                                accentHex: base.accentHex, recipe: spec.character.recipe)
+                                accentHex: base.accentHex, recipe: spec.character.recipe, look: spec.character.look)
         if isDemo {
             let bot = BotProfile(name: slug, title: spec.title, role: spec.role, provider: "", model: "Demo",
                                  skillCount: spec.skills.count, canonicalSessionID: "demo-\(slug)",
@@ -1327,6 +1329,9 @@ final class AppStore: ObservableObject {
             return bot
         }
         guard let api else { throw RPCError.notConnected }
+        let catalog = try await api.request("profiles.describe", params: ["name": "default"], timeout: 12) as? JSONObject
+        guard self.api === api, let catalog else { throw RPCError.transport("The engine changed. Try creating the Pixel again.") }
+        draft.availableToolsets.formIntersection(catalog.objects("toolsets").compactMap { $0.string("name") })
         if engine == .dsh {
             let data = try JSONEncoder().encode(spec)
             let object = try JSONSerialization.jsonObject(with: data) as? JSONObject ?? [:]

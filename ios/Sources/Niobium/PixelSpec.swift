@@ -1,5 +1,39 @@
 import Foundation
 
+/// An authored adult silhouette with a separately masked garment color.
+/// Older layered recipes remain a separate backwards-compatible format.
+struct PixelLook: Codable, Equatable, Hashable {
+    var portrait: String
+    var accent = "auto"
+    static let portraits = ["orion", "nova", "forge", "sage", "nyx", "astra", "vesper", "rook"]
+    static let masculine: Set<String> = ["orion", "forge", "rook"]
+    var body: String { Self.masculine.contains(portrait) ? "man" : "woman" }
+    var isValid: Bool {
+        Self.portraits.contains(portrait) && (["auto"] + Self.portraits).contains(accent)
+    }
+    static func generated(archetype: String, body: String, seed: String) -> PixelLook {
+        let candidates = portraits.filter { masculine.contains($0) == (body == "man") }
+        var random = CharacterRandom(seed + "|look")
+        return .init(portrait: candidates.contains(archetype) ? archetype : candidates[random.index(candidates.count)])
+    }
+    func remixed(seed: String) -> PixelLook {
+        var random = CharacterRandom(seed)
+        var copy = self
+        let accents = (["auto"] + Self.portraits).filter { $0 != accent }
+        copy.accent = accents[random.index(accents.count)]
+        return copy
+    }
+    enum CodingKeys: String, CodingKey { case portrait, accent }
+    init(portrait: String, accent: String = "auto") {
+        self.portrait = portrait; self.accent = accent
+    }
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(portrait: try c.decode(String.self, forKey: .portrait),
+                  accent: c.contains(.accent) ? try c.decode(String.self, forKey: .accent) : "auto")
+    }
+}
+
 struct CharacterRecipe: Codable, Equatable {
     var body: String
     var palette: String
@@ -40,7 +74,7 @@ struct CharacterRecipe: Codable, Equatable {
         "forge": .init(body: "man", palette: "forge", hair: "undercut", face: "sharp", outfit: "armor", accessory: "goggles"),
         "sage": .init(body: "woman", palette: "sage", hair: "locs", face: "soft", outfit: "druid", accessory: "antlers"),
         "nyx": .init(body: "woman", palette: "nyx", hair: "cat_black", face: "fierce", outfit: "rogue", accessory: "cat_ears"),
-        "astra": .init(body: "man", palette: "astra", hair: "white_pilot", face: "sharp", outfit: "pilot", accessory: "visor"),
+        "astra": .init(body: "woman", palette: "astra", hair: "white_pilot", face: "sharp", outfit: "pilot", accessory: "visor"),
         "vesper": .init(body: "woman", palette: "vesper", hair: "silver_bob", face: "calm", outfit: "veil", accessory: "veil"),
         "rook": .init(body: "man", palette: "rook", hair: "headwrap", face: "calm", outfit: "ranger", accessory: "headwrap")
     ]
@@ -174,6 +208,7 @@ struct PixelSpec: Codable {
         var archetype: String
         var age: Int
         var recipe: CharacterRecipe
+        var look: PixelLook? = nil
     }
     struct Companion: Codable {
         var kind: String
@@ -242,6 +277,7 @@ struct PixelSpec: Codable {
         if skills.count > 6 || connectors.count > 4 || !["low", "medium", "high"].contains(reasoning) { return "Invalid capability selection." }
         if !connectors.allSatisfy({ ["github", "notion", "linear", "slack", "google", "filesystem"].contains($0) }) { return "Unknown connector." }
         if CharacterRecipe.cast[character.archetype] == nil || !(18...120).contains(character.age) || !character.recipe.isValid { return "Choose an adult character and valid 48×48 layers." }
+        if let look = character.look, !look.isValid { return "Choose a valid portrait and colors." }
         if !Self.companions.contains(companion.kind) || companion.name.isEmpty || companion.name.count > 24 || companion.trait.count > 240 { return "Invalid companion." }
         if toolsets.count > 20 || Set(toolsets).count != toolsets.count { return "Invalid tool selection." }
         return nil
@@ -276,7 +312,7 @@ struct PixelSpec: Codable {
         var random = CharacterRandom(seed)
         let suffix = String(format: "%06x", random.index(0x1000000))
         var recipe = CharacterRecipe.generated(archetype: persona.id, seed: seed)
-        recipe.body = CharacterRecipe.cast[persona.id]!.body
+        recipe.body = PixelLook(portrait: persona.id).body
         if words.contains(where: { ["woman", "female", "feminine", "witch"].contains($0) }) { recipe.body = "woman" }
         else if words.contains(where: { ["man", "male", "masculine", "wizard"].contains($0) }) { recipe.body = "man" }
         if recipe.body == "woman" && recipe.detail == "stubble" { recipe.detail = "freckles" }
@@ -285,7 +321,7 @@ struct PixelSpec: Codable {
                      permissions: .init(approvalMode: "ask", network: persona.tools.contains("web") || persona.tools.contains("vision"), filesystem: "workspace", shell: false),
                      toolsets: persona.tools, skills: [], connectors: [], reasoning: "medium",
                      character: .init(archetype: persona.id, age: 28 + random.index(13),
-                                      recipe: recipe),
+                                      recipe: recipe, look: PixelLook.generated(archetype: persona.id, body: recipe.body, seed: seed)),
                      companion: .init(kind: kind, name: companionName, trait: Self.companionTrait(kind)))
     }
 }

@@ -38,7 +38,7 @@ struct HomeView: View {
                     .resizable()
                     .interpolation(.none)
                     .scaledToFill()
-                    .frame(width: proxy.size.width, height: 152)
+                    .frame(width: proxy.size.width, height: 112)
                     .clipped()
                 LinearGradient(stops: [
                     .init(color: NB.void.opacity(0.99), location: 0),
@@ -52,7 +52,6 @@ struct HomeView: View {
                         AtomicMark(size: 38)
                         VStack(alignment: .leading, spacing: 1) {
                             Text("Niobium").font(.system(size: 24, weight: .bold)).tracking(-0.8).foregroundStyle(NB.text)
-                            Text("YOUR PIXELS, EVERYWHERE.").font(.nbMono(7.5)).tracking(1.4).foregroundStyle(NB.secondary)
                         }
                         Spacer()
                         Button { showInstance = true } label: { HStack(spacing: 6) {
@@ -63,66 +62,45 @@ struct HomeView: View {
                         }
                         .foregroundStyle(NB.secondary)
                         .padding(.horizontal, 10).padding(.vertical, 8)
-                        .background(Capsule().fill(NB.ink.opacity(0.65)))
-                        .overlay(Capsule().strokeBorder(NB.ion.opacity(0.22), lineWidth: 1))
+                        .background(PixelButtonShape().fill(NB.ink.opacity(0.65)))
+                        .overlay(PixelButtonShape().stroke(NB.ion.opacity(0.22), lineWidth: 1))
                         }.buttonStyle(.plain)
                     }
                     .padding(.horizontal, 18)
                     .padding(.top, 8)
                     Spacer()
                 }
-                .frame(width: proxy.size.width, height: 152)
+                .frame(width: proxy.size.width, height: 112)
             }
-            .frame(width: proxy.size.width, height: 152)
+            .frame(width: proxy.size.width, height: 112)
         }
-        .frame(height: 152)
+        .frame(height: 112)
     }
 
     private var instanceCard: some View {
-        VStack(alignment: .leading, spacing: 11) {
-            HStack(spacing: 12) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12).fill(NB.ion.opacity(0.12))
-                    PixelIcon(.terminal, size: 24)
-                }
-                .frame(width: 40, height: 40)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(store.engine == .dsh ? "On-device engine" : "Hermes instance").font(.nbTitle(17)).foregroundStyle(NB.text)
-                    Text(store.engine == .dsh ? "On this device" : host).font(.nbMono(9)).foregroundStyle(NB.secondary).lineLimit(1)
-                    Text(store.isDemo ? "Demo workspace" : store.engine == .dsh ? "DSH · private Linux workspace" : "Your computer or VPS").font(.nbMono(8.5)).foregroundStyle(NB.tertiary)
-                }
-                Spacer()
-                VStack(alignment: .trailing, spacing: 3) {
-                    HStack(spacing: 5) {
-                        Circle().fill(store.connectionState.color).frame(width: 6, height: 6)
-                        Text(store.connectionState.label).font(.nbBody(10.5, weight: .medium)).foregroundStyle(store.connectionState.color)
-                    }
-                    Text(store.isDemo ? "preview" : store.engine == .dsh ? "local" : "gateway").font(.nbMono(9)).foregroundStyle(NB.tertiary)
+        HStack(spacing: 12) {
+            PixelIcon(.terminal, size: 24)
+                .frame(width: 42, height: 42)
+                .background(PixelButtonShape().fill(NB.ion.opacity(0.08)))
+            VStack(alignment: .leading, spacing: 4) {
+                Text(store.engine == .dsh ? "On-device engine" : "Hermes instance")
+                    .font(.nbTitle(15)).foregroundStyle(NB.text)
+                Text(store.engine == .dsh ? store.localConnectionError ?? store.localStatus : host)
+                    .font(.nbBody(11)).foregroundStyle(NB.secondary).lineLimit(2)
+            }
+            Spacer(minLength: 4)
+            VStack(alignment: .trailing, spacing: 4) {
+                NBPill(text: store.isDemo ? "Demo" : store.connectionState.label,
+                       tint: store.connectionState.color)
+                if let latency = store.gatewayLatencyMs {
+                    Text("\(latency) ms").font(.nbMono(10)).foregroundStyle(NB.tertiary)
                 }
             }
-            Divider().overlay(NB.line)
-            HStack(spacing: 0) {
-                stat(store.engine == .dsh ? "DSH" : "\(store.toolsets.count)", store.engine == .dsh ? "Engine" : "Toolsets", .terminal)
-                stat(store.isDemo ? "Demo" : store.engine == .dsh ? "Local" : "Host", "Policy", .shield)
-                stat(store.gatewayLatencyMs.map { "\($0) ms" } ?? "—", "Latency", .activity)
-                stat("\(store.bots.filter(\.isLive).count)/\(store.bots.count)", "Working", .pixels)
-            }
+            PixelIcon(.back, size: 12, tint: NB.tertiary).rotationEffect(.degrees(180))
         }
-        .padding(13)
-        .pixelPanel(radius: 20, accented: true)
-        .contentShape(RoundedRectangle(cornerRadius: 20))
+        .padding(13).pixelPanel(accented: true)
+        .contentShape(PixelButtonShape())
         .onTapGesture { showInstance = true }
-    }
-
-    private func stat(_ value: String, _ label: String, _ icon: PixelGlyph) -> some View {
-        VStack(spacing: 4) {
-            HStack(spacing: 5) {
-                PixelIcon(icon, size: 16)
-                Text(value).font(.nbTitle(13)).foregroundStyle(NB.text)
-            }
-            Text(label).font(.nbBody(9)).foregroundStyle(NB.tertiary)
-        }
-        .frame(maxWidth: .infinity)
     }
 
     private var pixelsSection: some View {
@@ -130,15 +108,14 @@ struct HomeView: View {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Your Pixels").font(.nbTitle(21)).foregroundStyle(NB.text)
-                    Text("Autonomous agents, each with a purpose.").font(.nbBody(11)).foregroundStyle(NB.tertiary)
                 }
                 Spacer()
                 Button { showNew = true } label: {
-                    Label("New Pixel", systemImage: "plus")
+                    HStack(spacing: 6) { PixelIcon(.spark, size: 14, tint: NB.onIon); Text("New Pixel") }
                         .font(.nbBody(11, weight: .semibold))
                         .foregroundStyle(NB.onIon)
-                        .padding(.horizontal, 12).padding(.vertical, 8)
-                        .background(PixelButtonShape().fill(LinearGradient(colors: [NB.ion, NB.ionDeep], startPoint: .leading, endPoint: .trailing)))
+                        .padding(.horizontal, 12).frame(minHeight: 44)
+                        .background(PixelButtonShape().fill(NB.ion))
                 }
                 .buttonStyle(.plain)
                 .disabled(!store.connectionState.isConnected && !store.isDemo)
@@ -167,25 +144,21 @@ struct HomeView: View {
     private func homePixel(_ bot: BotProfile) -> some View {
         let member = cast.member(for: bot.castKey, title: bot.title)
         return Button { store.openBot(bot) } label: {
-            HStack(alignment: .center, spacing: 8) {
-                CastPortrait(member: member, size: 64, showCompanion: true, showGlow: false)
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(bot.title).font(.nbTitle(13)).foregroundStyle(NB.text).lineLimit(1).minimumScaleFactor(0.8)
-                    Text(bot.subtitle).font(.nbBody(10)).foregroundStyle(NB.secondary).lineLimit(2)
-                    HStack(spacing: 4) {
-                        Circle().fill(bot.isLive ? NB.mint : NB.tertiary).frame(width: 5, height: 5)
-                        Text(bot.isLive ? "Working" : "Ready").font(.nbBody(9, weight: .medium)).foregroundStyle(bot.isLive ? NB.mint : NB.tertiary)
-                    }
-                    .padding(.horizontal, 6).padding(.vertical, 3)
-                    .background(Capsule().fill((bot.isLive ? NB.mint : NB.secondary).opacity(0.08)))
-                }.frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: 8) {
+                CastPortrait(member: member, size: 96, showCompanion: true, showGlow: false)
+                    .frame(maxWidth: .infinity)
+                HStack(spacing: 6) {
+                    Text(bot.title).font(.nbTitle(15)).foregroundStyle(NB.text).lineLimit(1)
+                    Spacer(minLength: 0)
+                    Rectangle().fill(bot.isLive ? NB.mint : NB.tertiary.opacity(0.4)).frame(width: 5, height: 5)
+                }
+                Text(bot.subtitle).font(.nbBody(11)).foregroundStyle(NB.secondary).lineLimit(1)
             }
-            .frame(minHeight: 70).padding(8).pixelPanel(radius: 16)
+            .padding(12).frame(maxWidth: .infinity, alignment: .leading).pixelPanel(accented: bot.isLive)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(bot.title), \(bot.subtitle), \(bot.isLive ? "working" : "ready")")
     }
-
 
 }
 
@@ -206,16 +179,14 @@ struct LocalView: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 5) {
                         Text("Engines").font(.nbTitle(30)).foregroundStyle(NB.text)
-                        Text("A home for every Pixel.").font(.nbBody(13)).foregroundStyle(NB.secondary)
+
                     }
                     Spacer()
                     PixelIcon(.terminal, size: 26)
                 }.padding(.vertical, 12)
-                Text("Choose an engine. Your dashboard, Pixels and chats work the same way.")
-                    .font(.nbBody(13)).foregroundStyle(NB.secondary).lineSpacing(4)
+
                 engineCard("On device", subtitle: "DSH · private Linux workspace", icon: .pixels, selected: store.engine == .dsh) {
-                    Text("Run your Pixels here with your own model API key. The engine works behind Niobium while you use the app.")
-                        .font(.nbBody(12)).foregroundStyle(NB.secondary).lineSpacing(4)
+
 #if NIOBIUM_LOCAL_DSH
                     if store.engine == .dsh {
                         HStack(spacing: 8) {
@@ -233,8 +204,7 @@ struct LocalView: View {
 #endif
                 }
                 engineCard("Hermes", subtitle: "Your computer or VPS", icon: .link, selected: store.engine == .hermes) {
-                    Text("Connect to your existing agents, tools and group rooms. Your local engine can stay running alongside Hermes.")
-                        .font(.nbBody(12)).foregroundStyle(NB.secondary).lineSpacing(4)
+
                     if store.engine != .hermes {
                         Button { Task { await store.useHermes() } } label: { PixelActionLabel("Use Hermes", icon: .link) }
                             .buttonStyle(NBQuietButtonStyle())

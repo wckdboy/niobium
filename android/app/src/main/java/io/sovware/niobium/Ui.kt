@@ -47,12 +47,7 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun GlassCard(modifier: Modifier = Modifier, padding: Int = 16, content: @Composable () -> Unit) {
     Box(
-        modifier
-            .clip(RoundedCornerShape(20.dp))
-            .background(
-                Brush.linearGradient(listOf(Nb.Surface, Nb.Ink.copy(alpha = 0.88f)))
-            )
-            .border(1.dp, Brush.linearGradient(listOf(Nb.FillStrong, Color.White.copy(alpha = 0.02f))), RoundedCornerShape(20.dp))
+        modifier.pixelPanel()
             .padding(padding.dp)
     ) { content() }
 }
@@ -70,14 +65,9 @@ fun NbIconButton(icon: String, onClick: () -> Unit, tint: Color = Nb.Secondary, 
 
 @Composable
 fun LiveDot(color: Color = Nb.Mint, pulse: Boolean = false) {
-    val transition = rememberInfiniteTransition(label = "dot")
-    val scale by transition.animateFloat(
-        if (pulse) 1f else 0.01f, if (pulse) 1f else 0.011f,
-        animationSpec = infiniteRepeatable(tween(1600), RepeatMode.Reverse), label = "scale"
-    )
-    Box(contentAlignment = Alignment.Center) {
-        if (pulse) Box(Modifier.size(16.dp).clip(CircleShape).background(color.copy(alpha = 0.18f * scale)))
-        Box(Modifier.size(6.dp).clip(CircleShape).background(color))
+    Box(Modifier.size(if (pulse) 10.dp else 6.dp), contentAlignment = Alignment.Center) {
+        if (pulse) Box(Modifier.size(10.dp).border(1.dp, color.copy(alpha = 0.3f), PixelButtonShape))
+        Box(Modifier.size(6.dp).background(color))
     }
 }
 
@@ -87,12 +77,7 @@ fun BotRow(bot: BotProfile, onClick: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(
-                if (bot.isLive) Brush.linearGradient(listOf(Nb.Ion.copy(alpha = 0.10f), Nb.FillSoft))
-                else Brush.linearGradient(listOf(Nb.FillSoft, Nb.FillSoft))
-            )
-            .border(1.dp, if (bot.isLive) Nb.Ion.copy(alpha = 0.22f) else Nb.Line, RoundedCornerShape(18.dp))
+            .pixelPanel(accented = bot.isLive)
             .clickable { onClick() }
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -120,8 +105,7 @@ fun BotRow(bot: BotProfile, onClick: () -> Unit) {
 @Composable
 fun GroupRow(room: GroupRoom, onClick: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Nb.FillSoft)
-            .border(1.dp, Nb.Line, RoundedCornerShape(18.dp)).clickable { onClick() }
+        Modifier.fillMaxWidth().pixelPanel().clickable { onClick() }
             .padding(horizontal = 14.dp, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

@@ -186,13 +186,13 @@ struct TabBar: View {
                     VStack(spacing: 5) {
                         ZStack {
                             if selection == tab {
-                                RoundedRectangle(cornerRadius: 11, style: .continuous)
+                                PixelButtonShape(cut: 3)
                                     .fill(NB.ion.opacity(0.13))
                                     .frame(width: 45, height: 29)
                                     .matchedGeometryEffect(id: "tabselection", in: namespace)
                                     .overlay(
-                                        RoundedRectangle(cornerRadius: 11, style: .continuous)
-                                            .strokeBorder(NB.ion.opacity(0.22), lineWidth: 1)
+                                        PixelButtonShape(cut: 3)
+                                            .stroke(NB.ion.opacity(0.22), lineWidth: 1)
                                     )
                             }
                             PixelIcon(tab == .home ? .home : tab == .pixels ? .pixels : tab == .local ? .terminal : tab == .activity ? .activity : .settings,

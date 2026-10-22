@@ -34,14 +34,16 @@ reported as queued.
 
 ## Pixel workshop
 
-Every New Pixel entry opens the same **describe → design → review → create**
+Every New Pixel entry opens the same **describe → preview → review → create**
 flow. [bot-build.md](bot-build.md) is the source skill.
 
-The builder asks the gateway for its installed tools and skills, generates a
-validated PixelSpec, and previews the adult character, companion, detailed
-operator briefing and access. Network, shell and files are reviewed before
-creation. Invalid or unavailable model output becomes a clearly labelled local
-template.
+The first preview is a local template and appears without a model or image
+request. Four short tabs separate Look, Creature, Persona and Access; the create
+button stays visible. Optional AI refinement updates the persona while keeping
+reviewed appearance and permissions. Its model call is bounded to 35 seconds.
+Invalid or unavailable model output remains an honestly labelled local template.
+The current engine's capabilities are checked before creating a profile;
+newly available tools cannot silently broaden the review.
 
 Creation pins the reviewed toolsets and skills, disables inherited MCP servers,
 keeps host command approvals manual and stores the versioned PixelSpec in
@@ -67,15 +69,14 @@ The authored cast is baked once into eight exact **48×48** cells, with at most
 atlas and scale portraits on the physical pixel grid without smoothing.
 Twelve independent **16×16** companions can accompany any portrait.
 
-Pixel studio and the creation review share a nine-trait editor. Pin favorites,
-remix the remaining traits locally, or restore the authored cast. Garment colors,
-skin tone and hair color are independent. Legacy six-field recipes still load.
-Custom layers use adult proportions, tailored bold outfits and an asymmetric
-pose. Large previews blink subtly and respect reduced motion. Both frames are
-cached; small roster portraits stay still. Visual edits preserve the briefing
-and access. The renderer remains a different art treatment from the authored cast.
+Pixel studio and the creation review share an authored-look picker with garment
+colors, local remix and undo. The finite library has eight adult silhouettes;
+it does not generate unlimited new illustrations. Faces, skin, hair and metal
+stay authored. Companion changes and visual edits preserve the briefing and
+access. Older layered recipes and their original controls remain available;
+only those legacy previews have a decorative, reduced-motion-aware blink.
 
-<img src="brand/pixel-studio-v3-gallery.png" width="576" alt="Eight actual custom adult Pixel recipes with tailored fantasy and cyborg outfits">
+<img src="brand/pixel-looks-v1-gallery.png" width="576" alt="Eight authored adult portraits and eight garment-color variants at their actual 48px resolution, enlarged five times">
 
 The offline generator has eight role-specific working methods, voices and
 creature temperaments; it handles word boundaries and honors explicit build
@@ -84,6 +85,7 @@ labelled separately. Named creatures represent real bounded delegation; they
 do not simulate task completion.
 
 Rebuild/check the catalogs with
+`python3 tools/portrait_looks.py [--check]`,
 `python3 tools/character_engine48.py [--check]` and
 `python3 tools/sync-pixel-personas.py [--check]`.
 The generated art source and exact prompt are versioned; the macOS Swift baking
@@ -91,8 +93,8 @@ tool produces the canonical native atlas.
 
 [Art and prompts](brand/art-provenance.json) ·
 [Design reference](docs/reference-dashboard.png) ·
-[Dashboard](docs/evidence/pixel-atelier-dashboard.png) ·
-[Editor](docs/evidence/pixel-studio-v3-editor.png) ·
+[Dashboard](docs/evidence/clean-pixels-ios-dashboard.png) ·
+[Editor](docs/evidence/clean-pixels-ios-workshop.png) ·
 [Companions](docs/evidence/pixel-atelier-companions.png)
 
 ## Build and check

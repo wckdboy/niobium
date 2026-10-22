@@ -54,7 +54,7 @@ CAST = {
  "forge":dict(body="man",palette="forge",hair="undercut",face="sharp",outfit="armor",accessory="goggles"),
  "sage":dict(body="woman",palette="sage",hair="locs",face="soft",outfit="druid",accessory="antlers"),
  "nyx":dict(body="woman",palette="nyx",hair="cat_black",face="fierce",outfit="rogue",accessory="cat_ears"),
- "astra":dict(body="man",palette="astra",hair="white_pilot",face="sharp",outfit="pilot",accessory="visor"),
+ "astra":dict(body="woman",palette="astra",hair="white_pilot",face="sharp",outfit="pilot",accessory="visor"),
  "vesper":dict(body="woman",palette="vesper",hair="silver_bob",face="calm",outfit="veil",accessory="veil"),
  "rook":dict(body="man",palette="rook",hair="headwrap",face="calm",outfit="ranger",accessory="headwrap")
 }
@@ -217,7 +217,6 @@ def artifacts():
             ("rook","ebony","moss","undercut","stubble")]]
  examples[6].update(outfit="astral",accessory="circlet")
  sheet=contact_sheet(examples,data)
- outputs["site/public/pixel-custom-atlas.png"]=png(sheet)
  outputs["brand/pixel-studio-v3-gallery.png"]=png(sheet,5)
  checks=[{**CAST["nova"],"body":build,"outfit":look,"hair":HAIR[index],"accessory":ACCESSORIES[index]}
          for build in ["woman","man"] for index,look in enumerate(OUTFITS)]

@@ -135,17 +135,7 @@ struct BotRow: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
-            .background(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(bot.isLive ? AnyShapeStyle(
-                        LinearGradient(colors: [NB.ion.opacity(0.10), NB.surface.opacity(0.55)],
-                                       startPoint: .topLeading, endPoint: .bottomTrailing))
-                          : AnyShapeStyle(NB.fillSoft))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .strokeBorder(bot.isLive ? NB.ion.opacity(0.22) : NB.line, lineWidth: 1)
-                    )
-            )
+            .pixelPanel(accented: bot.isLive)
         }
         .buttonStyle(.plain)
     }
@@ -180,8 +170,7 @@ struct GroupRow: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 11)
-            .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(NB.fillSoft))
-            .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(NB.line, lineWidth: 1))
+            .pixelPanel()
         }
         .buttonStyle(.plain)
     }

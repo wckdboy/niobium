@@ -33,11 +33,17 @@ for index in 0..<(columns*rows) {
         context.interpolationQuality = .high
         context.draw(cell, in: CGRect(x: 1, y: 1, width: 46, height: 46))
     }
+    // Some generated atlases leave a one-row divider above the second cast
+    // row. Remove that isolated wide line before palette quantization; actual
+    // hair peaks occupy only a few pixels and continue into the next row.
+    let topRun = (1..<47).filter { rgba[(48 + $0) * 4 + 3] >= 128 }.count
+    let nextRun = (1..<47).filter { rgba[(96 + $0) * 4 + 3] >= 128 }.count
+    let divider = topRun > 28 && nextRun < 14
     var colors: [RGB?] = [], histogram: [RGB: Int] = [:]
     for pixel in 0..<(size*size) {
         let offset = pixel*4, alpha = Int(rgba[offset+3])
         // One transparent logical pixel on every edge prevents cell leakage.
-        if alpha < 128 || pixel%size == 0 || pixel%size == 47 || pixel/size == 0 || pixel/size == 47 {
+        if alpha < 128 || pixel%size == 0 || pixel%size == 47 || pixel/size == 0 || pixel/size == 47 || (divider && pixel/size == 1) {
             colors.append(nil); continue
         }
         let color = RGB(r: min(255,Int(rgba[offset])*255/alpha),

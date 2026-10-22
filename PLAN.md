@@ -373,3 +373,47 @@ A scoped device query verifies ai.wckd.niobium 2.0 (10) is installed on the
 iPhone. No production uninstall was performed. Physical tests exited before
 launch after the lock-screen/runner connection block; behavior remains
 unverified. Evidence: docs/evidence/ios-build10-iphone-install.json.
+
+
+## Clean UI and instant portrait cycle — beta.6 replacement candidate
+
+The next candidate is Android code 10 / iOS build 12. Build 11 was diagnostic
+only; its shared overlay version makes it unsuitable for repeated adapter edits.
+
+- New Pixel previews are local and immediate. Optional AI refines persona;
+  it no longer blocks the first portrait behind a long model request.
+- Four short tabs separate Look, Creature, Persona and Access. The create
+  action stays visible. Dashboard telemetry and repeated explanations are reduced.
+- Cards, lists, controls and tab accents share flat stepped pixel frames.
+  Android idle status indicators no longer schedule an infinite animation.
+- Eight authored adult fantasy/cyborg silhouettes replace the default procedural
+  mixer. Garment colors, remix and bounded undo preserve face, hair and skin.
+  This is a curated library with color variants, not unlimited generated artwork.
+- Saved layered recipes still load with their original controls. Modern look
+  metadata round-trips through each provider; explicit appearance choices win.
+- The engine catalog is checked before creation and can only narrow reviewed
+  access. Persona refinement cannot overwrite changes made during the request.
+- A raw local WebSocket refusal regression verifies that the real socket error
+  reaches the caller immediately instead of becoming generic “not connected.”
+
+Validation: 39 iOS unit and five demo UI checks, 30 Android unit and ten ARM64
+emulator checks, fourteen Python checks, 31 Node checks and 38 standalone Swift
+assertions. Both native look renderers match sixteen shared RGBA fixtures.
+Build/lint, runtime package hashes and ELF alignment, site and Plane checks pass.
+Final remote CI and packaged release signatures remain separate release gates.
+
+The physical full Debug acceptance passed the controlled model/background/cold
+history workflow over Wi-Fi in 73.243 seconds on the existing test device;
+see docs/evidence/ios-build10-iphone-model.json. Production Release build 11
+loads DSH but fails its upstream event stream. The error now remains visible;
+a build-12 retry with bounded HTTP/error-code diagnostics is pending the unlocked
+phone. Keep beta.6 in draft until replacement artifacts and production acceptance
+are verified. Apple has accepted only the previous build 10; build 12 is not yet
+uploaded. Greptile remains unavailable at its trial quota.
+
+Next: finish the production event-stream diagnosis, accept the replacement on
+the paired phone, then publish verified artifacts and update the public site.
+After that, expand the authored portrait library with reviewed variants, add
+named saved looks, provider-key storage, real-account delegation and physical
+Android/16 KB acceptance. Look undo is implemented; a cross-creature history and
+unlimited bespoke sprite generation are not claimed.

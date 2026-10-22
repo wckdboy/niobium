@@ -40,26 +40,56 @@ class CharacterEngineTest {
         } finally { instrumentation.runOnMainSync { activity.finish() } }
     }
 
-    @Test fun workshopKeepsPinnedBuildAndSelectsNewCompanions() {
+    @Test fun workshopKeepsThePortraitThroughRemixUndoAndCreatureSelection() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val activity = instrumentation.startActivitySync(android.content.Intent(instrumentation.targetContext, MainActivity::class.java)
             .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK).putExtra("demo", true).putExtra("tab", "pixel-review"))
         try {
-            compose.onNodeWithText("Appearance & companion ↓").performScrollTo().performClick()
-            compose.onNodeWithTag("character.body").assertTextContains("Feminine")
-            compose.onNodeWithTag("character.remix").performScrollTo().performClick()
-            compose.onNodeWithTag("character.body").assertTextContains("Feminine")
-            val hair = compose.onNodeWithTag("character.hair")
-            val style = hair.fetchSemanticsNode().config[SemanticsProperties.Text]
-            compose.onNodeWithTag("character.pin.hair").performScrollTo().performClick()
-            compose.onNodeWithText("Appearance & companion ↑").performScrollTo().performClick()
-            compose.onNodeWithText("Appearance & companion ↓").performScrollTo().performClick()
-            compose.onNodeWithTag("character.pin.hair")
-                .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Pinned"))
-            compose.onNodeWithTag("character.remix").performScrollTo().performClick()
-            assertEquals(style, hair.fetchSemanticsNode().config[SemanticsProperties.Text])
+            compose.onNodeWithTag("look.nyx").assertIsSelected()
+            val color = compose.onNodeWithTag("look.color.outfit")
+            val original = color.fetchSemanticsNode().config[SemanticsProperties.StateDescription]
+            compose.onNodeWithTag("look.remix").performScrollTo().performClick()
+            compose.onNodeWithTag("look.nyx").assertIsSelected()
+            assertNotEquals(original, color.fetchSemanticsNode().config[SemanticsProperties.StateDescription])
+            compose.onNodeWithTag("look.undo").performScrollTo().performClick()
+            assertEquals(original, color.fetchSemanticsNode().config[SemanticsProperties.StateDescription])
+            compose.onNodeWithTag("builder.tab.creature").performScrollTo().performClick()
             compose.onNodeWithTag("familiar.mimic").performScrollTo().performClick().assertIsSelected()
+            compose.onNodeWithTag("builder.tab.look").performScrollTo().performClick()
+            compose.onNodeWithTag("look.nyx").assertIsSelected()
+            assertEquals(original, color.fetchSemanticsNode().config[SemanticsProperties.StateDescription])
+            compose.onNodeWithText("Create Nyx").assertIsDisplayed()
         } finally { instrumentation.runOnMainSync { activity.finish() } }
+    }
+    @Test fun authoredLooksMatchSharedPixelsAndSurviveAppearanceRoundTrip() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        val fixtures = JSONArray(instrumentation.context.assets.open("portrait-looks.json").bufferedReader().use { it.readText() })
+        for (i in 0 until fixtures.length()) {
+            val fixture = fixtures.getJSONObject(i)
+            val look = PixelLook.parse(fixture.getJSONObject("look"))
+            val rendered = requireNotNull(CharacterEngine.image(context, look))
+            val image = rendered.asAndroidBitmap()
+            assertEquals(48, image.width); assertEquals(48, image.height)
+            val rgba = ByteArray(48 * 48 * 4)
+            for (y in 0 until 48) for (x in 0 until 48) {
+                val p = image.getPixel(x, y); val at = (y * 48 + x) * 4
+                rgba[at] = (p ushr 16).toByte(); rgba[at+1] = (p ushr 8).toByte()
+                rgba[at+2] = p.toByte(); rgba[at+3] = (p ushr 24).toByte()
+            }
+            val digest = MessageDigest.getInstance("SHA-256").digest(rgba).joinToString("") { "%02x".format(it.toInt() and 255) }
+            assertEquals(fixture.getString("rgba_sha256"), digest)
+            assertSame(rendered, CharacterEngine.image(context, look))
+        }
+        val profile = "dsh:test-look-" + java.util.UUID.randomUUID()
+        val old = Cast.all.first()
+        val custom = old.copy(look = PixelLook("nyx", "astra"), companion = "mimic", companionName = "Bite")
+        CastStore.put(context, profile, custom)
+        assertEquals(custom, CastStore.get(context, profile))
+        val metadata = org.json.JSONObject().put("appearance", org.json.JSONObject()
+            .put("archetype", old.id).put("look", org.json.JSONObject.NULL))
+        CastStore.restore(context, profile, metadata)
+        assertNull(CastStore.get(context, profile).look)
     }
     @Test fun nativePixelsMatchTheSharedRgbaFixtures() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()

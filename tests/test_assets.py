@@ -57,7 +57,7 @@ class AssetsTests(unittest.TestCase):
         manifest = json.loads((ROOT / "brand/art-provenance.json").read_text())
         for asset in manifest["assets"]:
             self.assertEqual(hashlib.sha256((ROOT / asset["file"]).read_bytes()).hexdigest(), asset["sha256"])
-        current = (ROOT / "brand/pixel-cast-runtime-v4.png").read_bytes()
+        current = (ROOT / "brand/pixel-cast-runtime-v6.png").read_bytes()
         self.assertEqual(current, (ROOT / "ios/Resources/Assets.xcassets/PixelCastAtlas.imageset/pixel-cast-atlas.png").read_bytes())
         self.assertEqual(current, (ROOT / "android/app/src/main/res/drawable-nodpi/pixel_cast_atlas.png").read_bytes())
         self.assertEqual(current, (ROOT / "site/public/pixel-cast-atlas.png").read_bytes())
@@ -79,7 +79,7 @@ class AssetsTests(unittest.TestCase):
                 self.assertTrue(all(len(row)==48 for row in rows))
 
     def test_authored_cast_has_exact_pixels_and_independent_companions(self):
-        width,height,pixels = read_rgba(ROOT / "brand/pixel-cast-runtime-v4.png")
+        width,height,pixels = read_rgba(ROOT / "brand/pixel-cast-runtime-v6.png")
         self.assertEqual((width,height),(192,96))
         for index in range(8):
             cell=[row[(index%4)*48:(index%4+1)*48] for row in pixels[(index//4)*48:(index//4+1)*48]]
@@ -88,6 +88,7 @@ class AssetsTests(unittest.TestCase):
             self.assertGreater(len(opaque),16)
             self.assertEqual({p[3] for row in cell for p in row},{0,255})
             self.assertTrue(all(p[3]==0 for p in cell[0]+cell[-1]))
+            self.assertLess(sum(p[3]>0 for p in cell[1]), 15, "No stray atlas divider above the head")
             self.assertTrue(all(row[0][3]==row[-1][3]==0 for row in cell))
         atlas=json.loads((ROOT / "ios/Resources/character_engine.json").read_text())
         self.assertEqual(len(atlas["companions"]),12)
@@ -103,7 +104,7 @@ class AssetsTests(unittest.TestCase):
         self.assertEqual(len(hashes),12)
 
     def test_generated_catalogs_and_seed_fixtures_cannot_drift(self):
-        for tool in ["tools/character_engine48.py","tools/character_engine.py","tools/sync-pixel-personas.py"]:
+        for tool in ["tools/character_engine48.py","tools/character_engine.py","tools/sync-pixel-personas.py","tools/portrait_looks.py"]:
             subprocess.run([sys.executable,str(ROOT/tool),"--check"],cwd=ROOT,check=True,capture_output=True)
         fixture=(ROOT/"tests/fixtures/character-recipes.json").read_bytes()
         for path in ["ios/NativeTests/Fixtures/character-recipes.json","android/app/src/test/resources/character-recipes.json",

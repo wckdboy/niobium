@@ -21,27 +21,62 @@ final class CharacterEngine {
         var accessories: [String: [String]]
         struct Hair: Decodable { var back: [String]; var front: [String] }
     }
-    private let atlas: Atlas?
+    private struct LookAtlas: Decodable {
+        let version: Int
+        let size: Int
+        let looks: [String: LookArt]
+        let accents: [String: [UInt32]]
+        struct LookArt: Decodable {
+            let colors: [UInt32]
+            let pixels: [Int]
+            let materials: [Int]
+            let shades: [Int]
+        }
+    }
+    private lazy var atlas: Atlas? = Bundle.main.url(forResource: "character_engine", withExtension: "json")
+        .flatMap { try? Data(contentsOf: $0) }.flatMap { try? JSONDecoder().decode(Atlas.self, from: $0) }
+    private lazy var looks: LookAtlas? = (NSDataAsset(name: "PortraitLookCatalog")?.data)
+        .flatMap { try? JSONDecoder().decode(LookAtlas.self, from: $0) }
     private let cache = NSCache<NSString, UIImage>()
     private init() {
-        atlas = Bundle.main.url(forResource: "character_engine", withExtension: "json")
-            .flatMap { try? Data(contentsOf: $0) }.flatMap { try? JSONDecoder().decode(Atlas.self, from: $0) }
         cache.countLimit = 192
+    }
+    func image(for look: PixelLook) -> UIImage? {
+        guard look.isValid, let data = looks, data.version == 1, data.size == 48,
+              let art = data.looks[look.portrait], art.pixels.count == 2304,
+              art.materials.count == 2304, art.shades.count == 2304 else { return nil }
+        let key = ("look|" + [look.portrait, look.accent].joined(separator: "|")) as NSString
+        if let cached = cache.object(forKey: key) { return cached }
+        let pigments: [[UInt32]?] = [nil, data.accents[look.accent]]
+        var pixels = [UInt8](repeating: 0, count: 2304 * 4)
+        for i in art.pixels.indices {
+            let index = art.pixels[i]
+            guard index >= 0, art.colors.indices.contains(index) else { continue }
+            let material = art.materials[i], shade = art.shades[i]
+            let dye = pigments.indices.contains(material) ? pigments[material] : nil
+            let color = dye.flatMap { $0.indices.contains(shade) ? $0[shade] : nil } ?? art.colors[index]
+            pixels[i * 4] = UInt8((color >> 16) & 255)
+            pixels[i * 4 + 1] = UInt8((color >> 8) & 255)
+            pixels[i * 4 + 2] = UInt8(color & 255)
+            pixels[i * 4 + 3] = 255
+        }
+        guard let provider = CGDataProvider(data: Data(pixels) as CFData),
+              let cg = CGImage(width: 48, height: 48, bitsPerComponent: 8, bitsPerPixel: 32, bytesPerRow: 192,
+                               space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.last.rawValue),
+                               provider: provider, decode: nil, shouldInterpolate: false, intent: .defaultIntent) else { return nil }
+        let image = UIImage(cgImage: cg)
+        cache.setObject(image, forKey: key)
+        return image
     }
     func usesAuthored(_ member: CastMember) -> Bool {
         member.recipe == CharacterRecipe.cast[member.id]
     }
     func authoredImage(_ member: CastMember) -> UIImage? {
-        guard usesAuthored(member), let index = CastMember.all.firstIndex(where: { $0.id == member.id }) else { return nil }
-        let key = ("authored-" + member.id) as NSString
-        if let image = cache.object(forKey: key) { return image }
-        guard let sheet = UIImage(named: "PixelCastAtlas")?.cgImage else { return nil }
-        guard sheet.width == 192, sheet.height == 96,
-              let crop = sheet.cropping(to: CGRect(x: index % 4 * 48, y: index / 4 * 48, width: 48, height: 48)) else { return nil }
-        let image = UIImage(cgImage: crop)
-        cache.setObject(image, forKey: key)
-        return image
+        guard usesAuthored(member) else { return nil }
+        // Stock and garment variants share one canonical cached RGBA path.
+        return image(for: PixelLook(portrait: member.id))
     }
+
     func image(for recipe: CharacterRecipe, blink: Bool = false) -> UIImage? {
         guard recipe.isValid, let atlas, atlas.version == 3, atlas.size == 48 else { return nil }
         let key = (CharacterRecipe.fieldNames.map { recipe.value(for: $0) }.joined(separator: "|") + (blink ? "|blink" : "|open")) as NSString
@@ -84,13 +119,15 @@ struct CharacterSprite: View {
     @State private var blink = false
     private struct BlinkIdentity: Equatable { let recipe: CharacterRecipe?; let enabled: Bool }
     private var motion: BlinkIdentity {
-        .init(recipe: member.recipe, enabled: animate && !reduceMotion && scenePhase == .active && !CharacterEngine.shared.usesAuthored(member))
+        .init(recipe: member.recipe, enabled: member.look == nil && animate && !reduceMotion && scenePhase == .active && !CharacterEngine.shared.usesAuthored(member))
     }
     var body: some View {
         GeometryReader { proxy in
             let side = max(1, floor(min(proxy.size.width, proxy.size.height) * displayScale / 48)) * 48 / displayScale
             Group {
-                if let sprite = CharacterEngine.shared.authoredImage(member) {
+                if let look = member.look, let sprite = CharacterEngine.shared.image(for: look) {
+                    Image(uiImage: sprite).resizable().interpolation(.none)
+                } else if let sprite = CharacterEngine.shared.authoredImage(member) {
                     Image(uiImage: sprite).resizable().interpolation(.none)
                 } else if let recipe = member.recipe, let sprite = CharacterEngine.shared.image(for: recipe, blink: blink && motion.enabled) {
                     Image(uiImage: sprite).resizable().interpolation(.none)

@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "tested_at": "2026-10-22T20:38:56.031000Z",
+  "release_candidate": "v2.0.0-beta.6",
+  "source_commit": "72956aef847117a63baec4e4d51598da2644cd94",
+  "app": {
+    "bundle_id": "ai.wckd.niobium.acceptance",
+    "version": "2.0",
+    "build": 10,
+    "variant": "full DSH Debug diagnostic acceptance; independent app sandbox"
+  },
+  "device": {
+    "model": "iPhone 18 Pro Max",
+    "os": "iOS 27.0.1",
+    "physical": true,
+    "transport": "paired local network"
+  },
+  "test": {
+    "name": "LocalDSHModelDeviceUITests/testStreamSurvivesBackgroundAndHistorySurvivesColdLaunch()",
+    "passed": 1,
+    "failures": 0,
+    "duration_seconds": 73.24308502674103
+  },
+  "verified": [
+    "Real bundled DSH loads Scout in the native roster",
+    "Native chat attachment completes before Send is enabled",
+    "A prompt traverses native chat and DSH to a loopback-only controlled model endpoint",
+    "Unique per-run reply marker prevents an old message from satisfying the test",
+    "Partial SSE output is visible during an unfinished turn",
+    "The final SSE chunk is gated until eight seconds on the Home screen",
+    "The complete reply and finished turn are restored after foregrounding",
+    "The conversation survives a full app and Linux guest cold restart",
+    "The chat is native without a WebView"
+  ],
+  "not_verified": [
+    "Production Release build-10 native attachment failure is unresolved",
+    "Replacement production build-11 smoke is still pending",
+    "Real-account model transport",
+    "Actual delegation",
+    "Long background execution or suspension recovery",
+    "Battery and thermal behavior"
+  ],
+  "isolation": "No real provider account is used. Fixture credentials and model URL only enter the independent Debug acceptance app. The production app container and credentials are preserved.",
+  "reproduce": "python3 tools/check-ios-device.py --device YOUR_PAIRED_UNLOCKED_IPHONE --only-model --model-app PATH_TO_FULL_DEBUG_ACCEPTANCE_APP"
+}
