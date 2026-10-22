@@ -17,12 +17,13 @@ A pixel is a teammate, not a toy.
 
 ## Mark
 
-The app icon is a hand-built 16×16 pixel raster: a lowercase ore-cut **n** with a
-tiny mint companion pixel, purple on a clean white field. It follows WCKD's
-one-letter/one-colour system. It is intentionally
-low-resolution — nearest-neighbor scaling, no anti-aliasing. The n raster is used
-as the app icon, launch mark, wordmark and the Android adaptive/monochrome icon.
-Never add an orbit ring or recolor the letter.
+The symbol is the WCKD kit's lowercase pixel **n** with its companion pixel at the foot:
+`n.` on a 8 × 6 grid, in niobium blue `#1E8CFF` (the colour of anodised niobium), on a
+clean white field. It is one of the family (`w s a i o n n.`); the source is
+`brand/kit.json` in `wckdboy/autobot-www`, and the generated files live at
+https://niobium.sh/brand/ and https://wckd.ai/brand/niobium/. The same raster is the app
+icon, the launch mark, the masthead mark and the Android adaptive and monochrome icons.
+Whole pixels only, nearest-neighbour scaling, no outline, no orbit ring, never recoloured.
 
 `41` may appear as small annotation text, never inside the icon.
 
