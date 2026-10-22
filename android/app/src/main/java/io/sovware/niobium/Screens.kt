@@ -665,8 +665,12 @@ fun HomeScreen(vm: NiobiumViewModel, state: NbState, onNewPixel: () -> Unit, onS
         item {
             Box(Modifier.fillMaxWidth().height(152.dp)) {
                 Image(painterResource(R.drawable.terrace_hero), null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-                Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(
-                    Nb.Void.copy(alpha = 0.90f), Nb.Void.copy(alpha = 0.18f), androidx.compose.ui.graphics.Color.Transparent, Nb.Void))))
+                Box(Modifier.fillMaxSize().background(Brush.verticalGradient(
+                    0f to Nb.Void.copy(alpha = 0.99f),
+                    0.25f to Nb.Void.copy(alpha = 0.98f),
+                    0.50f to Nb.Void.copy(alpha = 0.94f),
+                    0.78f to androidx.compose.ui.graphics.Color.Transparent,
+                    1f to Nb.Void)))
                 Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 18.dp).padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     AtomicMark(36.dp)
                     Spacer(Modifier.width(9.dp))
@@ -723,7 +727,7 @@ private fun InstanceCard(state: NbState) {
     Column(Modifier.fillMaxWidth().pixelPanel(20.dp, accented = true).padding(14.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).background(Nb.Ion.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
-                Text("▤", color = Nb.Ion, fontSize = 18.sp)
+                PixelIcon(PixelGlyph.TERMINAL, size = 24.dp)
             }
             Spacer(Modifier.width(11.dp))
             Column(Modifier.weight(1f)) {
@@ -747,19 +751,19 @@ private fun InstanceCard(state: NbState) {
         Box(Modifier.fillMaxWidth().height(1.dp).background(Nb.Line))
         Spacer(Modifier.height(11.dp))
         Row {
-            HomeStat(if (state.engine == AgentEngine.DSH) "DSH" else "${state.toolsets.size}", if (state.engine == AgentEngine.DSH) "Engine" else "Toolsets", "◈", Modifier.weight(1f))
-            HomeStat(if (state.demo) "Demo" else if (state.engine == AgentEngine.DSH) "Local" else "Host", "Policy", "◇", Modifier.weight(1f))
-            HomeStat(state.gatewayLatencyMs?.let { "$it ms" } ?: "—", "Latency", "⌁", Modifier.weight(1f))
-            HomeStat("${state.bots.count { it.isLive }}/${state.bots.size}", "Working", "▦", Modifier.weight(1f))
+            HomeStat(if (state.engine == AgentEngine.DSH) "DSH" else "${state.toolsets.size}", if (state.engine == AgentEngine.DSH) "Engine" else "Toolsets", PixelGlyph.TERMINAL, Modifier.weight(1f))
+            HomeStat(if (state.demo) "Demo" else if (state.engine == AgentEngine.DSH) "Local" else "Host", "Policy", PixelGlyph.SHIELD, Modifier.weight(1f))
+            HomeStat(state.gatewayLatencyMs?.let { "$it ms" } ?: "—", "Latency", PixelGlyph.ACTIVITY, Modifier.weight(1f))
+            HomeStat("${state.bots.count { it.isLive }}/${state.bots.size}", "Working", PixelGlyph.PIXELS, Modifier.weight(1f))
         }
     }
 }
 
 @Composable
-private fun HomeStat(value: String, label: String, glyph: String, modifier: Modifier = Modifier) {
+private fun HomeStat(value: String, label: String, glyph: PixelGlyph, modifier: Modifier = Modifier) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(glyph, color = Nb.Ion, fontSize = 12.sp)
+            PixelIcon(glyph, size = 16.dp)
             Text(value, color = Nb.Text, style = NbTitle, fontSize = 13.sp)
         }
         Text(label, color = Nb.Tertiary, fontSize = 9.sp)

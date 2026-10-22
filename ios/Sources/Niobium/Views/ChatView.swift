@@ -40,7 +40,7 @@ struct ChatView: View {
             }
         }
         .task {
-            if store.activeBot?.name != bot.name || store.chatSessionID == nil {
+            if store.activeBot?.id != bot.id || (store.chatSessionID == nil && !store.isLoadingChat) {
                 store.openBot(bot)
             }
             withAnimation(.easeOut(duration: 0.45)) { appeared = true }
@@ -106,6 +106,7 @@ struct ChatView: View {
                     .background(Circle().fill(NB.fill))
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Back")
 
             BotAvatar(bot: bot, size: 36, showStatus: false)
             VStack(alignment: .leading, spacing: 2) {
@@ -156,6 +157,7 @@ struct ChatView: View {
                     .frame(width: 34, height: 34)
                     .background(Circle().fill(NB.fill))
             }
+            .accessibilityLabel("Chat options")
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
@@ -388,6 +390,7 @@ struct ChatView: View {
                     }
 
                     TextField("Message \(bot.title)…", text: $draft, axis: .vertical)
+                        .accessibilityIdentifier("chat.composer")
                         .lineLimit(1...5)
                         .font(.nbBody(15))
                         .foregroundStyle(NB.text)
@@ -428,15 +431,19 @@ struct ChatView: View {
                             }
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel("Stop response")
                     } else {
                         Button {
-                            let text = draft
-                            let image = attachment
-                            draft = ""
-                            attachment = nil
-                            photoItem = nil
-                            speech.stop()
-                            Task { await store.send(text, attachment: image) }
+                            Task { @MainActor in
+                                guard store.canSubmitChat else { return }
+                                let text = draft
+                                let image = attachment
+                                draft = ""
+                                attachment = nil
+                                photoItem = nil
+                                speech.stop()
+                                await store.send(text, attachment: image)
+                            }
                         } label: {
                             ZStack {
                                 Circle()
@@ -449,6 +456,7 @@ struct ChatView: View {
                         }
                         .buttonStyle(.plain)
                         .disabled(!canSend)
+                        .accessibilityLabel("Send message")
                     }
                 }
             }
@@ -477,7 +485,7 @@ struct ChatView: View {
     }
 
     private var canSend: Bool {
-        !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || attachment != nil
+        store.canSubmitChat && (!draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || attachment != nil)
     }
 
     private func toastPaste() {

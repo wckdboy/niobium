@@ -30,12 +30,28 @@ final class LocalDSHDeviceUITests: XCTestCase {
         app.buttons["Home"].tap()
         XCTAssertTrue(scout.waitForExistence(timeout: 10))
         XCUIDevice.shared.press(.home)
+        Thread.sleep(forTimeInterval: 8)
         app.activate()
         XCTAssertTrue(scout.waitForExistence(timeout: 30))
-        XCTAssertTrue(app.buttons["New Pixel"].isEnabled)
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"),
+                                             object: app.buttons["New Pixel"])
+        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 30), .completed)
+        app.buttons["Engines"].tap()
+        XCTAssertTrue(app.staticTexts["Ready · chats and tasks run in Niobium"].waitForExistence(timeout: 30))
+        app.buttons["Home"].tap()
 
         scout.tap()
-        XCTAssertTrue(app.textFields["Message Scout…"].waitForExistence(timeout: 90))
+        let composer = app.textFields["chat.composer"]
+        XCTAssertTrue(composer.waitForExistence(timeout: 90))
+        let attached = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"),
+                                                object: app.staticTexts["Attaching to Scout…"])
+        XCTAssertEqual(XCTWaiter.wait(for: [attached], timeout: 90), .completed)
+        let draft = "Connection check"
+        composer.tap()
+        composer.typeText(draft)
+        XCTAssertTrue(app.buttons["Send message"].isEnabled, "The real local session must complete its attachment handshake.")
+        composer.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: draft.count))
+        XCTAssertFalse(app.buttons["Send message"].isEnabled)
         XCTAssertFalse(app.webViews.firstMatch.exists)
         // Do not send a model request, capture private chat text or change keys.
     }

@@ -58,6 +58,11 @@ final class AppStore: ObservableObject {
     @Published var isLoadingHistory = false
     @Published var lastSyncedAt: Date?
 
+    var canSubmitChat: Bool {
+        activeBot != nil && !isLoadingChat &&
+        (isDemo || (connectionState.isConnected && chatSessionID != nil && api != nil))
+    }
+
     private var api: (any HermesRPC)?
     private var streamingMessageID: String?
     private var groupPollTask: Task<Void, Never>?
@@ -437,6 +442,7 @@ final class AppStore: ObservableObject {
     // MARK: - Direct bot chat
 
     func openBot(_ bot: BotProfile) {
+        guard activeBot?.id != bot.id || !isLoadingChat else { return }
         historyHasMore = false; historyBeforeSeq = nil; isLoadingHistory = false
         chatEpoch += 1
         let epoch = chatEpoch
@@ -489,12 +495,13 @@ final class AppStore: ObservableObject {
     }
 
     private func attachBot(_ bot: BotProfile, epoch: Int) async {
-        guard let api else { return }
         defer { if chatEpoch == epoch { isLoadingChat = false } }
+        guard chatEpoch == epoch, let api else { return }
         do {
             var storedID = bot.canonicalSessionID
             if storedID == nil {
                 let listed = try await api.request("session.list", params: ["title": "Bot Chat", "profile": bot.name]) as? JSONObject
+                guard chatEpoch == epoch, self.api === api else { return }
                 storedID = listed?.objects("sessions").first?.string("id")
             }
             let result: JSONObject?
@@ -522,6 +529,8 @@ final class AppStore: ObservableObject {
             await loadToolsets()
         } catch {
             guard chatEpoch == epoch, self.api === api else { return }
+            chatSessionID = nil
+            isTurnActive = false
             showError("Could not open \(bot.title). \(error.localizedDescription)")
         }
     }
@@ -567,7 +576,10 @@ final class AppStore: ObservableObject {
     }
 
     func send(_ rawText: String, attachment: UIImage? = nil) async {
-        guard !isLoadingChat else { return }
+        guard canSubmitChat else {
+            showError("Wait for this chat to connect before sending.")
+            return
+        }
         let text = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty || attachment != nil else { return }
         guard isDemo || chatSessionID != nil else {
@@ -675,15 +687,18 @@ final class AppStore: ObservableObject {
                 "source": chatSource
             ], timeout: 90) as? JSONObject
             guard let result else { throw RPCError.malformed }
-            guard chatEpoch == epoch, activeBot?.name == bot.name, self.api === api else { return }
+            guard chatEpoch == epoch, activeBot?.id == bot.id, self.api === api else { return }
             restoreChat(result, fallbackSessionID: row.sessionID)
             recoverPrompts(result)
             if engine == .dsh { _ = try await api.request("local.attach", params: ["session_id": chatSessionID ?? ""]) }
+            guard chatEpoch == epoch, self.api === api else { return }
             await loadModels()
             guard chatEpoch == epoch, self.api === api else { return }
             toastMessage("Opened \(row.title)")
         } catch {
             guard chatEpoch == epoch, self.api === api else { return }
+            chatSessionID = nil
+            isTurnActive = false
             showError("Could not open chat. \(error.localizedDescription)")
         }
     }

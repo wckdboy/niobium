@@ -204,3 +204,17 @@ chat UI. The test sends no model request; real-account turns, delegation,
 long background/suspension behavior and broader device acceptance remain.
 Reproduce with tools/check-ios-device.py; sanitized evidence is in
 docs/evidence/ios-build7-device-smoke.json.
+
+## Current cycle: beta.4 device acceptance and readability
+
+- Strengthen the shared dashboard scrim and use the pixel icon set for engine stats.
+- Gate Send on a connected, attached session; retain drafts during startup/offline.
+- Prevent repeated Pixel opens from racing the local attachment handshake, and
+  discard obsolete session lookups before they can change the backend selection.
+- Keep Send disabled if the local attachment handshake fails. Regression coverage
+  now includes duplicate opens, a delayed obsolete lookup and a rejected handoff.
+- Exercise an eight-second background handoff and a cold history reload.
+- Add an isolated Debug-only model fixture flow on iOS, with a separate app
+  identity and Keychain group. The production binary contains no fixture hook.
+- Candidate versions: Android 2.0 (7), full iOS 2.0 (8). Device model-turn
+  acceptance, final review and release packaging are in progress.

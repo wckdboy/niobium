@@ -68,7 +68,10 @@ data class NbState(
     val error: String? = null,
     val toast: String? = null,
     val lastSync: Long? = null
-)
+) {
+    val canSubmitChat: Boolean
+        get() = activeBot != null && !loadingChat && (demo || (connected && sessionId != null))
+}
 
 class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
     private val prefs = SecurePrefs(app)
@@ -382,6 +385,7 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
     // ── Direct chats ─────────────────────────────────────────────────────────
 
     fun openBot(bot: BotProfile) {
+        if (state.activeBot?.id == bot.id && state.loadingChat) return
         val epoch = ++chatEpoch
         demoTurn?.cancel()
         streamingId = null
@@ -402,11 +406,13 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private suspend fun attachBot(bot: BotProfile, epoch: Int) {
-        val client = gateway ?: return
+        if (chatEpoch != epoch) return
+        val client = gateway ?: run { state = state.copy(loadingChat = false); return }
         try {
             var stored = bot.canonicalSessionId
             if (stored == null) {
                 val listed = client.request("session.list", JSONObject().put("title", "Bot Chat").put("profile", bot.name))
+                if (chatEpoch != epoch || gateway !== client) return
                 stored = listed.objects("sessions").firstOrNull()?.s("id")
             }
             val result = if (stored != null) {
@@ -420,12 +426,15 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
             restoreChat(result)
             recoverPrompts(result)
             if (state.engine == AgentEngine.DSH) client.request("local.attach", JSONObject().put("session_id", state.sessionId))
+            if (chatEpoch != epoch || gateway !== client) return
+            state = state.copy(loadingChat = false)
             loadToolsets()
             loadModels()
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
             if (chatEpoch != epoch || gateway !== client) return
-            state = state.copy(loadingChat = false, error = "Could not open ${bot.title}. ${e.message}")
+            state = state.copy(loadingChat = false, sessionId = null, turnActive = false,
+                error = "Could not open ${bot.title}. ${e.message}")
         }
     }
 
@@ -449,7 +458,7 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
             sessionGeneration = snapshot.optInt("execution_generation").takeIf { snapshot.has("execution_generation") },
             messages = restored + if (streaming || partial.isNotEmpty()) listOf(
                 ChatMessage("inflight", "assistant", partial, streaming = streaming)) else emptyList(),
-            loadingChat = false, turnActive = snapshot.optBoolean("running", streaming), turnStatus = "")
+            turnActive = snapshot.optBoolean("running", streaming), turnStatus = "")
         state = state.copy(historyHasMore = snapshot.optBoolean("history_has_more"), historyBeforeSeq = snapshot.i("history_before_seq"), loadingHistory = false)
     }
 
@@ -473,7 +482,10 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun send(text: String, imageBase64: String? = null, mime: String = "image/jpeg") {
-        if (state.loadingChat) return
+        if (!state.canSubmitChat || (!state.demo && gateway == null)) {
+            showError("Wait for this chat to connect before sending.")
+            return
+        }
         val value = text.trim()
         if (value.isEmpty() && imageBase64 == null) return
         if (!state.demo && state.sessionId == null) {
@@ -600,16 +612,17 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
             runCatching {
                 val result = client.request("session.resume", JSONObject()
                     .put("session_id", row.sessionId).put("profile", bot.name).put("source", chatSource), 90_000)
-                if (chatEpoch != epoch || state.activeBot?.name != bot.name || gateway !== client) return@runCatching
+                if (chatEpoch != epoch || state.activeBot?.id != bot.id || gateway !== client) return@runCatching
                 restoreChat(result, row.sessionId)
                 recoverPrompts(result)
                 if (state.engine == AgentEngine.DSH) client.request("local.attach", JSONObject().put("session_id", state.sessionId))
-                if (gateway !== client || state.sessionId != row.sessionId) return@runCatching
+                if (chatEpoch != epoch || gateway !== client || state.sessionId != row.sessionId) return@runCatching
+                state = state.copy(loadingChat = false)
                 loadModels(); loadToolsets()
             }.onFailure {
                 if (it is kotlinx.coroutines.CancellationException) throw it
                 if (chatEpoch == epoch && gateway === client) {
-                    state = state.copy(loadingChat = false)
+                    state = state.copy(loadingChat = false, sessionId = null, turnActive = false)
                     showError("Could not open chat. ${it.message}")
                 }
             }

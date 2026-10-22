@@ -45,6 +45,9 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -151,15 +154,18 @@ fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = 
         }
         Composer(
             value = draft,
+            ready = state.canSubmitChat,
             onValueChange = { draft = it },
             placeholder = "Message ${bot.title}…",
             turnActive = state.turnActive,
             onSend = {
-                val text = draft
-                val image = attachment
-                draft = ""
-                attachment = null
-                vm.send(text, image?.first, image?.second ?: "image/jpeg")
+                if (vm.state.canSubmitChat) {
+                    val text = draft
+                    val image = attachment
+                    draft = ""
+                    attachment = null
+                    vm.send(text, image?.first, image?.second ?: "image/jpeg")
+                }
             },
             onStop = { vm.stopTurn() },
             onAttach = { photoPicker.launch("image/*") },
@@ -418,8 +424,10 @@ fun Composer(
     onAttach: () -> Unit = {},
     onDictate: () -> Unit = {},
     hasAttachment: Boolean = false,
-    onClearAttachment: () -> Unit = {}
+    onClearAttachment: () -> Unit = {},
+    ready: Boolean = true
 ) {
+    val canSend = ready && (value.isNotBlank() || hasAttachment)
     Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 12.dp).padding(bottom = 8.dp, top = 4.dp)) {
         if (hasAttachment) {
             Row(Modifier.padding(bottom = 6.dp).clip(CircleShape).background(Nb.Ion.copy(alpha = 0.10f))
@@ -461,12 +469,13 @@ fun Composer(
             Spacer(Modifier.width(4.dp))
             Box(
                 Modifier.size(33.dp).clip(CircleShape)
-                    .background(if (turnActive) Nb.Text else if (value.isNotBlank()) accent else Nb.Fill)
-                    .clickable { if (turnActive) onStop() else onSend() },
+                    .background(if (turnActive) Nb.Text else if (canSend) accent else Nb.Fill)
+                    .semantics { contentDescription = if (turnActive) "Stop response" else "Send message" }
+                    .clickable(enabled = turnActive || canSend, role = Role.Button) { if (turnActive) onStop() else onSend() },
                 contentAlignment = Alignment.Center
             ) {
                 if (turnActive) Box(Modifier.size(10.dp).clip(RoundedCornerShape(2.dp)).background(Nb.Void))
-                else Text("↑", color = if (value.isNotBlank()) Color(0xFF090C13) else Nb.Tertiary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                else Text("↑", color = if (canSend) Color(0xFF090C13) else Nb.Tertiary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -542,6 +551,7 @@ fun GroupChatScreen(vm: NiobiumViewModel, room: GroupRoom) {
             item { Spacer(Modifier.height(4.dp)) }
         }
         Composer(draft, { draft = it }, "Message the room…", false,
+            ready = state.connected || state.demo,
             onSend = { val t = draft; draft = ""; vm.sendGroup(t) }, onStop = {}, accent = Nb.Violet)
     }
 }

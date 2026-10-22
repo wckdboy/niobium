@@ -24,7 +24,7 @@ cd android
 ./gradlew :app:assembleRelease
 ```
 
-Twenty-four Android JVM tests include real OkHttp HTTP/WebSocket exchanges with a local
+Twenty-five Android JVM tests include real OkHttp HTTP/WebSocket exchanges with a local
 Node fixture: reverse-proxy paths, token encoding/header authentication,
 out-of-order replies, server errors, timeout/cancellation recovery, typed
 server-request IDs, approval replies and disconnecting an in-flight request.
@@ -43,9 +43,10 @@ xcodebuild -project Niobium.xcodeproj -scheme Niobium \
   CODE_SIGNING_ALLOWED=NO test
 ```
 
-Twenty-four unit tests cover URL/auth handling, JSON-RPC IDs, cancellation,
+Twenty-eight unit tests cover URL/auth handling, JSON-RPC IDs, cancellation,
 PixelSpec validation, reversed chat-selection responses, resumed streaming,
 recovered clarification dismissal, provisioning access and failed appearance saves.
+Attachment regressions cover duplicate opens, obsolete lookups and rejected handoffs.
 Three UI tests launch only the labelled demo, verify the dashboard and
 review flow plus coherent native Engines navigation, and retain screenshots in the xcresult. Native tests live in
 NativeTests; the lowercase tests symlink belongs to the DSH submodule.
@@ -69,6 +70,34 @@ Scout roster, checks native Engines/provider settings, returns from the Home
 screen and opens native chat. It sends no model request and changes no API key.
 Screenshots are retained in the local xcresult; inspect them for private data
 before sharing. The default client-only CI run skips this opt-in test.
+
+For a controlled model turn, build a separate full Debug app. Its bundle identity
+keeps app data and Keychain items separate from the installed Niobium app:
+
+```sh
+xcodebuild -project ios/NiobiumDSH.xcodeproj -scheme Niobium \
+  -configuration Debug -destination 'generic/platform=iOS' \
+  -derivedDataPath dist/iphone-model-app \
+  NIOBIUM_APP_BUNDLE_ID=ai.wckd.niobium.acceptance \
+  -allowProvisioningUpdates build
+python3 tools/check-ios-device.py --device YOUR_IPHONE_UDID --only-model \
+  --model-app dist/iphone-model-app/Build/Products/Debug-iphoneos/Niobium.app
+```
+
+The test runner hosts a loopback-only SSE model fixture. Only the Debug acceptance
+bundle can receive its URL and fixture key; Release builds omit that hook. The
+test sends a prompt through real DSH, backgrounds the app for eight seconds
+while a reply streams, and checks stored history after a full app/guest restart.
+It uses no real provider account. The production smoke also waits eight seconds
+on the Home screen, checks engine readiness again after returning, and verifies
+that a temporary unsent draft can be submitted before clearing it.
+
+The controlled model test can also run on a simulator. Build the same full Debug
+acceptance target with a simulator destination and separate derived data, then
+pass `--simulator`, its UDID, the matching `--model-app` and `--only-model` to
+the helper. This checks the real guest and model stream; physical lifecycle and
+device performance still require the iPhone run.
+
 
 GitHub Actions runs shared, Android and iOS suites for pull requests and pushes.
 Live provider/connector authorization, physical-device background behaviour and
