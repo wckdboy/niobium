@@ -246,7 +246,8 @@ docs/evidence/ios-build7-device-smoke.json.
 
 ## Pixel atelier cycle — 22 October 2026
 
-In progress on feat/pixel-atelier, targeting beta.5 (Android code 8 / iOS build 9):
+Merged in PR #7 at 20c4b9218e58a4c1583ddea06fd05165dd08753d.
+Beta.5 packages reviewed implementation ed8f661 (Android code 8 / iOS build 9):
 
 - New adult cast art without embedded creatures, baked to one canonical 192×96
   atlas. Native clients use identical exact 48×48 cells and physical-pixel scaling.
@@ -257,7 +258,9 @@ In progress on feat/pixel-atelier, targeting beta.5 (Android code 8 / iOS build 
 - Eight offline persona voices and working methods, explicit character cues,
   corrected word-based role matching, and an updated bot-build skill.
 - Portable seed/RGBA fixtures, native renderer checks, pin/legacy/type tests,
-  native editor interactions and reproducible art/catalog checks.\n- Full build 9 DSH simulator model/history acceptance passed in 93.789 seconds.\n  Android’s five runtime, two renderer and new editor interaction tests passed.
+  native editor interactions and reproducible art/catalog checks.
+- Full build 9 DSH simulator model/history acceptance passed in 104.198 seconds.
+  Android’s five runtime, two renderer and new editor interaction tests passed.
 
 Next: lift custom layered portraits to the authored cast's quality; improve persona
 naming/voice variety within each offline role; add undoable appearance history;
@@ -265,3 +268,22 @@ complete real-account delegation and physical-device acceptance. The iPhone is
 still unavailable, so current physical acceptance and temporary QA-app cleanup
 remain pending. Keep provider-key vault work, Android 16 KB devices and the
 reviewed Harness2 evaluation on the following runtime cycle.
+
+Final CI run 39822663459 passes shared, Android and iOS jobs. Its downloaded
+iOS xcresult verifies 37 passed tests, zero failures and two expected opt-in skips.
+The final independent Codex review reports no findings. Greptile found two
+distinct issues (skill-example escaping and pin lifetime), now fixed with
+regressions; all five threads are resolved. Its 50-credit trial quota blocked
+the final Greptile re-review.
+
+Apple accepted build 9 for TestFlight processing at 2026-10-22 17:37:46 UTC.
+Tester availability remains unverified. The temporary simulator acceptance app
+and runner have been removed; physical QA-app cleanup still awaits the iPhone.
+
+Beta.5 is public at https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.5
+(published 2026-10-22 17:43:05 UTC). All five GitHub asset names, sizes and digests,
+and the public metadata/checksums, match the staged files. The APK keeps the
+existing certificate. niobium.sh and www were deployed as version
+49b8f0be-0d15-47fe-a678-7df3c88a0b58; all six pages, www, the stylesheet, icon,
+cast, familiar strip and downloadable skill match the built HTTP bytes.
+Plane NIO-3/10/12/24/29/32/36 and both local exports record the release and limits.

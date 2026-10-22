@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "tested_at": "2026-10-22T17:02:14.047Z",
+  "tested_at": "2026-10-22T17:29:20.735000Z",
   "release": "v2.0.0-beta.5",
-  "packaged_source_commit": "6779c578701444746b5de93700569646c4e94781",
+  "packaged_source_commit": "ed8f6616e3cc45af5f342404cd9a43a0ef89ae97",
   "app": {
     "bundle_id": "ai.wckd.niobium.acceptance",
     "version": "2.0",
@@ -18,7 +18,7 @@
     "name": "LocalDSHModelDeviceUITests/testStreamSurvivesBackgroundAndHistorySurvivesColdLaunch",
     "passed": 1,
     "failures": 0,
-    "duration_seconds": 93.789,
+    "duration_seconds": 104.198,
     "target_bundle_identifier_explicitly_matched": true,
     "final_chunk_gated_until_background": true
   },

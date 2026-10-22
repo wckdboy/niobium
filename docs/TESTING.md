@@ -62,7 +62,7 @@ native DSH smoke test against the development-signed full app from an archive:
 
 ```sh
 python3 tools/check-ios-device.py --device YOUR_IPHONE_UDID \
-  --app dist/Niobium-2.0-9.xcarchive/Products/Applications/Niobium.app
+  --app dist/Niobium-2.0-9-pixel-atelier.xcarchive/Products/Applications/Niobium.app
 ```
 
 The helper builds the UI test runner and points its `UITargetAppPath` at the
