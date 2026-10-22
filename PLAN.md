@@ -188,3 +188,11 @@ still requires verification there. Android installation budgets include measured
 - Validation: 24 iOS unit + 3 UI tests; 24 Android JVM + 5 app-domain runtime
   tests; 18 shared adapter + 13 watcher tests, plus build/package/site checks.
 - See docs/DSH-PROVIDER.md and screenshots/README.md for boundaries and evidence.
+
+Beta.3 release completed 2026-10-22: PR #4 merged at
+90c6a91ec3563ca2fbef0543de69b9ed304ab7e1; CI run 39772986232 and final
+Greptile review passed, with all eight threads resolved. The signed Android
+2.0 (6), full iOS 2.0 (7), source bundle and checksums are published at
+https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.3. Apple accepted
+build 7 for processing; tester availability remains unverified. The site was
+deployed as Cloudflare version 2549f0c3-9bb9-4493-9d7b-7403a1e5d3e7.
