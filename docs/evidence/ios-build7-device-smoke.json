@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "tested_at": "2026-10-22T12:18:54Z",
+  "release": "v2.0.0-beta.3",
+  "app": {
+    "bundle_id": "ai.wckd.niobium",
+    "version": "2.0",
+    "build": 7,
+    "variant": "full DSH",
+    "signing": "development-signed release archive",
+    "packaged_source_commit": "52d48432acf7c4f77f1df6d626b3b8afb0bc4dab"
+  },
+  "device": {
+    "model": "iPhone 18 Pro Max",
+    "os": "iOS 27.0.1",
+    "physical": true
+  },
+  "test": {
+    "name": "LocalDSHDeviceUITests/testLocalEngineUsesNativeNavigationAndRestoresAfterBackgrounding",
+    "passed": 1,
+    "failures": 0,
+    "duration_seconds": 29.754
+  },
+  "verified": [
+    "in-place update from build 6 to build 7",
+    "local DSH starts and loads the real native Scout roster",
+    "New Pixel enabled after connection",
+    "native Engines shows ready state and API-key entry",
+    "advanced web workspace stays closed",
+    "Home screen round trip returns to the native roster",
+    "native Scout chat UI opens"
+  ],
+  "not_verified": [
+    "real-account model turn",
+    "actual delegation",
+    "long background execution or suspension recovery",
+    "battery and process-death behavior",
+    "full accessibility and tablet acceptance"
+  ],
+  "privacy": "Screenshots and xcresult stay local; device identifiers, existing chat text and credentials are not included in this record.",
+  "reproduce": "python3 tools/check-ios-device.py --device YOUR_IPHONE_UDID --app PATH_TO_FULL_DEVELOPMENT_SIGNED_NIOBIUM_APP"
+}
