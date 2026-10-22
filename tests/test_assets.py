@@ -43,6 +43,12 @@ class AssetsTests(unittest.TestCase):
         # A colon in a plain YAML description prevents DSH from discovering it.
         description = next(line for line in skill.decode().splitlines() if line.startswith("description:"))
         self.assertIsInstance(json.loads(description.split(":", 1)[1].strip()), str)
+        text = skill.decode()
+        example = text.split("~~~json\n", 1)[1].split("\n~~~", 1)[0]
+        recipe = json.loads(example)["character"]["recipe"]
+        self.assertEqual(set(recipe), {"body","palette","skin","hair_tone","hair","face","outfit","accessory","detail"})
+        for field in ["skin", "hair_tone", "detail"]:
+            self.assertIn("\n- " + field + ":", text)
         for name in ["skills/bot-build.md", "ios/Resources/bot-build.md",
                      "android/app/src/main/assets/bot_build.md", "site/public/bot-build.md"]:
             self.assertEqual(skill, (ROOT / name).read_bytes(), name)
@@ -91,7 +97,7 @@ class AssetsTests(unittest.TestCase):
         self.assertEqual(len(hashes),12)
 
     def test_generated_catalogs_and_seed_fixtures_cannot_drift(self):
-        for tool in ["tools/character_engine48.py","tools/sync-pixel-personas.py"]:
+        for tool in ["tools/character_engine48.py","tools/character_engine.py","tools/sync-pixel-personas.py"]:
             subprocess.run([sys.executable,str(ROOT/tool),"--check"],cwd=ROOT,check=True,capture_output=True)
         fixture=(ROOT/"tests/fixtures/character-recipes.json").read_bytes()
         for path in ["ios/NativeTests/Fixtures/character-recipes.json","android/app/src/test/resources/character-recipes.json",
