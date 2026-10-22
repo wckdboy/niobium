@@ -126,7 +126,7 @@ provided. The native Hermes workshop is not yet a DSH preset editor.
 with Cloudflare Workers Static Assets from this repository. The
 [2.0 beta release](https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.2)
 includes the signed Android APK, iOS distribution IPA, checksums and complete
-release notes. iOS 2.0 (5), ai.wckd.niobium, was uploaded for TestFlight and
+release notes. iOS 2.0 (6), ai.wckd.niobium, was uploaded for TestFlight and
 accepted for Apple processing. TestFlight manages installation; the App Store
 IPA is not a universally sideloadable download. The last stable release is
 [1.1](https://github.com/wckdboy/niobium/releases/tag/v1.1.0).

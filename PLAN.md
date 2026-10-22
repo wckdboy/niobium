@@ -162,3 +162,8 @@ Release review fixed four Greptile findings: unauthenticated header deadlines,
 serialized service completion/restart, preservation of edited skills, and valid
 source checksum manifests. Runtime regression tests cover the first three;
 the bundled source manifest passes standard SHA-256 verification.
+
+Final beta.2 artifacts: Android 2.0 (5) and full iOS 2.0 (6). The iOS package
+uploaded successfully to App Store Connect for processing; tester availability
+still requires verification there. Android installation budgets include measured
+4 KB file allocation rather than compressed/unpacked byte counts alone.

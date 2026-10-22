@@ -27,7 +27,7 @@ struct RemoteHarnessView: View {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Remote DeepSeek Harness")
                                 .font(.nbTitle(22)).foregroundStyle(NB.text)
-                            Text("Run DSH on your computer or VPS, then open its web UI here. This works on iPhone, iPad and Android; the embedded Alpine guest remains iOS-only.")
+                            Text("Run DSH on your computer or VPS, then open its web UI here. Remote DSH works on iPhone, iPad and Android. For on-device DSH, return to Local.")
                                 .font(.nbBody(12)).foregroundStyle(NB.secondary).lineSpacing(2)
                         }
                         TextField("http://vps.local:3080", text: $draft)

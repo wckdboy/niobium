@@ -8,7 +8,8 @@
     "source_commit": "bac298478545db7bb8762e82ba3db52f50ac6a5d",
     "source_repository": "https://github.com/everettjf/dsh-ios",
     "dsh_version": "0.1.0-rc.7",
-    "unpacked_bytes": 294519656
+    "unpacked_bytes": 294519656,
+    "installed_bytes_4k": 411066368
   },
   "package_repository": "https://packages.termux.dev/apt/termux-main/",
   "source_recipes_commit": "76e6212b260cd0aa15e7ae642fe85b9cfe984878",

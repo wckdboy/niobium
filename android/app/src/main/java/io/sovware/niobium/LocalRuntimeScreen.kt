@@ -129,7 +129,7 @@ fun LocalRuntimeScreen(onClose: (() -> Unit)? = null) {
                         }
                         else -> {
                             runtime.message?.let { Text(it, color = Nb.Rose, fontSize = 12.sp, lineHeight = 18.sp) }
-                            Text("First launch installs about 350 MB. Your workspace stays on this device when you stop or update the engine.",
+                            Text("First launch installs about 450 MB. Your workspace stays on this device when you stop or update the engine.",
                                 color = Nb.Secondary, fontSize = 12.sp, lineHeight = 18.sp)
                             PixelButton(if (runtime.phase == RuntimePhase.ERROR) "Try starting again" else "Start local Pixels",
                                 PixelGlyph.PLAY, Modifier.fillMaxWidth()) { start() }

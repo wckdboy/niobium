@@ -248,7 +248,7 @@ struct HomeView: View {
             }
             .padding(10)
             .background(RoundedRectangle(cornerRadius: 12).fill(NB.fillSoft))
-            Text("DSH is separate from Hermes. The local guest is iOS-only; remote works everywhere.")
+            Text("DSH uses its own sessions and settings. Local and remote runtimes are available on both platforms.")
                 .font(.nbBody(9)).foregroundStyle(NB.tertiary).lineSpacing(1)
         }
         .padding(15)

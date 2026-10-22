@@ -36,7 +36,7 @@ class RuntimeInstaller(private val context: Context) {
         if (!root.exists() && previous.exists()) check(previous.renameTo(root))
         val marker = File(root, ".niobium-image")
         if (!marker.isFile || marker.readText() != expected) {
-            check(base.usableSpace > image.getLong("unpacked_bytes") + 128L * 1024 * 1024) { "Free at least 450 MB to install local DSH." }
+            check(base.usableSpace > image.getLong("installed_bytes_4k") + 128L * 1024 * 1024) { "Free at least 550 MB to install local DSH." }
             progress(2)
             context.assets.open("niobium-runtime.image").use {
                 check(sha(it, cancelled) == expected) { "The Linux image checksum failed." }
