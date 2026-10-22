@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "tested_at": "2026-10-22T14:01:36.562000Z",
+  "release": "v2.0.0-beta.4",
+  "packaged_source_commit": "d16bda4b53bb5a1a8c635bf30918b3393262f58f",
+  "app": {
+    "bundle_id": "ai.wckd.niobium.acceptance",
+    "version": "2.0",
+    "build": 8,
+    "variant": "full DSH Debug acceptance"
+  },
+  "device": {
+    "model": "iPhone 17 Pro simulator",
+    "os": "iOS 26.1",
+    "physical": false
+  },
+  "test": {
+    "name": "LocalDSHModelDeviceUITests/testStreamSurvivesBackgroundAndHistorySurvivesColdLaunch",
+    "passed": 1,
+    "failures": 0,
+    "duration_seconds": 87.152,
+    "target_bundle_identifier_explicitly_matched": true,
+    "final_chunk_gated_until_background": true
+  },
+  "verified": [
+    "real bundled DSH loads the native Scout roster",
+    "local session attachment completes before Send is enabled",
+    "prompt traverses the native chat and real DSH to a loopback-only model fixture",
+    "a unique per-run marker proves the current reply rather than old history",
+    "unfinished turn and absent final reply asserted before pressing Home",
+    "partial SSE output reaches native chat before backgrounding",
+    "final SSE chunk is explicitly gated until the eight-second background step completes",
+    "the complete reply and finished turn are visible after eight seconds on the Home screen",
+    "the same conversation is restored after a full app and guest restart",
+    "the chat stays native without a WebView"
+  ],
+  "not_verified": [
+    "physical build 8 lifecycle",
+    "real-account model transport",
+    "actual delegation",
+    "long background execution or suspension recovery",
+    "battery and OEM behavior"
+  ],
+  "isolation": "The acceptance bundle has a separate app container and Keychain identity. The model fixture uses no real account, and the production Release binary contains no fixture URL/key hook.",
+  "reproduce": "python3 tools/check-ios-device.py --device YOUR_SIMULATOR_UDID --simulator --only-model --model-app PATH_TO_FULL_DEBUG_ACCEPTANCE_SIMULATOR_APP"
+}

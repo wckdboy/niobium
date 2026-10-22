@@ -7,7 +7,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, readonly) NSString *baseURL;
 @property(nonatomic, readonly) NSString *marker;
 @property(atomic, readonly) NSUInteger requestCount;
-@property(nonatomic) NSTimeInterval replyDelay;
+- (void)releaseReply;
 - (void)stop;
 @end
 NS_ASSUME_NONNULL_END

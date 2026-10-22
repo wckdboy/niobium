@@ -1,5 +1,16 @@
 # Native screenshots
 
+Beta.4 dashboard captures verify the stronger header scrim and shared pixel
+engine icons in both themes. These use the labelled demo roster:
+
+- iOS 2.0 (8) simulator: [light](ios-beta4-home-light.png), [dark](ios-beta4-home-dark.png).
+- Android 2.0 (7) signed release: [light](android-beta4-home-light.png), [dark](android-beta4-home-dark.png).
+
+The full iOS simulator model test separately proves real DSH streaming, an
+eight-second background round trip and history after a cold launch. See
+[the evidence](../docs/evidence/ios-build8-simulator-model.json). Build 8 iPhone
+acceptance remains pending; the physical build 7 evidence below is narrower.
+
 The beta.3 captures show the actual local DSH engine connected to the standard
 native app. They use the full iOS 2.0 (7) simulator build and signed Android
 2.0 (6) release on the ARM64 Android 16/API 36 emulator.

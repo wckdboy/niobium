@@ -10,7 +10,6 @@ final class LocalDSHModelDeviceUITests: XCTestCase {
         executionTimeAllowance = 600
         let fixture = try XCTUnwrap(NBLocalModelFixture())
         let prefix = "LOCAL DSH \(fixture.marker)"
-        fixture.replyDelay = 12
         defer { fixture.stop() }
         let app = XCUIApplication(bundleIdentifier: "ai.wckd.niobium.acceptance")
         app.launchArguments = ["--dsh", "--no-splash"]
@@ -33,10 +32,13 @@ final class LocalDSHModelDeviceUITests: XCTestCase {
         XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 90), .completed)
         send.tap()
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", prefix)).firstMatch.waitForExistence(timeout: 60))
+        let reply = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", prefix + " DEVICE ROUND TRIP")).firstMatch
+        XCTAssertTrue(app.buttons["Stop response"].exists, "Background acceptance must begin during an unfinished turn.")
+        XCTAssertFalse(reply.exists)
         XCUIDevice.shared.press(.home)
         Thread.sleep(forTimeInterval: 8)
+        fixture.releaseReply()
         app.activate()
-        let reply = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", prefix + " DEVICE ROUND TRIP")).firstMatch
         XCTAssertTrue(reply.waitForExistence(timeout: 90))
         XCTAssertGreaterThan(fixture.requestCount, 0)
         XCTAssertTrue(app.buttons["Send message"].waitForExistence(timeout: 30), "The streamed turn must finish.")

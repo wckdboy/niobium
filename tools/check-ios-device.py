@@ -55,8 +55,9 @@ def main():
     original = max(products.glob("Niobium_" + platform + "*.xctestrun"), key=lambda p: p.stat().st_mtime)
     manifest = plistlib.loads(original.read_bytes())
 
-    def configure(target, app, test_class, flag):
+    def configure(target, app, bundle, test_class, flag):
         target["UITargetAppPath"] = str(app)
+        target["UITargetAppBundleIdentifier"] = bundle
         target["DependentProductPaths"] = [str(app)] + [
             p for p in target.get("DependentProductPaths", []) if "NiobiumUITests-Runner.app" in p
         ]
@@ -64,15 +65,15 @@ def main():
         target["OnlyTestIdentifiers"] = [test_class]
         return target
 
-    for index, (app, _, test_class, flag) in enumerate(subjects):
+    for index, (app, bundle, test_class, flag) in enumerate(subjects):
         selected = copy.deepcopy(manifest)
         if "TestConfigurations" in selected:
             for config in selected["TestConfigurations"]:
-                config["TestTargets"] = [configure(t, app, test_class, flag) for t in config["TestTargets"]
+                config["TestTargets"] = [configure(t, app, bundle, test_class, flag) for t in config["TestTargets"]
                                          if t.get("BlueprintName") == "NiobiumUITests"]
             targets = [t for c in selected["TestConfigurations"] for t in c["TestTargets"]]
         else:
-            target = configure(selected["NiobiumUITests"], app, test_class, flag)
+            target = configure(selected["NiobiumUITests"], app, bundle, test_class, flag)
             selected = {"NiobiumUITests": target, "__xctestrun_metadata__": selected["__xctestrun_metadata__"]}
             targets = [target]
         if not targets:

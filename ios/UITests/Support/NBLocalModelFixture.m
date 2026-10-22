@@ -6,8 +6,10 @@
 @interface NBLocalModelFixture ()
 @property(nonatomic) int fd;
 @property(nonatomic) uint16_t port;
-@property(nonatomic) dispatch_source_t source;
-@property(nonatomic) dispatch_queue_t queue;
+@property(nonatomic, strong) dispatch_source_t source;
+@property(nonatomic, strong) dispatch_queue_t queue;
+@property(nonatomic, strong) dispatch_semaphore_t replyGate;
+@property(atomic) BOOL stopped;
 @property(atomic, readwrite) NSUInteger requestCount;
 @end
 
@@ -15,6 +17,7 @@
 - (instancetype)init {
     if (!(self = [super init])) return nil;
     _marker = NSUUID.UUID.UUIDString;
+    _replyGate = dispatch_semaphore_create(0);
     _fd = socket(AF_INET, SOCK_STREAM, 0);
     if (_fd < 0) return nil;
     struct sockaddr_in address = {.sin_len = sizeof(address), .sin_family = AF_INET,
@@ -33,7 +36,10 @@
     return self;
 }
 - (NSString *)baseURL { return [NSString stringWithFormat:@"http://127.0.0.1:%u", self.port]; }
+- (void)releaseReply { dispatch_semaphore_signal(self.replyGate); }
 - (void)stop {
+    self.stopped = YES;
+    [self releaseReply];
     if (self.source) { dispatch_source_cancel(self.source); self.source = nil; }
     if (self.fd >= 0) { close(self.fd); self.fd = -1; }
 }
@@ -100,7 +106,9 @@
     @synchronized(self) { self.requestCount += 1; }
     [self write:@"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nCache-Control: no-cache\r\nConnection: close\r\n\r\n" to:peer];
     [self write:[self event:[NSString stringWithFormat:@"LOCAL DSH %@ ", self.marker] finish:NO] to:peer];
-    if (self.replyDelay > 0) [NSThread sleepForTimeInterval:MIN(self.replyDelay, 20)];
+    // The test releases the final chunk only after it has observed a partial
+    // reply and backgrounded Niobium. A deadline bounds failed test cleanup.
+    if (dispatch_semaphore_wait(self.replyGate, dispatch_time(DISPATCH_TIME_NOW, 120 * NSEC_PER_SEC)) != 0 || self.stopped) return;
     [self write:[self event:@"DEVICE ROUND TRIP" finish:YES] to:peer];
     [self write:@"data: [DONE]\n\n" to:peer];
 }
