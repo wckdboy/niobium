@@ -106,6 +106,17 @@ test('local session rows retain actual titles and activity without inventing cou
   assert.equal(rows[0].started_at, undefined);
 });
 
+test('native local chat lists retain older sessions beyond the requested display limit', async () => {
+  const items = Array.from({length: 120}, (_, i) => ({sessionId: 'chat-' + i, agentPreset: 'standard', updatedAt: i * 1000}));
+  items.push({sessionId: 'other-pixel', agentPreset: 'another', updatedAt: 150000},
+    {sessionId: 'companion', agentPreset: 'standard', origin: 'subagent', updatedAt: 150000});
+  const p = createProvider({rpc: async () => ({items})});
+  const rows = (await p.request('session.list', {profile: 'default', limit: 60})).sessions;
+  assert.equal(rows.length, 120);
+  assert.equal(rows[0].id, 'chat-119');
+  assert.equal(rows.at(-1).id, 'chat-0');
+});
+
 test('each model step finalizes once and turn completion never repeats its text', () => {
   const state = {text: '', stepText: '', priorStep: false};
   const event = (type, data) => streamFrames({payload: {type: 'session/event', sessionId: 'sid', event: {type, data}}}, state);

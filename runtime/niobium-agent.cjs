@@ -209,7 +209,9 @@ function createProvider({rpc, postResponse, home = '/root/.dsh', workspace = '/r
       }
       case 'session.list': {
         const rows = (await rpc('session.list', {})).items.filter(s => s.origin !== 'subagent' && (!p.profile || presetID(p.profile) === presetID(s.agentPreset)));
-        return {sessions: rows.sort((a,b) => b.updatedAt-a.updatedAt).slice(0, Math.min(p.limit || 60, 100)).map(s => ({id: s.sessionId, session_id: s.sessionId,
+        // Native session lists cannot request a continuation page yet. Preserve
+        // every local chat rather than silently hiding rows beyond their limit.
+        return {sessions: rows.sort((a,b) => b.updatedAt-a.updatedAt).map(s => ({id: s.sessionId, session_id: s.sessionId,
           title: s.projections?.values?.title || 'Chat ' + s.sessionId.slice(-6), updated_at: s.updatedAt / 1000, model: 'DSH', running: s.running}))};
       }
       case 'session.create': {
