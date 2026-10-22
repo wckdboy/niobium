@@ -112,7 +112,10 @@ The beta passed 24 iOS unit tests, 3 native UI tests, 24 Android JVM tests,
 5 Android runtime instrumentation tests,
 18 DSH-adapter tests, 13 upstream-watcher tests, 5 asset checks and 38 pure Swift PixelSpec assertions.
 Android debug/release builds and lint, both iOS variants and the signed full
-iOS archive/export passed. Native Home and Pixel-review captures are in
+iOS archive/export passed. Full build 7 also passed the opt-in native DSH smoke
+test on a physical iPhone 18 Pro Max running iOS 27.0.1; see
+[the device evidence](docs/evidence/ios-build7-device-smoke.json).
+Native Home and Pixel-review captures are in
 [screenshots](screenshots/README.md). These checks do not establish end-to-end
 parity with a live, provider-backed Hermes install.
 

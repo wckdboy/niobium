@@ -69,8 +69,12 @@ and that the web interface opens only from advanced controls.
 
 Both iOS targets compile, and the full iOS simulator boots DSH into the native
 dashboard and Scout roster. Native state and UI tests cover DSH creation routing,
-engine identity and the coherent Engines screen. Physical iOS/Android execution,
-real-account provider acceptance, actual delegation, model/image edge cases,
+engine identity and the coherent Engines screen. A physical iPhone 18 Pro Max
+(iOS 27.0.1), upgraded from build 6 to 7, passed the opt-in DSH startup, native
+Engines, Home-screen return and chat-UI smoke test. The sanitized record is in
+[evidence/ios-build7-device-smoke.json](evidence/ios-build7-device-smoke.json).
+Physical Android and broader iOS execution, real-account provider acceptance,
+actual delegation, model/image edge cases,
 16 KB devices and OEM battery/process-death behavior still need acceptance.
 
 DSH APIs are grounded in the pinned image and

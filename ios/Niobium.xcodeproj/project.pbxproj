@@ -11,6 +11,7 @@
 		0C71937DE535F00ED332DD62 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8A6C18F7A70DB585CADF863 /* RootView.swift */; };
 		16C551F33A5623C689152478 /* PixelComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F7CD6081B76DBAC20A77786 /* PixelComponents.swift */; };
 		16FA9B303A48F55CFA838885 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E704B906D738908DBF1156D /* Theme.swift */; };
+		214277DE50830925F58728FE /* LocalDSHDeviceUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03C49BB9E39CC73A1739BA27 /* LocalDSHDeviceUITests.swift */; };
 		2D34E9368C50EB82EA9C7628 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 063319FA4EED8BEB522CC64B /* OnboardingView.swift */; };
 		30BF5F4627D0D1CAA403A285 /* BotsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D65FE4758CBAF210B2115AA /* BotsView.swift */; };
 		333F26945B25F06F3F915D65 /* CredentialPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1AFDA3DFCA502228435D1AC /* CredentialPromptView.swift */; };
@@ -66,6 +67,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		03C49BB9E39CC73A1739BA27 /* LocalDSHDeviceUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalDSHDeviceUITests.swift; sourceTree = "<group>"; };
 		03DDC2C567BD154F7B787F7C /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		05A3A26E6798DCAE73848B78 /* GroupsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupsView.swift; sourceTree = "<group>"; };
 		063319FA4EED8BEB522CC64B /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
@@ -193,6 +195,7 @@
 		B22F38AB97DDEC27EC73425A /* UITests */ = {
 			isa = PBXGroup;
 			children = (
+				03C49BB9E39CC73A1739BA27 /* LocalDSHDeviceUITests.swift */,
 				B57601DD63B1EEF47A996E4F /* NiobiumUITests.swift */,
 			);
 			path = UITests;
@@ -370,6 +373,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				214277DE50830925F58728FE /* LocalDSHDeviceUITests.swift in Sources */,
 				57ECAA5D4EFF73812A1CBEEB /* NiobiumUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

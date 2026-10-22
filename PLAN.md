@@ -196,3 +196,11 @@ Greptile review passed, with all eight threads resolved. The signed Android
 https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.3. Apple accepted
 build 7 for processing; tester availability remains unverified. The site was
 deployed as Cloudflare version 2549f0c3-9bb9-4493-9d7b-7403a1e5d3e7.
+
+Physical iPhone follow-up: full build 7 installed over build 6 on an iPhone 18
+Pro Max running iOS 27.0.1. The opt-in native DSH smoke test passed startup,
+Scout roster, native Engines/provider settings, Home-screen return and native
+chat UI. The test sends no model request; real-account turns, delegation,
+long background/suspension behavior and broader device acceptance remain.
+Reproduce with tools/check-ios-device.py; sanitized evidence is in
+docs/evidence/ios-build7-device-smoke.json.
