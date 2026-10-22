@@ -319,3 +319,38 @@ The full signed archive and distribution IPA pass current-resource, signature,
 identity and Release fixture-hook exclusion checks. Independent review of
 implementation eaefe46 reports no findings. The iPhone is paired but locked,
 so physical acceptance is waiting for unlock. Greptile remains at its trial quota.
+
+
+Candidate delivery status (22 October, 19:10 UTC):
+
+- Signed Android 2.0 (9) and full iOS 2.0 (10), unchanged corresponding runtime
+  sources, metadata and checksums are uploaded to the unpublished
+  [beta.6 draft](https://github.com/wckdboy/niobium/releases/tag/untagged-a4e78f6eb37fbcb43274).
+  All five GitHub names, lengths and digests match local staging.
+- Apple accepted build 10 for processing at 18:55:09 UTC. Tester availability
+  remains unverified.
+- [PR #8](https://github.com/wckdboy/niobium/pull/8) is open. The native
+  implementation reviewed at eaefe46 has no findings. The final metadata
+  follow-up review remains running; Greptile cannot review at its trial quota.
+- The latest Mac runner remained queued for about 20 minutes. The client suite
+  now pins the supported macOS 15 ARM64/Xcode 26.3 image, with the same tests.
+  [CI 39837175768](https://github.com/wckdboy/niobium/actions/runs/39837175768)
+  is pending. Merge, public release and site deployment wait for the checks.
+- The paired iPhone remained locked; device preflight timed out before launching
+  the tests. Build 10 physical acceptance and physical QA-app cleanup remain
+  pending. Simulator QA apps were removed.
+- Plane NIO-3/10/24/29/32/36 and both exports record the candidate and limits.
+  The public website/release remain beta.5 until beta.6 publication.
+
+Next cycle acceptance:
+
+1. Undo restores the complete draft appearance and companion identity. Keep a
+   bounded history in the parent editor so folds and lazy-list disposal retain it.
+2. Named saved looks use versioned recipes and provider-qualified identities,
+   with bounded storage and clear apply/delete controls. Save still uses the
+   existing metadata revision check.
+3. Offline roles gain deterministic name/voice variation while retaining explicit
+   user cues, stable profile IDs, adult ages and clearly labelled template output.
+4. Retry the physical build when unlocked, remove only isolated QA apps, then
+   complete real-account turns/delegation, physical Android/16 KB, provider-key
+   storage and Hermes replay.
