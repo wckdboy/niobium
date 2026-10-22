@@ -101,6 +101,11 @@ pass `--simulator`, its UDID, the matching `--model-app` and `--only-model` to
 the helper. This checks the real guest and model stream; physical lifecycle and
 device performance still require the iPhone run.
 
+After inspection, remove only the temporary `ai.wckd.niobium.acceptance` app and
+`ai.wckd.niobium.uitests.xctrunner` from the test device. Preserve the production
+`ai.wckd.niobium` app and its data. If the device disconnects, cleanup and physical
+acceptance remain pending until it reconnects.
+
 
 GitHub Actions runs shared, Android and iOS suites for pull requests and pushes.
 Live provider/connector authorization, physical-device background behaviour and

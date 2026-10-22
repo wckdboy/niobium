@@ -205,7 +205,7 @@ long background/suspension behavior and broader device acceptance remain.
 Reproduce with tools/check-ios-device.py; sanitized evidence is in
 docs/evidence/ios-build7-device-smoke.json.
 
-## Current cycle: beta.4 device acceptance and readability
+## Shipped: beta.4 device acceptance and readability
 
 - Strengthen the shared dashboard scrim and use the pixel icon set for engine stats.
 - Gate Send on a connected, attached session; retain drafts during startup/offline.
@@ -224,8 +224,22 @@ docs/evidence/ios-build7-device-smoke.json.
   31 shared Node tests, 5 asset checks and 38 Swift PixelSpec assertions.
   Both themes were inspected on iOS/Android. Signed Android release and full
   iOS archive/export pass; Release fixture-hook exclusion is verified.
-- Candidate versions: Android 2.0 (7), full iOS 2.0 (8). PR #6 is under review.
-  The iPhone is currently unavailable, so build 8 physical model/lifecycle
-  acceptance remains pending. Build 7 physical smoke covered UI only.
+- Published versions: Android 2.0 (7), full iOS 2.0 (8). PR #6 merged at
+  00e9975548b9777c25713fa06064266c1aafdb37. Final head 0a589bd and CI run
+  39792307093 pass shared, Android and iOS suites. Greptile reviewed 32 files
+  with no new comments; both review threads are resolved.
+- Beta.4 assets, runtime sources, metadata and SHA256SUMS are published at
+  https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.4. All five GitHub
+  asset digests match the staged files. App source is d16bda4, unchanged by the
+  later test/documentation fixes.
+- Apple accepted full iOS 2.0 (8) at 2026-10-22T14:14:59Z for processing.
+  TestFlight tester availability is unverified. The iPhone is unavailable, so
+  build 8 physical model/lifecycle acceptance remains pending. Build 7 physical
+  smoke covered UI only.
+- niobium.sh deployed as d208831f-9b39-4c71-8f21-0f8d9c372063. Exact deployed
+  bytes match all six pages, www Home, favicon, stylesheet, skill and icon.
+  Plane NIO-24/29/32 and both local exports record the same evidence and limits.
 - Next loop: physical build 8 and Android/16 KB acceptance, real-account model
   turns and actual delegation, then encrypted provider storage and Hermes replay.
+  After device acceptance, remove the temporary acceptance app/test runner;
+  preserve the production app and its workspace.

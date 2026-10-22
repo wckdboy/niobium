@@ -137,8 +137,8 @@ acceptance and actual delegation remain. Mobile gateway push delivery is not pro
 with Cloudflare Workers Static Assets from this repository. The
 [2.0 beta release](https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.4)
 includes the signed Android APK, iOS distribution IPA, checksums and complete
-release notes. The full iOS 2.0 (8) package targets TestFlight under
-ai.wckd.niobium; the release notes track processing and availability. TestFlight
+release notes. Apple accepted full iOS 2.0 (8), ai.wckd.niobium, for TestFlight
+processing on 22 October; tester availability remains unverified. TestFlight
 manages installation; the App Store
 IPA is not a universally sideloadable download. The last stable release is
 [1.1](https://github.com/wckdboy/niobium/releases/tag/v1.1.0).

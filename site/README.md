@@ -13,7 +13,7 @@ copies.
 
 Cloudflare Worker: `niobium-site`. Domains: [niobium.sh](https://niobium.sh/)
 and [www.niobium.sh](https://www.niobium.sh/).
-Deployment 2026-10-22: `659476b6-ada8-49cc-b16c-6716535b49f3`.
+Deployment 2026-10-22: `d208831f-9b39-4c71-8f21-0f8d9c372063`.
 HTTP and exact deployed-HTML verification passed. Browser visual QA remains
 unverified: automatic approval rejected Brave Browser; the in-app browser was
 unavailable.
