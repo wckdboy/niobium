@@ -112,8 +112,8 @@ Prioritize these domains without replacing backend behaviour with simulations:
   findings were fixed and resolved; regression cases are in the native suites.
 - The daily [Hermes watcher](docs/HERMES-UPDATES.md) is on main; review
   new contracts and tools before updating the audited baseline.
-- First follow-up: [Android embedded DSH](docs/ANDROID-DSH.md), using APK-packaged
-  PRoot with a pinned Ubuntu/Node environment and device acceptance gates.
+- Android embedded DSH now uses APK-packaged PRoot with the pinned Alpine/Node
+  image. Physical-device and provider-backed acceptance remain.
 - Then complete receipts/replay, connector authorization and room control.
 - Polish modular character art to the standard of the authored adult cast.
 
@@ -131,3 +131,29 @@ Reproducible verification is in [TESTING.md](docs/TESTING.md).
   Add capability-gated room activity next; keep the audited baseline until acceptance passes.
 - Active-session build/test/review/release cycles work. Unattended continuation needs
   a supported wake/timer integration; a shell sleep loop is not installed.
+
+## Harness2 evaluation
+
+Inspected google-research/harness2 at commit
+1cfe254e8d25b15f37048c3730134686abe60335 (Apache-2.0, Python 3.12/3.13).
+Its deterministic local demo passed both recursion modes with k=2:
+two tasks, zero failures, 28 Python executions and 32 deterministic editor calls.
+No model credentials were used. The evidence pin is in config/harness2-evaluation.json.
+
+The proposed Niobium use is an optional **Improve this Pixel** experiment on the
+PC/VPS, with a Hermes substrate adapter. Existing upstream executors are
+OpenCode and Codex; Hermes/DSH integration has not been implemented.
+
+- Start with one probe step on explicit test tasks in an isolated workspace.
+  Bound model cost, elapsed time and companion fan-out; side-effecting user
+  tasks must not be silently repeated as probes.
+- Map proposed persona/skill/delegation changes to a reviewed PixelSpec diff.
+  Keep provider secrets, connector authorization and enforced permissions
+  outside the editable harness. A prompt must not grant access.
+- Retain run evidence, compare with the original Pixel, and adopt a versioned
+  change with rollback after review. Confirm claimed improvements with
+  independent task checks rather than model preference alone.
+- Prove cancellation, reconnect, partial failure, evidence redaction and
+  unchanged access before exposing the control in the app.
+
+Source: https://github.com/google-research/harness2/tree/1cfe254e8d25b15f37048c3730134686abe60335

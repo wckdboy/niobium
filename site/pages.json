@@ -2,15 +2,15 @@
   {
     "slug": "",
     "key": "home",
-    "title": "Niobium — your pixels, everywhere",
+    "title": "Niobium \u2014 your pixels, everywhere",
     "heading": "your pixels, everywhere",
     "label": "wckd / niobium / 2.0 beta",
-    "description": "A native client for your AI bots on iPhone, iPad and Android, built for Hermes, with a mature, beautiful pixel-art aesthetic: every bot a 48×48 character, the real gateway underneath."
+    "description": "A native client for your AI bots on iPhone, iPad and Android, built for Hermes, with a mature, beautiful pixel-art aesthetic: every bot a 48\u00d748 character, the real gateway underneath."
   },
   {
     "slug": "system",
     "key": "system",
-    "title": "System — Niobium",
+    "title": "System \u2014 Niobium",
     "heading": "a pocket command deck",
     "label": "niobium / system",
     "description": "Native clients, real Hermes bot profiles, attributed chats and capability-aware tools, drawn in pixel art."
@@ -18,23 +18,23 @@
   {
     "slug": "local",
     "key": "local",
-    "title": "Local and remote DSH — Niobium",
+    "title": "Local and remote DSH \u2014 Niobium",
     "heading": "your harness, your keys",
     "label": "niobium / harness",
-    "description": "Run DeepSeek Harness in an on-device Alpine guest on iOS, or connect to a computer or VPS from either platform."
+    "description": "Run DeepSeek Harness in an on-device Alpine guest on iOS or ARM64 Android, or connect to DSH on a computer or VPS."
   },
   {
     "slug": "build",
     "key": "build",
-    "title": "Pixel workshop — Niobium",
+    "title": "Pixel workshop \u2014 Niobium",
     "heading": "give them a purpose",
     "label": "niobium / pixel workshop",
-    "description": "The bot-build skill turns an idea into a reviewed persona, an adult 48×48 character, a companion, skills and explicit access."
+    "description": "The bot-build skill turns an idea into a reviewed persona, an adult 48\u00d748 character, a companion, skills and explicit access."
   },
   {
     "slug": "releases",
     "key": "releases",
-    "title": "Releases — Niobium",
+    "title": "Releases \u2014 Niobium",
     "heading": "builds and releases",
     "label": "niobium / releases",
     "description": "Niobium 2.0 beta: signed Android APK, iOS TestFlight build, checksums, verification and remaining work."
@@ -42,7 +42,7 @@
   {
     "slug": "legal",
     "key": "legal",
-    "title": "Privacy and licenses — Niobium",
+    "title": "Privacy and licenses \u2014 Niobium",
     "heading": "plain terms",
     "label": "niobium / privacy and licenses",
     "description": "Niobium privacy, asset provenance, open-source licenses and independent project status."

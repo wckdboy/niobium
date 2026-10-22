@@ -70,7 +70,7 @@ fun PixelButton(label: String, glyph: PixelGlyph, modifier: Modifier = Modifier,
                 secondary: Boolean = false, destructive: Boolean = false, enabled: Boolean = true, onClick: () -> Unit) {
     val tint = if (destructive) Nb.Rose else Nb.Ion
     val background = if (secondary) tint.copy(alpha = 0.09f) else tint
-    val foreground = if (secondary) tint else Color.White
+    val foreground = if (secondary) tint else if (!Nb.light && !destructive) Color(0xFF1B1326) else Color.White
     Row(modifier.heightIn(min = 50.dp).clip(PixelButtonShape)
         .background(if (enabled) background else Nb.FillStrong)
         .border(1.dp, if (enabled) tint.copy(alpha = 0.32f) else Nb.Line, PixelButtonShape)

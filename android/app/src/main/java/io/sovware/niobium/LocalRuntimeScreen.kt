@@ -159,7 +159,7 @@ fun LocalRuntimeScreen(onClose: (() -> Unit)? = null) {
 private fun LocalWorkspace(origin: String, token: String, modifier: Modifier) {
     var error by remember(origin) { mutableStateOf<String?>(null) }
     var revision by remember(origin) { mutableIntStateOf(0) }
-    Column(modifier) {
+    Column(modifier.imePadding()) {
         error?.let { message ->
             Row(Modifier.fillMaxWidth().background(Nb.Surface).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(message, color = Nb.Rose, fontSize = 12.sp, modifier = Modifier.weight(1f))

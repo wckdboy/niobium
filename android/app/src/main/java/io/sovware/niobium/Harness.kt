@@ -111,7 +111,7 @@ fun RemoteHarnessScreen(onClose: () -> Unit) {
                 }
             }
             androidx.compose.runtime.key(active, reloadID) { AndroidView(
-                modifier = Modifier.fillMaxSize().navigationBarsPadding(),
+                modifier = Modifier.fillMaxSize().navigationBarsPadding().imePadding(),
                 factory = { ctx ->
                     WebView(ctx).apply {
                         layoutParams = android.view.ViewGroup.LayoutParams(

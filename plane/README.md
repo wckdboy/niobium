@@ -3,7 +3,7 @@
 [Niobium project](https://app.plane.so/wckd/projects/2fbcf987-20de-43dc-80ac-0a6bab7ec03a/issues/)
 in workspace `wckd`, identifier `NIO`, timezone Europe/Copenhagen.
 
-The 2026-10-22 reconciliation covers 36 work items, including explicit work for
+The 2026-10-22 reconciliation covers 37 work items, including explicit work for
 companions, connectors, memory, projects, Android local DSH, admissions,
 credentials, quality, Bot Mode, parity, replay and personas. Missing descriptions
 and priorities from the old CSV import have been restored.
