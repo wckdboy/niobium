@@ -9,6 +9,10 @@ final class AppStore: ObservableObject {
     @Published var engine: AgentEngine = .hermes
     @Published var localStatus = "Stopped"
     @Published var localReady = false
+    var localConnectionError: String? {
+        guard engine == .dsh, case let .failed(message) = connectionState else { return nil }
+        return message
+    }
     @Published var connection: GatewayConnection?
     @Published var connectionState: GatewayState = .disconnected
     @Published var isDemo = false
@@ -180,6 +184,9 @@ final class AppStore: ObservableObject {
             api = nil
             connectionState = .failed(error.localizedDescription)
             connectError = error.localizedDescription
+#if NIOBIUM_LOCAL_DSH
+            if local { DSHHarness.shared().log.append("[niobium] native provider connection failed: \(error.localizedDescription)") }
+#endif
         }
         isConnecting = false
     }

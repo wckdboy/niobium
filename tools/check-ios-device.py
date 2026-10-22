@@ -3,6 +3,7 @@
 import argparse
 import copy
 from datetime import datetime, timezone
+import json
 from pathlib import Path
 import plistlib
 import subprocess
@@ -28,6 +29,13 @@ def main():
         parser.error("--app is required for the standard device smoke test")
     if args.only_model and not args.model_app:
         parser.error("--only-model requires --model-app")
+    if not args.simulator:
+        lock = subprocess.run([
+            "xcrun", "devicectl", "device", "info", "lockState", "--device", args.device,
+            "--json-output", "-", "--timeout", "20"
+        ], check=True, capture_output=True, text=True)
+        if json.loads(lock.stdout)["result"]["passcodeRequired"]:
+            parser.error("Unlock the paired iPhone and keep it awake before starting. A paired wireless connection works without a cable.")
     subjects = []
     if not args.only_model:
         subjects.append((args.app.resolve(), "ai.wckd.niobium", "LocalDSHDeviceUITests", "NIOBIUM_DEVICE_DSH_TEST"))
@@ -65,6 +73,7 @@ def main():
         target["OnlyTestIdentifiers"] = [test_class]
         return target
 
+    failures = []
     for index, (app, bundle, test_class, flag) in enumerate(subjects):
         selected = copy.deepcopy(manifest)
         if "TestConfigurations" in selected:
@@ -83,11 +92,18 @@ def main():
         result = args.result_bundle or ROOT / "dist" / ("NiobiumDevice-" + datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S") + ".xcresult")
         if index:
             result = result.with_name(result.stem + "-model.xcresult")
-        run("xcodebuild", "test-without-building", "-xctestrun", prepared,
-            "-destination", destination, "-parallel-testing-enabled", "NO",
-            "-test-timeouts-enabled", "YES", "-maximum-test-execution-time-allowance", "720",
-            "-resultBundlePath", result.resolve())
-        print("DSH acceptance results:", result.resolve())
+        try:
+            run("xcodebuild", "test-without-building", "-xctestrun", prepared,
+                "-destination", destination, "-parallel-testing-enabled", "NO",
+                "-test-timeouts-enabled", "YES", "-maximum-test-execution-time-allowance", "720",
+                "-resultBundlePath", result.resolve())
+        except subprocess.CalledProcessError:
+            failures.append(test_class)
+            print("DSH acceptance FAILED:", test_class, result.resolve(), flush=True)
+        else:
+            print("DSH acceptance PASSED:", test_class, result.resolve(), flush=True)
+    if failures:
+        raise SystemExit("Failed DSH acceptance: " + ", ".join(failures))
 
 
 if __name__ == "__main__":

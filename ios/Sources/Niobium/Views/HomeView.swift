@@ -144,7 +144,7 @@ struct HomeView: View {
                 .disabled(!store.connectionState.isConnected && !store.isDemo)
             }
             if store.bots.isEmpty {
-                Text(store.engine == .dsh && !store.connectionState.isConnected ? store.localStatus : "Give your first Pixel a purpose. Create one here or refresh your roster.")
+                Text(store.engine == .dsh && !store.connectionState.isConnected ? store.localConnectionError ?? store.localStatus : "Give your first Pixel a purpose. Create one here or refresh your roster.")
                     .font(.nbBody(13)).foregroundStyle(NB.secondary).padding(16).pixelPanel()
             }
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 155), spacing: 10)], spacing: 10) {
@@ -220,7 +220,7 @@ struct LocalView: View {
                     if store.engine == .dsh {
                         HStack(spacing: 8) {
                             if store.isConnecting { ProgressView().tint(NB.ion) }
-                            Text(store.connectionState.isConnected ? "Ready · chats and tasks run in Niobium" : store.localStatus)
+                            Text(store.connectionState.isConnected ? "Ready · chats and tasks run in Niobium" : store.localConnectionError ?? store.localStatus)
                                 .font(.nbBody(12)).foregroundStyle(store.connectionState.isConnected ? NB.mint : NB.secondary)
                         }
                     }

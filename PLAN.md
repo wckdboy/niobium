@@ -317,5 +317,59 @@ pass. Full build 10 DSH simulator model/background/cold-history acceptance
 passes in 99.595 seconds (docs/evidence/ios-build10-simulator-model.json).
 The full signed archive and distribution IPA pass current-resource, signature,
 identity and Release fixture-hook exclusion checks. Independent review of
-implementation eaefe46 reports no findings. The iPhone is paired but locked,
-so physical acceptance is waiting for unlock. Greptile remains at its trial quota.
+implementation eaefe46 reports no findings. A later wireless physical run boots
+DSH but fails native roster attachment. Physical acceptance has not passed;
+publication is held. Greptile remains at its trial quota.
+
+
+Candidate delivery status (22 October, after wireless device testing):
+
+- Signed Android 2.0 (9) and full iOS 2.0 (10), unchanged corresponding runtime
+  sources, metadata and checksums are uploaded to the unpublished
+  beta.6 draft (release ID 421093112).
+  All five GitHub names, lengths and digests match local staging.
+- Apple accepted build 10 for processing at 18:55:09 UTC. Tester availability
+  remains unverified.
+- [PR #8](https://github.com/wckdboy/niobium/pull/8) is open. The native
+  implementation reviewed at eaefe46 has no findings. The final metadata
+  follow-up review remains running; Greptile cannot review at its trial quota.
+- The latest Mac runner remained queued for about 20 minutes. The client suite
+  now pins the supported macOS 15 ARM64/Xcode 26.3 image, with the same tests.
+  [CI 39837175768](https://github.com/wckdboy/niobium/actions/runs/39837175768)
+  passed all three jobs: 37 iOS tests pass with two opt-in skips; shared and
+  Android also pass. Follow-up diagnostic source changes need fresh CI and
+  replacement signed iOS artifacts before release.
+- The paired iPhone is reachable over the local network without a cable. The
+  build-10 production smoke launches, boots Linux and reaches server readiness
+  in 17.229 seconds, then fails with an empty native roster and Error state.
+  The exact connection failure still needs diagnosis. The controlled model run
+  was blocked before app launch by the lock screen and cancelled. See
+  docs/evidence/ios-build10-wireless-device.json.
+- Follow-up source exposes connection failures in Home/Engines and redacted DSH
+  logs, prevents Auto-Lock during full-app acceptance, and improves helper lock
+  preflight/result collection. All 38 client tests pass (two opt-in skips),
+  including 19 gateway-state tests. The full diagnostic device app builds.
+  These source changes are not in the existing build-10 distribution artifact.
+- Beta.6 publication and site deployment remain held for the native connection
+  fix, fresh build and physical acceptance. Temporary physical QA-app cleanup
+  remains pending; the production app and data have been preserved.
+- Plane NIO-3/10/24/29/32/36 and both exports record the candidate and limits.
+  The public website/release remain beta.5 until beta.6 publication.
+
+Next cycle acceptance:
+
+1. Undo restores the complete draft appearance and companion identity. Keep a
+   bounded history in the parent editor so folds and lazy-list disposal retain it.
+2. Named saved looks use versioned recipes and provider-qualified identities,
+   with bounded storage and clear apply/delete controls. Save still uses the
+   existing metadata revision check.
+3. Offline roles gain deterministic name/voice variation while retaining explicit
+   user cues, stable profile IDs, adult ages and clearly labelled template output.
+4. Retry the physical build when unlocked, remove only isolated QA apps, then
+   complete real-account turns/delegation, physical Android/16 KB, provider-key
+   storage and Hermes replay.
+
+A scoped device query verifies ai.wckd.niobium 2.0 (10) is installed on the
+iPhone. No production uninstall was performed. Physical tests exited before
+launch after the lock-screen/runner connection block; behavior remains
+unverified. Evidence: docs/evidence/ios-build10-iphone-install.json.

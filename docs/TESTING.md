@@ -57,12 +57,12 @@ The full DSH target has a separate device archive gate; do not regenerate it
 with XcodeGen. TestFlight uses ai.wckd.niobium on team XKA8CGC2AB. Export/upload
 options are in ios/Release.
 
-For a connected, unlocked iPhone with Developer Mode enabled, run the opt-in
+For a paired, unlocked iPhone with Developer Mode enabled, run the opt-in
 native DSH smoke test against the development-signed full app from an archive:
 
 ```sh
 python3 tools/check-ios-device.py --device YOUR_IPHONE_UDID \
-  --app dist/Niobium-2.0-9-pixel-atelier.xcarchive/Products/Applications/Niobium.app
+  --app dist/Niobium-2.0-10-pixel-studio.xcarchive/Products/Applications/Niobium.app
 ```
 
 The helper builds the UI test runner and points its `UITargetAppPath` at the
@@ -72,6 +72,20 @@ Scout roster, checks native Engines/provider settings, returns from the Home
 screen and opens native chat. It sends no model request and changes no API key.
 Screenshots are retained in the local xcresult; inspect them for private data
 before sharing. The default client-only CI run skips this opt-in test.
+An existing paired local-network connection works without a cable. The helper
+checks the lock state before building and reports when an unlock is required.
+The full app honors the acceptance launch argument to prevent Auto-Lock during
+the run. If both apps are supplied, each test runs even if the other fails;
+the helper still exits unsuccessfully if either acceptance test fails.
+
+The build-10 wireless run reached the real device and booted DSH, then failed
+because the native connection entered an error state and the roster did not
+load. The separate controlled model run was blocked before launch by the lock
+screen and was cancelled. These are not physical acceptance passes. Sanitized
+evidence is in [ios-build10-wireless-device.json](evidence/ios-build10-wireless-device.json).
+The follow-up source exposes local connection errors on Home and Engines and
+records them in the redacted DSH diagnostic log. The existing build-10 release
+artifacts predate that change; beta.6 publication remains on hold.
 
 For a controlled model turn, build a separate full Debug app. Its bundle identity
 keeps app data and Keychain items separate from the installed Niobium app:

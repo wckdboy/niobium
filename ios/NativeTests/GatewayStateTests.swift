@@ -64,6 +64,22 @@ private final class FixtureRPC: HermesRPC {
 
 @MainActor
 final class GatewayStateTests: XCTestCase {
+    func testLocalConnectionFailureStaysVisibleWhileLinuxIsReady() {
+        let store = AppStore(api: FixtureRPC())
+        store.engine = .dsh
+        store.localReady = true
+        store.localStatus = "Running"
+        store.connectionState = .failed("Gateway returned HTTP 403.")
+        XCTAssertEqual(store.localConnectionError, "Gateway returned HTTP 403.")
+        store.connectionState = .connecting
+        XCTAssertNil(store.localConnectionError)
+        store.connectionState = .connected(version: "DSH")
+        XCTAssertNil(store.localConnectionError)
+        store.connectionState = .failed("Remote connection failed")
+        store.engine = .hermes
+        XCTAssertNil(store.localConnectionError)
+    }
+
     func testRepeatedOpenWhileAttachingUsesOneSession() async throws {
         let rpc = FixtureRPC(), bot = try XCTUnwrap(BotProfile.parse(["name": "scout", "origin": "dsh"]))
         rpc.holdListFor = bot.name

@@ -18,6 +18,11 @@ final class NiobiumSceneDelegate: UIResponder, UIWindowSceneDelegate {
         window.rootViewController = host
         self.window = window
         window.makeKeyAndVisible()
+        // Match the SwiftUI client runner: opt-in acceptance should not be
+        // interrupted by Auto-Lock while a cold guest is starting.
+        if ProcessInfo.processInfo.arguments.contains("--no-splash") {
+            UIApplication.shared.isIdleTimerDisabled = true
+        }
     }
 
     func sceneDidBecomeActive(_ scene: UIScene) {
