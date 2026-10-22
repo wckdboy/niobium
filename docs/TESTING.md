@@ -110,6 +110,11 @@ acceptance remain pending until it reconnects.
 
 
 GitHub Actions runs shared, Android and iOS suites for pull requests and pushes.
+The client suite pins macOS 15 ARM64 and Xcode 26.3, both listed in the
+[official runner image](https://github.com/actions/runner-images/blob/main/images/macos/macos-15-arm64-Readme.md).
+This keeps the client toolchain explicit as the latest image migrates. Full DSH
+release archives are also built locally with Xcode 27.1. Both run the same
+native client sources; the opt-in full runtime checks use their matching apps.
 Live provider/connector authorization, physical-device background behaviour and
 physical-device Android DSH remain explicit acceptance work in PLAN.md.
 
