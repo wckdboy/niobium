@@ -15,6 +15,26 @@ import okhttp3.RequestBody.Companion.toRequestBody
 
 @RunWith(AndroidJUnit4::class)
 class LocalRuntimeTest {
+    private class GuestOutput(process: Process) {
+        private val tail = StringBuilder()
+        init {
+            Thread {
+                runCatching { process.inputStream.use { input ->
+                    val buffer = ByteArray(4096)
+                    while (true) {
+                        val size = input.read(buffer)
+                        if (size < 0) break
+                        synchronized(tail) {
+                            tail.append(String(buffer, 0, size, Charsets.UTF_8))
+                            if (tail.length > 16384) tail.delete(0, tail.length - 16384)
+                        }
+                    }
+                } }
+            }.apply { isDaemon = true; start() }
+        }
+        fun snapshot(): String = synchronized(tail) { tail.toString() }
+    }
+
     @Test fun dshWebIsPrivateAndAuthenticated() {
         val runtime = RuntimeInstaller(InstrumentationRegistry.getInstrumentation().targetContext).prepare()
         val socket = java.io.File(runtime.root, "tmp/nb-test.sock")
@@ -22,14 +42,13 @@ class LocalRuntimeTest {
         val process = RuntimeCommand.process(runtime, listOf("/usr/local/bin/dsh-serve"), mapOf(
             "DSH_PORT" to "3080", "NIOBIUM_SOCKET" to "/tmp/nb-test.sock",
             "NODE_OPTIONS" to "--require /usr/local/lib/niobium-local.cjs")).start()
-        val executor = Executors.newSingleThreadExecutor()
-        val output = executor.submit<String> { process.inputStream.bufferedReader().readText() }
+        val output = GuestOutput(process)
         var proxy: LocalRuntimeProxy? = null
         try {
             val until = System.nanoTime() + TimeUnit.SECONDS.toNanos(90)
             while (process.isAlive && System.nanoTime() < until && !LocalRuntimeProxy.ready(socket.path)) Thread.sleep(200)
-            if (!process.isAlive) fail("DSH exited: " + output.get(10, TimeUnit.SECONDS))
-            assertTrue("DSH web did not become ready: " + LocalRuntimeProxy.probe(socket.path), LocalRuntimeProxy.ready(socket.path))
+            if (!process.isAlive) fail("DSH exited: " + output.snapshot())
+            assertTrue("DSH web did not become ready: " + LocalRuntimeProxy.probe(socket.path) + "\n" + output.snapshot(), LocalRuntimeProxy.ready(socket.path))
             proxy = LocalRuntimeProxy(socket.path)
             val client = okhttp3.OkHttpClient()
             fun get(cookie: Boolean, origin: String? = null): okhttp3.Response {
@@ -95,7 +114,7 @@ class LocalRuntimeTest {
         } finally {
             proxy?.close(); process.outputStream.close()
             assertTrue("Stop did not drain the guest tree", process.waitFor(15, TimeUnit.SECONDS))
-            socket.delete(); executor.shutdownNow()
+            socket.delete()
         }
     }
 
@@ -296,13 +315,13 @@ class LocalRuntimeTest {
             instrumentation.runOnMainSync {
                 vm!!.buildPixel(context, drafted, {}, { error("Native creation failed: " + it) })
             }
-            waitFor("Native Pixel created and chat attached") { vm!!.state.activeBot?.name == profile && vm!!.state.sessionId != null }
+            waitFor("Native Pixel created and chat attached") { vm!!.state.activeBot?.name == profile && vm!!.state.canSubmitChat }
             assertTrue(java.io.File(runtime.home, ".dsh/.agent-presets/" + profile + "/agent.cordis.yml").isFile)
             instrumentation.runOnMainSync { vm!!.send("Say hello") }
             waitFor("Real DSH response rendered in native state") { vm!!.state.messages.any { it.role == "assistant" && it.text.contains("NATIVE-DSH-REPLY") } && !vm!!.state.turnActive }
             assertEquals(0L, received.count)
             val bot = vm!!.state.activeBot!!
-            instrumentation.runOnMainSync { vm!!.closeBot(); vm!!.openBot(bot) }
+            instrumentation.runOnMainSync { vm!!.closeBot(); vm!!.openBot(bot); vm!!.openBot(bot) }
             waitFor("Native chat history restored") { !vm!!.state.loadingChat && vm!!.state.messages.any { it.text.contains("NATIVE-DSH-REPLY") } }
         } finally {
             instrumentation.runOnMainSync { vm?.disconnect(); vmStore.clear() }

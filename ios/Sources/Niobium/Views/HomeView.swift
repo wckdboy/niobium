@@ -40,8 +40,13 @@ struct HomeView: View {
                     .scaledToFill()
                     .frame(width: proxy.size.width, height: 152)
                     .clipped()
-                LinearGradient(colors: [NB.void.opacity(0.90), NB.void.opacity(0.18), .clear, NB.void],
-                               startPoint: .top, endPoint: .bottom)
+                LinearGradient(stops: [
+                    .init(color: NB.void.opacity(0.99), location: 0),
+                    .init(color: NB.void.opacity(0.98), location: 0.25),
+                    .init(color: NB.void.opacity(0.94), location: 0.50),
+                    .init(color: .clear, location: 0.78),
+                    .init(color: NB.void, location: 1)
+                ], startPoint: .top, endPoint: .bottom)
                 VStack(alignment: .leading, spacing: 0) {
                     HStack(alignment: .center, spacing: 10) {
                         AtomicMark(size: 38)
@@ -78,7 +83,7 @@ struct HomeView: View {
             HStack(spacing: 12) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 12).fill(NB.ion.opacity(0.12))
-                    Image(systemName: "server.rack").font(.system(size: 16, weight: .medium)).foregroundStyle(NB.ion)
+                    PixelIcon(.terminal, size: 24)
                 }
                 .frame(width: 40, height: 40)
                 VStack(alignment: .leading, spacing: 3) {
@@ -97,10 +102,10 @@ struct HomeView: View {
             }
             Divider().overlay(NB.line)
             HStack(spacing: 0) {
-                stat(store.engine == .dsh ? "DSH" : "\(store.toolsets.count)", store.engine == .dsh ? "Engine" : "Toolsets", "hammer")
-                stat(store.isDemo ? "Demo" : store.engine == .dsh ? "Local" : "Host", "Policy", "shield")
-                stat(store.gatewayLatencyMs.map { "\($0) ms" } ?? "—", "Latency", "waveform.path.ecg")
-                stat("\(store.bots.filter(\.isLive).count)/\(store.bots.count)", "Working", "cpu")
+                stat(store.engine == .dsh ? "DSH" : "\(store.toolsets.count)", store.engine == .dsh ? "Engine" : "Toolsets", .terminal)
+                stat(store.isDemo ? "Demo" : store.engine == .dsh ? "Local" : "Host", "Policy", .shield)
+                stat(store.gatewayLatencyMs.map { "\($0) ms" } ?? "—", "Latency", .activity)
+                stat("\(store.bots.filter(\.isLive).count)/\(store.bots.count)", "Working", .pixels)
             }
         }
         .padding(13)
@@ -109,10 +114,10 @@ struct HomeView: View {
         .onTapGesture { showInstance = true }
     }
 
-    private func stat(_ value: String, _ label: String, _ icon: String) -> some View {
+    private func stat(_ value: String, _ label: String, _ icon: PixelGlyph) -> some View {
         VStack(spacing: 4) {
             HStack(spacing: 5) {
-                Image(systemName: icon).font(.system(size: 12, weight: .medium)).foregroundStyle(NB.ion)
+                PixelIcon(icon, size: 16)
                 Text(value).font(.nbTitle(13)).foregroundStyle(NB.text)
             }
             Text(label).font(.nbBody(9)).foregroundStyle(NB.tertiary)

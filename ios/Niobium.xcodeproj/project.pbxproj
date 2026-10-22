@@ -33,7 +33,9 @@
 		90694DD2EB755CDC5C559B4B /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A73453351829E3FFB57BF67 /* SettingsView.swift */; };
 		940FB9622DFCA4D81EAECAC1 /* PixelBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E416EFDE39DF4BC9C54A79 /* PixelBuilder.swift */; };
 		963E259EB5A04F98028AA9C2 /* AIBuildView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C55B0D736E31F7FB52F44C2 /* AIBuildView.swift */; };
+		9A6839BC000C7C6759884C31 /* LocalDSHModelDeviceUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB1B8325F9C3BF64283A69CD /* LocalDSHModelDeviceUITests.swift */; };
 		9A989906327CB4BB829218DE /* Cast.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8273CAA1922CA7D96927FEAC /* Cast.swift */; };
+		B0931F9D858F9EB22B2FAB89 /* NBLocalModelFixture.m in Sources */ = {isa = PBXBuildFile; fileRef = D4553B863939692A6E694D56 /* NBLocalModelFixture.m */; };
 		B56C999C035DC8EED69892AE /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 03DDC2C567BD154F7B787F7C /* PrivacyInfo.xcprivacy */; };
 		BB69FCF61C90769403C69177 /* NiobiumTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B49BBE05B43B6B6AFAFFDA24 /* NiobiumTests.swift */; };
 		BFB3799D4EE79F918EEF91F6 /* Connection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7881BF04B81903578F406EAE /* Connection.swift */; };
@@ -74,7 +76,9 @@
 		07A95B778EAAA3C963220A5C /* PulseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PulseView.swift; sourceTree = "<group>"; };
 		0C55B0D736E31F7FB52F44C2 /* AIBuildView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIBuildView.swift; sourceTree = "<group>"; };
 		110D1522BB2728DAA3278BAA /* DemoData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoData.swift; sourceTree = "<group>"; };
+		1158CF98B689748A8F0EFC67 /* NBLocalModelFixture.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NBLocalModelFixture.h; sourceTree = "<group>"; };
 		19BCD2792FD6DE0F11367BF7 /* ToolsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolsView.swift; sourceTree = "<group>"; };
+		1AD107FD61F1D834EF43D474 /* ModelFixtureBridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ModelFixtureBridge.h; sourceTree = "<group>"; };
 		1E5C16B81C787644093F1ED4 /* Niobium.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Niobium.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2071CB229CBC0CC7853AF958 /* DSHLocalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSHLocalView.swift; sourceTree = "<group>"; };
 		2C22F988531A89583ECB5D3D /* NiobiumSceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NiobiumSceneDelegate.swift; sourceTree = "<group>"; };
@@ -105,6 +109,8 @@
 		B5C551A6F8A4092D6F86964E /* Niobium-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Niobium-Bridging-Header.h"; sourceTree = "<group>"; };
 		B8A6C18F7A70DB585CADF863 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		BD5A8D72D3F2FD723D9AAC2A /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		CB1B8325F9C3BF64283A69CD /* LocalDSHModelDeviceUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalDSHModelDeviceUITests.swift; sourceTree = "<group>"; };
+		D4553B863939692A6E694D56 /* NBLocalModelFixture.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NBLocalModelFixture.m; sourceTree = "<group>"; };
 		E0BD636CA46D4C02C57B8406 /* PixelSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelSpec.swift; sourceTree = "<group>"; };
 		E1E416EFDE39DF4BC9C54A79 /* PixelBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelBuilder.swift; sourceTree = "<group>"; };
 		E3A6FBE565A3A6026443339B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -195,10 +201,22 @@
 		B22F38AB97DDEC27EC73425A /* UITests */ = {
 			isa = PBXGroup;
 			children = (
+				D490E2D6877982BAC8E7464B /* Support */,
 				03C49BB9E39CC73A1739BA27 /* LocalDSHDeviceUITests.swift */,
+				CB1B8325F9C3BF64283A69CD /* LocalDSHModelDeviceUITests.swift */,
 				B57601DD63B1EEF47A996E4F /* NiobiumUITests.swift */,
 			);
 			path = UITests;
+			sourceTree = "<group>";
+		};
+		D490E2D6877982BAC8E7464B /* Support */ = {
+			isa = PBXGroup;
+			children = (
+				1AD107FD61F1D834EF43D474 /* ModelFixtureBridge.h */,
+				1158CF98B689748A8F0EFC67 /* NBLocalModelFixture.h */,
+				D4553B863939692A6E694D56 /* NBLocalModelFixture.m */,
+			);
+			path = Support;
 			sourceTree = "<group>";
 		};
 		F0DE187B6103F21E90C153AD /* Resources */ = {
@@ -374,6 +392,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				214277DE50830925F58728FE /* LocalDSHDeviceUITests.swift in Sources */,
+				9A6839BC000C7C6759884C31 /* LocalDSHModelDeviceUITests.swift in Sources */,
+				B0931F9D858F9EB22B2FAB89 /* NBLocalModelFixture.m in Sources */,
 				57ECAA5D4EFF73812A1CBEEB /* NiobiumUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -494,7 +514,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Resources/Niobium.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -521,6 +541,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = ai.wckd.niobium.uitests;
 				SDKROOT = iphoneos;
+				SWIFT_OBJC_BRIDGING_HEADER = UITests/Support/ModelFixtureBridge.h;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = Niobium;
 			};
@@ -533,7 +554,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Resources/Niobium.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -560,6 +581,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = ai.wckd.niobium.uitests;
 				SDKROOT = iphoneos;
+				SWIFT_OBJC_BRIDGING_HEADER = UITests/Support/ModelFixtureBridge.h;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = Niobium;
 			};

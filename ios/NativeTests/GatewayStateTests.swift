@@ -14,10 +14,20 @@ private final class FixtureRPC: HermesRPC {
     var holdClarify = false
     var createdName = "fixture-profile"
     var madeLocally = false
+    var holdListFor: String?
+    var failLocalAttach = false
 
     func request(_ method: String, params: JSONObject, timeout: TimeInterval) async throws -> Any {
         calls.append((method, params))
         switch method {
+        case "session.list":
+            if params.string("profile") == holdListFor, holdListFor != nil {
+                return try await withCheckedThrowingContinuation { held = $0 }.value
+            }
+            return ["sessions": [["id": "chat-" + (params.string("profile") ?? "default")]]]
+        case "local.attach":
+            if failLocalAttach { throw RPCError.server(code: -32000, message: "This local chat selection changed.") }
+            return ["ok": true]
         case "session.resume":
             if params.string("session_id") == "older" {
                 return try await withCheckedThrowingContinuation { held = $0 }.value
@@ -54,6 +64,77 @@ private final class FixtureRPC: HermesRPC {
 
 @MainActor
 final class GatewayStateTests: XCTestCase {
+    func testRepeatedOpenWhileAttachingUsesOneSession() async throws {
+        let rpc = FixtureRPC(), bot = try XCTUnwrap(BotProfile.parse(["name": "scout", "origin": "dsh"]))
+        rpc.holdListFor = bot.name
+        let store = AppStore(api: rpc)
+        store.engine = .dsh
+        store.openBot(bot)
+        for _ in 0..<1000 { if rpc.held != nil { break }; await Task.yield() }
+        let pending = try XCTUnwrap(rpc.held)
+        store.openBot(bot)
+        pending.resume(returning: RPCResult(value: ["sessions": [["id": "scout-session"]]] as JSONObject))
+        for _ in 0..<1000 { if !store.isLoadingChat { break }; await Task.yield() }
+        XCTAssertFalse(store.isLoadingChat)
+        XCTAssertEqual(store.chatSessionID, "scout-session")
+        XCTAssertEqual(rpc.calls.filter { $0.0 == "session.list" }.count, 1)
+        XCTAssertEqual(rpc.calls.filter { $0.0 == "session.resume" }.count, 1)
+        XCTAssertEqual(rpc.calls.filter { $0.0 == "local.attach" }.count, 1)
+    }
+
+    func testSupersededSessionLookupCannotChangeTheBackendSelection() async throws {
+        let rpc = FixtureRPC()
+        let old = try XCTUnwrap(BotProfile.parse(["name": "old", "origin": "dsh"]))
+        let latest = try XCTUnwrap(BotProfile.parse(["name": "latest", "origin": "dsh"]))
+        rpc.holdListFor = old.name
+        let store = AppStore(api: rpc)
+        store.engine = .dsh
+        store.openBot(old)
+        for _ in 0..<1000 { if rpc.held != nil { break }; await Task.yield() }
+        let pending = try XCTUnwrap(rpc.held)
+        store.openBot(latest)
+        for _ in 0..<1000 { if !store.isLoadingChat { break }; await Task.yield() }
+        XCTAssertEqual(store.chatSessionID, "chat-latest")
+        pending.resume(returning: RPCResult(value: ["sessions": []] as JSONObject))
+        for _ in 0..<50 { await Task.yield() }
+        XCTAssertEqual(store.chatSessionID, "chat-latest")
+        XCTAssertFalse(rpc.calls.contains { $0.0 == "session.create" })
+        XCTAssertEqual(rpc.calls.filter { $0.0 == "session.resume" }.map { $0.1.string("profile") }, ["latest"])
+    }
+
+    func testFailedLocalHandoffDoesNotEnableSending() async throws {
+        let rpc = FixtureRPC()
+        rpc.failLocalAttach = true
+        let store = AppStore(api: rpc)
+        store.engine = .dsh
+        store.connectionState = .connected(version: "fixture")
+        store.openBot(try XCTUnwrap(BotProfile.parse(["name": "scout", "origin": "dsh"])))
+        for _ in 0..<1000 { if !store.isLoadingChat { break }; await Task.yield() }
+        XCTAssertNil(store.chatSessionID)
+        XCTAssertFalse(store.canSubmitChat)
+        XCTAssertFalse(store.isTurnActive)
+    }
+
+    func testSendingWaitsForAnAttachedConnectedChat() async throws {
+        let rpc = FixtureRPC()
+        let store = AppStore(api: rpc)
+        store.activeBot = try XCTUnwrap(BotProfile.parse(["name": "scout"]))
+        store.chatSessionID = "sid"
+        store.connectionState = .connected(version: "fixture")
+        store.isLoadingChat = true
+        XCTAssertFalse(store.canSubmitChat)
+        await store.send("Keep this draft")
+        XCTAssertTrue(store.messages.isEmpty)
+        XCTAssertFalse(store.isTurnActive)
+        XCTAssertTrue(rpc.calls.isEmpty)
+        store.isLoadingChat = false
+        XCTAssertTrue(store.canSubmitChat)
+        store.connectionState = .disconnected
+        XCTAssertFalse(store.canSubmitChat)
+        await store.send("Still keep this draft")
+        XCTAssertTrue(store.messages.isEmpty)
+        XCTAssertTrue(rpc.calls.isEmpty)
+    }
     func testCompletedDshStepsStayDistinctWithoutEndingTheTurn() async {
         let rpc = FixtureRPC()
         let subject = AppStore(api: rpc)

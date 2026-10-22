@@ -10,6 +10,17 @@ enum LocalDSHProvider {
         let changed = environment["NIOBIUM_AGENT_TOKEN"] != token
         environment["NIOBIUM_AGENT_TOKEN"] = token
         environment["NODE_OPTIONS"] = "--require /usr/local/lib/niobium-agent.cjs"
+#if DEBUG
+        // Only the separately sandboxed acceptance app can redirect its model
+        // to the UI runner's loopback fixture. Release builds contain no hook.
+        if Bundle.main.bundleIdentifier == "ai.wckd.niobium.acceptance",
+           let raw = ProcessInfo.processInfo.environment["NIOBIUM_DSH_FIXTURE_URL"],
+           let url = URL(string: raw), url.scheme == "http", url.host == "127.0.0.1",
+           let port = url.port, (1024...65535).contains(port) {
+            environment["DEEPSEEK_BASE_URL"] = raw
+            environment["DEEPSEEK_API_KEY"] = "niobium-local-fixture"
+        }
+#endif
         harness.extraEnvironment = environment
         boot.start()
         let deadline = Date().addingTimeInterval(300)

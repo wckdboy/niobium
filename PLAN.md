@@ -168,7 +168,7 @@ uploaded successfully to App Store Connect for processing; tester availability
 still requires verification there. Android installation budgets include measured
 4 KB file allocation rather than compressed/unpacked byte counts alone.
 
-## Current cycle: 2.0.0-beta.3 — native DSH provider and coherent UI
+## Shipped: 2.0.0-beta.3 — native DSH provider and coherent UI
 
 - One native Home, Pixels, workshop and chat surface for Hermes and local DSH.
 - Engines chooses the provider and retains saved Hermes settings. DSH stays
@@ -204,3 +204,28 @@ chat UI. The test sends no model request; real-account turns, delegation,
 long background/suspension behavior and broader device acceptance remain.
 Reproduce with tools/check-ios-device.py; sanitized evidence is in
 docs/evidence/ios-build7-device-smoke.json.
+
+## Current cycle: beta.4 device acceptance and readability
+
+- Strengthen the shared dashboard scrim and use the pixel icon set for engine stats.
+- Gate Send on a connected, attached session; retain drafts during startup/offline.
+- Prevent repeated Pixel opens from racing the local attachment handshake, and
+  discard obsolete session lookups before they can change the backend selection.
+- Keep Send disabled if the local attachment handshake fails. Regression coverage
+  now includes duplicate opens, a delayed obsolete lookup and a rejected handoff.
+- Exercise an eight-second background handoff and a cold history reload.
+- Add an isolated Debug-only model fixture flow on iOS, with a separate app
+  identity and Keychain group. The production binary contains no fixture hook.
+- Full iOS simulator model acceptance passed in 87.152 seconds: a unique
+  current-turn reply, eight seconds on the Home screen, finished native stream
+  and restored history after a full app/guest restart. Evidence:
+  docs/evidence/ios-build8-simulator-model.json.
+- Validation: 28 iOS unit + 3 UI tests; 25 Android JVM + 5 runtime tests;
+  31 shared Node tests, 5 asset checks and 38 Swift PixelSpec assertions.
+  Both themes were inspected on iOS/Android. Signed Android release and full
+  iOS archive/export pass; Release fixture-hook exclusion is verified.
+- Candidate versions: Android 2.0 (7), full iOS 2.0 (8). PR #6 is under review.
+  The iPhone is currently unavailable, so build 8 physical model/lifecycle
+  acceptance remains pending. Build 7 physical smoke covered UI only.
+- Next loop: physical build 8 and Android/16 KB acceptance, real-account model
+  turns and actual delegation, then encrypted provider storage and Hermes replay.

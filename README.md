@@ -7,7 +7,7 @@
 A native iPhone, iPad and Android home for Pixels: your agents on a Hermes host
 or in the on-device DSH engine, with their own personas, tools and companions.
 
-**New release: [2.0.0-beta.3](https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.3).** Full Hermes parity is the target;
+**New release: [2.0.0-beta.4](https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.4).** Full Hermes parity is the target;
 it is not finished. The current scope is in [PLAN.md](PLAN.md), the implementation
 audit is in [docs/HERMES-PARITY.md](docs/HERMES-PARITY.md), and the work is tracked
 in [Plane](https://app.plane.so/wckd/projects/2fbcf987-20de-43dc-80ac-0a6bab7ec03a/issues/).
@@ -108,14 +108,17 @@ node site/build.mjs
 node site/check.mjs
 ~~~
 
-The beta passed 24 iOS unit tests, 3 native UI tests, 24 Android JVM tests,
+The beta passed 28 iOS unit tests, 3 native UI tests, 25 Android JVM tests,
 5 Android runtime instrumentation tests,
 18 DSH-adapter tests, 13 upstream-watcher tests, 5 asset checks and 38 pure Swift PixelSpec assertions.
 Android debug/release builds and lint, both iOS variants and the signed full
-iOS archive/export passed. Full build 7 also passed the opt-in native DSH smoke
+iOS 2.0 (8) archive/export passed. A full iOS simulator acceptance test drives
+real DSH through a controlled SSE model, an eight-second Home-screen return and
+stored history after a cold launch; see [the model evidence](docs/evidence/ios-build8-simulator-model.json).
+Full build 7 also passed the opt-in native DSH smoke
 test on a physical iPhone 18 Pro Max running iOS 27.0.1; see
 [the device evidence](docs/evidence/ios-build7-device-smoke.json).
-Native Home and Pixel-review captures are in
+Build 8 physical acceptance awaits the reconnected iPhone. Native Home and Pixel-review captures are in
 [screenshots](screenshots/README.md). These checks do not establish end-to-end
 parity with a live, provider-backed Hermes install.
 
@@ -132,9 +135,9 @@ acceptance and actual delegation remain. Mobile gateway push delivery is not pro
 
 [niobium.sh](https://niobium.sh) uses the shared WCKD web design and is deployed
 with Cloudflare Workers Static Assets from this repository. The
-[2.0 beta release](https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.3)
+[2.0 beta release](https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.4)
 includes the signed Android APK, iOS distribution IPA, checksums and complete
-release notes. The full iOS 2.0 (7) package targets TestFlight under
+release notes. The full iOS 2.0 (8) package targets TestFlight under
 ai.wckd.niobium; the release notes track processing and availability. TestFlight
 manages installation; the App Store
 IPA is not a universally sideloadable download. The last stable release is
