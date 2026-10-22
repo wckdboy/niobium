@@ -9,8 +9,8 @@ model endpoint.
 ## Implementation
 
 - The welcome screen offers **Run Pixels locally** before gateway setup. The
-  Local tab has native pixel icons, stepped buttons, install progress and
-  explicit Start/Stop controls. Remote DSH remains available.
+  standard Niobium app opens with DSH as its agent provider. Engines contains
+  provider selection, native API-key setup and advanced Start/Stop controls.
 - PRoot, its loader and Niobium's supervisor are APK native-library executables.
   Android blocks execution from writable app storage for apps targeting API
   29+. Native ELF load segments are checked for 16 KB alignment at build time.
@@ -35,8 +35,8 @@ model endpoint.
   DSH storage, not a native Keystore provider vault. Hermes tokens continue to
   use Android Keystore. The application never logs runtime output or keys.
 - The shared bot-build skill is installed in the workspace. DSH exposes its
-  own sessions, tools, agent presets and settings. The native Hermes workshop
-  is not yet a DSH preset editor; a generated PixelSpec is a design for review.
+  own sessions, tools, agent presets and settings. The native workshop creates
+  real DSH presets; native chats use the shared [provider adapter](DSH-PROVIDER.md).
 
 PRoot is a compatibility layer, not a security boundary between Pixels. The
 guest shares the Android app UID and its Linux home. DSH's guest permission
@@ -45,25 +45,30 @@ requires additional work. The iOS-only host bridge is not advertised on Android.
 
 ## Verified in Niobium
 
-Four instrumentation tests ran inside the APK's own app UID on the ARM64
+Five instrumentation tests ran inside the APK's own app UID on the ARM64
 Android 16/API 36 emulator with 4 KB pages:
 
 1. Cold image preparation, guest shell, Node and DSH CLI execution.
 2. Real DSH HTTP readiness, rejected anonymous/foreign-origin access, successful
    authenticated HTTP and WebSocket upgrade, and no stock unauthenticated TCP
    listener. Real session creation and bot-build skill discovery are tested.
-3. Foreground-service start, accessible workspace entry, a nonzero CSS viewport
-   in the real WebView, Stop and closed listener.
+3. Foreground-service start behind the standard native Home/Pixels/Engines
+   navigation, explicit advanced WebView entry with a nonzero CSS viewport,
+   Stop and closed listener.
 4. Image replacement preserving a sentinel and user-edited bot-build instructions.
    Immediate Stop/Start and slow unauthenticated connections have regression coverage.
+
+5. Native Pixel creation writes a DSH agent preset; a prompt travels through
+   DSH to a controlled loopback model server, streams into native chat and
+   restores after reopening. PRoot hard-link emulation supports durable logs.
 
 JVM tests cover traversal, symlink parents, replacement links, size/entry limits
 and cancellation. The source/recipe bundle and NOTICE accompany release assets.
 
 ## Remaining acceptance work
 
-- Provider-backed turns, native addons, PTYs, uploads and actual delegated work.
-- Native DSH Pixel creation and permission mapping; encrypted provider vault.
+- Real-account provider turns, native addons, PTYs, image acceptance and actual delegated work.
+- Native encrypted provider vault and stronger per-Pixel permissions.
 - Physical ARM64 devices, Android 9 through current, physical 16 KB page-size
   operation, OEM background restrictions, process death and battery measurements.
 - Signed upgrades across real installed versions and low-storage/corrupt-image

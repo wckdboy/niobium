@@ -55,7 +55,7 @@ struct ChatView: View {
             RoutinesView(bot: bot).environmentObject(store)
         }
         .sheet(isPresented: $showCast) {
-            CastStudioView(profile: bot.name, title: bot.title)
+            CastStudioView(profile: bot.name, title: bot.title, castKey: bot.castKey)
         }
         .sheet(isPresented: $showModels) { ModelPickerView(bot: bot).environmentObject(store) }
         .sheet(isPresented: $showChats) { ChatsView(bot: bot).environmentObject(store) }
@@ -130,13 +130,13 @@ struct ChatView: View {
             Spacer()
             Menu {
                 Button { showCompanions = true } label: { Label("Companion tasks", systemImage: "pawprint") }
-                Menu("Mention a Pixel") {
+                if store.engine == .hermes { Menu("Mention a Pixel") {
                     ForEach(store.bots.filter { $0.name != bot.name }) { teammate in
                         Button(teammate.title) { draft += (draft.isEmpty ? "" : " ") + "@" + teammate.name + " " }
                     }
-                }
+                } }
                 Button { showTools = true } label: { Label("Tools & capabilities", systemImage: "hammer") }
-                Button { showRoutines = true } label: { Label("Routines", systemImage: "clock.arrow.circlepath") }
+                if store.engine == .hermes { Button { showRoutines = true } label: { Label("Routines", systemImage: "clock.arrow.circlepath") } }
                 Button { showChats = true } label: { Label("All chats", systemImage: "bubble.left.and.bubble.right") }
                 Button { showCast = true } label: { Label("Cast studio", systemImage: "person.crop.artframe") }
                 Button { showInfo = true } label: { Label("Pixel details", systemImage: "info.circle") }

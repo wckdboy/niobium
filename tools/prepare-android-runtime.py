@@ -107,15 +107,19 @@ def main():
         shutil.copy2(source, target)
     if digest(target) != config["rootfs"]["sha256"]: raise ValueError("Guest checksum mismatch")
     metadata = dict(config)
+    metadata["provider_sha256"] = digest(ROOT / "runtime/niobium-agent.cjs")
     metadata["native_sha256"] = {p.name: digest(p) for p in sorted(native.iterdir())}
     (assets / "niobium-runtime.json").write_text(json.dumps(metadata, indent=2) + "\n")
     for name in ["niobium-local.cjs"]:
         path = ROOT / "android/runtime" / name
         if path.exists(): shutil.copy2(path, assets / name)
+    shutil.copy2(ROOT / "runtime/niobium-agent.cjs", assets / "niobium-agent.cjs")
     if args.sources:
         sources = ROOT / "dist/android-runtime-sources"; sources.mkdir(parents=True, exist_ok=True)
         shutil.copy2(LOCK, sources / LOCK.name)
         shutil.copy2(ROOT / "android/runtime/supervisor.c", sources / "supervisor.c")
+        shutil.copy2(ROOT / "android/runtime/niobium-local.cjs", sources / "niobium-local.cjs")
+        shutil.copy2(ROOT / "runtime/niobium-agent.cjs", sources / "niobium-agent.cjs")
         for item in config["sources"]:
             suffix = ".zip" if item["url"].endswith(".zip") else ".tar.gz"
             fetch(item["url"], item["sha256"], sources / (item["name"] + suffix))

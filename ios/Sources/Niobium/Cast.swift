@@ -183,10 +183,10 @@ struct CastStudioView: View {
     @State private var selected: CastMember
     @ObservedObject private var store = CastStore.shared
 
-    init(profile: String, title: String) {
+    init(profile: String, title: String, castKey: String? = nil) {
         self.profile = profile
         self.title = title
-        _selected = State(initialValue: CastStore.shared.member(for: profile, title: title))
+        _selected = State(initialValue: CastStore.shared.member(for: castKey ?? profile, title: title))
     }
 
     private func layerOptions(_ field: String) -> [String] {

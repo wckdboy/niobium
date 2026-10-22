@@ -85,6 +85,11 @@ Your companion $companionName helps with bounded subtasks when a job becomes com
         val missing = spec.skills.filter { it !in skills }
         if (missing.isNotEmpty()) notes.add("Unavailable skills excluded: ${missing.joinToString()}.")
         spec = spec.copy(skills = spec.skills.filter { it in skills })
+        if (catalog.s("provider") == "DSH") {
+            if (spec.connectors.isNotEmpty()) notes.add("Local connections need separate DSH setup. This Pixel starts without connector access.")
+            spec = spec.copy(connectors = emptyList())
+            notes.add("Local reasoning follows the selected model’s DSH settings. Skills share the local workspace.")
+        }
         return PixelDraft(spec, parsed != null, tools, skills, notes)
     }
 }

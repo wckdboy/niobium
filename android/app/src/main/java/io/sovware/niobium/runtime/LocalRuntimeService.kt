@@ -84,7 +84,8 @@ class LocalRuntimeService : Service() {
             LocalRuntime.mutable.value = LocalRuntimeState(RuntimePhase.STARTING, 95)
             val child = RuntimeCommand.process(runtime, listOf("/usr/local/bin/dsh-serve"), mapOf(
                 "DSH_PORT" to front.port.toString(), "NIOBIUM_SOCKET" to guestPath,
-                "NODE_OPTIONS" to "--require /usr/local/lib/niobium-local.cjs")).start()
+                "NIOBIUM_AGENT_TOKEN" to front.key,
+                "NODE_OPTIONS" to "--require /usr/local/lib/niobium-local.cjs --require /usr/local/lib/niobium-agent.cjs")).start()
             process = child
             // Drain output without retaining provider secrets or conversation contents.
             val drain = Thread({ runCatching { child.inputStream.use { input ->
@@ -140,7 +141,7 @@ class LocalRuntimeService : Service() {
     }
     private fun notification(detail: String): Notification {
         val open = PendingIntent.getActivity(this, 41,
-            Intent(this, MainActivity::class.java).putExtra("tab", "local"),
+            Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val stop = PendingIntent.getService(this, 42, Intent(this, LocalRuntimeService::class.java).setAction(STOP),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)

@@ -212,7 +212,7 @@ private fun ChatHeader(bot: BotProfile, state: NbState, onOpenTools: () -> Unit,
         verticalAlignment = Alignment.CenterVertically) {
         NbIconButton("‹", onBack, size = 34)
         Spacer(Modifier.width(11.dp))
-        BotAvatar(bot.title, bot.accent, 36.dp, bot.isLive, showStatus = false, profileName = bot.name)
+        BotAvatar(bot.title, bot.accent, 36.dp, bot.isLive, showStatus = false, profileName = bot.castKey)
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -240,7 +240,7 @@ private fun ChatHeader(bot: BotProfile, state: NbState, onOpenTools: () -> Unit,
             ) {
                 DropdownMenuItem(text = { Text("Companion tasks", color = Nb.Text, fontSize = 13.sp) },
                     onClick = { menuOpen = false; onOpenCompanions() })
-                DropdownMenuItem(text = { Text("Mention a Pixel", color = Nb.Text, fontSize = 13.sp) },
+                if (state.engine == AgentEngine.HERMES) DropdownMenuItem(text = { Text("Mention a Pixel", color = Nb.Text, fontSize = 13.sp) },
                     onClick = { menuOpen = false; onMention() })
                 DropdownMenuItem(
                     text = { Text("Toolbox", color = Nb.Text, fontSize = 13.sp) },
@@ -254,7 +254,7 @@ private fun ChatHeader(bot: BotProfile, state: NbState, onOpenTools: () -> Unit,
                     text = { Text("All chats", color = Nb.Text, fontSize = 13.sp) },
                     onClick = { menuOpen = false; onOpenChats() }
                 )
-                DropdownMenuItem(
+                if (state.engine == AgentEngine.HERMES) DropdownMenuItem(
                     text = { Text("Routines", color = Nb.Text, fontSize = 13.sp) },
                     onClick = { menuOpen = false; onOpenRoutines() }
                 )
@@ -277,7 +277,7 @@ private fun ChatHeader(bot: BotProfile, state: NbState, onOpenTools: () -> Unit,
 @Composable
 private fun ChatPreamble(bot: BotProfile, state: NbState) {
     Column(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        BotAvatar(bot.title, bot.accent, 60.dp, false, showStatus = false, profileName = bot.name)
+        BotAvatar(bot.title, bot.accent, 60.dp, false, showStatus = false, profileName = bot.castKey)
         Spacer(Modifier.height(10.dp))
         Text(bot.title, color = Nb.Text, style = NbTitle, fontSize = 20.sp)
         Spacer(Modifier.height(4.dp))

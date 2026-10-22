@@ -5,6 +5,7 @@ import org.json.JSONObject
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
+import java.nio.file.LinkOption.NOFOLLOW_LINKS
 import java.security.MessageDigest
 import java.util.UUID
 
@@ -62,15 +63,33 @@ class RuntimeInstaller(private val context: Context) {
             } finally { removeTree(stage) }
         }
         check(home.isDirectory) { "The local workspace is missing. Your Linux image has been preserved." }
-        File(home, "workspace").mkdirs()
-        context.assets.open("niobium-local.cjs").use { input ->
-            File(root, "usr/local/lib/niobium-local.cjs").outputStream().use(input::copyTo)
+        safeDirectory(home, "workspace")
+        val adapterDirectory = safeDirectory(root, "usr/local/lib")
+        for (name in listOf("niobium-local.cjs", "niobium-agent.cjs")) {
+            val stage = Files.createTempFile(adapterDirectory.toPath(), ".niobium-", ".pending")
+            try {
+                context.assets.open(name).use { input -> Files.newOutputStream(stage).use(input::copyTo) }
+                Files.move(stage, File(adapterDirectory, name).toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
+            } finally { Files.deleteIfExists(stage) }
         }
-        val skill = File(home, "workspace/.agents/skills/pixel-builder/SKILL.md")
-        skill.parentFile?.mkdirs()
-        if (!skill.exists()) context.assets.open("bot_build.md").use { input -> skill.outputStream().use(input::copyTo) }
+        val skillDirectory = safeDirectory(home, "workspace/.agents/skills/pixel-builder")
+        val skill = File(skillDirectory, "SKILL.md")
+        if (!Files.exists(skill.toPath(), NOFOLLOW_LINKS)) context.assets.open("bot_build.md").use { input ->
+            Files.newOutputStream(skill.toPath(), java.nio.file.StandardOpenOption.CREATE_NEW, java.nio.file.StandardOpenOption.WRITE).use(input::copyTo)
+        }
         progress(90)
         return PreparedRuntime(root, home, temporary, libraries, native, image.getString("dsh_version"))
+    }
+
+    private fun safeDirectory(base: File, relative: String): File {
+        var current = base.toPath()
+        check(Files.isDirectory(current, NOFOLLOW_LINKS)) { "The local runtime directory was replaced. Restore it before starting." }
+        for (part in relative.split('/')) {
+            current = current.resolve(part)
+            if (!Files.exists(current, NOFOLLOW_LINKS)) Files.createDirectory(current)
+            check(Files.isDirectory(current, NOFOLLOW_LINKS)) { "A local runtime directory was replaced by a link. Restore it before starting." }
+        }
+        return current.toFile()
     }
 
     private fun removeTree(directory: File) {
@@ -99,7 +118,7 @@ object RuntimeCommand {
         val args = mutableListOf(
             File(runtime.native, "libniobium_supervisor.so").path,
             File(runtime.native, "libniobium_proot.so").path,
-            "-L", "--kill-on-exit", "-0", "--rootfs=" + runtime.root.path, "--cwd=/root/workspace",
+            "-L", "--link2symlink", "--kill-on-exit", "-0", "--rootfs=" + runtime.root.path, "--cwd=/root/workspace",
             "-b", "/dev", "-b", "/proc", "-b", runtime.home.path + ":/root",
             "/usr/bin/env", "-u", "LD_LIBRARY_PATH", "-u", "LD_PRELOAD",
             "-u", "PROOT_LOADER", "-u", "PROOT_TMP_DIR", "-u", "PROOT_NO_SECCOMP",

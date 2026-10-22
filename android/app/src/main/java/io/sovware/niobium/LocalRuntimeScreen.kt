@@ -28,127 +28,139 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.sovware.niobium.runtime.LocalRuntime
 import io.sovware.niobium.runtime.RuntimePhase
 
 @Composable
-fun LocalRuntimeScreen(onClose: (() -> Unit)? = null) {
+fun LocalRuntimeScreen(vm: NiobiumViewModel? = null, onClose: (() -> Unit)? = null) {
     val context = LocalContext.current
     val runtime by LocalRuntime.state.collectAsStateWithLifecycle()
+    val state = vm?.state
     var workspace by rememberSaveable { mutableStateOf(false) }
     var remote by remember { mutableStateOf(false) }
-    val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { LocalRuntime.start(context) }
+    var advanced by rememberSaveable { mutableStateOf(false) }
+    var apiKey by remember { mutableStateOf("") }
+    var provider by rememberSaveable { mutableStateOf("DeepSeek") }
+    val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        if (vm != null) vm.useLocal() else LocalRuntime.start(context)
+    }
     fun start() {
         if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
             permission.launch(Manifest.permission.POST_NOTIFICATIONS)
-        else LocalRuntime.start(context)
+        else if (vm != null) vm.useLocal() else LocalRuntime.start(context)
     }
     BackHandler(enabled = workspace || remote || onClose != null) {
         when { workspace -> workspace = false; remote -> remote = false; else -> onClose?.invoke() }
     }
     if (remote) { RemoteHarnessScreen { remote = false }; return }
-    Column(Modifier.fillMaxSize().background(Nb.Void).statusBarsPadding()
-        .then(if (onClose != null) Modifier.navigationBarsPadding() else Modifier)) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically) {
+    Column(Modifier.fillMaxSize().background(Nb.Void).statusBarsPadding()) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
             if (workspace || onClose != null) {
-                Box(Modifier.size(44.dp).clickable { if (workspace) workspace = false else onClose?.invoke() },
-                    contentAlignment = Alignment.Center) { PixelIcon(PixelGlyph.BACK, Nb.Secondary) }
-                Spacer(Modifier.width(6.dp))
-            } else AtomicMark(36.dp)
-            Column(Modifier.weight(1f).padding(start = 10.dp)) {
-                Text(if (workspace) "Pixel workspace" else "On your device", color = Nb.Text, fontSize = 18.sp, style = NbTitle)
-                Text("LOCAL DSH · ARM64", color = Nb.Tertiary, fontSize = 9.sp, style = NbMono)
+                Box(Modifier.size(44.dp).clickable { if (workspace) workspace = false else onClose?.invoke() }
+                    .semantics { contentDescription = "Back" }, contentAlignment = Alignment.Center) {
+                    PixelIcon(PixelGlyph.BACK, Nb.Secondary)
+                }
+                Spacer(Modifier.width(8.dp))
             }
-            NbPill(when (runtime.phase) {
-                RuntimePhase.RUNNING -> "Online"
-                RuntimePhase.OFF -> "Offline"
-                RuntimePhase.ERROR -> "Retry"
-                else -> "Preparing"
-            }, if (runtime.phase == RuntimePhase.RUNNING) Nb.Mint else Nb.Ion)
+            Column(Modifier.weight(1f)) {
+                Text(if (workspace) "Advanced DSH" else "Engines", color = Nb.Text, fontSize = 30.sp, style = NbTitle)
+                if (!workspace) Text("A home for every Pixel.", color = Nb.Secondary, fontSize = 13.sp)
+            }
+            PixelIcon(PixelGlyph.TERMINAL, Nb.Ion, 26.dp)
         }
         if (workspace && runtime.phase == RuntimePhase.RUNNING && runtime.origin != null && runtime.cookie != null) {
             LocalWorkspace(runtime.origin!!, runtime.cookie!!, Modifier.weight(1f))
         } else {
-            if (workspace) workspace = false
-            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(18.dp)) {
-                Column(Modifier.fillMaxWidth().pixelPanel(22.dp, accented = true).padding(20.dp)) {
+            Column(Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text("Choose an engine. Your dashboard, Pixels and chats work the same way.", color = Nb.Secondary, fontSize = 13.sp, lineHeight = 20.sp)
+                Column(Modifier.fillMaxWidth().pixelPanel(accented = state?.engine == AgentEngine.DSH).padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            Text("Small pixels.\nBig possibilities.", color = Nb.Text, style = NbDisplay,
-                                fontSize = 30.sp, lineHeight = 33.sp)
-                            Spacer(Modifier.height(10.dp))
-                            Text("Your own little Linux lab.", color = Nb.Ion, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                        PixelIcon(PixelGlyph.PIXELS)
+                        Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                            Text("On device", color = Nb.Text, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+                            Text("DSH · private Linux workspace", color = Nb.Tertiary, fontSize = 11.sp)
                         }
-                        CastPortrait(CastStore.get(context, "athena"), 92.dp, showCompanion = true)
+                        NbPill(if (state?.engine == AgentEngine.DSH) "Selected" else if (runtime.phase == RuntimePhase.RUNNING) "Running" else "Local",
+                            if (runtime.phase == RuntimePhase.RUNNING) Nb.Mint else Nb.Ion)
                     }
-                    Spacer(Modifier.height(18.dp))
-                    Text("Run Pixels here with DSH and your provider API keys. Connect to Hermes whenever you want.",
-                        color = Nb.Secondary, fontSize = 13.sp, lineHeight = 20.sp)
-                    Spacer(Modifier.height(18.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        NbPill("Alpine Linux")
-                        NbPill("No root")
-                        NbPill("Your keys")
+                    Text("Run your Pixels here with your own model API key. Keep using Niobium while the engine works in the background.",
+                        color = Nb.Secondary, fontSize = 12.sp, lineHeight = 19.sp)
+                    if (runtime.busy) {
+                        Text(when (runtime.phase) {
+                            RuntimePhase.INSTALLING -> "Preparing Linux · " + runtime.progress + "%"
+                            RuntimePhase.STARTING -> "Starting the Pixel engine…"
+                            else -> "Stopping local tasks…"
+                        }, color = Nb.Ion, fontSize = 12.sp)
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            repeat(16) { index -> Box(Modifier.weight(1f).height(5.dp).background(
+                                if (index < runtime.progress * 16 / 100) Nb.Ion else Nb.FillStrong)) }
+                        }
                     }
+                    runtime.message?.let { Text(it, color = Nb.Rose, fontSize = 12.sp) }
+                    if (state?.engine != AgentEngine.DSH || runtime.phase in listOf(RuntimePhase.OFF, RuntimePhase.ERROR)) {
+                        PixelButton(if (runtime.phase == RuntimePhase.RUNNING) "Use on-device Pixels" else "Use on-device DSH",
+                            PixelGlyph.PLAY, Modifier.fillMaxWidth(), enabled = !runtime.busy) { start() }
+                    } else if (state.connecting) Text("Connecting your Pixels…", color = Nb.Ion, fontSize = 12.sp)
+                    else if (state.connected) Text("Ready · chats and tasks run in Niobium", color = Nb.Mint, fontSize = 12.sp)
+                    else if (runtime.phase == RuntimePhase.RUNNING) PixelButton("Reconnect local Pixels", PixelGlyph.LINK, Modifier.fillMaxWidth()) { vm?.reconnect() }
                 }
-
-                Column(Modifier.fillMaxWidth().pixelPanel().padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Column(Modifier.fillMaxWidth().pixelPanel(accented = state?.engine == AgentEngine.HERMES).padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        PixelIcon(PixelGlyph.TERMINAL)
-                        Spacer(Modifier.width(10.dp))
-                        Text("Local engine", color = Nb.Text, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                        Text("DSH 0.1.0-rc.7", color = Nb.Tertiary, fontSize = 9.sp, style = NbMono)
-                    }
-                    when (runtime.phase) {
-                        RuntimePhase.INSTALLING, RuntimePhase.STARTING, RuntimePhase.STOPPING -> {
-                            Text(when (runtime.phase) {
-                                RuntimePhase.INSTALLING -> "Unpacking your little world…"
-                                RuntimePhase.STARTING -> "Waking the Pixels…"
-                                else -> "Stopping tasks and closing Linux…"
-                            }, color = Nb.Secondary, fontSize = 13.sp)
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                repeat(16) { index ->
-                                    Box(Modifier.weight(1f).height(8.dp).background(
-                                        if (runtime.phase == RuntimePhase.STOPPING || index < runtime.progress * 16 / 100) Nb.Ion else Nb.FillStrong))
-                                }
-                            }
-                            PixelButton("Cancel startup", PixelGlyph.STOP, Modifier.fillMaxWidth(),
-                                secondary = true, enabled = runtime.phase != RuntimePhase.STOPPING) { LocalRuntime.stop(context) }
+                        PixelIcon(PixelGlyph.LINK)
+                        Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                            Text("Hermes", color = Nb.Text, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+                            Text("Your computer or VPS", color = Nb.Tertiary, fontSize = 11.sp)
                         }
-                        RuntimePhase.RUNNING -> {
-                            Text("Linux is running. Add your provider in DSH settings, then create a session for your Pixel.",
-                                color = Nb.Secondary, fontSize = 13.sp, lineHeight = 19.sp)
-                            PixelButton("Open Pixel workspace", PixelGlyph.TERMINAL, Modifier.fillMaxWidth()) { workspace = true }
-                            PixelButton("Stop local Pixels", PixelGlyph.STOP, Modifier.fillMaxWidth(), secondary = true, destructive = true) {
-                                workspace = false; LocalRuntime.stop(context)
+                        if (state?.engine == AgentEngine.HERMES) NbPill("Selected", Nb.Mint)
+                    }
+                    Text("Connect to your existing agents, tools and group rooms. Your local engine can stay running alongside Hermes.",
+                        color = Nb.Secondary, fontSize = 12.sp, lineHeight = 19.sp)
+                    if (state?.engine != AgentEngine.HERMES) PixelButton("Use Hermes", PixelGlyph.LINK, Modifier.fillMaxWidth(), secondary = true) { vm?.useHermes() }
+                }
+                if (state?.engine == AgentEngine.DSH && state.connected) {
+                    Column(Modifier.fillMaxWidth().pixelPanel().padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text("Model provider", color = Nb.Text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf("DeepSeek", "OpenAI", "Anthropic").forEach { name ->
+                                Text(name, color = if (name == provider) Nb.Ion else Nb.Secondary, fontSize = 11.sp,
+                                    modifier = Modifier.clickable { provider = name; apiKey = "" }.background(if (name == provider) Nb.FillStrong else Nb.FillSoft).padding(8.dp))
                             }
                         }
-                        else -> {
-                            runtime.message?.let { Text(it, color = Nb.Rose, fontSize = 12.sp, lineHeight = 18.sp) }
-                            Text("First launch installs about 450 MB. Your workspace stays on this device when you stop or update the engine.",
-                                color = Nb.Secondary, fontSize = 12.sp, lineHeight = 18.sp)
-                            PixelButton(if (runtime.phase == RuntimePhase.ERROR) "Try starting again" else "Start local Pixels",
-                                PixelGlyph.PLAY, Modifier.fillMaxWidth()) { start() }
+                        androidx.compose.material3.OutlinedTextField(value = apiKey, onValueChange = { apiKey = it },
+                            label = { Text(provider + " API key") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                            visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation())
+                        PixelButton("Save API key", PixelGlyph.SHIELD, Modifier.fillMaxWidth(), secondary = true, enabled = apiKey.isNotBlank()) {
+                            val ref = when (provider) { "OpenAI" -> "OPENAI_API_KEY"; "Anthropic" -> "ANTHROPIC_API_KEY"; else -> "DEEPSEEK_API_KEY" }
+                            vm?.saveLocalCredential(ref, apiKey) { apiKey = "" }
                         }
+                        Text("Keys stay in DSH app storage. Choose a model from the model picker in your Pixel’s chat.",
+                            color = Nb.Tertiary, fontSize = 11.sp, lineHeight = 17.sp)
                     }
                 }
-                Row(Modifier.fillMaxWidth().pixelPanel().padding(18.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    PixelIcon(PixelGlyph.SPARK, Nb.Mint)
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text("Give your Pixel a personality", color = Nb.Text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                        Text("Ask DSH to use the bot-build skill in your workspace. It designs an adult persona, a look, permissions, and a companion for review.",
-                            color = Nb.Secondary, fontSize = 12.sp, lineHeight = 18.sp)
-                    }
+                Row(Modifier.fillMaxWidth().clickable { advanced = !advanced }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    PixelIcon(PixelGlyph.SETTINGS, Nb.Tertiary, 18.dp)
+                    Text("Advanced controls", color = Nb.Secondary, fontSize = 13.sp, modifier = Modifier.weight(1f).padding(start = 10.dp))
+                    Text(if (advanced) "−" else "+", color = Nb.Ion, fontSize = 18.sp)
                 }
-                Text("Provider requests use the internet. DSH files and settings stay in app storage. Local Pixels share this Linux workspace; keep permissions intentional.",
-                    color = Nb.Tertiary, fontSize = 10.5.sp, lineHeight = 16.sp)
-                PixelButton("Open remote DSH", PixelGlyph.LINK, Modifier.fillMaxWidth(), secondary = true) { remote = true }
-                if (onClose != null) PixelButton("Connect to Hermes", PixelGlyph.BACK, Modifier.fillMaxWidth(), secondary = true, onClick = onClose)
-                Spacer(Modifier.height(4.dp))
+                if (advanced) {
+                    if (runtime.phase == RuntimePhase.RUNNING) {
+                        PixelButton("Advanced DSH workspace", PixelGlyph.TERMINAL, Modifier.fillMaxWidth(), secondary = true) { workspace = true }
+                        PixelButton("Stop local engine", PixelGlyph.STOP, Modifier.fillMaxWidth(), secondary = true, destructive = true) {
+                            workspace = false; LocalRuntime.stop(context)
+                        }
+                    } else if (runtime.busy) PixelButton("Cancel startup", PixelGlyph.STOP, Modifier.fillMaxWidth(), secondary = true) { LocalRuntime.stop(context) }
+                    PixelButton("Remote DSH workspace", PixelGlyph.LINK, Modifier.fillMaxWidth(), secondary = true) { remote = true }
+                    Text("First launch installs about 450 MB. Local Pixels share a Linux workspace; tool choices limit their available tools, while workspace scopes are operating instructions. Hermes provides group rooms and scheduled jobs.",
+                        color = Nb.Tertiary, fontSize = 11.sp, lineHeight = 17.sp)
+                }
+                Spacer(Modifier.height(14.dp))
             }
         }
     }
@@ -200,5 +212,31 @@ private fun LocalWorkspace(origin: String, token: String, modifier: Modifier) {
                 }
             }, onRelease = { web -> web.stopLoading(); web.loadUrl("about:blank"); web.removeAllViews(); web.destroy() })
         }
+    }
+}
+
+@Composable
+fun LocalToolsScreen(state: NbState, onClose: (() -> Unit)?) {
+    Column(Modifier.fillMaxSize().background(Nb.Void).statusBarsPadding().verticalScroll(rememberScrollState()).padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp)) {
+        if (onClose != null) PixelButton("Back to Pixel", PixelGlyph.BACK, Modifier.fillMaxWidth(), secondary = true, onClick = onClose)
+        PixelIcon(PixelGlyph.SHIELD, size = 30.dp)
+        Text("Local tool access", color = Nb.Text, style = NbTitle, fontSize = 28.sp)
+        Text("Your Pixel’s reviewed preset decides which tools it can use. Create a new Pixel to choose a different set.",
+            color = Nb.Secondary, fontSize = 13.sp, lineHeight = 20.sp)
+        state.activeBot?.let { bot ->
+            Column(Modifier.fillMaxWidth().pixelPanel().padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(bot.title, color = Nb.Text, fontWeight = FontWeight.SemiBold)
+                if (bot.enabledToolsets.isEmpty()) Text("No optional toolsets selected.", color = Nb.Tertiary, fontSize = 12.sp)
+                bot.enabledToolsets.forEach { tool ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        PixelIcon(PixelGlyph.SPARK, Nb.Ion, 16.dp)
+                        Text(tool.replaceFirstChar { it.uppercase() }, color = Nb.Secondary, fontSize = 13.sp, modifier = Modifier.padding(start = 10.dp))
+                    }
+                }
+            }
+        }
+        Text("Skills share the local workspace. Model keys and advanced DSH configuration are under Engines. Tool selection controls the preset’s catalog; local Pixels share app storage.",
+            color = Nb.Tertiary, fontSize = 12.sp, lineHeight = 19.sp)
     }
 }

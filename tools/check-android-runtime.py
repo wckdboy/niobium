@@ -25,5 +25,9 @@ with zipfile.ZipFile(sys.argv[1]) as archive, tempfile.TemporaryDirectory() as t
     if hashlib.sha256(image).hexdigest() != manifest["rootfs"]["sha256"]:
         raise ValueError("Packaged Linux image checksum mismatch")
     archive.getinfo("assets/niobium-local.cjs")
+    provider = archive.read("assets/niobium-agent.cjs")
+    expected_provider = hashlib.sha256((prepare.ROOT / "runtime/niobium-agent.cjs").read_bytes()).hexdigest()
+    if hashlib.sha256(provider).hexdigest() != expected_provider or manifest["provider_sha256"] != expected_provider:
+        raise ValueError("Packaged native provider is stale or has a checksum mismatch")
     archive.getinfo("assets/bot_build.md")
     print("PASS: packaged image, all native hashes, ARM64 ABI and 16 KB ELF alignment")

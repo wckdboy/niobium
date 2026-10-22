@@ -58,7 +58,7 @@ fun PixelIcon(glyph: PixelGlyph, tint: Color = Nb.Ion, size: Dp = 24.dp, descrip
 }
 
 val PixelButtonShape = GenericShape { size, _ ->
-    val step = floor(size.height / 6f)
+    val step = floor(size.height / 12f)
     moveTo(step, 0f); lineTo(size.width-step, 0f); lineTo(size.width-step, step)
     lineTo(size.width, step); lineTo(size.width, size.height-step); lineTo(size.width-step, size.height-step)
     lineTo(size.width-step, size.height); lineTo(step, size.height); lineTo(step, size.height-step)

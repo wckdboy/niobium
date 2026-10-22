@@ -46,9 +46,12 @@ data class BotProfile(
     val isDefault: Boolean,
     val hidden: Boolean,
     val accentHex: String?,
-    val hasAvatar: Boolean
+    val hasAvatar: Boolean,
+    val origin: String = "hermes",
+    val enabledToolsets: List<String> = emptyList()
 ) {
-    val id get() = name
+    val castKey get() = if (origin == "dsh") "dsh:" + name else name
+    val id get() = castKey
     val accent: Color get() = Nb.colorFor(accentHex ?: name)
     val initials: String
         get() = title.split(" ").filter { it.isNotBlank() }.take(2).joinToString("") { it.take(1) }.uppercase().ifEmpty { name.take(2).uppercase() }
@@ -81,7 +84,9 @@ data class BotProfile(
                 isDefault = j.b("is_default") ?: false,
                 hidden = meta?.b("hidden") ?: false,
                 accentHex = meta?.s("color"),
-                hasAvatar = j.b("has_avatar") ?: false
+                hasAvatar = j.b("has_avatar") ?: false,
+                origin = if (j.s("origin") == "dsh") "dsh" else "hermes",
+                enabledToolsets = j.strings("enabled_toolsets")
             )
         }
     }

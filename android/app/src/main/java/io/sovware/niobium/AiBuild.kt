@@ -121,7 +121,7 @@ fun AIBuildSheet(vm: NiobiumViewModel, preview: Boolean = false, onDismiss: () -
                                     label = { Text(value, fontSize = 9.sp) })
                             }
                         }
-                        Text("Host approvals stay manual. Tool selection is applied to Hermes; network and workspace isolation are configured on the host. The Pixel inherits the default profile’s model credentials.",
+                        Text("Tool choices are applied to the selected engine. Workspace scopes are operating instructions; the engine owns sandbox enforcement. Your Pixel uses the model credentials configured for that engine.",
                             color = Nb.Tertiary, fontSize = 10.sp, lineHeight = 15.sp)
                         Text("Tools: " + current.enabledToolsets.joinToString().ifBlank { "none" }, color = Nb.Secondary, style = NbMono, fontSize = 11.sp)
                         Text("Skills: " + spec.skills.joinToString().ifBlank { "none" }, color = Nb.Secondary, fontSize = 12.sp)

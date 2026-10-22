@@ -109,7 +109,7 @@ struct BotsView: View {
                 if store.bots.isEmpty {
                     EmptyStateView(icon: "square.grid.2x2",
                                    title: "Make your first pixel",
-                                   detail: "A pixel is a Hermes profile with its own memory, model and tools. Give it a name and it stays with you.",
+                                   detail: "Give your Pixel a purpose, a personality and the tools it needs. Its chats stay with the engine you choose.",
                                    actionTitle: "Create a pixel") { newBot = true }
                         .padding(.horizontal, 20)
                         .padding(.top, 8)
@@ -163,14 +163,14 @@ struct BotsView: View {
         HStack {
             Wordmark()
             Spacer()
-            Button { showRooms = true } label: {
+            if store.engine == .hermes { Button { showRooms = true } label: {
                 Image(systemName: "person.2")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(NB.secondary)
                     .frame(width: 32, height: 32)
                     .background(Circle().fill(NB.fillSoft))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.plain) }
             HStack(spacing: 7) {
                 StatusDot(color: store.connectionState.color, pulse: store.isConnecting)
                 Text(store.connectionState.isConnected ? "online" : store.connectionState.label.lowercased())

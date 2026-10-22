@@ -15,7 +15,8 @@ The v2 source retains two build flavors:
 The full build reuses [everettjf/dsh-ios](https://github.com/everettjf/dsh-ios)
 and [iSH-ARM64](https://github.com/OpenMinis/ish-arm64). It compiles the emulator
 into the app, boots Alpine 3.21 with Node 22 and `@deepseek-ai/dsh`, supervises
-`dsh-serve`, and displays the stock DSH web UI in a WebKit surface.
+`dsh-serve`, and connects the native roster, workshop and chats through the shared
+Niobium provider adapter. The stock web UI is an advanced control.
 
 ```sh
 cd /path/to/niobium
@@ -76,7 +77,7 @@ guest image. Audited debug simulator bundles measured 17 MB client and 98 MB ful
 - `Speech.swift` — on-device dictation.
 - `Views/` — Pixels, Chat, Rooms, Activity, Toolbox, Settings and sheets.
 - `DSHLocalView.swift` — SwiftUI host for `DSHRootViewController` (full build only).
-- `DSHAppDelegate.m` — defers guest boot until the user opens Settings → On device.
+- `DSHAppDelegate.m` — defers guest boot until the user selects the on-device engine.
 - `NiobiumDSH.xcodeproj` — full build project, including the iSH Meson phase.
 - `ThirdParty/dsh-ios` — pinned GPLv3 submodule.
 - `scripts/build-local-dsh.sh` — reproducible Alpine + Node + dsh image build.
@@ -99,12 +100,12 @@ guest image. Audited debug simulator bundles measured 17 MB client and 98 MB ful
 
 ## Local DSH behavior
 
-- Boot is **on demand**: opening Settings → On device → DeepSeek Harness calls
-  `DSHBootCoordinator.start()`.
+- Boot is **on demand**: selecting On device from onboarding or Engines calls
+  `DSHBootCoordinator.start()` and opens the standard native app.
 - First boot imports the rootfs (20–60 s on a phone), then starts `dsh-serve`
-  on a free loopback port; the stock DSH UI loads when ready.
-- The DSH screen has its own terminal, full log, restart, capabilities and
-  session data. It is a separate harness, not a Hermes profile.
+  on a free loopback port; the native provider attaches when ready.
+- The advanced DSH screen retains terminal, log, restart and capabilities.
+  Native Pixels are real DSH presets and use real DSH sessions. See ../docs/DSH-PROVIDER.md.
 - Guest data persists under Application Support; app updates with a new rootfs
   migrate `~/.dsh` and the workspace.
 - The iOS full app is arm64 only; x86_64 simulators cannot run the AArch64
@@ -123,7 +124,7 @@ xcrun simctl launch booted ai.wckd.niobium --demo --no-splash --dsh
 ```
 
 `--no-splash` skips the splash and keeps the simulator display awake; it is for
-capture/testing only. `--dsh` opens the local DeepSeek Harness immediately (full
+capture/testing only. `--dsh` selects the native on-device provider immediately (full
 build only).
 
 ## Limitations

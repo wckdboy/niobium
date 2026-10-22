@@ -79,7 +79,7 @@ fun PixelsScreen(vm: NiobiumViewModel, state: NbState, onNewPixel: () -> Unit, o
                         Spacer(Modifier.height(5.dp))
                         Text("Your agents, close at hand.", color = Nb.Secondary, fontSize = 14.sp)
                     }
-                    Box(Modifier.size(38.dp).clip(CircleShape).background(Nb.FillSoft)
+                    if (state.engine == AgentEngine.HERMES) Box(Modifier.size(38.dp).clip(CircleShape).background(Nb.FillSoft)
                         .border(1.dp, Nb.Line, CircleShape).clickable { onOpenRooms() }, contentAlignment = Alignment.Center) {
                         Text("◎", color = Nb.Secondary, fontSize = 13.sp)
                     }
@@ -136,7 +136,7 @@ fun PixelsScreen(vm: NiobiumViewModel, state: NbState, onNewPixel: () -> Unit, o
                             Modifier.width(68.dp).clickable { vm.openBot(pixel) },
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            BotAvatar(pixel.title, pixel.accent, 54.dp, true, profileName = pixel.name)
+                            BotAvatar(pixel.title, pixel.accent, 54.dp, true, profileName = pixel.castKey)
                             Spacer(Modifier.height(7.dp))
                             Text(pixel.title, color = Nb.Secondary, fontSize = 10.5.sp, maxLines = 1)
                         }
@@ -152,7 +152,7 @@ fun PixelsScreen(vm: NiobiumViewModel, state: NbState, onNewPixel: () -> Unit, o
         if (state.bots.isEmpty()) {
             item {
                 EmptyState("▦", "Make your first pixel",
-                    "A pixel is a Hermes profile with its own memory, model and tools. Give it a name and it stays with you.",
+                    "Give your Pixel a purpose, a personality and the tools it needs. Its chats stay with the engine you choose.",
                     "Create a pixel", onNewPixel, Modifier.padding(horizontal = 20.dp))
             }
         } else {
@@ -253,7 +253,7 @@ fun ActivityScreen(vm: NiobiumViewModel, state: NbState) {
                             .border(1.dp, Nb.Ion.copy(alpha = 0.22f), RoundedCornerShape(17.dp))
                             .clickable { vm.openBot(pixel) }.padding(13.dp), verticalAlignment = Alignment.CenterVertically
                     ) {
-                        BotAvatar(pixel.title, pixel.accent, 42.dp, true, profileName = pixel.name)
+                        BotAvatar(pixel.title, pixel.accent, 42.dp, true, profileName = pixel.castKey)
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
                             Text(pixel.title, color = Nb.Text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
@@ -332,6 +332,7 @@ private fun ActivityRow(item: ActivityItem) {
 
 @Composable
 fun ToolsScreen(vm: NiobiumViewModel, state: NbState, onClose: (() -> Unit)? = null) {
+    if (state.engine == AgentEngine.DSH) { LocalToolsScreen(state, onClose); return }
     var query by remember { mutableStateOf("") }
     var showSkills by remember { mutableStateOf(false) }
     var showMCP by remember { mutableStateOf(false) }
@@ -495,7 +496,7 @@ fun SettingsScreen(vm: NiobiumViewModel, state: NbState, onOpenTools: () -> Unit
         )
     }
     if (showHarness) {
-        LocalRuntimeScreen { showHarness = false }
+        LocalRuntimeScreen(vm) { showHarness = false }
         return
     }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 36.dp)) {
@@ -569,7 +570,7 @@ fun SettingsScreen(vm: NiobiumViewModel, state: NbState, onOpenTools: () -> Unit
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Text("Local Pixels · DSH", color = Nb.Text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                    Text("Open DSH on your computer or VPS", color = Nb.Tertiary, fontSize = 10.5.sp)
+                    Text("Choose where your Pixels run", color = Nb.Tertiary, fontSize = 10.5.sp)
                 }
                 Text("›", color = Nb.Tertiary, fontSize = 16.sp)
             }
@@ -626,7 +627,7 @@ fun SettingsScreen(vm: NiobiumViewModel, state: NbState, onOpenTools: () -> Unit
                 Column {
                     Text("Your gateway. No middleman.", color = Nb.Text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.height(4.dp))
-                    Text("Messages stream directly from this device to the Hermes instance you entered. Niobium has no account, no backend, no analytics and no telemetry.",
+                    Text("Messages go directly to your selected engine and model provider. Niobium has no account, no backend, no analytics and no telemetry.",
                         color = Nb.Secondary, fontSize = 11.5.sp, lineHeight = 17.sp)
                 }
             }
@@ -641,7 +642,7 @@ fun SettingsScreen(vm: NiobiumViewModel, state: NbState, onOpenTools: () -> Unit
                 Spacer(Modifier.width(14.dp))
                 Column {
                     Text("Niobium", color = Nb.Text, style = NbTitle, fontSize = 18.sp)
-                    Text("The pocket command deck for Hermes Agent.", color = Nb.Secondary, fontSize = 11.5.sp)
+                    Text("Your Pixels. On your terms.", color = Nb.Secondary, fontSize = 11.5.sp)
                     Text("v" + BuildConfig.VERSION_NAME + " (" + BuildConfig.VERSION_CODE + ") · Nb 41", color = Nb.Tertiary, style = NbMono, fontSize = 8.5.sp)
                 }
             }
@@ -657,21 +658,8 @@ fun SettingsScreen(vm: NiobiumViewModel, state: NbState, onOpenTools: () -> Unit
 }
 
 @Composable
-fun HomeScreen(vm: NiobiumViewModel, state: NbState, onNewPixel: () -> Unit, onShowPixels: () -> Unit) {
+fun HomeScreen(vm: NiobiumViewModel, state: NbState, onNewPixel: () -> Unit, onShowPixels: () -> Unit, onOpenEngines: () -> Unit) {
     val context = LocalContext.current
-    var showHarness by remember { mutableStateOf(false) }
-    var showInstance by remember { mutableStateOf(false) }
-    if (showHarness) { LocalRuntimeScreen { showHarness = false }; return }
-    if (showInstance) {
-        androidx.compose.material3.AlertDialog(onDismissRequest = { showInstance = false }, containerColor = Nb.Ink,
-            title = { Text("Hermes instance", color = Nb.Text) },
-            text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(state.connection?.url ?: "No gateway connected", color = Nb.Secondary, style = NbMono, fontSize = 12.sp)
-                Text("Access is enforced by your Hermes host.", color = Nb.Secondary, fontSize = 12.sp)
-                state.gatewayLatencyMs?.let { Text("Last round trip: " + it + " ms", color = Nb.Secondary, fontSize = 12.sp) }
-                androidx.compose.material3.TextButton(onClick = { vm.refreshAllAsync() }) { Text("Refresh gateway", color = Nb.Ion) }
-            } }, confirmButton = { androidx.compose.material3.TextButton(onClick = { showInstance = false }) { Text("Done", color = Nb.Ion) } })
-    }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 30.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
@@ -687,7 +675,7 @@ fun HomeScreen(vm: NiobiumViewModel, state: NbState, onNewPixel: () -> Unit, onS
                         Text("YOUR PIXELS, EVERYWHERE.", color = Nb.Secondary, style = NbMono, fontSize = 7.sp, letterSpacing = 1.sp)
                     }
                     Row(Modifier.clip(CircleShape).background(Nb.Ink.copy(alpha = 0.8f))
-                        .border(1.dp, Nb.Ion.copy(alpha = 0.22f), CircleShape).clickable { showInstance = true }
+                        .border(1.dp, Nb.Ion.copy(alpha = 0.22f), CircleShape).clickable { onOpenEngines() }
                         .padding(horizontal = 10.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
                         LiveDot(if (state.connected) Nb.Mint else Nb.Tertiary)
                         Spacer(Modifier.width(5.dp))
@@ -697,7 +685,7 @@ fun HomeScreen(vm: NiobiumViewModel, state: NbState, onNewPixel: () -> Unit, onS
                 }
             }
         }
-        item { Box(Modifier.padding(horizontal = 16.dp).clickable { showInstance = true }) { InstanceCard(state) } }
+        item { Box(Modifier.padding(horizontal = 16.dp).clickable { onOpenEngines() }) { InstanceCard(state) } }
         item {
             Row(Modifier.padding(horizontal = 16.dp).padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
@@ -705,6 +693,7 @@ fun HomeScreen(vm: NiobiumViewModel, state: NbState, onNewPixel: () -> Unit, onS
                     Text("A little personality. A lot of purpose.", color = Nb.Tertiary, fontSize = 11.sp)
                 }
                 androidx.compose.material3.Button(onClick = onNewPixel,
+                    enabled = state.connected || state.demo, shape = PixelButtonShape,
                     colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Nb.Ion, contentColor = Nb.OnIon),
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 10.dp)) {
                     Text("+ New Pixel", fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold)
@@ -712,7 +701,8 @@ fun HomeScreen(vm: NiobiumViewModel, state: NbState, onNewPixel: () -> Unit, onS
             }
         }
         if (state.bots.isEmpty()) item {
-            Text("Give your first Pixel a purpose. Create one here or refresh your gateway roster.", color = Nb.Secondary, fontSize = 13.sp,
+            Text(if (state.engine == AgentEngine.DSH && !state.connected) state.engineStatus.ifEmpty { "Starting your Pixels…" }
+                else "Give your first Pixel a purpose. Create one here or refresh your roster.", color = Nb.Secondary, fontSize = 13.sp,
                 modifier = Modifier.padding(horizontal = 16.dp).pixelPanel().padding(16.dp))
         }
         items(state.bots.take(6).chunked(2), key = { row -> row.first().name }) { row ->
@@ -725,7 +715,6 @@ fun HomeScreen(vm: NiobiumViewModel, state: NbState, onNewPixel: () -> Unit, onS
             Text("All " + state.bots.size + " Pixels  →", color = Nb.Secondary, fontSize = 11.sp,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).clickable { onShowPixels() }.padding(vertical = 4.dp))
         }
-        item { Box(Modifier.padding(horizontal = 16.dp).padding(top = 10.dp)) { LocalDSHCard(state) { showHarness = true } } }
     }
 }
 
@@ -738,10 +727,10 @@ private fun InstanceCard(state: NbState) {
             }
             Spacer(Modifier.width(11.dp))
             Column(Modifier.weight(1f)) {
-                Text("Hermes Instance", color = Nb.Text, style = NbTitle, fontSize = 16.sp)
-                Text(state.connection?.url?.removePrefix("http://")?.removePrefix("https://") ?: "self-hosted",
+                Text(if (state.engine == AgentEngine.DSH) "On-device engine" else "Hermes instance", color = Nb.Text, style = NbTitle, fontSize = 16.sp)
+                Text(if (state.engine == AgentEngine.DSH) "DSH · private Linux workspace" else state.connection?.url?.removePrefix("http://")?.removePrefix("https://") ?: "self-hosted",
                     color = Nb.Secondary, style = NbMono, fontSize = 9.sp, maxLines = 1)
-                Text(if (state.demo) "Demo workspace" else "Your computer or VPS", color = Nb.Tertiary, style = NbMono, fontSize = 8.5.sp)
+                Text(if (state.demo) "Demo workspace" else if (state.engine == AgentEngine.DSH) "On this device" else "Your computer or VPS", color = Nb.Tertiary, style = NbMono, fontSize = 8.5.sp)
             }
             Column(horizontalAlignment = Alignment.End) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -749,7 +738,7 @@ private fun InstanceCard(state: NbState) {
                     Spacer(Modifier.width(5.dp))
                     Text(if (state.connected) "Online" else "Offline", color = if (state.connected) Nb.Mint else Nb.Tertiary, fontSize = 10.sp)
                 }
-                Text(if (state.demo) "preview" else "gateway", color = Nb.Tertiary, style = NbMono, fontSize = 8.5.sp)
+                Text(if (state.demo) "preview" else if (state.engine == AgentEngine.DSH) "local" else "gateway", color = Nb.Tertiary, style = NbMono, fontSize = 8.5.sp)
                 Spacer(Modifier.width(2.dp))
                 Text("›", color = Nb.Tertiary, fontSize = 13.sp)
             }
@@ -758,8 +747,8 @@ private fun InstanceCard(state: NbState) {
         Box(Modifier.fillMaxWidth().height(1.dp).background(Nb.Line))
         Spacer(Modifier.height(11.dp))
         Row {
-            HomeStat("${state.toolsets.size}", "Toolsets", "◈", Modifier.weight(1f))
-            HomeStat(if (state.demo) "Demo" else "Host", "Policy", "◇", Modifier.weight(1f))
+            HomeStat(if (state.engine == AgentEngine.DSH) "DSH" else "${state.toolsets.size}", if (state.engine == AgentEngine.DSH) "Engine" else "Toolsets", "◈", Modifier.weight(1f))
+            HomeStat(if (state.demo) "Demo" else if (state.engine == AgentEngine.DSH) "Local" else "Host", "Policy", "◇", Modifier.weight(1f))
             HomeStat(state.gatewayLatencyMs?.let { "$it ms" } ?: "—", "Latency", "⌁", Modifier.weight(1f))
             HomeStat("${state.bots.count { it.isLive }}/${state.bots.size}", "Working", "▦", Modifier.weight(1f))
         }
@@ -779,7 +768,7 @@ private fun HomeStat(value: String, label: String, glyph: String, modifier: Modi
 
 @Composable
 private fun HomePixelCard(context: android.content.Context, bot: BotProfile, modifier: Modifier = Modifier, onTap: () -> Unit) {
-    val member = CastStore.get(context, bot.name)
+    val member = CastStore.get(context, bot.castKey)
     Row(modifier.pixelPanel(16.dp).clickable { onTap() }.padding(8.dp).heightIn(min = 70.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
         CastPortrait(member, 64.dp, showCompanion = true)
@@ -797,37 +786,6 @@ private fun HomePixelCard(context: android.content.Context, bot: BotProfile, mod
 }
 
 @Composable
-private fun LocalDSHCard(state: NbState, onOpen: () -> Unit) {
-    Column(Modifier.fillMaxWidth().pixelPanel(20.dp, accented = true).padding(14.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text("Local DSH", color = Nb.Text, style = NbTitle, fontSize = 18.sp)
-                Text("A Linux home for your Pixels.", color = Nb.Tertiary, fontSize = 10.sp)
-            }
-            Box(Modifier.clip(CircleShape).background(Nb.Ion.copy(alpha = 0.16f))
-                .border(1.dp, Nb.Ion.copy(alpha = 0.35f), CircleShape).clickable { onOpen() }
-                .padding(horizontal = 11.dp, vertical = 7.dp)) {
-                Text(">_ Open DSH", color = Nb.Ion, fontSize = 10.sp, fontWeight = FontWeight.Medium)
-            }
-        }
-        Spacer(Modifier.height(9.dp))
-        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Nb.FillSoft).padding(10.dp),
-            verticalAlignment = Alignment.CenterVertically) {
-            Text("◈", color = Nb.Ion, fontSize = 14.sp)
-            Spacer(Modifier.width(8.dp))
-            Column(Modifier.weight(1f)) {
-                Text("Harness runtime", color = Nb.Text, fontSize = 11.5.sp, fontWeight = FontWeight.Medium)
-                Text("On device · Alpine Linux", color = Nb.Tertiary, style = NbMono, fontSize = 8.sp)
-            }
-            Text("Open to check", color = Nb.Tertiary, style = NbMono, fontSize = 8.sp)
-        }
-        Spacer(Modifier.height(9.dp))
-        Text("Run on-device with your provider keys, or connect to remote DSH.",
-            color = Nb.Tertiary, fontSize = 8.5.sp, lineHeight = 12.sp)
-    }
-}
-
-@Composable
 fun LocalScreen(vm: NiobiumViewModel, state: NbState) {
-    LocalRuntimeScreen()
+    LocalRuntimeScreen(vm)
 }

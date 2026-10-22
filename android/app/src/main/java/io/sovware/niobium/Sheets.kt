@@ -86,7 +86,7 @@ fun NewGroupSheet(vm: NiobiumViewModel, state: NbState, onDone: () -> Unit) {
                     }.padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                BotAvatar(bot.title, bot.accent, 38.dp, false, showStatus = false, profileName = bot.name)
+                BotAvatar(bot.title, bot.accent, 38.dp, false, showStatus = false, profileName = bot.castKey)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Text(bot.title, color = Nb.Text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)

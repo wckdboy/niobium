@@ -13,6 +13,7 @@ private final class FixtureRPC: HermesRPC {
     var failConfigure = false
     var holdClarify = false
     var createdName = "fixture-profile"
+    var madeLocally = false
 
     func request(_ method: String, params: JSONObject, timeout: TimeInterval) async throws -> Any {
         calls.append((method, params))
@@ -28,8 +29,12 @@ private final class FixtureRPC: HermesRPC {
         case "profiles.create":
             createdName = params.string("name") ?? ""
             return ["ok": true]
+        case "pixel.create":
+            madeLocally = true
+            createdName = params.dict("spec")?.string("name") ?? ""
+            return ["ok": true]
         case "profiles.describe": return ["skills": [["name": "audit"], ["name": "extra"]]]
-        case "profiles.list": return ["profiles": [["name": createdName]]]
+        case "profiles.list": return ["profiles": [["name": createdName, "origin": madeLocally ? "dsh" : "hermes"]]]
         case "profiles.configure":
             if failConfigure { throw RPCError.server(code: 4409, message: "Fixture conflict") }
             return ["ok": true]
@@ -49,6 +54,25 @@ private final class FixtureRPC: HermesRPC {
 
 @MainActor
 final class GatewayStateTests: XCTestCase {
+    func testLocalPixelCreationUsesNativeDshPresetEndpoint() async throws {
+        let rpc = FixtureRPC()
+        let subject = AppStore(api: rpc)
+        subject.engine = .dsh
+        let spec = PixelSpec.fallback(for: "Research interesting projects")
+        let draft = PixelDraft(spec: spec, usedModel: false, availableToolsets: ["web", "file", "delegation"], availableSkills: [], notes: [])
+        let bot = try await subject.buildPixel(draft: draft)
+        XCTAssertEqual(bot.origin, "dsh")
+        XCTAssertTrue(rpc.calls.contains { $0.0 == "pixel.create" })
+        XCTAssertFalse(rpc.calls.contains { $0.0 == "profiles.create" || $0.0 == "config.set" })
+    }
+
+    func testPixelsWithSameNameKeepTheirProviderAndAppearanceIdentity() throws {
+        let remote = try XCTUnwrap(BotProfile.parse(["name": "scout"]))
+        let local = try XCTUnwrap(BotProfile.parse(["name": "scout", "origin": "dsh"]))
+        XCTAssertEqual(remote.name, local.name)
+        XCTAssertNotEqual(remote.id, local.id)
+        XCTAssertNotEqual(remote.castKey, local.castKey)
+    }
     func testOldClarifyAcknowledgementCannotClearANewerPrompt() async throws {
         let rpc = FixtureRPC()
         // Use a wired fixture to exercise the actual asynchronous response path.

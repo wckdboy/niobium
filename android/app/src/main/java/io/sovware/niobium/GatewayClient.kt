@@ -38,7 +38,7 @@ class GatewayClient(private val listener: Listener) {
     var connected: Boolean = false
         private set
 
-    fun connect(baseUrl: String, token: String) {
+    fun connect(baseUrl: String, token: String, cookie: String? = null) {
         disconnect(silent = true)
         closedByUs = false
         val httpUrl = baseUrl.trimEnd('/').toHttpUrlOrNull() ?: throw GatewayException("That gateway address isn’t valid.")
@@ -46,7 +46,7 @@ class GatewayClient(private val listener: Listener) {
             .addPathSegments("api/ws")
             .apply { if (token.isNotBlank()) addQueryParameter("token", token) }
             .build()
-        val request = Request.Builder().url(wsUrl).build()
+        val request = Request.Builder().url(wsUrl).apply { cookie?.let { header("Cookie", "niobium_session=" + it) } }.build()
         socket = http.newWebSocket(request, object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
                 if (socket === webSocket) connected = true
@@ -166,11 +166,12 @@ class GatewayClient(private val listener: Listener) {
     }
 
     companion object {
-        suspend fun probe(baseUrl: String, token: String): JSONObject {
+        suspend fun probe(baseUrl: String, token: String, cookie: String? = null): JSONObject {
             val url = baseUrl.trimEnd('/').toHttpUrlOrNull()?.newBuilder()?.addPathSegments("api/status")?.build()
                 ?: throw GatewayException("That gateway address isn’t valid.")
             val request = Request.Builder().url(url)
                 .apply {
+                    cookie?.let { header("Cookie", "niobium_session=" + it) }
                     if (token.isNotBlank()) {
                         header("X-Hermes-Session-Token", token)
                         header("Authorization", "Bearer $token")

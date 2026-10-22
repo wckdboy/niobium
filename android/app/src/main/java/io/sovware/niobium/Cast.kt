@@ -171,7 +171,7 @@ private fun compRes(id: String): Int = when (id) {
 fun CastStudioSheet(vm: NiobiumViewModel, profile: String, title: String, onDismiss: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     var saving by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
-    var selected by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(CastStore.get(context, profile)) }
+    var selected by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(CastStore.get(context, if (vm.state.engine == AgentEngine.DSH) "dsh:" + profile else profile)) }
     androidx.compose.material3.ModalBottomSheet(
         onDismissRequest = onDismiss, containerColor = Nb.Ink,
         sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)

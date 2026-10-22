@@ -74,8 +74,10 @@ struct BotProfile: Identifiable, Equatable {
     var accentHex: String?
     var hasAvatar: Bool
     var enabledToolsets: [String] = []
+    var origin: String = "hermes"
 
-    var id: String { name }
+    var castKey: String { origin == "dsh" ? "dsh:" + name : name }
+    var id: String { castKey }
     var accent: Color { NB.color(for: accentHex) }
     var initials: String {
         let parts = title.split(separator: " ").prefix(2)
@@ -125,7 +127,9 @@ struct BotProfile: Identifiable, Equatable {
             isDefault: json.bool("is_default") ?? false,
             hidden: meta.bool("hidden") ?? false,
             accentHex: meta.string("color"),
-            hasAvatar: json.bool("has_avatar") ?? false
+            hasAvatar: json.bool("has_avatar") ?? false,
+            enabledToolsets: json.array("enabled_toolsets") as? [String] ?? [],
+            origin: json.string("origin") == "dsh" ? "dsh" : "hermes"
         )
     }
 }
