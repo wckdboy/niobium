@@ -190,8 +190,8 @@ extension CharacterRecipe {
 struct CharacterCustomizer: View {
     @Binding var recipe: CharacterRecipe
     let archetype: String
+    @Binding var pinned: Set<String>
     var enabled = true
-    @State private var pinned: Set<String> = ["body", "skin"]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -202,7 +202,7 @@ struct CharacterCustomizer: View {
                 .buttonStyle(NBQuietButtonStyle())
                 .disabled(!enabled || pinned.count == CharacterRecipe.fieldNames.count)
                 .accessibilityIdentifier("character.remix")
-            Text("Pin your favorites, then remix the rest. Default skin and hair colors follow their palette.")
+            Text("Pin your favorites, then remix the rest. Pinning a palette-default color also keeps its palette.")
                 .font(.nbBody(11)).foregroundStyle(NB.tertiary)
             ForEach(CharacterRecipe.fieldNames, id: \.self) { field in
                 HStack(spacing: 8) {
@@ -276,6 +276,7 @@ struct CastStudioView: View {
     let profile: String
     let title: String
     @State private var selected: CastMember
+    @State private var pinned: Set<String> = ["body", "skin"]
 
     init(profile: String, title: String, castKey: String? = nil) {
         self.profile = profile; self.title = title
@@ -303,8 +304,7 @@ struct CastStudioView: View {
                             .font(.nbBody(11)).foregroundStyle(NB.secondary)
                     }.frame(maxWidth: .infinity)
                     NBSectionHeader(title: "Make it yours", detail: "48 × 48")
-                    CharacterCustomizer(recipe: recipe, archetype: selected.id, enabled: !saving)
-                        .id(selected.id)
+                    CharacterCustomizer(recipe: recipe, archetype: selected.id, pinned: $pinned, enabled: !saving)
                     NBSectionHeader(title: "Companion", detail: "small creature, big ideas")
                     FamiliarPicker(kind: companion, enabled: !saving)
                     NBSectionHeader(title: "The cast", detail: "eight starting points")

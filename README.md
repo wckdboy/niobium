@@ -86,7 +86,7 @@ The generated art source and exact prompt are versioned; the macOS Swift baking
 tool produces the canonical native atlas.
 
 [Art and prompts](brand/art-provenance.json) ·
-[Design reference](docs/reference-dashboard.png)
+[Design reference](docs/reference-dashboard.png) ·\n[Dashboard](docs/evidence/pixel-atelier-dashboard.png) ·\n[Editor](docs/evidence/pixel-atelier-editor.png) ·\n[Companions](docs/evidence/pixel-atelier-companions.png)
 
 ## Build and check
 

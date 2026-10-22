@@ -14,7 +14,9 @@ The Node watcher tests cover contract/feature detection, new releases, truncated
 comparisons, pagination, idempotent issue updates and invalid repository paths.
 The Plane test opens a loopback-only server and checks dry-run behaviour,
 credentials, stable UUID updates and workflow preservation. Asset checks cover
-the opaque white icon, art provenance, shared skill/recipe copies and CSV fields. New character checks verify all twelve\n16×16 companion sprites, hard-alpha 48×48 cast cells, color budgets, and generated\ncatalog/fixture drift without third-party image packages.
+the opaque white icon, art provenance, shared skill/recipe copies and CSV fields. New character checks verify all twelve
+16×16 companion sprites, hard-alpha 48×48 cast cells, color budgets, and generated
+catalog/fixture drift without third-party image packages.
 
 Android, with Node available on PATH and JDK 17:
 
@@ -116,8 +118,12 @@ Android runtime tests require an ARM64 Android device/emulator:
     ./gradlew :app:connectedDebugAndroidTest
     python3 ../tools/check-android-runtime.py app/build/outputs/apk/debug/app-debug.apk
 
-An Android workshop interaction test checks pinned remixing and the mimic radio
-selection. Two additional on-device renderer checks verify shared RGBA pixels and that changing\ncompanions preserves each authored portrait. Five app-domain runtime tests verify Linux/Node/DSH, private authenticated HTTP/WebSocket access,
+An Android Compose workshop test pins hair, closes and reopens the appearance
+section, remixes, and verifies the retained style and mimic selection. Espresso
+is pinned to 3.7.0: Compose’s old transitive version reflects an InputManager
+method removed on Android 16. The stable fix uses getSystemService
+([Android Test release notes](https://developer.android.com/jetpack/androidx/releases/test#espresso-3.7.0)). Two additional on-device renderer checks verify shared RGBA pixels and that changing
+companions preserves each authored portrait. Five app-domain runtime tests verify Linux/Node/DSH, private authenticated HTTP/WebSocket access,
 real session creation and bot-build discovery, service Start/Stop, CSS viewport layout,
 workspace preservation through image replacement, and a full native preset/chat/history
 round trip through real DSH and a controlled model server. Eighteen shared adapter

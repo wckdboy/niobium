@@ -24,6 +24,8 @@ fun AIBuildSheet(vm: NiobiumViewModel, preview: Boolean = false, onDismiss: () -
     var draft by remember { mutableStateOf<PixelDraft?>(null) }
     var designJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
     var showSoul by remember { mutableStateOf(false) }
+    var appearanceExpanded by remember { mutableStateOf(false) }
+    var appearancePins by remember { mutableStateOf(setOf("body", "skin")) }
     LaunchedEffect(preview) {
         if (preview && vm.state.demo) draft = PixelBuilder.draft(context, null, "A sharp-tongued security witch for VPS logs, with a bat")
     }
@@ -69,6 +71,7 @@ fun AIBuildSheet(vm: NiobiumViewModel, preview: Boolean = false, onDismiss: () -
                 item {
                     Button(onClick = {
                         working = true; error = null
+                        appearancePins = setOf("body", "skin"); appearanceExpanded = false
                         designJob = vm.draftPixel(context, prompt, onDraft = { draft = it; working = false },
                             onError = { error = it; working = false })
                     }, enabled = !working && prompt.isNotBlank(), modifier = Modifier.fillMaxWidth(),
@@ -104,12 +107,12 @@ fun AIBuildSheet(vm: NiobiumViewModel, preview: Boolean = false, onDismiss: () -
                     Text(spec.companion.trait, color = Nb.Secondary, fontSize = 12.sp)
                 }
                 item {
-                    var appearanceExpanded by remember { mutableStateOf(false) }
                     TextButton(onClick = { appearanceExpanded = !appearanceExpanded }, enabled = !working) {
                         Text(if (appearanceExpanded) "Appearance & companion ↑" else "Appearance & companion ↓", color = Nb.Ion)
                     }
                     if (appearanceExpanded) Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        CharacterCustomizer(spec.character.recipe, spec.character.archetype, !working) {
+                        CharacterCustomizer(spec.character.recipe, spec.character.archetype, appearancePins,
+                            enabled = !working, onPinsChange = { appearancePins = it }) {
                             draft = current.copy(spec = spec.copy(character = spec.character.copy(recipe = it)))
                         }
                         SectionHeader("Companion")

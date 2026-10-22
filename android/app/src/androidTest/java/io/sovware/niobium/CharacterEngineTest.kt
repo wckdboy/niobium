@@ -5,49 +5,37 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.*
 import org.junit.Test
+import org.junit.Rule
+import androidx.compose.ui.test.*
+import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.semantics.SemanticsProperties
 import org.junit.runner.RunWith
 import org.json.JSONArray
 import java.security.MessageDigest
 
 @RunWith(AndroidJUnit4::class)
 class CharacterEngineTest {
+    @get:Rule val compose = createEmptyComposeRule()
+
     @Test fun workshopKeepsPinnedBuildAndSelectsNewCompanions() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val activity = instrumentation.startActivitySync(android.content.Intent(instrumentation.targetContext, MainActivity::class.java)
             .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK).putExtra("demo", true).putExtra("tab", "pixel-review"))
-        fun nodes(node: android.view.accessibility.AccessibilityNodeInfo?): List<android.view.accessibility.AccessibilityNodeInfo> =
-            if (node == null) emptyList() else listOf(node) + (0 until node.childCount).flatMap { nodes(node.getChild(it)) }
-        fun find(text: String) = nodes(instrumentation.uiAutomation.rootInActiveWindow).firstOrNull {
-            it.isVisibleToUser && (it.text?.toString()?.startsWith(text) == true || it.contentDescription?.toString() == text)
-        }
-        fun click(text: String) {
-            repeat(40) {
-                var node = find(text)
-                repeat(6) {
-                    if (node?.isClickable == true && node?.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK) == true) {
-                        instrumentation.waitForIdleSync(); Thread.sleep(200); return
-                    }
-                    node = node?.parent
-                }
-                nodes(instrumentation.uiAutomation.rootInActiveWindow).filter { it.isScrollable }.forEach {
-                    it.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
-                }
-                Thread.sleep(150)
-            }
-            fail("Missing workshop control: " + text)
-        }
         try {
-            click("Appearance & companion")
-            assertNotNull(find("Feminine"))
-            click("Remix look")
-            assertNotNull("Pinned build changed during remix", find("Feminine"))
-            click("Mimic companion")
-            val until = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(3)
-            // The label can be a child view; selection belongs to its radio ancestor.
-            fun selected() = generateSequence(find("Mimic companion")) { it.parent }.take(6).any { it.isChecked || it.isSelected }
-            while (System.nanoTime() < until && !selected()) Thread.sleep(100)
-            assertTrue("Mimic selection was not retained: " + generateSequence(find("Mimic companion")) { it.parent }
-                .take(6).joinToString { it.className.toString() + "/" + it.isChecked + "/" + it.isSelected }, selected())
+            compose.onNodeWithText("Appearance & companion ↓").performScrollTo().performClick()
+            compose.onNodeWithTag("character.body").assertTextContains("Feminine")
+            compose.onNodeWithTag("character.remix").performScrollTo().performClick()
+            compose.onNodeWithTag("character.body").assertTextContains("Feminine")
+            val hair = compose.onNodeWithTag("character.hair")
+            val style = hair.fetchSemanticsNode().config[SemanticsProperties.Text]
+            compose.onNodeWithTag("character.pin.hair").performScrollTo().performClick()
+            compose.onNodeWithText("Appearance & companion ↑").performScrollTo().performClick()
+            compose.onNodeWithText("Appearance & companion ↓").performScrollTo().performClick()
+            compose.onNodeWithTag("character.pin.hair")
+                .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Pinned"))
+            compose.onNodeWithTag("character.remix").performScrollTo().performClick()
+            assertEquals(style, hair.fetchSemanticsNode().config[SemanticsProperties.Text])
+            compose.onNodeWithTag("familiar.mimic").performScrollTo().performClick().assertIsSelected()
         } finally { instrumentation.runOnMainSync { activity.finish() } }
     }
     @Test fun nativePixelsMatchTheSharedRgbaFixtures() {

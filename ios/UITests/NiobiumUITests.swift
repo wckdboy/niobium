@@ -40,6 +40,17 @@ final class NiobiumUITests: XCTestCase {
         let build = app.buttons["character.body"].label
         app.buttons["character.remix"].tap()
         XCTAssertEqual(app.buttons["character.body"].label, build)
+        let hair = app.buttons["character.hair"]
+        for _ in 0..<4 where !hair.isHittable { app.swipeUp() }
+        let style = hair.label
+        app.buttons["character.pin.hair"].tap()
+        let appearance = app.buttons["Appearance & companion"]
+        for _ in 0..<6 where !appearance.isHittable { app.swipeDown() }
+        appearance.tap()
+        appearance.tap()
+        XCTAssertEqual(app.buttons["character.pin.hair"].value as? String, "Pinned")
+        app.buttons["character.remix"].tap()
+        XCTAssertEqual(hair.label, style)
         let screenshot = XCTAttachment(screenshot: app.screenshot())
         screenshot.name = "Pixel appearance editor"
         screenshot.lifetime = .keepAlways

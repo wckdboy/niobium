@@ -208,14 +208,14 @@ internal fun characterValueLabel(value: String, field: String): String {
 }
 
 @Composable
-fun CharacterCustomizer(recipe: CharacterRecipe, archetype: String, enabled: Boolean = true, onChange: (CharacterRecipe) -> Unit) {
-    var pinned by remember(archetype) { mutableStateOf(setOf("body", "skin")) }
+fun CharacterCustomizer(recipe: CharacterRecipe, archetype: String, pinned: Set<String>, enabled: Boolean = true,
+                        onPinsChange: (Set<String>) -> Unit, onChange: (CharacterRecipe) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         PixelButton("Remix look", PixelGlyph.SPARK, Modifier.fillMaxWidth().testTag("character.remix"),
             secondary = true, enabled = enabled && pinned.size < CharacterRecipe.fields.size) {
             onChange(recipe.remixed(archetype, java.util.UUID.randomUUID().toString(), pinned))
         }
-        Text("Pin your favorites, then remix the rest. Default skin and hair colors follow their palette.",
+        Text("Pin your favorites, then remix the rest. Pinning a palette-default color also keeps its palette.",
             color = Nb.Tertiary, fontSize = 11.sp, lineHeight = 16.sp)
         CharacterRecipe.fields.forEach { field ->
             var expanded by remember(field) { mutableStateOf(false) }
@@ -241,7 +241,7 @@ fun CharacterCustomizer(recipe: CharacterRecipe, archetype: String, enabled: Boo
                 Box(Modifier.size(46.dp).clip(RoundedCornerShape(10.dp))
                     .background(if (field in pinned) Nb.Ion.copy(alpha = 0.12f) else Nb.FillSoft)
                     .clickable(enabled = enabled, role = Role.Button) {
-                        pinned = if (field in pinned) pinned - field else pinned + field
+                        onPinsChange(if (field in pinned) pinned - field else pinned + field)
                     }.semantics {
                         contentDescription = (if (field in pinned) "Unpin " else "Pin ") + characterFieldLabel(field).lowercase()
                         stateDescription = if (field in pinned) "Pinned" else "Unpinned"
@@ -285,6 +285,7 @@ fun CastStudioSheet(vm: NiobiumViewModel, profile: String, title: String, onDism
     val context = androidx.compose.ui.platform.LocalContext.current
     var saving by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf(CastStore.get(context, if (vm.state.engine == AgentEngine.DSH) "dsh:" + profile else profile)) }
+    var pinned by remember { mutableStateOf(setOf("body", "skin")) }
     ModalBottomSheet(onDismissRequest = { if (!saving) onDismiss() }, containerColor = Nb.Ink,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true,
             confirmValueChange = { !saving || it != SheetValue.Hidden })) {
@@ -299,7 +300,8 @@ fun CastStudioSheet(vm: NiobiumViewModel, profile: String, title: String, onDism
             item {
                 SectionHeader("Make it yours", "48 × 48")
                 Spacer(Modifier.height(10.dp))
-                CharacterCustomizer(selected.recipe ?: CharacterRecipe.cast.getValue(selected.id), selected.id, !saving) { selected = selected.copy(recipe = it) }
+                CharacterCustomizer(selected.recipe ?: CharacterRecipe.cast.getValue(selected.id), selected.id, pinned,
+                    enabled = !saving, onPinsChange = { pinned = it }) { selected = selected.copy(recipe = it) }
             }
             item {
                 SectionHeader("Companion", "small creature, big ideas")
