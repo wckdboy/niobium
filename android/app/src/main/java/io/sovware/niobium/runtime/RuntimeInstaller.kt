@@ -68,7 +68,7 @@ class RuntimeInstaller(private val context: Context) {
         }
         val skill = File(home, "workspace/.agents/skills/pixel-builder/SKILL.md")
         skill.parentFile?.mkdirs()
-        context.assets.open("bot_build.md").use { input -> skill.outputStream().use(input::copyTo) }
+        if (!skill.exists()) context.assets.open("bot_build.md").use { input -> skill.outputStream().use(input::copyTo) }
         progress(90)
         return PreparedRuntime(root, home, temporary, libraries, native, image.getString("dsh_version"))
     }

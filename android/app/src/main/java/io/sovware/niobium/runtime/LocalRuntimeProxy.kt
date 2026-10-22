@@ -41,8 +41,7 @@ class LocalRuntimeProxy(private val socketPath: String) : Closeable {
     }
 
     private fun bridge(client: Socket) {
-        client.soTimeout = 10000
-        val raw = header(client.getInputStream())
+        val raw = header(client.getInputStream(), System.nanoTime() + 2_000_000_000L) { client.soTimeout = it }
         val lines = raw.split("\r\n")
         val request = lines.first().split(' ')
         val fields = lines.drop(1).filter { it.isNotBlank() }.map { line ->
@@ -103,10 +102,15 @@ class LocalRuntimeProxy(private val socketPath: String) : Closeable {
     }
 
     companion object {
-        private fun header(input: InputStream): String {
+        private fun header(input: InputStream, deadline: Long = Long.MAX_VALUE, timeout: ((Int) -> Unit)? = null): String {
             val bytes = java.io.ByteArrayOutputStream()
             var tail = 0
             while (bytes.size() < 32768) {
+                if (deadline != Long.MAX_VALUE) {
+                    val remaining = (deadline - System.nanoTime()) / 1_000_000
+                    check(remaining > 0) { "HTTP header deadline exceeded" }
+                    timeout?.invoke(remaining.coerceAtMost(Int.MAX_VALUE.toLong()).toInt())
+                }
                 val value = input.read()
                 check(value >= 0) { "Truncated HTTP header" }
                 bytes.write(value)

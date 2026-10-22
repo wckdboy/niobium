@@ -27,7 +27,7 @@ model endpoint.
   No process is killed by port or process name. The service never auto-restarts
   a task after process death.
 - DSH binds a Unix socket in app-private storage. Only the native proxy listens
-  on an OS-allocated loopback TCP port. Every HTTP/WebSocket connection needs a
+  on an OS-allocated loopback TCP port. Unauthenticated headers have a total deadline and a connection cap. Every HTTP/WebSocket connection needs a
   fresh 256-bit per-run cookie; Host and Origin are checked. The HttpOnly cookie
   stays out of URLs and command arguments. The WebView blocks external
   navigation/resources, and CSP restricts WebSocket/fetch destinations.
@@ -54,7 +54,8 @@ Android 16/API 36 emulator with 4 KB pages:
    listener. Real session creation and bot-build skill discovery are tested.
 3. Foreground-service start, accessible workspace entry, a nonzero CSS viewport
    in the real WebView, Stop and closed listener.
-4. Image replacement preserving a sentinel in the user's workspace.
+4. Image replacement preserving a sentinel and user-edited bot-build instructions.
+   Immediate Stop/Start and slow unauthenticated connections have regression coverage.
 
 JVM tests cover traversal, symlink parents, replacement links, size/entry limits
 and cancellation. The source/recipe bundle and NOTICE accompany release assets.

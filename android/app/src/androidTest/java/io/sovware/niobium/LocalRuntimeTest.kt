@@ -45,6 +45,21 @@ class LocalRuntimeTest {
                 assertTrue(it.header("Content-Security-Policy").orEmpty().contains("connect-src 'self'"))
                 assertTrue(it.body.string().contains("<html", true))
             }
+            val slow = (0 until 12).map { java.net.Socket("127.0.0.1", proxy.port) }
+            val dripping = java.util.concurrent.atomic.AtomicBoolean(true)
+            val dripper = Thread {
+                while (dripping.get()) {
+                    slow.forEach { runCatching { it.getOutputStream().write('G'.code); it.getOutputStream().flush() } }
+                    Thread.sleep(200)
+                }
+            }.apply { start() }
+            try {
+                // Traffic continues frequently enough to defeat a per-read timeout.
+                Thread.sleep(2600)
+                get(true).use { assertEquals("Slow unauthenticated clients held every slot", 200, it.code) }
+            } finally {
+                dripping.set(false); slow.forEach { it.close() }; dripper.join(1000)
+            }
             val connected = java.util.concurrent.CountDownLatch(1)
             var websocketFailure: Throwable? = null
             val websocket = client.newWebSocket(okhttp3.Request.Builder().url(proxy.origin + "/api/events.mux")
@@ -89,13 +104,17 @@ class LocalRuntimeTest {
         val installer = RuntimeInstaller(context)
         val before = installer.prepare()
         val file = java.io.File(before.home, "workspace/.niobium-persistence-test")
+        val skill = java.io.File(before.home, "workspace/.agents/skills/pixel-builder/SKILL.md")
+        val originalSkill = skill.readText()
+        skill.appendText("\n# User-customized instruction: preserve me.\n")
         file.writeText("keep this local Pixel")
         try {
             java.io.File(before.root, ".niobium-image").writeText("previous-image")
             val after = installer.prepare()
             assertEquals("keep this local Pixel", java.io.File(after.home, "workspace/.niobium-persistence-test").readText())
             assertTrue(java.io.File(after.home, "workspace/.agents/skills/pixel-builder/SKILL.md").isFile)
-        } finally { file.delete() }
+            assertEquals(originalSkill + "\n# User-customized instruction: preserve me.\n", skill.readText())
+        } finally { file.delete(); skill.writeText(originalSkill) }
     }
 
     @Test fun foregroundServiceStartsAndStopsFromLocalScreen() {
@@ -157,6 +176,12 @@ class LocalRuntimeTest {
             assertTrue("Stopped local port is still reachable", runCatching {
                 java.net.Socket("127.0.0.1", android.net.Uri.parse(origin).port).use { }
             }.isFailure)
+            // Start immediately when OFF is published, the old cleanup race window.
+            io.sovware.niobium.runtime.LocalRuntime.start(context)
+            val restarted = System.nanoTime() + TimeUnit.SECONDS.toNanos(90)
+            while (System.nanoTime() < restarted && io.sovware.niobium.runtime.LocalRuntime.state.value.phase !in listOf(
+                io.sovware.niobium.runtime.RuntimePhase.RUNNING, io.sovware.niobium.runtime.RuntimePhase.ERROR)) Thread.sleep(100)
+            assertEquals(io.sovware.niobium.runtime.RuntimePhase.RUNNING, io.sovware.niobium.runtime.LocalRuntime.state.value.phase)
         } finally {
             io.sovware.niobium.runtime.LocalRuntime.stop(context)
             instrumentation.runOnMainSync { activity.finish() }

@@ -137,7 +137,7 @@ def main():
         shutil.copy2(ROOT / "NOTICE", sources / "NOTICE")
         shutil.copy2(ROOT / "tools/prepare-android-runtime.py", sources / "prepare-android-runtime.py")
         (sources / "SHA256SUMS").write_text("".join(
-            digest(path) + "  " + str(path.relative_to(sources)) + "\\n"
+            digest(path) + "  " + str(path.relative_to(sources)) + "\n"
             for path in sorted(sources.rglob("*")) if path.is_file() and path.name != "SHA256SUMS"))
         print("Pinned corresponding-source archives and build recipes: " + str(sources))
     print("Prepared ARM64 runtime, 16 KB native ELF alignment and verified Alpine/DSH image.")

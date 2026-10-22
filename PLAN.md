@@ -157,3 +157,8 @@ OpenCode and Codex; Hermes/DSH integration has not been implemented.
   unchanged access before exposing the control in the app.
 
 Source: https://github.com/google-research/harness2/tree/1cfe254e8d25b15f37048c3730134686abe60335
+
+Release review fixed four Greptile findings: unauthenticated header deadlines,
+serialized service completion/restart, preservation of edited skills, and valid
+source checksum manifests. Runtime regression tests cover the first three;
+the bundled source manifest passes standard SHA-256 verification.

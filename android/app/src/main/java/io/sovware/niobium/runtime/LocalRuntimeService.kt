@@ -38,6 +38,8 @@ class LocalRuntimeService : Service() {
     private val worker = Executors.newSingleThreadExecutor()
     private val stopping = AtomicBoolean(false)
     private val active = AtomicBoolean(false)
+    private val main = android.os.Handler(android.os.Looper.getMainLooper())
+    private var latestStartId = 0
     @Volatile private var process: Process? = null
     @Volatile private var proxy: LocalRuntimeProxy? = null
     private val channel = "local-dsh"
@@ -49,6 +51,7 @@ class LocalRuntimeService : Service() {
     }
     override fun onBind(intent: Intent?): IBinder? = null
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        latestStartId = startId
         if (intent?.action == STOP) {
             requestStop()
             if (!active.get()) stopSelf()
@@ -113,11 +116,15 @@ class LocalRuntimeService : Service() {
             }
             process = null
             socket?.delete()
-            active.set(false)
-            if (stopping.get()) LocalRuntime.mutable.value = LocalRuntimeState()
-            else if (failureMessage != null) LocalRuntime.mutable.value = LocalRuntimeState(RuntimePhase.ERROR, message = failureMessage)
-            stopForeground(STOP_FOREGROUND_REMOVE)
-            stopSelf()
+            // Accept Start and finish cleanup on the main thread. A completed
+            // worker cannot stop a newer accepted run between OFF and stopSelf.
+            main.post {
+                active.set(false)
+                val stopped = stopSelfResult(latestStartId)
+                if (stopped) stopForeground(STOP_FOREGROUND_REMOVE)
+                if (stopping.get()) LocalRuntime.mutable.value = LocalRuntimeState()
+                else if (failureMessage != null) LocalRuntime.mutable.value = LocalRuntimeState(RuntimePhase.ERROR, message = failureMessage)
+            }
         }
     }
     private fun requestStop() {
