@@ -199,7 +199,7 @@ struct BotInfoSheet: View {
                     Text("Context").font(.nbBody(11, weight: .medium)).foregroundStyle(NB.text)
                     Text("\(usage.contextTokens.formatted()) / \(usage.contextLength?.formatted() ?? "—") tokens")
                         .font(.nbMono(8)).foregroundStyle(NB.tertiary)
-                    Text("\(usage.apiCalls) calls" + (store.engine == .hermes ? " · \(usage.compressionCount) compressions" : ""))
+                    Text("\(usage.apiCalls)" + (store.engine == .hermes ? " calls · \(usage.compressionCount) compressions" : " model steps"))
                         .font(.nbMono(8)).foregroundStyle(NB.tertiary)
                 }
                 Spacer()
