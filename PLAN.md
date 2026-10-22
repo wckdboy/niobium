@@ -310,3 +310,12 @@ Plane NIO-3/10/12/24/29/32/36 and both local exports record the release and limi
 Next: undoable appearance history, saved looks and names with more variation
 within each offline role; physical/current real-account and Android 16 KB
 acceptance; provider-key vault, actual delegation and Hermes replay.
+
+Candidate validation: 33+4 iOS tests, 29 Android JVM and nine final code-9
+ARM64 checks pass; eleven Python art/assets, 31 Node and 38 Swift assertions
+pass. Full build 10 DSH simulator model/background/cold-history acceptance
+passes in 99.595 seconds (docs/evidence/ios-build10-simulator-model.json).
+The full signed archive and distribution IPA pass current-resource, signature,
+identity and Release fixture-hook exclusion checks. Independent review of
+implementation eaefe46 reports no findings. The iPhone is paired but locked,
+so physical acceptance is waiting for unlock. Greptile remains at its trial quota.
