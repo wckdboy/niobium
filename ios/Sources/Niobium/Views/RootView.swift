@@ -144,7 +144,7 @@ struct MainShell: View {
             Group {
                 switch tab {
                 case .home:
-                    HomeView()
+                    HomeView(onShowPixels: { tab = .pixels })
                 case .pixels:
                     BotsView(newBot: $newBot)
                 case .local:
@@ -156,6 +156,10 @@ struct MainShell: View {
                 }
             }
             .transition(.opacity)
+        }
+        .task {
+            let args = ProcessInfo.processInfo.arguments
+            if store.isDemo && (args.contains("--workshop") || args.contains("--pixel-review")) { newBot = true }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             TabBar(selection: $tab)

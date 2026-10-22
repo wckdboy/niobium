@@ -14,6 +14,7 @@ struct ChatView: View {
     @State private var showModels = false
     @State private var showChats = false
     @State private var showInfo = false
+    @State private var showCompanions = false
     @State private var showClarify = false
     @State private var appeared = false
     @FocusState private var inputFocused: Bool
@@ -41,6 +42,8 @@ struct ChatView: View {
             withAnimation(.easeOut(duration: 0.45)) { appeared = true }
         }
         .onDisappear { speech.stop() }
+        .sheet(item: Binding(get: { store.credentialRequests.first }, set: { _ in })) { request in CredentialPromptView(request: request).environmentObject(store).id(request.id) }
+        .sheet(isPresented: $showCompanions) { CompanionsView(bot: bot).environmentObject(store) }
         .sheet(isPresented: $showTools) {
             ChatToolsSheet(bot: bot).environmentObject(store)
         }
@@ -50,6 +53,8 @@ struct ChatView: View {
         .sheet(isPresented: $showCast) {
             CastStudioView(profile: bot.name, title: bot.title)
         }
+        .sheet(isPresented: $showModels) { ModelPickerView(bot: bot).environmentObject(store) }
+        .sheet(isPresented: $showChats) { ChatsView(bot: bot).environmentObject(store) }
         .sheet(isPresented: $showInfo) {
             BotInfoSheet(bot: bot).environmentObject(store)
         }
@@ -64,7 +69,7 @@ struct ChatView: View {
                 }
             }
         }
-        .onChange(of: store.clarifyRequest) { _, new in
+        .onChange(of: store.clarifyRequest, initial: true) { _, new in
             if new != nil { showClarify = true }
         }
         .onChange(of: photoItem) { _, item in
@@ -120,6 +125,12 @@ struct ChatView: View {
             }
             Spacer()
             Menu {
+                Button { showCompanions = true } label: { Label("Companion tasks", systemImage: "pawprint") }
+                Menu("Mention a Pixel") {
+                    ForEach(store.bots.filter { $0.name != bot.name }) { teammate in
+                        Button(teammate.title) { draft += (draft.isEmpty ? "" : " ") + "@" + teammate.name + " " }
+                    }
+                }
                 Button { showTools = true } label: { Label("Tools & capabilities", systemImage: "hammer") }
                 Button { showRoutines = true } label: { Label("Routines", systemImage: "clock.arrow.circlepath") }
                 Button { showChats = true } label: { Label("All chats", systemImage: "bubble.left.and.bubble.right") }

@@ -137,4 +137,3 @@ companion.name: 1–24 characters. companion.trait: at most 240.
 Validate every identifier and length before returning JSON. If the request is
 underspecified, make a useful, restrained choice. Never fabricate capability
 availability or silently grant credentials.
-

@@ -58,58 +58,6 @@ private fun SheetField(label: String, value: String, placeholder: String, multil
 }
 
 @Composable
-fun NewBotSheet(vm: NiobiumViewModel, onDone: () -> Unit) {
-    var name by remember { mutableStateOf("") }
-    var title by remember { mutableStateOf("") }
-    var role by remember { mutableStateOf("") }
-    var color by remember { mutableStateOf("#A78BFA") }
-    val colors = listOf("#A78BFA", "#F0ABFC", "#5EEAD4", "#F5C97A", "#FDA4AF", "#C4B5FD")
-    Column(Modifier.fillMaxWidth().imePadding().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(bottom = 28.dp)) {
-        Text("New pixel", color = Nb.Text, style = NbDisplay, fontSize = 30.sp)
-        Text("A pixel is a Hermes profile with its own memory, model and tools.",
-            color = Nb.Secondary, fontSize = 12.sp, lineHeight = 17.sp)
-        Spacer(Modifier.height(18.dp))
-        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            BotAvatar(title.ifBlank { name.ifBlank { "New Pixel" } }, Nb.colorFor(color), 72.dp, false,
-                showStatus = false, profileName = name.ifBlank { "niobium" })
-            Spacer(Modifier.height(9.dp))
-            Text(title.ifBlank { "New Pixel" }, color = Nb.Text, style = NbTitle, fontSize = 20.sp)
-            Text(role.ifBlank { "A new specialist on your Hermes team." }, color = Nb.Secondary, fontSize = 11.5.sp)
-        }
-        Spacer(Modifier.height(18.dp))
-        SheetField("PIXEL NAME", name, "athena") { name = it.filter { c -> c.isLetterOrDigit() || c == '-' }.lowercase() }
-        Spacer(Modifier.height(12.dp))
-        SheetField("DISPLAY TITLE", title, "Athena") { title = it }
-        Spacer(Modifier.height(12.dp))
-        SheetField("ROLE", role, "Research, strategy and long-horizon thinking.", multiline = true) { role = it }
-        Spacer(Modifier.height(16.dp))
-        Text("SIGNAL COLOUR", color = Nb.Tertiary, style = NbMono, fontSize = 8.5.sp, letterSpacing = 1.2.sp)
-        Spacer(Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            colors.forEach { hex ->
-                Box(
-                    Modifier.size(31.dp).clip(CircleShape).background(Nb.colorFor(hex))
-                        .border(if (color == hex) 2.dp else 1.dp,
-                            if (color == hex) Color.White.copy(alpha = 0.9f) else Nb.LineStrong, CircleShape)
-                        .clickable { color = hex }
-                )
-            }
-        }
-        Spacer(Modifier.height(18.dp))
-        Box(
-            Modifier.fillMaxWidth().height(50.dp).clip(CircleShape)
-                .background(if (name.isBlank()) Nb.Ion.copy(alpha = 0.3f) else Nb.Ion)
-                .clickable(enabled = name.isNotBlank()) {
-                    vm.createBot(name, title, role, color) { onDone() }
-                }, contentAlignment = Alignment.Center
-        ) {
-            Text("Create pixel", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-        }
-        Spacer(Modifier.height(8.dp))
-    }
-}
-
-@Composable
 fun NewGroupSheet(vm: NiobiumViewModel, state: NbState, onDone: () -> Unit) {
     var name by remember { mutableStateOf("") }
     var selected by remember { mutableStateOf(setOf<String>()) }

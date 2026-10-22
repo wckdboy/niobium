@@ -1,91 +1,99 @@
-# Hermes gateway ↔ Niobium parity audit
+# Hermes gateway ↔ Niobium
 
-Audited against `NousResearch/hermes-agent` `main`, contracts in
-`tui_gateway/contracts` (277 client→server methods, 79 events, 18 server→client
-requests). This is the working matrix for Niobium's mobile surface, not a claim
-that every internal/desktop method exists in the app.
+The v2 audit uses the contracts in NousResearch/hermes-agent at
+[1186b6bd5330185ba61c4f80fbfc073f7febbf0e](https://github.com/NousResearch/hermes-agent/tree/1186b6bd5330185ba61c4f80fbfc073f7febbf0e/tui_gateway/contracts).
+This is implementation coverage, not a claim of complete live parity.
 
-## The wire split (important)
+## Implemented paths
 
-`/api/ws` attaches the session **authority** and answers canonical
-`hermes-gateway-v1` verbs. Legacy sidecars answer only names the authority does
-not know, and never `session.*`, `prompt.*` or `message.*`. Params are
-`extra="forbid"`.
+- Discovery: client.capabilities, runtime.describe, gateway.capabilities.
+- Profiles: profiles.list/create/describe/configure; reviewed PixelSpec
+  provisioning; installed-skill filtering; pinned toolsets; manual host
+  approvals and reasoning preferences through config.set.
+- Identity: versioned PixelSpec and appearance in ui_meta.niobium; appearance
+  updates use ui_meta_expected_revisions and preserve other metadata.
+- Direct chat: canonical Bot Chat discovery, session.create/resume/list,
+  transcripts, prompt.submit and session.interrupt.
+- Model and reasoning changes: session.mutate model/reasoning with a refreshed expected_revision and
+  expected_generation. Stop uses the current execution_generation.
+- Chat events: message, reasoning, tool progress/completion, usage, notices and
+  request cancellation. Non-focused session events are excluded from the chat.
+- Approvals: live JSON-RPC replies; canonical recovered approvals use prompt_id
+  and execution_generation through approval.respond. The old fabricated
+  recovered RPC id is removed.
+- Credential prompts: transient secure fields for secret, sudo, vault unlock,
+  login saving and verification codes. Values are cleared on resolution or
+  disconnect, not persisted or appended to the transcript.
+- Tools, skills and MCP: tools.list, tools.configure, skills.manage list,
+  skills.reload, MCP inventory and status.
+- Stored sessions, model inventory and usage cards.
+- Rooms: groups.capabilities/list/create/log/send, local roster and @mentions.
+  Background-room copy follows the advertised durable-driver capability.
+- Companions: subagent.list/tail/steer/interrupt, including failed delegations.
+  UI updates are scoped to the active profile/session.
+- Routines: cron.manage list/add/remove.
+- Photos and local dictation on both platforms.
+- DSH: embedded Alpine/iSH on iOS full; remote harness on both. Remote addresses
+  are stored in Keychain/Keystore, with visible retry/error controls and WebView
+  teardown.
 
-This pass fixed two hard incompatibilities:
+## Contract and lifetime fixes
 
-- `session.resume` no longer sends `inline_images`; the canonical resume params
-  are `session_id`, `profile`, `source`, `latest`, `workspace`, `defer_history`,
-  `omit_messages`, `cols`, `display_projection`.
-- `session.create` now sends `source: "gui"` (one of
-  `cli|tui|gui|acp|tool|oneshot`), not the legacy `"desktop"`.
+Canonical session methods reject extra keys. The client uses advertised source
+values, does not send legacy inline_images on resume, and sends explicit
+submission identifiers with prompt.submit.
 
-Both clients now call `runtime.describe` and read
-`session_create.sources`, then choose `gui` when supported (falling back to
-`tui`). They also call `gateway.capabilities` for build-level discovery.
+Model mutations and interruption require generation fences. A control snapshot
+is refreshed before either operation. Resume restores the canonical running
+flag and pending approval prompts.
 
-Without this, an authority-backed gateway returned `4001 invalid_params` and
-Pixel chat attach failed; only legacy sidecars worked.
+A canceled iOS request releases its waiter. A ready timeout belongs to the
+socket that created it and cannot close a replacement connection. Old transport
+callbacks cannot overwrite the current connection. Android connection callbacks
+carry an epoch for the same reason.
 
-## Implemented in Niobium
+The Pixel builder no longer discards generated permission metadata or calls
+nonexistent skill-enable actions. It clones installed skill files, disables
+unselected skills, checks each profile-configuration result, and reports
+partial provisioning.
 
-| Domain | Methods / behavior | iOS | Android |
-|---|---|---|---|
-| Discovery | `client.capabilities`, `gateway.capabilities`, `runtime.describe` | ✅ | ✅ |
-| Profiles / Pixels | `profiles.list`, `profiles.create`, `profiles.configure` | ✅ | ✅ |
-| Chat | `session.create/resume/list`, transcript from resume, `prompt.submit`, `session.interrupt` | ✅ | ✅ |
-| Events | `message.*`, `reasoning.*`, `tool.*`, `approval.*`, `clarify` | ✅ | ✅ |
-| Approvals | inline approval + multi-question clarify | ✅ | ✅ |
-| Tools | `toolsets.list`, `tools.list`, `tools.configure` | ✅ | ✅ |
-| Rooms | `groups.capabilities/list/create/log/send` | ✅ | ✅ |
-| Routines | `cron.manage` list/add/remove | ✅ | ✅ (new) |
-| Photos | `image.attach_bytes` | ✅ | ✅ (new) |
-| Dictation | on-device speech → `prompt.submit` | ✅ | ✅ (new, system recognizer) |
-| Remote DSH | `Settings → Harness`, arbitrary DSH web UI over http(s) | ✅ | ✅ |
-| Model picker | `model.options`, `session.mutate operation=model` | ✅ | ✅ |
-| Chats | `session.list {scope:"stored"}`, `session.resume` | ✅ | ✅ |
-| Usage | `session.stats` context/tokens/latency | ✅ | ✅ |
-| Local DSH | embedded iSH-ARM64 + Alpine + `dsh-serve` | ✅ (full build) | — (platform limit) |
-| Light/dark | System/Light/Dark palette | ✅ (new) | ✅ (new) |
-| Mascots | chosen/random/custom 8×8 per profile | ✅ (new) | ✅ (new) |
-| Ore icon | 16×16 purple-on-white app icon | ✅ (new) | ✅ (new) |
+The Hermes-only iOS target no longer bundles root.tar.gz. The audited simulator
+bundles measured 17 MB (client) and 98 MB (full DSH); these are debug simulator
+bundles, not download-size claims.
 
-## Remaining gaps (honest)
+## Still partial or missing
 
-| Domain | Missing methods / UI |
-|---|---|
-| Sessions | stored-session browser, `session.history` browsing, rename/archive/delete via `session.mutate`, `session.export`, canonical replay `session.events.since` |
-| Busy controls | `session.steer/redirect`, `prompt.receipt/cancel`, queued prompt steer/replace |
-| Models | `model.options` picker; model/reasoning switches via `session.mutate` |
-| Usage | `session.stats`, context breakdown, token ring |
-| Attachments | `pdf.attach`, `file.attach`, `image.attach` from a path |
-| Skills | `skills.manage {action:"list"}` and `skills.reload` implemented; `commands.catalog`/slash autocomplete remain |
-| MCP | `mcp.servers.list/status/test/oauth` |
-| Memory | `learning.frames/detail/edit/delete` (journey/memory UI) |
-| Projects | `projects.*`, workspace switch via `session.mutate` |
-| Rooms | `groups.state/rename/stop/approve/retry/attachments` |
-| Approvals recovery | `approval.pending/received`, `clarify.lock`, `request.answer` after reconnect |
-| Subagents | `subagent.list/tail/steer/interrupt` |
-| Vault/security | `vault.*`; secret/vault prompts are currently declined |
-| Connectors | `connectors.list/catalog/connect/accounts/policy`, `connection.respond` |
-| Browser | `browser.manage` |
-| Voice backend | `voice.toggle/record/tts`; current dictation is local STT only |
-| Android local DSH | iSH-ARM64 is iOS-only; Android uses the remote harness path |
-
-## Cross-platform notes
-
-- Android now has photo attachment (`image.attach_bytes` with `mime`) and system
-  dictation, matching the iOS composer.
-- Routines are no longer iOS-only.
-- Remote DSH is the cross-platform harness path. Local Alpine/iSH remains an iOS
-  full-build feature (GPLv3); Android connects to a DSH web UI on a computer/VPS.
-- `groups.*` verbs are permission-gated by ticket scope; a `permission_denied` is
-  surfaced rather than hidden.
+- Sessions: history paging/export, rename/archive/delete/branch/rewind, durable
+  replay cursors and epoch recovery.
+- Admissions: unknown-delivery/outbox recovery, receipts/cancel, queued prompt
+  editing, busy steering and redirection.
+- Models: complete provider/account management and live reasoning acceptance.
+- Attachments: file and PDF paths; upload bounds/resizing need a deeper pass.
+- Skills: command catalog/autocomplete, detail/edit/install and complete errors.
+- MCP: test, OAuth, enable/disable and catalog setup.
+- Memory: learning.frames/detail/edit/delete.
+- Projects: projects.* and workspace session mutations.
+- Rooms: state/rename/stop/approve/retry/attachments; qualified multi-connection
+  identities and uncertain-delivery recovery.
+- Approvals/clarify: pending/received acknowledgements, clarify locking and replay races,
+  request.answer coverage and reconnect races need further live verification.
+- Connectors: catalog/accounts/connect/policy and connection operation cards.
+- Browser/voice: complete host browser control, voice recording/TTS and device
+  bridges.
+- Native background delivery/push.
+- Android embedded Linux/DSH runtime.
 
 ## Verification
 
-- Builds: iOS standard and full, Android debug + release.
-- Local DSH on simulator: Alpine image import, kernel boot, `dsh-serve` on
-  127.0.0.1:3080, stock DSH web UI loaded.
-- Demo flows: roster, chat, tools, approvals, rooms, routines, light mode,
-  mascot studio, remote harness URL.
+- 38 pure Swift PixelSpec checks: valid templates, adult/layer validation,
+  typed decoding, permissions, unavailable tools and duplicate capabilities.
+- Four Android unit tests cover template validity and permission/catalog gates.
+- Android debug/release builds and iOS Hermes-only/full-DSH simulator builds.
+- Native Home and Pixel-review captures inspected on both platforms.
+- Website build, seven generated HTML pages, 73 internal links/assets and skill
+  copy consistency; Cloudflare deployment verified.
+- Full live gateway/provider execution, real account authorization and physical
+  device background behaviour have not been established by these checks.
+
+The remaining acceptance criteria are in the
+[Niobium Plane project](https://app.plane.so/wckd/projects/2fbcf987-20de-43dc-80ac-0a6bab7ec03a/issues/).

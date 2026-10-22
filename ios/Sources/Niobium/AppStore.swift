@@ -13,15 +13,23 @@ final class AppStore: ObservableObject {
 
     @Published var bots: [BotProfile] = []
     @Published var groups: [GroupRoom] = []
+    @Published var groupsHaveDriver = false
     @Published var toolsets: [Toolset] = []
     @Published var routines: [Routine] = []
+    @Published var companionTasks: [CompanionTask] = []
+    @Published var companionError: String?
+    @Published var companionsLoading = false
+    @Published var gatewayLatencyMs: Int?
     @Published var runtimeInfo: JSONObject?
     @Published var gatewayCapabilities: JSONObject?
     @Published var modelChoices: [ModelChoice] = []
     @Published var sessions: [SessionRow] = []
     @Published var usage: UsageStats?
     @Published var skills: [String: [String]] = [:]
+    @Published var mcpServers: [MCPServerRow] = []
     @Published var chatRevision = 0
+    @Published var chatGeneration: Int?
+    @Published var chatReasoning: String?
     var chatSource = "gui"
     @Published var activity: [ActivityItem] = []
 
@@ -35,6 +43,7 @@ final class AppStore: ObservableObject {
     @Published var streamingReasoning = ""
     @Published var approvals: [ApprovalRequest] = []
     @Published var clarifyRequest: ClarifyRequest?
+    @Published var credentialRequests: [CredentialRequest] = []
     @Published var toast: String?
     @Published var errorBanner: String?
     @Published var isRefreshing = false
@@ -47,6 +56,8 @@ final class AppStore: ObservableObject {
     private var toastTask: Task<Void, Never>?
     private var demoTurnTask: Task<Void, Never>?
     private var pendingDemoToolID: String?
+    private var chatEpoch = 0
+    private var groupEpoch = 0
 
     init() {
         let env = ProcessInfo.processInfo.environment
@@ -81,6 +92,9 @@ final class AppStore: ObservableObject {
             connectError = "A gateway access token is required. Use the session token from `hermes serve`."
             return
         }
+        credentialRequests = []
+        approvals = []
+        clarifyRequest = nil
         isConnecting = true
         connectError = nil
         connectionState = .connecting
@@ -93,8 +107,8 @@ final class AppStore: ObservableObject {
             api = client
             let saved = GatewayConnection(id: UUID(), name: name.isEmpty ? "My Hermes" : name,
                                           baseURL: normalized, savedAt: Date(), isDemo: false)
+            guard ConnectionPrefs.save(saved, token: token) else { client.disconnect(notify: false); throw RPCError.transport("Could not store the gateway token securely.") }
             connection = saved
-            ConnectionPrefs.save(saved, token: token)
             isDemo = false
             needsConnection = false
             connectionState = .connected(version: version)
@@ -182,15 +196,22 @@ final class AppStore: ObservableObject {
     }
 
     private func wire(_ client: HermesRPCClient) {
-        client.onNotification = { [weak self] type, sessionID, payload in
-            Task { @MainActor in self?.handleEvent(type: type, sessionID: sessionID, payload: payload) }
-        }
-        client.onServerRequest = { [weak self] id, method, params in
-            Task { @MainActor in self?.handleServerRequest(id: id, method: method, params: params) }
-        }
-        client.onDisconnect = { [weak self] message in
+        client.onNotification = { [weak self, weak client] type, sessionID, payload in
             Task { @MainActor in
-                guard let self, !self.isDemo else { return }
+                guard let self, let client, self.api === client else { return }
+                self.handleEvent(type: type, sessionID: sessionID, payload: payload)
+            }
+        }
+        client.onServerRequest = { [weak self, weak client] id, method, params in
+            Task { @MainActor in
+                guard let self, let client, self.api === client else { return }
+                self.handleServerRequest(id: id, method: method, params: params)
+            }
+        }
+        client.onDisconnect = { [weak self, weak client] message in
+            Task { @MainActor in
+                guard let self, let client, self.api === client, !self.isDemo else { return }
+                self.credentialRequests = []
                 self.connectionState = .failed(message)
                 self.showError("Connection lost. \(message)")
             }
@@ -204,8 +225,10 @@ final class AppStore: ObservableObject {
             let sources = runtime.dict("session_create")?.array("sources")?.compactMap { $0 as? String } ?? []
             chatSource = sources.contains("gui") ? "gui" : (sources.contains("tui") ? "tui" : "gui")
         }
+        let started = Date()
         if let caps = try? await api.request("gateway.capabilities", params: [:], timeout: 6) as? JSONObject {
             gatewayCapabilities = caps
+            gatewayLatencyMs = max(1, Int(Date().timeIntervalSince(started) * 1000))
         }
     }
 
@@ -224,6 +247,10 @@ final class AppStore: ObservableObject {
         guard !isDemo, let api else { return }
         do {
             let result = try await api.request("profiles.list", params: ["include_sessions": true]) as? JSONObject
+            for row in result?.objects("profiles") ?? [] {
+                guard let name = row.string("name"), let meta = row.dict("ui_meta")?.dict("niobium") else { continue }
+                CastStore.shared.restore(profile: name, metadata: meta)
+            }
             let parsed = result?.objects("profiles").compactMap(BotProfile.parse) ?? []
             bots = parsed.filter { !$0.hidden }.sorted { a, b in
                 if a.isLive != b.isLive { return a.isLive }
@@ -239,6 +266,7 @@ final class AppStore: ObservableObject {
         guard !isDemo, let api else { return }
         do {
             let capabilities = try await api.request("groups.capabilities", params: [:]) as? JSONObject
+            groupsHaveDriver = capabilities?.bool("driver") ?? false
             guard capabilities?.array("methods")?.contains(where: { ($0 as? String) == "groups.list" }) == true else {
                 groups = []
                 return
@@ -253,10 +281,12 @@ final class AppStore: ObservableObject {
 
     func loadToolsets() async {
         guard !isDemo, let api else { return }
+        let session = chatSessionID
         do {
             var params: JSONObject = [:]
-            if let chatSessionID, let activeBot { params = ["session_id": chatSessionID, "profile": activeBot.name] }
+            if let session { params["session_id"] = session }
             let result = try await api.request("tools.list", params: params) as? JSONObject
+            guard self.api === api, chatSessionID == session else { return }
             toolsets = result?.objects("toolsets").compactMap(Toolset.parse) ?? []
         } catch {
             // Non-fatal; leave the previous catalog visible.
@@ -266,11 +296,25 @@ final class AppStore: ObservableObject {
     // MARK: - Direct bot chat
 
     func openBot(_ bot: BotProfile) {
+        chatEpoch += 1
+        let epoch = chatEpoch
+        demoTurnTask?.cancel()
+        streamingMessageID = nil
+        pendingDemoToolID = nil
+        for request in credentialRequests { api?.respond(id: request.rpcID, result: ["value": ""]) }
+        credentialRequests = []
         activeBot = bot
         messages = []
         approvals = []
         clarifyRequest = nil
         chatSessionID = nil
+        chatRevision = 0
+        chatGeneration = nil
+        chatReasoning = nil
+        modelChoices = []
+        usage = nil
+        companionTasks = []
+        companionError = nil
         isTurnActive = false
         turnStatus = ""
         streamingReasoning = ""
@@ -281,20 +325,30 @@ final class AppStore: ObservableObject {
             isLoadingChat = false
             return
         }
-        Task { await attachBot(bot) }
+        Task { await attachBot(bot, epoch: epoch) }
     }
 
     func closeBot() {
+        chatEpoch += 1
+        demoTurnTask?.cancel()
+        streamingMessageID = nil
+        pendingDemoToolID = nil
+        for request in credentialRequests { api?.respond(id: request.rpcID, result: ["value": ""]) }
+        credentialRequests = []
         activeBot = nil
         chatSessionID = nil
         messages = []
+        companionTasks = []
+        companionError = nil
         approvals = []
+        clarifyRequest = nil
         isTurnActive = false
+        isLoadingChat = false
     }
 
-    private func attachBot(_ bot: BotProfile) async {
+    private func attachBot(_ bot: BotProfile, epoch: Int) async {
         guard let api else { return }
-        defer { isLoadingChat = false }
+        defer { if chatEpoch == epoch { isLoadingChat = false } }
         do {
             var storedID = bot.canonicalSessionID
             if storedID == nil {
@@ -316,12 +370,17 @@ final class AppStore: ObservableObject {
                 ], timeout: 90) as? JSONObject
             }
             guard let result else { throw RPCError.malformed }
+            guard chatEpoch == epoch, self.api === api else { return }
             chatSessionID = result.string("session_id")
             chatRevision = result.int("revision") ?? chatRevision
+            chatGeneration = result.int("execution_generation")
+            chatReasoning = result.dict("info")?.string("reasoning_effort")
+            isTurnActive = result.bool("running") ?? false
             messages = parseTranscript(result.objects("messages"))
             await loadModels()
+            guard chatEpoch == epoch, self.api === api else { return }
             if let inflight = result.dict("inflight") {
-                isTurnActive = inflight.bool("streaming") ?? false
+                isTurnActive = result.bool("running") ?? inflight.bool("streaming") ?? false
                 let text = inflight.string("assistant") ?? ""
                 if !text.isEmpty {
                     let msg = ChatMessage(id: "inflight", role: .assistant, text: text,
@@ -329,11 +388,10 @@ final class AppStore: ObservableObject {
                     messages.append(msg)
                 }
             }
-            if let approval = result.dict("pending_approval") {
-                approvals = [parseApproval(approval, sessionID: chatSessionID ?? "", rpcID: .string("recovered-\(UUID().uuidString)"))]
-            }
+            recoverPrompts(result)
             await loadToolsets()
         } catch {
+            guard chatEpoch == epoch, self.api === api else { return }
             showError("Could not open \(bot.title). \(error.localizedDescription)")
         }
     }
@@ -367,15 +425,29 @@ final class AppStore: ObservableObject {
                     "mime": "image/jpeg"
                 ])
             }
-            _ = try await api.request("prompt.submit", params: [
+            let receipt = try await api.request("prompt.submit", params: [
                 "session_id": sessionID,
                 "profile": bot.name,
-                "text": text
-            ], timeout: 30)
+                "text": displayed, "submission_id": UUID().uuidString, "clarify_batch": true
+            ], timeout: 30) as? JSONObject
+            if chatSessionID == sessionID, let generation = receipt?.int("execution_generation") { chatGeneration = generation }
         } catch {
+            guard chatSessionID == sessionID, self.api === api else { return }
             isTurnActive = false
             showError("Message failed. \(error.localizedDescription)")
         }
+    }
+
+    func loadMCP() async {
+        guard !isDemo, let api else { mcpServers = []; return }
+        let profile = activeBot?.name ?? "default"
+        guard let listed = try? await api.request("mcp.servers.list", params: ["profile": profile], timeout: 20) as? JSONObject else { return }
+        let statuses = (try? await api.request("mcp.servers.status", params: ["profile": profile], timeout: 20) as? JSONObject)?.objects("servers") ?? []
+        let byName = Dictionary(uniqueKeysWithValues: statuses.compactMap { row -> (String, JSONObject)? in
+            guard let name = row.string("name") else { return nil }
+            return (name, row)
+        })
+        mcpServers = listed.objects("servers").compactMap { MCPServerRow.parse($0, status: byName[$0.string("name") ?? ""]) }
     }
 
     func loadSkills() async {
@@ -401,6 +473,7 @@ final class AppStore: ObservableObject {
     func loadUsage() async {
         guard !isDemo, let api, let sessionID = chatSessionID else { usage = nil; return }
         guard let result = try? await api.request("session.stats", params: ["session_id": sessionID], timeout: 15) as? JSONObject else { return }
+        guard chatSessionID == sessionID, self.api === api else { return }
         usage = UsageStats.parse(result)
     }
 
@@ -420,6 +493,7 @@ final class AppStore: ObservableObject {
 
     func resumeSession(_ row: SessionRow, for bot: BotProfile) async {
         guard !isDemo, let api else { return }
+        let epoch = chatEpoch
         do {
             let result = try await api.request("session.resume", params: [
                 "session_id": row.sessionID,
@@ -427,21 +501,26 @@ final class AppStore: ObservableObject {
                 "source": chatSource
             ], timeout: 90) as? JSONObject
             guard let result else { throw RPCError.malformed }
+            guard chatEpoch == epoch, activeBot?.name == bot.name, self.api === api else { return }
             chatSessionID = result.string("session_id") ?? row.sessionID
             chatRevision = result.int("revision") ?? chatRevision
+            chatGeneration = result.int("execution_generation")
+            chatReasoning = result.dict("info")?.string("reasoning_effort")
+            isTurnActive = result.bool("running") ?? false
             messages = parseTranscript(result.objects("messages"))
             if let inflight = result.dict("inflight") {
-                isTurnActive = inflight.bool("streaming") ?? false
+                isTurnActive = result.bool("running") ?? inflight.bool("streaming") ?? false
                 if let text = inflight.string("assistant"), !text.isEmpty {
                     messages.append(ChatMessage(id: "inflight", role: .assistant, text: text,
                                                 timestamp: Date(), toolStatus: .completed))
                 }
-            } else {
-                isTurnActive = false
             }
+            recoverPrompts(result)
             await loadModels()
+            guard chatEpoch == epoch, self.api === api else { return }
             toastMessage("Opened \(row.title)")
         } catch {
+            guard chatEpoch == epoch, self.api === api else { return }
             showError("Could not open chat. \(error.localizedDescription)")
         }
     }
@@ -455,6 +534,7 @@ final class AppStore: ObservableObject {
             "profile": activeBot?.name ?? "default",
             "session_id": sessionID
         ], timeout: 20) as? JSONObject else { return }
+        guard chatSessionID == sessionID, self.api === api else { return }
         var rows: [ModelChoice] = []
         for provider in result.objects("providers") {
             let slug = provider.string("slug") ?? provider.string("id") ?? ""
@@ -473,13 +553,15 @@ final class AppStore: ObservableObject {
     func switchModel(_ choice: ModelChoice) async {
         guard !isDemo, let api, let sessionID = chatSessionID else { return }
         do {
-            let result = try await api.request("session.mutate", params: [
-                "session_id": sessionID,
-                "request_id": UUID().uuidString,
-                "expected_revision": chatRevision,
-                "operation": "model",
-                "payload": ["model": choice.model, "provider": choice.provider]
-            ], timeout: 30) as? JSONObject
+            let snapshot = try await controlSnapshot()
+            guard chatSessionID == sessionID else { return }
+            var params: JSONObject = ["session_id": sessionID, "request_id": UUID().uuidString,
+                                      "expected_revision": snapshot.int("revision") ?? chatRevision,
+                                      "operation": "model", "payload": ["model": choice.model, "provider": choice.provider]]
+            if let generation = snapshot.int("execution_generation") { params["expected_generation"] = generation }
+            let result = try await api.request("session.mutate", params: params, timeout: 30) as? JSONObject
+            guard chatSessionID == sessionID else { return }
+            chatGeneration = result?.int("execution_generation") ?? chatGeneration
             if let revision = result?.int("revision") { chatRevision = revision }
             if let index = bots.firstIndex(where: { $0.name == activeBot?.name }) {
                 bots[index].model = choice.model
@@ -495,6 +577,22 @@ final class AppStore: ObservableObject {
         }
     }
 
+    func setReasoning(_ effort: String?) async {
+        guard effort == nil || ["minimal", "low", "medium", "high", "xhigh", "max", "ultra"].contains(effort!),
+              !isDemo, let api, let session = chatSessionID else { return }
+        do {
+            let snapshot = try await controlSnapshot()
+            guard self.api === api, chatSessionID == session, let generation = snapshot.int("execution_generation") else { return }
+            let result = try await api.request("session.mutate", params: ["session_id": session, "request_id": UUID().uuidString,
+                "expected_revision": snapshot.int("revision") ?? chatRevision, "expected_generation": generation,
+                "operation": "reasoning", "payload": ["effort": effort as Any? ?? NSNull()]]) as? JSONObject
+            guard self.api === api, chatSessionID == session else { return }
+            chatRevision = result?.int("revision") ?? chatRevision
+            chatReasoning = effort
+            toastMessage("Reasoning: \(effort ?? "profile default")")
+        } catch { showError("Could not change reasoning. \(error.localizedDescription)") }
+    }
+
     func stopTurn() {
         if isDemo {
             demoTurnTask?.cancel()
@@ -508,15 +606,20 @@ final class AppStore: ObservableObject {
         }
         guard let api, let sessionID = chatSessionID, let bot = activeBot else { return }
         Task {
-            _ = try? await api.request("session.interrupt", params: ["session_id": sessionID, "profile": bot.name])
-            isTurnActive = false
+            do {
+                let snapshot = try await controlSnapshot()
+                var params: JSONObject = ["session_id": sessionID, "profile": bot.name]
+                if let generation = snapshot.int("execution_generation") { params["execution_generation"] = generation }
+                _ = try await api.request("session.interrupt", params: params)
+                if chatSessionID == sessionID { isTurnActive = false }
+            } catch { showError("Could not stop the turn. \(error.localizedDescription)") }
         }
     }
 
     // MARK: - Events
 
     private func handleEvent(type: String, sessionID: String, payload: JSONObject) {
-        if !sessionID.isEmpty, let active = chatSessionID, sessionID != active { return }
+        if !sessionID.isEmpty, sessionID != chatSessionID { return }
         switch type {
         case "message.start":
             isTurnActive = true
@@ -555,6 +658,11 @@ final class AppStore: ObservableObject {
             showError(payload.string("message") ?? "The agent hit an error.")
         case "notice":
             toastMessage(payload.string("message") ?? "")
+        case "request.cancel":
+            let id = JSONValueID.parse(payload["id"] ?? payload["request_id"])?.description ?? ""
+            approvals.removeAll { $0.rpcID.description == id || $0.requestID == id }
+            if clarifyRequest?.rpcID.description == id { clarifyRequest = nil }
+            credentialRequests.removeAll { $0.rpcID.description == id }
         case "approval.cancelled":
             approvals.removeAll { $0.sessionID == sessionID }
         case "background.complete", "btw.complete":
@@ -562,9 +670,7 @@ final class AppStore: ObservableObject {
             addActivity(.message, title: "Background result", detail: String(text.prefix(140)), bot: activeBot?.name ?? "")
             toastMessage("Background task finished")
         case "session.usage":
-            if let usage = payload.dict("usage") {
-                _ = usage
-            }
+            if let live = payload.dict("usage"), let parsed = UsageStats.parse(live) { usage = parsed }
         default:
             break
         }
@@ -666,7 +772,10 @@ final class AppStore: ObservableObject {
 
     private func handleServerRequest(id: JSONValueID, method: String, params: JSONObject) {
         let sessionID = params.string("session_id") ?? ""
-        if !sessionID.isEmpty, let active = chatSessionID, active != sessionID { return }
+        if !sessionID.isEmpty, chatSessionID != sessionID {
+            if api?.declinesNotShown == true { api?.respondError(id: id, code: 4404, message: "This window does not show that session.") }
+            return
+        }
         switch method {
         case "approval":
             let approval = parseApproval(params, sessionID: sessionID, rpcID: id)
@@ -682,12 +791,85 @@ final class AppStore: ObservableObject {
             }
             clarifyRequest = ClarifyRequest(rpcID: id, sessionID: sessionID, questions: questions)
         case "sudo", "secret", "vault.code", "vault.unlock_prompt", "vault.save_login":
-            // The mobile client declines interactive host secrets; the agent fails fast and
-            // can ask for a different route.
-            api?.respond(id: id, result: ["value": ""])
+            let title: String
+            switch method {
+            case "sudo": title = "Host password requested"
+            case "secret": title = params.string("env_var") ?? "Secret requested"
+            case "vault.unlock_prompt": title = "Unlock " + (params.string("display_name") ?? "credential vault")
+            case "vault.save_login": title = "Save a login on your host"
+            default: title = "Verification code"
+            }
+            let detail = params.string("prompt") ?? params.string("hint") ?? params.string("command") ?? params.string("site") ?? "Your Hermes host is waiting for this value."
+            guard credentialRequests.count < 16 else { api?.respond(id: id, result: ["value": ""]); return }
+            credentialRequests.append(.init(rpcID: id, sessionID: sessionID, method: method, title: title, detail: detail, login: method == "vault.save_login", connectionID: connection?.id))
         default:
             api?.respondError(id: id, message: "Niobium does not handle \(method) yet.")
         }
+    }
+
+    func saveAppearance(_ member: CastMember, profile: String) async -> Bool {
+        if isDemo { CastStore.shared.select(member, for: profile); return true }
+        guard let api else { showError("Connect a gateway before saving this character."); return false }
+        do {
+            let inventory = try await api.request("profiles.list", params: ["include_sessions": false]) as? JSONObject
+            guard let row = inventory?.objects("profiles").first(where: { $0.string("name") == profile }), self.api === api else { throw RPCError.transport("The profile or connection changed. Refresh and try again.") }
+            var metadata = row.dict("ui_meta")?.dict("niobium") ?? [:]
+            var appearance: JSONObject = ["archetype": member.id, "companion": member.companion, "companion_name": member.companionName]
+            if let recipe = member.recipe {
+                appearance["recipe"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(recipe))
+            }
+            metadata["appearance"] = appearance
+            let revision = row.dict("ui_meta_revisions")?.int("niobium") ?? 0
+            let result = try await api.request("profiles.configure", params: ["name": profile,
+                "ui_meta": ["niobium": metadata], "ui_meta_expected_revisions": ["niobium": revision]]) as? JSONObject
+            guard result?.bool("ok") == true else { throw RPCError.transport("This Pixel changed elsewhere. Refresh before saving again.") }
+            CastStore.shared.select(member, for: profile)
+            toastMessage("Character saved to Hermes")
+            return true
+        } catch { showError("Could not save the character. \(error.localizedDescription)"); return false }
+    }
+
+    func resolveCredential(_ request: CredentialRequest, value: String) {
+        guard request.connectionID == connection?.id, credentialRequests.contains(where: { $0.id == request.id }) else { return }
+        api?.respond(id: request.rpcID, result: ["value": value])
+        credentialRequests.removeAll { $0.id == request.id }
+    }
+
+    private func controlSnapshot() async throws -> JSONObject {
+        guard let api, let session = chatSessionID, let profile = activeBot?.name else { throw RPCError.notConnected }
+        guard let snapshot = try await api.request("session.resume", params: ["session_id": session, "profile": profile,
+                                                                            "source": chatSource, "omit_messages": true]) as? JSONObject else { throw RPCError.malformed }
+        guard chatSessionID == session, activeBot?.name == profile else { throw RPCError.transport("This chat has changed. Try again in the current chat.") }
+        chatRevision = snapshot.int("revision") ?? chatRevision
+        chatGeneration = snapshot.int("execution_generation")
+        chatReasoning = snapshot.dict("info")?.string("reasoning_effort")
+        return snapshot
+    }
+    private func recoverPrompts(_ snapshot: JSONObject) {
+        let session = snapshot.string("session_id") ?? chatSessionID ?? ""
+        approvals = snapshot.objects("prompts").filter { $0.string("kind") == "approval" }.map {
+            var row = parseApproval($0, sessionID: session, rpcID: .string(""))
+            row.promptID = $0.string("prompt_id")
+            row.executionGeneration = $0.int("execution_generation")
+            return row
+        }
+        if let pending = snapshot.dict("pending_approval"), approvals.isEmpty {
+            var row = parseApproval(pending, sessionID: session, rpcID: .string(""))
+            row.recovered = true
+            approvals = [row]
+        }
+        let clarify = snapshot.objects("prompts").filter { $0.string("kind") == "clarify" }
+        let questions = clarify.compactMap { row -> ClarifyQuestion? in
+            guard let id = row.string("prompt_id"), row.int("execution_generation") != nil else { return nil }
+            return ClarifyQuestion(id: id, question: row.string("question") ?? "More information requested",
+                                   choices: row.array("choices") as? [String] ?? [], multiSelect: row.bool("multi_select") ?? false)
+        }
+        let generations = Dictionary(clarify.compactMap { row -> (String, Int)? in
+            guard let id = row.string("prompt_id"), let generation = row.int("execution_generation") else { return nil }
+            return (id, generation)
+        }, uniquingKeysWith: { _, new in new })
+        clarifyRequest = questions.isEmpty ? nil : ClarifyRequest(rpcID: .string(""), sessionID: session,
+                                                                 questions: questions, promptGenerations: generations)
     }
 
     private func parseApproval(_ params: JSONObject, sessionID: String, rpcID: JSONValueID) -> ApprovalRequest {
@@ -702,8 +884,9 @@ final class AppStore: ObservableObject {
     }
 
     func resolveApproval(_ approval: ApprovalRequest, choice: String) {
-        approvals.removeAll { $0.id == approval.id }
+        guard approval.choices.contains(choice) else { return }
         if isDemo {
+            approvals.removeAll { $0.id == approval.id }
             if choice == "deny" {
                 toastMessage("Command denied")
                 appendAssistant("Understood — I’ve left the build directory untouched.")
@@ -720,19 +903,60 @@ final class AppStore: ObservableObject {
             isTurnActive = false
             return
         }
-        api?.respond(id: approval.rpcID, result: ["choice": choice])
-        toastMessage("Approval sent: \(choice)")
+        guard let api, chatSessionID == approval.sessionID else { return }
+        if let promptID = approval.promptID, let generation = approval.executionGeneration {
+            Task {
+                do {
+                    _ = try await api.request("approval.respond", params: ["session_id": approval.sessionID, "execution_generation": generation, "prompt_id": promptID, "choice": choice])
+                    guard self.api === api, chatSessionID == approval.sessionID else { return }
+                    approvals.removeAll { $0.id == approval.id }
+                    toastMessage("Approval sent: \(choice)")
+                } catch { showError("Approval was not accepted. \(error.localizedDescription)") }
+            }
+        } else if approval.recovered {
+            Task {
+                do {
+                    _ = try await api.request("approval.respond", params: ["session_id": approval.sessionID, "request_id": approval.requestID, "choice": choice])
+                    guard self.api === api, chatSessionID == approval.sessionID else { return }
+                    approvals.removeAll { $0.id == approval.id }
+                } catch { showError("Approval was not accepted. \(error.localizedDescription)") }
+            }
+        } else {
+            api.respond(id: approval.rpcID, result: ["choice": choice])
+            approvals.removeAll { $0.id == approval.id }
+            toastMessage("Approval sent: \(choice)")
+        }
     }
 
     func resolveClarify(_ answers: [String: String]) {
         guard let request = clarifyRequest else { return }
-        clarifyRequest = nil
-        api?.respond(id: request.rpcID, result: ["answers": answers, "outcome": "submitted"])
+        guard let api, chatSessionID == request.sessionID else { return }
+        if request.promptGenerations.isEmpty {
+            api.respond(id: request.rpcID, result: ["answers": answers, "outcome": answers.isEmpty ? "cancelled" : "submitted"])
+            clarifyRequest = nil
+            return
+        }
+        Task {
+            do {
+                for question in request.questions {
+                    guard self.api === api, chatSessionID == request.sessionID,
+                          let generation = request.promptGenerations[question.id] else { return }
+                    _ = try await api.request("clarify.respond", params: ["session_id": request.sessionID,
+                        "execution_generation": generation, "prompt_id": question.id, "answer": answers[question.id] ?? ""])
+                    guard self.api === api, chatSessionID == request.sessionID else { return }
+                    clarifyRequest?.questions.removeAll { $0.id == question.id }
+                    clarifyRequest?.promptGenerations.removeValue(forKey: question.id)
+                }
+                clarifyRequest = nil
+            } catch { showError("The answer was not accepted. \(error.localizedDescription)") }
+        }
     }
 
     // MARK: - Groups
 
     func openGroup(_ room: GroupRoom) {
+        groupEpoch += 1
+        groupPollTask?.cancel()
         activeGroup = room
         roomEvents = []
         if isDemo {
@@ -750,6 +974,7 @@ final class AppStore: ObservableObject {
     }
 
     func closeGroup() {
+        groupEpoch += 1
         groupPollTask?.cancel(); groupPollTask = nil
         activeGroup = nil
         roomEvents = []
@@ -757,10 +982,12 @@ final class AppStore: ObservableObject {
 
     func refreshGroup() async {
         guard !isDemo, let api, let room = activeGroup else { return }
+        let epoch = groupEpoch
         do {
             let result = try await api.request("groups.log", params: [
                 "room_id": room.roomID, "since_seq": 0, "limit": 500
             ]) as? JSONObject
+            guard groupEpoch == epoch, self.api === api else { return }
             roomEvents = result?.objects("events").compactMap(RoomEvent.parse) ?? []
         } catch {
             // Background polling should stay quiet.
@@ -799,6 +1026,7 @@ final class AppStore: ObservableObject {
     }
 
     private func demoGroupReply(room: GroupRoom, prompt: String) {
+        let epoch = groupEpoch
         let replies = room.members.prefix(2).enumerated().map { index, member in
             let text = index == 0
                 ? "On it. I’ll take the first pass and report back with a recommendation."
@@ -808,6 +1036,7 @@ final class AppStore: ObservableObject {
         Task { @MainActor in
             for (offset, pair) in replies.enumerated() {
                 try? await Task.sleep(for: .milliseconds(900 + offset * 500))
+                guard !Task.isCancelled, groupEpoch == epoch else { return }
                 let (member, text) = pair
                 roomEvents.append(RoomEvent(seq: (roomEvents.last?.seq ?? 0) + 1, roomID: room.roomID,
                                             eventID: UUID().uuidString, kind: "message.member",
@@ -846,26 +1075,25 @@ final class AppStore: ObservableObject {
 
     // MARK: - AI Pixel builder
 
-    @Published var isBuildingPixel = false
 
-    func buildPixel(prompt: String) async throws -> BotProfile {
-        let clean = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !clean.isEmpty else { throw RPCError.transport("Describe what the Pixel should do.") }
-        isBuildingPixel = true
-        defer { isBuildingPixel = false }
-        let (spec, usedModel) = await PixelBuilder.shared.spec(for: clean, api: isDemo ? nil : api)
-        let slug = spec.name.lowercased().replacingOccurrences(of: " ", with: "-")
-        var member = CastMember.all.first(where: { $0.id == spec.character.archetype }) ?? CastMember.seeded(slug, title: spec.title)
-        if CastMember.all.contains(where: { $0.companion == spec.companion.kind }) {
-            member = CastMember(id: member.id, name: member.name, companion: spec.companion.kind,
-                                companionName: spec.companion.name.isEmpty ? member.companionName : spec.companion.name,
-                                accentHex: member.accentHex)
-        }
+    func draftPixel(prompt: String) async throws -> PixelDraft {
+        try await PixelBuilder.shared.draft(for: prompt, api: isDemo ? nil : api)
+    }
+
+    func buildPixel(draft: PixelDraft) async throws -> BotProfile {
+        let spec = draft.spec
+        if let error = spec.validationError { throw RPCError.transport(error) }
+        let slug = spec.name
+        guard !bots.contains(where: { $0.name == slug }) else { throw RPCError.transport("That Pixel name already exists. Choose another name.") }
+        guard let base = CastMember.all.first(where: { $0.id == spec.character.archetype }) else { throw RPCError.malformed }
+        let member = CastMember(id: base.id, name: base.name, portrait: base.portrait,
+                                companion: spec.companion.kind, companionName: spec.companion.name,
+                                accentHex: base.accentHex, recipe: spec.character.recipe)
         if isDemo {
-            let bot = BotProfile(name: slug, title: spec.title, role: spec.role, provider: "", model: "Hermes",
+            let bot = BotProfile(name: slug, title: spec.title, role: spec.role, provider: "", model: "Demo",
                                  skillCount: spec.skills.count, canonicalSessionID: "demo-\(slug)",
                                  canonicalResolvedID: nil, lastSessionID: nil,
-                                 preview: "Built by the Pixel builder.", activityAt: Date(),
+                                 preview: "\(spec.companion.name) and I are ready. What trouble are we solving?", activityAt: Date(),
                                  workerActive: false, isDefault: false, hidden: false,
                                  accentHex: member.accentHex, hasAvatar: false)
             bots.insert(bot, at: 0)
@@ -873,70 +1101,80 @@ final class AppStore: ObservableObject {
             return bot
         }
         guard let api else { throw RPCError.notConnected }
-        _ = try await api.request("profiles.create", params: [
-            "name": slug,
-            "description": spec.role,
-            "no_skills": false
-        ], timeout: 120)
-        var uiMeta: JSONObject = [
-            "title": spec.title,
-            "description": spec.role,
-            "color": member.accentHex,
-            "hidden": false,
-            "companion": spec.companion.kind,
-            "builder": usedModel ? "model" : "template"
-        ]
-        var configure: JSONObject = [
-            "name": slug,
-            "description": spec.role,
-            "soul": spec.soul,
-            "enabled_toolsets": spec.toolsets,
-            "ui_meta": ["hermes-bots": uiMeta]
-        ]
-        _ = try await api.request("profiles.configure", params: configure, timeout: 120)
+        // Clone installed skill files, then pin the reviewed tools, skills and MCP access.
+        let created = try await api.request("profiles.create", params: [
+            "name": slug, "description": spec.role, "soul": spec.soul + spec.policyBriefing,
+            "clone_from": "default", "clone_all": false, "no_skills": false, "clone_channels": false
+        ], timeout: 120) as? JSONObject
+        guard created?.bool("ok") == true else { throw RPCError.transport("The gateway did not confirm creation.") }
+        do {
+            _ = try await api.request("config.set", params: ["profile": slug, "key": "approvals.mode", "value": "manual"])
+            let inventory = try await api.request("profiles.describe", params: ["name": slug]) as? JSONObject
+            let installed = Set(inventory?.objects("skills").compactMap { $0.string("name") } ?? [])
+            guard Set(spec.skills).isSubset(of: installed) else { throw RPCError.transport("A selected skill was not copied by the gateway.") }
+            let data = try JSONEncoder().encode(spec)
+            let meta = try JSONSerialization.jsonObject(with: data) as? JSONObject ?? [:]
+            let result = try await api.request("profiles.configure", params: [
+                "name": slug, "description": spec.role, "soul": spec.soul + spec.policyBriefing,
+                "enabled_toolsets": draft.enabledToolsets,
+                "enabled_mcp_servers": [],
+                "disabled_skills": Array(installed.subtracting(spec.skills)).sorted(),
+                "ui_meta": ["hermes-bots": ["title": spec.title, "description": spec.role, "color": member.accentHex, "hidden": false],
+                            "niobium": ["schema_version": 2, "pixel_spec": meta, "builder": draft.usedModel ? "model" : "template"]]
+            ], timeout: 120) as? JSONObject
+            guard result?.bool("ok") == true else { throw RPCError.transport("The gateway could not apply all profile sections.") }
+            _ = try await api.request("config.set", params: ["profile": slug, "key": "reasoning", "value": spec.reasoning, "scope": "global"])
+        } catch {
+            await refreshRoster()
+            throw RPCError.transport("Created \(slug), but setup is incomplete: \(error.localizedDescription) Open the profile to repair it; creation was not retried.")
+        }
         CastStore.shared.select(member, for: slug)
         await refreshRoster()
-        guard let created = bots.first(where: { $0.name == slug }) else { throw RPCError.malformed }
-        toastMessage(usedModel ? "Built \(created.title) with AI" : "Built \(created.title) from a template")
-        return created
+        guard let bot = bots.first(where: { $0.name == slug }) else { throw RPCError.transport("Created \(slug), but the roster has not refreshed. Refresh before trying again.") }
+        toastMessage(draft.usedModel ? "Built \(bot.title) with AI" : "Built \(bot.title) from a template")
+        return bot
     }
 
-    // MARK: - Create bot
-
-    func createBot(name: String, title: String, role: String, colorHex: String) async throws {
-        let slug = name.trimmingCharacters(in: .whitespacesAndNewlines)
-            .lowercased()
-            .replacingOccurrences(of: " ", with: "-")
-        guard !slug.isEmpty else { throw RPCError.transport("Give your bot a name.") }
-        if isDemo {
-            let bot = BotProfile(name: slug, title: title.isEmpty ? slug.capitalized : title,
-                                 role: role, provider: "", model: "Hermes",
-                                 skillCount: 12, canonicalSessionID: "demo-\(slug)",
-                                 canonicalResolvedID: nil, lastSessionID: nil,
-                                 preview: "Say hello to \(title.isEmpty ? slug.capitalized : title).",
-                                 activityAt: Date(), workerActive: false, isDefault: false,
-                                 hidden: false, accentHex: colorHex, hasAvatar: false)
-            bots.insert(bot, at: 0)
-            return
+    func loadCompanions() async {
+        guard !isDemo else { companionTasks = []; return }
+        guard let api, let session = chatSessionID, let profile = activeBot?.name else { return }
+        companionsLoading = true
+        defer { companionsLoading = false }
+        do {
+            let result = try await api.request("subagent.list", params: ["session_id": session, "profile": profile]) as? JSONObject
+            guard chatSessionID == session, activeBot?.name == profile else { return }
+            var children = result?.objects("subagents").compactMap(CompanionTask.parse) ?? []
+            for failed in result?.objects("delegations") ?? [] {
+                guard let id = failed.string("delegation_id") else { continue }
+                children.append(.init(id: "\(id)-\(failed.int("task_index") ?? 0)", goal: failed.string("goal") ?? "Delegated task",
+                                      status: failed.string("status") ?? "failed", lastTool: failed.string("error") ?? "Task failed.",
+                                      toolCount: 0, canSteer: false, failed: true))
+            }
+            companionTasks = children; companionError = nil
+        } catch {
+            guard chatSessionID == session, activeBot?.name == profile else { return }
+            companionError = "Companion work is unavailable on this gateway. \(error.localizedDescription)"
         }
-        guard let api else { throw RPCError.notConnected }
-        _ = try await api.request("profiles.create", params: [
-            "name": slug,
-            "description": role,
-            "no_skills": false
-        ], timeout: 120)
-        _ = try await api.request("profiles.configure", params: [
-            "name": slug,
-            "description": role,
-            "ui_meta": ["hermes-bots": ["title": title.isEmpty ? slug.capitalized : title,
-                                        "description": role,
-                                        "color": colorHex,
-                                        "hidden": false]]
-        ])
-        await refreshRoster()
-        if let created = bots.first(where: { $0.name == slug }) {
-            openBot(created)
+    }
+    func companionTranscript(_ id: String) async throws -> String {
+        guard let api, let session = chatSessionID, let profile = activeBot?.name else { throw RPCError.notConnected }
+        let result = try await api.request("subagent.tail", params: ["session_id": session, "profile": profile, "subagent_id": id]) as? JSONObject
+        guard chatSessionID == session, activeBot?.name == profile else { throw RPCError.transport("This chat has changed. Reopen companion tasks.") }
+        return result?.string("text") ?? ""
+    }
+    func controlCompanion(_ id: String, action: String, text: String) async throws {
+        guard ["steer", "interrupt"].contains(action), let api, let session = chatSessionID, let profile = activeBot?.name else { throw RPCError.notConnected }
+        var params: JSONObject = ["session_id": session, "profile": profile, "subagent_id": id]
+        if action == "steer" { params["text"] = text }
+        let result = try await api.request("subagent." + action, params: params) as? JSONObject
+        guard chatSessionID == session, activeBot?.name == profile else { return }
+        if action == "steer" {
+            guard result?.string("status") == "queued" else { throw RPCError.transport("The helper could not accept this correction.") }
+            toastMessage("Correction queued for the helper")
+        } else {
+            toastMessage(result?.bool("found") == true ? "Stop requested" : "The helper has already finished")
         }
+        await loadCompanions()
     }
 
     // MARK: - Tools
@@ -1103,6 +1341,7 @@ final class AppStore: ObservableObject {
             || prompt.lowercased().contains("delete") || prompt.lowercased().contains("deploy")
         if wantsAction {
             try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled else { return }
             let toolID = "demo-tool-\(UUID().uuidString)"
             pendingDemoToolID = toolID
             messages.append(ChatMessage(id: toolID, role: .tool, text: "", timestamp: Date(),
@@ -1110,6 +1349,7 @@ final class AppStore: ObservableObject {
                                         toolResult: nil, toolStatus: .running,
                                         toolPreview: "rm -rf ./build"))
             try? await Task.sleep(for: .milliseconds(500))
+            guard !Task.isCancelled else { return }
             approvals.append(ApprovalRequest(rpcID: .string("demo-\(UUID().uuidString)"),
                                              requestID: "demo-approval",
                                              sessionID: chatSessionID ?? "demo",
@@ -1124,6 +1364,7 @@ final class AppStore: ObservableObject {
         for chunk in reply.chunked(into: 4) {
             if Task.isCancelled { return }
             try? await Task.sleep(for: .milliseconds(28))
+            guard !Task.isCancelled else { return }
             appendStreaming(chunk)
         }
         if let index = messages.firstIndex(where: { $0.id == id }) {

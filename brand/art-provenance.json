@@ -1,0 +1,31 @@
+{
+  "assets": [
+    {
+      "file": "brand/terrace-hero.png",
+      "tool": "image_gen.imagegen",
+      "date": "2026-10-22",
+      "transparent": false,
+      "prompt": "Create a production landscape image asset for the header of Niobium, a professional mobile AI-agent app. New original artwork, no text, no logo, no UI, no phone frame, no people. Wide landscape aspect ratio 3:1, preferably 1536x512. Meticulous authentic pixel art with hard square pixels on a fine 384x128 virtual grid, no smooth gradients or painted brush strokes. A peaceful bright high fantasy and subtle science fantasy vista: pale ivory sky and soft lavender clouds, floating rocky islands in the distance, a small lavender moon in upper right, an ornate distant spired castle on a floating island on the RIGHT, dark violet pine forest and moss on floating rock ledges at the bottom, tiny violet crystals and narrow waterfalls. A few miniature hovering airships. Very restrained mint accents. Three depth planes with atmospheric lavender haze. Leave the upper left 50% mostly pale clear sky so actual app title can overlay it legibly. Scene rich in details at bottom and right, luminous white and pale lilac dominant, purple shadows, beautiful tasteful 16-bit RPG pixel scenery. This is a reusable mobile app header background, not a mockup. Do not include words, characters, portraits, frames or controls.",
+      "sha256": "72d500615fd6fbcb6a493d168438212cfaea48031052652b49059376b65e38a7"
+    },
+    {
+      "file": "brand/pixel-cast-atlas.png",
+      "tool": "image_gen.imagegen",
+      "date": "2026-10-22",
+      "transparent": true,
+      "prompt": "Create one original game character sprite atlas for Niobium. A perfectly regular 4-column by 2-row grid, eight identical square cells, generous transparent gutters, no grid lines, no background, NO TEXT, labels, numbers or logo. Each cell contains exactly ONE different adult (all are unambiguously age 25-40) fantasy/cyborg character, waist-up portrait facing slightly toward center, head not oversized, shoulders and outfit visible, ends at belt, and one tiny cute weird monster floating near the shoulder on its right. Authentic premium hand-placed 48x48 pixel art virtual resolution PER character, enlarged nearest-neighbor square blocks, sharp outlines, sophisticated selective shading, visible square pixels, about 20 colors per sprite, 16-bit RPG cast. Professional distinct attractive adult identities, playful sly expressions, stylish bold revealing but fully non-explicit outfits; no nudity, no sexual acts, no minors, no school uniforms. Balanced four adult men/four adult women. Row 1 left to right: (1) Orion, silver-haired adult male arcane mage, violet open high-collar cloak over dark fitted tunic, gold crescent staff, small one-eyed owl; (2) Nova, adult woman cyber creative, warm brown skin, purple long ponytail, black cropped tech jacket and tasteful purple armored crop top, small purple grinning horned cat; (3) Forge, muscular adult man engineer with short black hair and stubble, open sleeveless dark armor vest with golden circuitry, shoulder drone with blue eye; (4) Sage, adult woman druid with long green braided hair, green leaf bodice with exposed shoulders and collarbone, tiny lime gelatinous dragon. Row 2 left to right: (5) Nyx, adult woman rogue with black hair, red eyes, dark violet asymmetrical strappy battle top with opaque full chest coverage, pointed mechanical ear implants, tiny red-eyed black bat; (6) Astra, adult male pilot with white hair, blue visor pushed up, blue flight harness over fitted dark shirt, cute white rabbit bot; (7) Vesper, adult woman night oracle with silver bob, lavender sleeveless wrap bodice, cloak hanging from shoulders, tiny luminous moon moth with eyes; (8) Rook, adult man field ranger with dark brown skin, brown tousled hair and light beard, olive open coat over a dark shirt, tiny amber three-eyed feathered lizard. All clothing covers private areas. Unified pixel style and scale, each silhouette strongly distinct, high contrast eyes and features readable at 48 pixels tall. Every character fully contained within its cell without crossing to another. Equal character size. Transparent background throughout. Deliver one wide atlas, 2:1 aspect ratio.",
+      "sha256": "dd9bf97745206124a94e28bd8461e44e3e2daa43f89f73d54fb4781b51328d06"
+    },
+    {
+      "file": "brand/pixel-cast-atlas-v3.png",
+      "tool": "image_gen.imagegen",
+      "date": "2026-10-22",
+      "transparent": true,
+      "prompt_file": "brand/pixel-cast-v3-prompt.txt",
+      "sha256": "8d58b95e6b572cacd603e6fb43b1013df4adb5a2d4191119f677fdb34846800d",
+      "source_reference": "brand/pixel-cast-atlas.png"
+    }
+  ],
+  "runtime_note": "The original atlases are retained at generated resolution. Native clients use the v3 atlas, crop, cache and render portraits at 48x48; custom layer recipes also render at 48x48. These generated atlases are pixel-styled source art, not a claim of hand-placed 48x48 originals.",
+  "reference": "docs/reference-dashboard.png is the user-supplied design reference, not generated product output."
+}

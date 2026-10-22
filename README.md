@@ -1,139 +1,130 @@
-<p align="center">
-  <img src="brand/app-icon-n-1024.png" width="96" alt="Niobium" />
-</p>
+<p align="center"><img src="brand/app-icon-n-1024.png" width="80" alt="Niobium"></p>
 
 # Niobium
 
-**By [WCKD.ai](https://wckd.ai). Your pixels, everywhere.**
+**Your pixels, everywhere. By [WCKD.ai](https://wckd.ai).**
 
-Niobium is the pocket command deck for a self-hosted Hermes gateway: a fast native
-iOS/iPadOS and Android client with a mature 32×32 pixel cast, companions, and an AI
-builder that creates a complete Pixel from one sentence.
+A native iPhone, iPad and Android command deck for the Hermes agent on your
+computer or VPS. Pixels are persistent Hermes profiles with their own voice,
+memory, model, tools and creature companions.
 
-> **Independent software.** Niobium is not affiliated with, endorsed by, or
-> sponsored by xAI/Grok, Mausbot, Nous Research/Hermes, or DeepSeek. Hermes is a
-> separate open-source project by Nous Research; DeepSeek Harness is a separate
-> project. See [legal](https://niobium.sh/legal/).
+**Public release: 1.1.0. v2 is in development.** Full Hermes parity is the target;
+it is not finished. The current scope is in [PLAN.md](PLAN.md), the implementation
+audit is in [docs/HERMES-PARITY.md](docs/HERMES-PARITY.md), and the work is tracked
+in [Plane](https://app.plane.so/wckd/projects/2fbcf987-20de-43dc-80ac-0a6bab7ec03a/issues/).
 
-**v1.1 is shipped.** v2 — the Home redesign, 32×32 cast, companions and AI builder —
-is in active build on the `v2` branch. The plan is [PLAN.md](PLAN.md); the gateway
-matrix is [docs/HERMES-PARITY.md](docs/HERMES-PARITY.md); v1 docs are archived at
-[docs/README-v1.md](docs/README-v1.md).
+<img src="screenshots/ios-home-audit.png" width="280" alt="Niobium v2 on iPhone"> <img src="screenshots/android-home-audit.png" width="252" alt="Niobium v2 on Android">
 
-<img src="screenshots/ios-home-v2.png" width="320" alt="Niobium v2 Home on iOS"> <img src="screenshots/android-home-v2.png" width="180" alt="Niobium v2 Home on Android">
-
-## The deck
+## The app
 
 Five tabs: **Home · Pixels · Local · Activity · Settings**.
 
-- **Home** — a pixel landscape, the Hermes instance card (host, access, tools,
-  latency, local bots), a two-column cast with companions, and the Local DSH card.
-- **Pixels** — the full roster, active rail, rooms, AI builder and new Pixel.
-- **Local** — local DeepSeek Harness on iOS full builds; remote DSH on both.
-- **Chats** — stored session browser, revision-fenced model picker, usage card,
-  skills list, cast studio.
-- **AI builder** — one sentence → personality, permissions, toolsets, connectors,
-  character and companion; `bot-build.md` is the skill.
-- **Activity** — turns, tools, approvals and the work in flight.
-- **Settings** — appearance, connection, toolbox, harness, privacy.
+- **Home:** lavender pixel landscape, gateway status and measured round trip,
+  compact roster, and an honest local/remote harness entry.
+- **Pixels:** persistent Bot Chats, rooms, @mentions and the Pixel workshop.
+- **Local:** an embedded Alpine/iSH DeepSeek Harness in the iOS full build;
+  remote DSH on both platforms.
+- **Activity:** messages, tools, approvals and background results.
+- **Settings:** gateway, appearance, skills, MCP inventory and runtime controls.
 
-Chat stays a focused full-screen surface with the character and companion in the
-header, approvals, tools, rooms and routines.
+Chat includes photos, dictation, model/reasoning selection, stored sessions, usage,
+routines, approval/clarify UI and companion work. Subagent monitoring, transcript
+tails, steering and interruption use real Hermes RPCs. A queued correction is
+reported as queued.
 
-## The cast
+## Pixel workshop
 
-Eight adult characters — four men, four women — drawn as 32×32 sprites, each with
-a cute monster companion. Mature cyber/fantasy styling is allowed; explicit content
-and minors are not. Every Pixel can be chosen, randomised or built by AI.
+Every New Pixel entry opens the same **describe → design → review → create**
+flow. [bot-build.md](bot-build.md) is the source skill.
 
-![Niobium 32×32 cast](brand/cast-sheet.png)
+The builder asks the gateway for its installed tools and skills, generates a
+validated PixelSpec, and previews the adult character, companion, detailed
+operator briefing and access. Network, shell and files are reviewed before
+creation. Invalid or unavailable model output becomes a clearly labelled local
+template.
 
-## AI builder
+Creation pins the reviewed toolsets and skills, disables inherited MCP servers,
+keeps host command approvals manual and stores the versioned PixelSpec in
+profile metadata. Model credentials are inherited from the default profile.
+Connector requests need separate account authorization. Workspace and network
+isolation are configured on the Hermes host.
 
-`bot-build.md` is a portable agent skill. Describe a job in one sentence; the
-builder returns a strict `PixelSpec` with personality, permissions, toolsets,
-skills, connectors, character and companion. Niobium validates it, calls
-`profiles.create` + `profiles.configure`, stores the cast/companion, and opens the
-new Pixel. If no model is configured, it falls back to a labelled local template.
+Appearance edits are saved to Hermes with metadata revision checks and restored
+when the roster refreshes. An incomplete setup is reported without silently
+creating a second profile.
 
-- Skill: [bot-build.md](bot-build.md)
-- Site page: [niobium.sh/build](https://niobium.sh/build/)
-- Builder code: `ios/Sources/Niobium/PixelSpec.swift`, `android/.../PixelBuilder.kt`
+## Characters and companions
 
-## Hermes + DSH
+Eight original adult fantasy/cyborg characters, with a playful, mischievous
+edge. Human characters are 18+; styling is mature and non-explicit.
 
-- Canonical WebSocket JSON-RPC gateway, text frames, Keychain/Keystore token.
-- Canonical session payloads fixed: no `inline_images`, source `gui` or negotiated
-  through `runtime.describe`; `gateway.capabilities` discovery.
-- iOS full build embeds iSH-ARM64 + Alpine 3.21 + Node 22 + DSH and boots on demand;
-  it is GPLv3, 82 MB and not an App Store build.
-- Android (and iOS) can open a remote DSH web UI from a computer or VPS.
+The app caches **48×48** portraits and displays them with nearest-neighbour
+interpolation. New character recipes combine body, palette, hair, face, outfit
+and accessory layers; their rendering remains experimental and needs more
+visual polish than the authored cast. Named creature companions represent bounded delegation;
+they do not simulate task completion.
 
-## v2 preview
+[Art and prompts](brand/art-provenance.json) ·
+[Design reference](docs/reference-dashboard.png)
 
-Local preview artifacts (not a public release yet):
+## Build and check
 
-- `dist/Niobium-2.0-preview.apk` — SHA-256 `764b075b49c5a0f4d2b210e8e1dbceb5a32d72ab6656f496c75dbf5961b2edab`
-- `dist/Niobium-2.0-preview.ipa` (development-signed, not published) — SHA-256 `9df5862a33f14f2c725ef4d011cb1b8675b81c93f1bbcc3cdd4b1a03f00717b9`
+Android requires JDK 17 and the Android SDK:
 
-The stable v1.1 release remains on GitHub. v2 is on the `v2` branch and PR #1.
-
-## Build
-
-### Android
-
-```sh
+~~~sh
 cd android
-./gradlew assembleDebug          # or assembleRelease
-adb install -r app/build/outputs/apk/debug/app-debug.apk
-```
+./gradlew :app:testDebugUnitTest :app:assembleDebug
+~~~
 
-### iOS Hermes client
+The Hermes-only iOS target excludes the Linux root filesystem:
 
-```sh
+~~~sh
 cd ios
 xcodegen generate
 xcodebuild -project Niobium.xcodeproj -scheme Niobium \
-  -destination 'platform=iOS Simulator,name=iPhone 18 Pro' build
-```
+  -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+~~~
 
-### iOS full local DSH
+The full local-DSH target is a separate project. Do not regenerate it with
+XcodeGen. See [ios/README.md](ios/README.md) for the submodule/rootfs prerequisites.
 
-```sh
-git submodule update --init --recursive
-cd ios
-scripts/build-local-dsh.sh
-xcodebuild -project NiobiumDSH.xcodeproj -scheme Niobium \
-  -configuration Release -destination 'generic/platform=iOS' \
-  -archivePath build/Niobium-DSH.xcarchive archive \
-  -allowProvisioningUpdates DEVELOPMENT_TEAM=<YOUR_TEAM_ID>
-```
+Pure Swift validation checks:
 
-## Repo
+~~~sh
+swiftc ios/Sources/Niobium/PixelSpec.swift tools/check-pixel-spec.swift \
+  -o /tmp/niobium-check-pixel-spec
+/tmp/niobium-check-pixel-spec
+~~~
 
-```
-ios/            SwiftUI client, XcodeGen project, full iSH/DSH target
-android/        Kotlin + Compose client
-brand/          icon, cast, palette, tokens, guide
-site/           WCKD static site + Wrangler config
-skills/         bot-build.md
-plane/          issue ledger (CSV)
-docs/           parity audit and v1 archive
-tools/          sprite/icon generators
-```
+Website:
 
-## Site and project ledger
+~~~sh
+node site/build.mjs
+node site/check.mjs
+~~~
 
-- Site: **[niobium.sh](https://niobium.sh/)** — deployed on Cloudflare Workers
-  Static Assets from `site/`. The apex is verified; `www.niobium.sh` still needs
-  a DNS record on the zone.
-- Plane: **[Niobium v2](https://app.plane.so/wckd/projects/2fbcf987-20de-43dc-80ac-0a6bab7ec03a/issues/)**
-  in the `wckd` workspace; 24 issues imported from `plane/issues.csv`.
+The rebuild has passed 38 Swift PixelSpec checks, four Android test cases,
+Android debug/release builds and both iOS simulator build variants. Native Home and
+Pixel-review captures are in [screenshots](screenshots/README.md). These checks
+do not establish end-to-end parity with a live, provider-backed Hermes install.
 
-## License
+## Current limits
 
-iOS full build (iSH/DSH) is GPLv3; see [LICENSE](LICENSE) and [NOTICE](NOTICE).
-Android is MIT; see [android/LICENSE](android/LICENSE). Site and brand assets are
-WCKD.ai. No affiliation with the projects named above.
+Native connector authorization, memory editing, project/workspace management,
+complete file/PDF support, durable replay/outbox handling and several room/busy
+controls remain incomplete. Android has remote DSH; an embedded Android Linux
+runtime is not implemented. Mobile background sockets and push delivery are not
+provided.
 
-Built by [WCKD.ai](https://wckd.ai). Niobium, 2026.
+## Site and licenses
+
+[niobium.sh](https://niobium.sh) uses the shared WCKD web design and is deployed
+with Cloudflare Workers Static Assets from this repository. Public downloads
+remain on the [1.1 release](https://github.com/wckdboy/niobium/releases/tag/v1.1.0).
+
+Android is MIT. The iOS full build combines GPLv3 components. Niobium is
+independent of Hermes/Nous Research and DeepSeek; see [NOTICE](NOTICE) and
+[LICENSE](LICENSE). Legacy v1 notes remain in [docs/README-v1.md](docs/README-v1.md).
+
+[Expanded test suite](docs/TESTING.md) · [Hermes update watch](docs/HERMES-UPDATES.md) ·
+[Android local-runtime decision](docs/ANDROID-DSH.md)

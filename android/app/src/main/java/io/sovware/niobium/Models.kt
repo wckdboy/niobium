@@ -188,13 +188,16 @@ data class Approval(
     val command: String,
     val description: String,
     val toolName: String,
-    val choices: List<String>
+    val choices: List<String>,
+    val promptId: String? = null,
+    val executionGeneration: Int? = null,
+    val recovered: Boolean = false
 ) {
-    val id get() = requestId.ifBlank { rpcId.toString() }
+    val id get() = promptId ?: requestId.ifBlank { rpcId.toString() }
 }
 
 data class ClarifyQuestion(val id: String, val question: String, val choices: List<String>, val multiSelect: Boolean)
-data class ClarifyRequest(val rpcId: Any, val sessionId: String, val questions: List<ClarifyQuestion>)
+data class ClarifyRequest(val rpcId: Any, val sessionId: String, val questions: List<ClarifyQuestion>, val promptGenerations: Map<String, Int> = emptyMap())
 
 data class Toolset(val name: String, val description: String, val tools: List<String>, val enabled: Boolean) {
     val id get() = name
@@ -260,4 +263,8 @@ data class UsageStats(
                 j.optInt("active_subagents"), j.optString("model"))
         }
     }
+}
+
+data class MCPServerRow(val name: String, val transport: String, val status: String, val connected: Boolean, val enabled: Boolean, val tools: Int, val source: String) {
+    val id get() = name
 }

@@ -1,9 +1,11 @@
 import SwiftUI
 
 struct HomeView: View {
+    var onShowPixels: () -> Void = {}
     @EnvironmentObject private var store: AppStore
     @State private var showNew = false
     @State private var showRemote = false
+    @State private var showInstance = false
 #if NIOBIUM_LOCAL_DSH
     @State private var showLocal = false
 #endif
@@ -18,7 +20,7 @@ struct HomeView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 hero
-                VStack(alignment: .leading, spacing: 22) {
+                VStack(alignment: .leading, spacing: 18) {
                     instanceCard
                     pixelsSection
                     localCard
@@ -30,6 +32,21 @@ struct HomeView: View {
         .scrollIndicators(.hidden)
         .frame(maxWidth: .infinity)
         .background(NB.void)
+        .sheet(isPresented: $showInstance) {
+            NavigationStack {
+                Form {
+                    Section("Gateway") {
+                        LabeledContent("Host", value: host)
+                        LabeledContent("Connection", value: store.connectionState.label)
+                        LabeledContent("Transport", value: "WebSocket JSON-RPC")
+                        LabeledContent("Access", value: "Enforced by your Hermes host")
+                        if let ms = store.gatewayLatencyMs { LabeledContent("Last round trip", value: "\(ms) ms") }
+                    }
+                    Section { Button("Refresh gateway") { Task { await store.refreshAll() } } }
+                }.navigationTitle("Hermes instance")
+                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { showInstance = false } } }
+            }
+        }
         .sheet(isPresented: $showNew) { NewBotView().environmentObject(store) }
         .sheet(isPresented: $showRemote) { RemoteHarnessView() }
 #if NIOBIUM_LOCAL_DSH
@@ -40,13 +57,13 @@ struct HomeView: View {
     private var hero: some View {
         GeometryReader { proxy in
             ZStack(alignment: .bottom) {
-                Image("HeroPixels")
+                Image("TerraceHero")
                     .resizable()
                     .interpolation(.none)
                     .scaledToFill()
-                    .frame(width: proxy.size.width, height: 196)
+                    .frame(width: proxy.size.width, height: 152)
                     .clipped()
-                LinearGradient(colors: [NB.void.opacity(0.97), NB.void.opacity(0.55), NB.void.opacity(0.10), NB.void],
+                LinearGradient(colors: [NB.void.opacity(0.90), NB.void.opacity(0.18), .clear, NB.void],
                                startPoint: .top, endPoint: .bottom)
                 VStack(alignment: .leading, spacing: 0) {
                     HStack(alignment: .center, spacing: 10) {
@@ -56,40 +73,41 @@ struct HomeView: View {
                             Text("YOUR PIXELS, EVERYWHERE.").font(.nbMono(7.5)).tracking(1.4).foregroundStyle(NB.secondary)
                         }
                         Spacer()
-                        HStack(spacing: 6) {
+                        Button { showInstance = true } label: { HStack(spacing: 6) {
                             Circle().fill(store.connectionState.color).frame(width: 6, height: 6)
-                            Text(store.isDemo ? "Connected" : store.connectionState.label)
+                            Text(store.isDemo ? "Demo" : store.connectionState.label)
                                 .font(.nbBody(11, weight: .medium)).lineLimit(1)
                             Image(systemName: "chevron.right").font(.system(size: 8))
                         }
                         .foregroundStyle(NB.secondary)
                         .padding(.horizontal, 10).padding(.vertical, 8)
                         .background(Capsule().fill(NB.ink.opacity(0.65)))
-                        .overlay(Capsule().strokeBorder(NB.line, lineWidth: 1))
+                        .overlay(Capsule().strokeBorder(NB.ion.opacity(0.22), lineWidth: 1))
+                        }.buttonStyle(.plain)
                     }
                     .padding(.horizontal, 18)
                     .padding(.top, 8)
                     Spacer()
                 }
-                .frame(width: proxy.size.width, height: 196)
+                .frame(width: proxy.size.width, height: 152)
             }
-            .frame(width: proxy.size.width, height: 196)
+            .frame(width: proxy.size.width, height: 152)
         }
-        .frame(height: 196)
+        .frame(height: 152)
     }
 
     private var instanceCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 11) {
             HStack(spacing: 12) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 12).fill(NB.ion.opacity(0.12))
                     Image(systemName: "server.rack").font(.system(size: 16, weight: .medium)).foregroundStyle(NB.ion)
                 }
-                .frame(width: 46, height: 46)
+                .frame(width: 40, height: 40)
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Hermes Instance").font(.nbTitle(17)).foregroundStyle(NB.text)
                     Text(host).font(.nbMono(9)).foregroundStyle(NB.secondary).lineLimit(1)
-                    Text(store.isDemo ? "Demo · local" : "VPS · self-hosted").font(.nbMono(8.5)).foregroundStyle(NB.tertiary)
+                    Text(store.isDemo ? "Demo workspace" : "Your computer or VPS").font(.nbMono(8.5)).foregroundStyle(NB.tertiary)
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 3) {
@@ -102,22 +120,25 @@ struct HomeView: View {
             }
             Divider().overlay(NB.line)
             HStack(spacing: 0) {
-                stat("\(store.toolsets.count)", "Tools", "hammer")
-                stat("Full", "Access", "shield")
-                stat("—", "Latency", "waveform.path.ecg")
-                stat("\(store.bots.filter(\.isLive).count)/\(store.bots.count)", "Local bots", "cpu")
+                stat("\(store.toolsets.count)", "Toolsets", "hammer")
+                stat(store.isDemo ? "Demo" : "Host", "Policy", "shield")
+                stat(store.gatewayLatencyMs.map { "\($0) ms" } ?? "—", "Latency", "waveform.path.ecg")
+                stat("\(store.bots.filter(\.isLive).count)/\(store.bots.count)", "Working", "cpu")
             }
         }
-        .padding(16)
-        .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(NB.surface.opacity(0.82)))
-        .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(NB.line, lineWidth: 1))
+        .padding(13)
+        .pixelPanel(radius: 20, accented: true)
+        .contentShape(RoundedRectangle(cornerRadius: 20))
+        .onTapGesture { showInstance = true }
     }
 
     private func stat(_ value: String, _ label: String, _ icon: String) -> some View {
         VStack(spacing: 4) {
-            Image(systemName: icon).font(.system(size: 14, weight: .medium)).foregroundStyle(NB.ion)
-            Text(value).font(.nbTitle(14)).foregroundStyle(NB.text)
-            Text(label).font(.nbBody(9.5)).foregroundStyle(NB.tertiary)
+            HStack(spacing: 5) {
+                Image(systemName: icon).font(.system(size: 12, weight: .medium)).foregroundStyle(NB.ion)
+                Text(value).font(.nbTitle(13)).foregroundStyle(NB.text)
+            }
+            Text(label).font(.nbBody(9)).foregroundStyle(NB.tertiary)
         }
         .frame(maxWidth: .infinity)
     }
@@ -139,10 +160,23 @@ struct HomeView: View {
                 }
                 .buttonStyle(.plain)
             }
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
-                ForEach(store.bots.prefix(8)) { bot in
+            if store.bots.isEmpty {
+                Text("Give your first Pixel a purpose. Create one here or refresh your gateway roster.")
+                    .font(.nbBody(13)).foregroundStyle(NB.secondary).padding(16).pixelPanel()
+            }
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 155), spacing: 10)], spacing: 10) {
+                ForEach(store.bots.prefix(6)) { bot in
                     homePixel(bot)
                 }
+            }
+            if store.bots.count > 6 {
+                Button(action: onShowPixels) {
+                    HStack {
+                        Text("All \(store.bots.count) Pixels")
+                        Spacer()
+                        Image(systemName: "arrow.right")
+                    }.font(.nbBody(11, weight: .medium)).foregroundStyle(NB.secondary).padding(.horizontal, 4)
+                }.buttonStyle(.plain)
             }
         }
     }
@@ -150,30 +184,23 @@ struct HomeView: View {
     private func homePixel(_ bot: BotProfile) -> some View {
         let member = cast.member(for: bot.name, title: bot.title)
         return Button { store.openBot(bot) } label: {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .top, spacing: 8) {
-                    CastPortrait(member: member, size: 62, showCompanion: true, showGlow: false)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(bot.title).font(.nbTitle(13)).foregroundStyle(NB.text).lineLimit(1)
-                        Text(bot.subtitle).font(.nbBody(9)).foregroundStyle(NB.tertiary).lineLimit(2)
-                        Spacer(minLength: 0)
-                        HStack(spacing: 4) {
-                            Circle().fill(bot.isLive ? NB.mint : NB.tertiary).frame(width: 4, height: 4)
-                            Text(bot.statusLine).font(.nbMono(8)).foregroundStyle(bot.isLive ? NB.mint : NB.tertiary).lineLimit(1)
-                        }
+            HStack(alignment: .center, spacing: 8) {
+                CastPortrait(member: member, size: 64, showCompanion: true, showGlow: false)
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(bot.title).font(.nbTitle(13)).foregroundStyle(NB.text).lineLimit(1).minimumScaleFactor(0.8)
+                    Text(bot.subtitle).font(.nbBody(10)).foregroundStyle(NB.secondary).lineLimit(2)
+                    HStack(spacing: 4) {
+                        Circle().fill(bot.isLive ? NB.mint : NB.tertiary).frame(width: 5, height: 5)
+                        Text(bot.isLive ? "Working" : "Ready").font(.nbBody(9, weight: .medium)).foregroundStyle(bot.isLive ? NB.mint : NB.tertiary)
                     }
-                    Spacer(minLength: 0)
-                    Image(systemName: "ellipsis").font(.system(size: 10)).foregroundStyle(NB.tertiary)
-                }
-                Text(bot.preview.isEmpty ? bot.role : bot.preview)
-                    .font(.nbBody(9.5)).foregroundStyle(NB.secondary).lineLimit(2)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 6).padding(.vertical, 3)
+                    .background(Capsule().fill((bot.isLive ? NB.mint : NB.secondary).opacity(0.08)))
+                }.frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(10)
-            .background(RoundedRectangle(cornerRadius: 16).fill(NB.surface.opacity(0.7)))
-            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(NB.line, lineWidth: 1))
+            .frame(minHeight: 70).padding(8).pixelPanel(radius: 16)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("\(bot.title), \(bot.subtitle), \(bot.isLive ? "working" : "ready")")
     }
 
     private var localCard: some View {
@@ -181,7 +208,13 @@ struct HomeView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Local DSH").font(.nbTitle(19)).foregroundStyle(NB.text)
-                    Text("Run local Pixels through DSH on your device.").font(.nbBody(10.5)).foregroundStyle(NB.tertiary)
+                    Text({
+#if NIOBIUM_LOCAL_DSH
+                        "Alpine Linux on your device. Your provider keys."
+#else
+                        "Your harness on a computer or VPS."
+#endif
+                    }()).font(.nbBody(10.5)).foregroundStyle(NB.tertiary)
                 }
                 Spacer()
                 Button {
@@ -201,7 +234,7 @@ struct HomeView: View {
             HStack(spacing: 10) {
                 Image(systemName: "shippingbox").font(.system(size: 15)).foregroundStyle(NB.ion)
                 VStack(alignment: .leading, spacing: 1) {
-                    Text("Local Runtime").font(.nbBody(12, weight: .semibold)).foregroundStyle(NB.text)
+                    Text("Harness runtime").font(.nbBody(12, weight: .semibold)).foregroundStyle(NB.text)
 #if NIOBIUM_LOCAL_DSH
                     Text("Alpine + iSH · boots on demand").font(.nbMono(8)).foregroundStyle(NB.tertiary)
 #else
@@ -210,24 +243,16 @@ struct HomeView: View {
                 }
                 Spacer()
                 HStack(spacing: 4) {
-                    Circle().fill(NB.mint).frame(width: 5, height: 5)
-                    Text("on demand").font(.nbMono(8)).foregroundStyle(NB.mint)
+                    Text("Open to check").font(.nbMono(8)).foregroundStyle(NB.tertiary)
                 }
             }
             .padding(10)
             .background(RoundedRectangle(cornerRadius: 12).fill(NB.fillSoft))
-            HStack(spacing: 0) {
-                localStat("Model", "DSH")
-                localStat("Resources", "shared")
-                localStat("GPU", "device")
-                localStat("Local Pixels", "\(store.bots.filter(\.isLive).count) running")
-            }
             Text("DSH is separate from Hermes. The local guest is iOS-only; remote works everywhere.")
                 .font(.nbBody(9)).foregroundStyle(NB.tertiary).lineSpacing(1)
         }
         .padding(15)
-        .background(RoundedRectangle(cornerRadius: 22).fill(NB.surface.opacity(0.82)))
-        .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(NB.line, lineWidth: 1))
+        .pixelPanel(radius: 20, accented: true)
     }
 
     private func localStat(_ label: String, _ value: String) -> some View {

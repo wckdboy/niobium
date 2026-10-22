@@ -3,7 +3,7 @@
 Native SwiftUI client for a Hermes Agent gateway. Swift 6, iOS 18+. A Hermes
 profile is rendered as a **Pixel**.
 
-Version 1.1 has two build flavors:
+The v2 source retains two build flavors:
 
 | Target | What it is | Dependencies |
 | --- | --- | --- |
@@ -24,7 +24,7 @@ git submodule update --init --recursive
 cd ios
 scripts/build-local-dsh.sh            # builds rootfs (~6 min) + hterm
 xcodebuild -project NiobiumDSH.xcodeproj -scheme Niobium \
-  -destination 'platform=iOS Simulator,name=iPhone 18 Pro' build
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
 ```
 
 `scripts/build-local-dsh.sh` needs `meson`, `ninja` and `ld.lld`
@@ -59,12 +59,13 @@ brew install xcodegen
 cd ios
 xcodegen generate
 xcodebuild -project Niobium.xcodeproj -scheme Niobium \
-  -destination 'platform=iOS Simulator,name=iPhone 18 Pro' build
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
 open Niobium.xcodeproj
 ```
 
 `Niobium.xcodeproj` is generated from `project.yml`; edit `project.yml`, not the
-`.pbxproj`. The Hermes-only target does not compile any DSH/iSH source.
+`.pbxproj`. The Hermes-only target does not compile DSH/iSH source or bundle the Linux
+guest image. Audited debug simulator bundles measured 17 MB client and 98 MB full.
 
 ## Layout
 
@@ -86,8 +87,9 @@ open Niobium.xcodeproj
 - `GET /api/status` probes HTTP/auth.
 - `WS /api/ws?token=…` carries JSON-RPC 2.0 **text** frames. Binary frames are
   rejected by Hermes.
-- After `gateway.ready`, send `client.capabilities {server_requests:true}` and
-  answer `approval` / `clarify` requests.
+- After `gateway.ready`, advertise server requests and handle approvals, clarify
+  and transient credential/vault requests. Recovered canonical prompts carry
+  prompt IDs and execution generations.
 - `session.create` uses the title `Bot Chat`; the UI calls the resulting
   conversation a **pixel chat**.
 - `groups.log` is polled every 3 s while a room is open; `groups.send` is
@@ -111,13 +113,13 @@ open Niobium.xcodeproj
 ## Demo / screenshots
 
 ```sh
-xcrun simctl launch booted io.sovware.niobium --demo --no-splash
-xcrun simctl launch booted io.sovware.niobium --demo --no-splash --bot athena
-xcrun simctl launch booted io.sovware.niobium --demo --no-splash --room demo-launch
-xcrun simctl launch booted io.sovware.niobium --demo --no-splash --bot forge --demo-tool
-xcrun simctl launch booted io.sovware.niobium --demo --no-splash --tab activity
-xcrun simctl launch booted io.sovware.niobium --demo --no-splash --toolbox
-xcrun simctl launch booted io.sovware.niobium --demo --no-splash --dsh
+xcrun simctl launch booted ai.wckd.niobium --demo --no-splash
+xcrun simctl launch booted ai.wckd.niobium --demo --no-splash --bot orion
+xcrun simctl launch booted ai.wckd.niobium --demo --no-splash --room demo-launch
+xcrun simctl launch booted ai.wckd.niobium --demo --no-splash --bot forge --demo-tool
+xcrun simctl launch booted ai.wckd.niobium --demo --no-splash --tab activity
+xcrun simctl launch booted ai.wckd.niobium --demo --no-splash --toolbox
+xcrun simctl launch booted ai.wckd.niobium --demo --no-splash --dsh
 ```
 
 `--no-splash` skips the splash and keeps the simulator display awake; it is for
@@ -128,8 +130,14 @@ build only).
 
 - No APNs/background connection.
 - Room-level approvals are not surfaced yet.
-- Uploaded Hermes avatars are not fetched; faces are generated pixel tiles.
+- Uploaded Hermes avatars are not fetched; the app uses its original adult cast.
+- Custom 48×48 layer rendering is experimental and needs further visual polish.
 - Cleartext HTTP is allowed for self-hosted LAN gateways (ATS). Prefer
   HTTPS/Tailscale.
 - Local DSH needs 81 MB of guest image, grants no App Store distribution path
   because of iSH's additional terms, and the combined app is GPLv3.
+
+Current implementation and verification limits are recorded in
+[HERMES-PARITY.md](../docs/HERMES-PARITY.md).
+
+Use `--workshop` or `--pixel-review` with `--demo` to capture Pixel creation.

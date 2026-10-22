@@ -65,7 +65,7 @@ struct RoomsView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 16)
 
-                Text("Rooms run on your gateway, not the phone. They keep thinking when the app is closed.")
+                Text(store.isDemo ? "Demo rooms show how Pixels collaborate. Connect your gateway for real conversations." : (store.groupsHaveDriver ? "Your gateway runs these rooms. They can continue when the app disconnects." : "Reopen a room to sync its latest messages. Background discussion depends on your gateway."))
                     .font(.nbBody(11))
                     .foregroundStyle(NB.tertiary)
                     .lineSpacing(2)

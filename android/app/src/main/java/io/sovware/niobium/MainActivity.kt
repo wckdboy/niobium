@@ -46,8 +46,8 @@ class MainActivity : ComponentActivity() {
             Nb.systemDark = isSystemInDarkTheme()
             LaunchedEffect(Nb.appearance, Nb.systemDark) {
                 val controller = androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
-                controller.isAppearanceLightStatusBars = !Nb.light
-                controller.isAppearanceLightNavigationBars = !Nb.light
+                controller.isAppearanceLightStatusBars = Nb.light
+                controller.isAppearanceLightNavigationBars = Nb.light
             }
             NiobiumTheme {
                 NiobiumApp(vm, tab, intent.getBooleanExtra("tools", false))

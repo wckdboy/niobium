@@ -1,0 +1,366 @@
+{
+  "project_id": "2fbcf987-20de-43dc-80ac-0a6bab7ec03a",
+  "exported_at": "2026-10-22",
+  "work_items": [
+    {
+      "id": "8371c624-7ff2-45f5-9c15-6e0e1ff38917",
+      "sequence_id": 1,
+      "name": "v2 branch and product plan",
+      "description": "Create PLAN.md and README v2; no affiliation copy. See docs/HERMES-PARITY.md and PLAN.md for verified implementation coverage and remaining acceptance gates.",
+      "priority": "urgent",
+      "state": "93044b58-ac66-4aad-8bff-02893abc5fe0",
+      "external_id": null,
+      "external_source": null
+    },
+    {
+      "id": "f6b781b5-3943-489c-8550-72c21de1e68d",
+      "sequence_id": 2,
+      "name": "WCKD design tokens and legal copy",
+      "description": "Dark/light palette, mature adult content policy, disclaimers in app/site. See docs/HERMES-PARITY.md and PLAN.md for verified implementation coverage and remaining acceptance gates.",
+      "priority": "high",
+      "state": "93044b58-ac66-4aad-8bff-02893abc5fe0",
+      "external_id": null,
+      "external_source": null
+    },
+    {
+      "id": "d1bc8db7-ff94-489c-89f3-0245aca42ea6",
+      "sequence_id": 3,
+      "name": "48×48 adult cast, original art and cached layer engine",
+      "description": "Original adult fantasy/cyborg cast and terrace generated. Native 48×48 cached portraits; shared layer recipes, palettes, outfit/hair/accessory choices, and companion names. Verify at small sizes, both themes, and actual native layouts; preserve asset provenance.",
+      "priority": "high",
+      "state": "429820e5-f4b1-4754-9dd5-55b8a3c7cd64",
+      "external_id": null,
+      "external_source": null
+    },
+    {
+      "id": "b9a55d72-acb9-492b-9d21-57b535cbe20a",
+      "sequence_id": 4,
+      "name": "Unique lowercase n ore icon",
+      "description": "16x16 purple-on-white WCKD letter mark; iOS/Android/launch/site. See docs/HERMES-PARITY.md and PLAN.md for verified implementation coverage and remaining acceptance gates.",
+      "priority": "high",
+      "state": "93044b58-ac66-4aad-8bff-02893abc5fe0",
+      "external_id": null,
+      "external_source": null
+    },
+    {
+      "id": "df535ffa-8b70-4e52-be6c-5f32205d300e",
+      "sequence_id": 5,
+      "name": "Pixel hero landscape",
+      "description": "Home hero with floating islands and castle; accessibility contrast. See docs/HERMES-PARITY.md and PLAN.md for verified implementation coverage and remaining acceptance gates.",
+      "priority": "medium",
+      "state": "93044b58-ac66-4aad-8bff-02893abc5fe0",
+      "external_id": null,
+      "external_source": null
+    },
+    {
+      "id": "758029a8-f526-4ea4-a8ba-3fe82d807222",
+      "sequence_id": 6,
+      "name": "Five-tab shell",
+      "description": "Home/Pixels/Local/Activity/Settings on iOS and Android. See docs/HERMES-PARITY.md and PLAN.md for verified implementation coverage and remaining acceptance gates.",
+      "priority": "urgent",
+      "state": "93044b58-ac66-4aad-8bff-02893abc5fe0",
+      "external_id": null,
+      "external_source": null
+    },
+    {
+      "id": "971d9512-5d6b-4eb0-994f-7b1f3e82e188",
+      "sequence_id": 7,
+      "name": "Reference dashboard and truthful runtime state",
+      "description": "Use the supplied lavender pixel dashboard as the app reference. Shared panel components, compact two-column roster, measured gateway round trip, honest host policy, and working-Pixel count. Remove invented Full access/GPU/local-bot telemetry. Validate phone, tablet, light/dark, empty and disconnected states.",
+      "priority": "high",
+      "state": "429820e5-f4b1-4754-9dd5-55b8a3c7cd64",
+      "external_id": null,
+      "external_source": null
+    },
+    {
+      "id": "3ffc5738-640b-4ea3-8720-883317c98644",
+      "sequence_id": 8,
+      "name": "Local DSH card",
+      "description": "On-device iOS / remote both; runtime stats and open action. See docs/HERMES-PARITY.md and PLAN.md for verified implementation coverage and remaining acceptance gates.",
+      "priority": "high",
+      "state": "93044b58-ac66-4aad-8bff-02893abc5fe0",
+      "external_id": null,
+      "external_source": null
+    },
+    {
+      "id": "9ef53328-5c3b-48a1-bd2e-6621782d38f9",
+      "sequence_id": 9,
+      "name": "bot-build.md skill",
+      "description": "Portable agentskills skill with strict PixelSpec schema and safety. See docs/HERMES-PARITY.md and PLAN.md for verified implementation coverage and remaining acceptance gates.",
+      "priority": "urgent",
+      "state": "93044b58-ac66-4aad-8bff-02893abc5fe0",
+      "external_id": null,
+      "external_source": null
+    },
+    {
+      "id": "fe3e3bba-6828-4a33-b1ed-c73b48deb3b4",
+      "sequence_id": 10,
+      "name": "Validated PixelSpec and design → review → create",
+      "description": "Both clients validate adult age, character layers, names, traits, briefings and capability IDs. Query profiles.describe for the actual catalog; filter unclassified/disallowed tools; label model failure as a template. Review name, permissions, soul, skills and connector requests before creating.",
+      "priority": "high",
+      "state": "429820e5-f4b1-4754-9dd5-55b8a3c7cd64",
+      "external_id": null,
+      "external_source": null
+    },
+    {
+      "id": "9e7319a6-711c-498b-bcb1-c1ef7a6324ce",
+      "sequence_id": 11,
+      "name": "Provision reviewed skills, tools and persona metadata",
+      "description": "Clone default skill files and provider credentials without channel tokens, pin only reviewed tools and skills, disable inherited MCP servers, set manual host approvals and reasoning, and store versioned PixelSpec in ui_meta.niobium. Detect partial setup and do not create duplicate profiles. Read metadata back on roster refresh.",
+      "priority": "high",
+      "state": "429820e5-f4b1-4754-9dd5-55b8a3c7cd64",
+      "external_id": null,
+      "external_source": null
+    },
+    {
+      "id": "2da78e15-bd8c-4816-95ba-bcc7f2cd130a",
+      "sequence_id": 12,
+      "name": "Cast/companion selection",
+      "description": "Store chosen cast, companion, randomizer, studio. See docs/HERMES-PARITY.md and PLAN.md for verified implementation coverage and remaining acceptance gates.",
+      "priority": "high",
+      "state": "93044b58-ac66-4aad-8bff-02893abc5fe0",
+      "external_id": null,
+      "external_source": null
+    },
+    {
+      "id": "cd632c39-488b-4b99-86e2-5e76530a1ce1",
+      "sequence_id": 13,
+      "name": "Canonical session payload fixes",
+      "description": "Remove inline_images; source gui/runtime.describe. See docs/HERMES-PARITY.md and PLAN.md for verified implementation coverage and remaining acceptance gates.",
+      "priority": "urgent",
+      "state": "93044b58-ac66-4aad-8bff-02893abc5fe0",
+      "external_id": null,
+      "external_source": null
+    },
+    {
+      "id": "5d5afb8b-50bc-4ab0-954d-8d2f5cf7a860",
+      "sequence_id": 14,
+      "name": "Session browser and mutations",
+      "description": "session.list stored/history/mutate rename/archive/delete/export. See docs/HERMES-PARITY.md and PLAN.md for verified implementation coverage and remaining acceptance gates.",
+      "priority": "high",
+      "state": "429820e5-f4b1-4754-9dd5-55b8a3c7cd64",
+      "external_id": null,
+      "external_source": null
+    },
+    {
+      "id": "1712cbeb-b2fb-4d22-b592-29f62062545f",
+      "sequence_id": 15,
+      "name": "Generation-fenced model switching and reasoning",
+      "description": "Both clients now refresh a control snapshot before model or reasoning mutations and send expected_revision plus expected_generation. Reasoning UI supports profile default and Hermes effort levels. Native builds pass; provider-specific reasoning behaviour and stale/busy rejection need live acceptance.",
+      "priority": "high",
+      "state": "429820e5-f4b1-4754-9dd5-55b8a3c7cd64",
+      "external_id": null,
+      "external_source": null
+    },
+    {
+      "id": "2f5da985-88c3-48da-aaf5-409ad7f6f983",
+      "sequence_id": 16,
+      "name": "Usage and context",
+      "description": "session.stats/context breakdown/usage ring. See docs/HERMES-PARITY.md and PLAN.md for verified implementation coverage and remaining acceptance gates.",
+      "priority": "medium",
+      "state": "93044b58-ac66-4aad-8bff-02893abc5fe0",
+      "external_id": null,
+      "external_source": null
+    },
+    {
+      "id": "7f804e43-6b29-43a1-a314-e23b1e67a3c3",
+      "sequence_id": 17,
+      "name": "Skills and command catalog",
+      "description": "skills.manage/reload/commands.catalog + slash UI. See docs/HERMES-PARITY.md and PLAN.md for verified implementation coverage and remaining acceptance gates.",
+      "priority": "high",
+      "state": "429820e5-f4b1-4754-9dd5-55b8a3c7cd64",
+      "external_id": null,
+      "external_source": null
+    },
+    {
+      "id": "53aa7d82-9c93-4249-b9d4-84f6894f4163",
+      "sequence_id": 18,
+      "name": "MCP inventory, status and account setup",
+      "description": "Inventory/status UI already exists. Verify real response shapes, stale-session fencing, OAuth/test/enable flows, and honest unavailable/error states; current inventory alone is not full MCP parity.",
+      "priority": "high",
+      "state": "429820e5-f4b1-4754-9dd5-55b8a3c7cd64",
+      "external_id": null,
+      "external_source": null
+    },
+    {
+      "id": "d67ab811-f5d0-4d96-bf51-ce21e955361b",
+      "sequence_id": 19,
+      "name": "Recover approvals and clarify after reconnect",
+      "description": "Canonical snapshot approvals and clarifications now recover prompt_id/execution_generation and respond through the generation-fenced methods. Legacy approvals use request_id rather than an invented RPC id. Server-request cancellation clears pending UI. Native builds pass. Pending/received acknowledgements, clarify locking and real reconnect-race verification remain.",
+      "priority": "high",
+      "state": "429820e5-f4b1-4754-9dd5-55b8a3c7cd64",
+      "external_id": null,
+      "external_source": null
+    },
+    {
+      "id": "e4a2f5f4-a594-4be9-9f8a-30dd0df2c952",
+      "sequence_id": 20,
+      "name": "Attachments parity",
+      "description": "PDF/file/image attach; Android/iOS composer. See docs/HERMES-PARITY.md and PLAN.md for verified implementation coverage and remaining acceptance gates.",
+      "priority": "high",
+      "state": "bb5501a7-f73d-4bd6-b23e-f2e54d9a1982",
+      "external_id": null,
+      "external_source": null
+    },
+    {
+      "id": "742592c8-f93e-479a-825b-62e347f8537e",
+      "sequence_id": 21,
+      "name": "Remote DSH both platforms",
+      "description": "Settings -> Harness URL, WebView/WebKit. See docs/HERMES-PARITY.md and PLAN.md for verified implementation coverage and remaining acceptance gates.",
+      "priority": "high",
+      "state": "93044b58-ac66-4aad-8bff-02893abc5fe0",
+      "external_id": null,
+      "external_source": null
+    },
+    {
+      "id": "d5ffe881-5395-4948-a68b-339f26a8f59e",
+      "sequence_id": 22,
+      "name": "Local DSH iOS polish",
+      "description": "status/resources/terminal; on-demand boot. See docs/HERMES-PARITY.md and PLAN.md for verified implementation coverage and remaining acceptance gates.",
+      "priority": "medium",
+      "state": "429820e5-f4b1-4754-9dd5-55b8a3c7cd64",
+      "external_id": null,
+      "external_source": null
+    },
+    {
+      "id": "6ece6f88-127c-4cb2-9bc0-12df8b87745b",
+      "sequence_id": 23,
+      "name": "Match niobium.sh to the shared WCKD site system",
+      "description": "Deployed the shared WCKD static site to the existing niobium-site Cloudflare Worker at niobium.sh and www.niobium.sh. Version 659476b6-ada8-49cc-b16c-6716535b49f3. Shared lowercase/mono layout, family footer, truthful platform/release status. Seven HTML pages and 73 local links/assets pass checks; public HTTP 200 and deployed HTML matches the local build. Browser visual QA remains unverified because automatic approval denied Brave Browser.",
+      "priority": "high",
+      "state": "93044b58-ac66-4aad-8bff-02893abc5fe0",
+      "external_id": null,
+      "external_source": null
+    },
+    {
+      "id": "13cb6beb-a647-4544-bd60-97ac9997e6d8",
+      "sequence_id": 24,
+      "name": "Screenshots and signed artifacts",
+      "description": "iOS standard/full; Android debug/release; checksums. See docs/HERMES-PARITY.md and PLAN.md for verified implementation coverage and remaining acceptance gates.",
+      "priority": "urgent",
+      "state": "429820e5-f4b1-4754-9dd5-55b8a3c7cd64",
+      "external_id": null,
+      "external_source": null
+    },
+    {
+      "id": "5ea28d4f-ff8f-4d21-acac-ff31198b614b",
+      "sequence_id": 25,
+      "name": "Real companion delegation controls",
+      "description": "Native companion panel over subagent.list/tail/steer/interrupt. Preserve failed delegations; distinguish queued correction from delivered work; session/transport ownership fences; ask parent to split work using delegate_task; never simulate real task completion.",
+      "priority": "high",
+      "state": "429820e5-f4b1-4754-9dd5-55b8a3c7cd64",
+      "external_id": "companions",
+      "external_source": "niobium-v2-audit"
+    },
+    {
+      "id": "9e89a753-b574-44c3-83aa-6b4d72c24d9b",
+      "sequence_id": 26,
+      "name": "Connector accounts and authorization cards",
+      "description": "Implement connectors.list/catalog/connect/accounts/policy and connection.request/update/respond with the correct owner shape. Show account authorization links and operation state; never confuse requested connectors with connected credentials.",
+      "priority": "high",
+      "state": "bb5501a7-f73d-4bd6-b23e-f2e54d9a1982",
+      "external_id": "connectors",
+      "external_source": "niobium-v2-audit"
+    },
+    {
+      "id": "6d89c12b-c043-49f5-ae1b-0363180f4c5e",
+      "sequence_id": 27,
+      "name": "Memory and skill detail editing",
+      "description": "Implement learning.frames/detail/edit/delete with native readable content, explicit edits and recoverable deletion behaviour. Keep account/profile/session ownership correct; improve skills discovery and install/reload failure handling.",
+      "priority": "high",
+      "state": "bb5501a7-f73d-4bd6-b23e-f2e54d9a1982",
+      "external_id": "memory",
+      "external_source": "niobium-v2-audit"
+    },
+    {
+      "id": "8377ea89-a9a1-4ea0-9c0e-9411f628d83c",
+      "sequence_id": 28,
+      "name": "Project and workspace management",
+      "description": "Native projects list/create/edit/archive and folder selection; use revision/generation-fenced session.mutate workspace; refuse busy-session changes; keep profile-scoped project data separate.",
+      "priority": "high",
+      "state": "bb5501a7-f73d-4bd6-b23e-f2e54d9a1982",
+      "external_id": "projects",
+      "external_source": "niobium-v2-audit"
+    },
+    {
+      "id": "9b6ed218-0ca5-41ca-80cb-9466338405c8",
+      "sequence_id": 29,
+      "name": "Android on-device DSH runtime",
+      "description": "iSH integration currently exists only on iOS. Design and verify a genuine Android Linux runtime/host bridge, provider-key handling, supervision, persisted workspace and licensing. Remote DSH is available; do not label it an on-device runtime.",
+      "priority": "high",
+      "state": "bb5501a7-f73d-4bd6-b23e-f2e54d9a1982",
+      "external_id": "android-local",
+      "external_source": "niobium-v2-audit"
+    },
+    {
+      "id": "fa5afff8-fba0-4a08-b473-4a8b68421150",
+      "sequence_id": 30,
+      "name": "Prompt receipts, queues and busy controls",
+      "description": "Stable submission IDs, unknown-delivery recovery, prompt.receipt/cancel, session.steer/redirect and queued prompt steering/replacement. Never blindly resend a timed-out or ambiguous submission; preserve unsent drafts and attachment state.",
+      "priority": "high",
+      "state": "429820e5-f4b1-4754-9dd5-55b8a3c7cd64",
+      "external_id": "admissions",
+      "external_source": "niobium-v2-audit"
+    },
+    {
+      "id": "fbcba67c-b773-4bc4-98ad-061041472340",
+      "sequence_id": 31,
+      "name": "Native credential and vault prompts",
+      "description": "Native secure prompt forms implemented for secret, sudo, vault unlock, save-login and verification codes. Values are transient, cleared on cancellation/disconnect, and bound to the exact transport epoch. Native builds pass. Acceptance still requires live host credential prompts, including reconnect races.",
+      "priority": "high",
+      "state": "429820e5-f4b1-4754-9dd5-55b8a3c7cd64",
+      "external_id": "secrets",
+      "external_source": "niobium-v2-audit"
+    },
+    {
+      "id": "0bf47cd7-d432-4b61-8547-4d30f7a7d61f",
+      "sequence_id": 32,
+      "name": "Accessibility, tablet layouts and performance",
+      "description": "Readable dynamic type/contrast/touch targets, VoiceOver/TalkBack labels, reduced motion, keyboard/safe-area handling, virtualized long rosters, bounded caches and transport lifetime tests. Validate actual devices and both themes.",
+      "priority": "high",
+      "state": "429820e5-f4b1-4754-9dd5-55b8a3c7cd64",
+      "external_id": "quality",
+      "external_source": "niobium-v2-audit"
+    },
+    {
+      "id": "fd47fdf2-894a-46f9-ac04-562089d6383b",
+      "sequence_id": 33,
+      "name": "Complete Bot Mode rooms and attributed DMs",
+      "description": "Capability-gated room roster, durable driver status, mentions, state/rename/stop/approve/retry/attachments, idempotent send with uncertain-delivery handling, and qualified cross-connection identities. Avoid false claims when the gateway lacks a durable driver.",
+      "priority": "high",
+      "state": "429820e5-f4b1-4754-9dd5-55b8a3c7cd64",
+      "external_id": "bot-mode",
+      "external_source": "niobium-v2-audit"
+    },
+    {
+      "id": "f90e5271-491a-477c-b81d-3b11f0e14b59",
+      "sequence_id": 34,
+      "name": "Hermes capability parity and contract verification",
+      "description": "Full parity remains the target. Verify all mobile-relevant domains against pinned Hermes contracts and record implemented/partial/unsupported states. Native builds and a demo screenshot do not prove live parity. Add fixture/unit/integration gates to prevent invalid wire keys and missing generation fences.",
+      "priority": "urgent",
+      "state": "429820e5-f4b1-4754-9dd5-55b8a3c7cd64",
+      "external_id": "parity",
+      "external_source": "niobium-v2-audit"
+    },
+    {
+      "id": "5af3550c-22a0-4cff-b811-a4ed14dbbe6b",
+      "sequence_id": 35,
+      "name": "Reconnect replay and background delivery",
+      "description": "Session.events.since cursors, deduplication, epoch changes and transcript recovery; preserve pending user decisions; investigate native background notification support without pretending mobile sockets run indefinitely.",
+      "priority": "medium",
+      "state": "bb5501a7-f73d-4bd6-b23e-f2e54d9a1982",
+      "external_id": "replay",
+      "external_source": "niobium-v2-audit"
+    },
+    {
+      "id": "ae2dc110-9ec8-4fcd-8643-f3c6661a4be8",
+      "sequence_id": 36,
+      "name": "Distinct personas and creature generation quality",
+      "description": "Every new Pixel goes through bot-build.md. Validate 120–600 word personable operator briefings, adult 48×48 looks, opt-in mischievous voice, original named creatures, role-specific installed skills and requested connections. Ensure templates remain clearly labelled.",
+      "priority": "high",
+      "state": "429820e5-f4b1-4754-9dd5-55b8a3c7cd64",
+      "external_id": "personas",
+      "external_source": "niobium-v2-audit"
+    }
+  ]
+}

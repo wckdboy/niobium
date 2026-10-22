@@ -8,6 +8,8 @@ android/keystore.properties
 android/*.jks
 dist/*.xcarchive/
 .DS_Store
+__pycache__/
+*.pyc
 # Secrets
 *.p12
 *.mobileprovision

@@ -1,146 +1,116 @@
-# Niobium v2 — build plan
+# Niobium v2
 
-**By WCKD.ai. Not affiliated with xAI/Grok, Mausbot, Nous Research/Hermes, or DeepSeek.**
+The goal is a complete native mobile surface for Hermes Bot Mode, with an
+optional on-device DSH runtime, a professional pixel-art interface, and Pixels
+that feel like individual teammates.
 
-Niobium is a native iOS/iPadOS and Android client for a self-hosted Hermes
-gateway, with an optional on-device or remote DeepSeek Harness. v2 is a new
-product surface, not a skin: a home dashboard, 32×32 character cast, companions,
-and an AI builder that creates a complete Pixel from one sentence.
+Reference: [the supplied dashboard](docs/reference-dashboard.png).
+Ledger: [Plane](https://app.plane.so/wckd/projects/2fbcf987-20de-43dc-80ac-0a6bab7ec03a/issues/).
+Protocol audit: [HERMES-PARITY.md](docs/HERMES-PARITY.md).
 
-## North star
+## Decisions
 
-> Your pixels, everywhere. A fast, quiet command deck for the agents that do the
-> work — with a cast you recognise at a glance.
+- SwiftUI on iOS/iPadOS; Kotlin/Compose on Android. Keep platform UI native.
+- Shared PixelSpec, bot-build skill, character recipes, palette and terminology.
+- 48×48 portrait output, cached and displayed without smoothing; smaller
+  companion sprites. Original adult fantasy/cyborg cast, with mature outfits
+  and a mischievous voice. All human characters are 18+.
+- The app follows the pale lavender reference. The website follows the shared
+  WCKD mono/rules/one-colour brand system.
+- Every New Pixel entry goes through design, review and creation.
+- Generated capabilities come from the connected gateway's catalog.
+  Credentials, connections, tool access and host sandboxing remain distinct.
+- Companions represent real delegated work. The parent owns verification.
+- DMs and group rooms use Hermes attribution and gateway-owned state.
+- Unsupported methods, incomplete setup and uncertain delivery are visible.
 
-## Principles
+## Completed implementation in this pass
 
-1. **One glance, one action.** The home screen answers: is the instance alive,
-   what is working, and what needs me?
-2. **Characters, not initials.** Every Pixel is an adult 32×32 pixel character
-   with a role, a companion, and a visual identity that survives light/dark.
-3. **Build a teammate in one sentence.** The `bot-build.md` skill turns intent
-   into personality, permissions, skills, connectors, character and companion.
-4. **Speed is a feature.** No blocking launch work; local DSH boots on demand;
-   every list is virtualised; no third-party SDKs.
-5. **Honest limits.** The gateway matrix is public; unsupported verbs are not
-   faked.
-6. **Mature, not explicit.** Adult characters may be stylish, cyber/fantasy and
-   revealing; no nudity, sexual acts, or minors. Companions are cute monsters.
+- [x] Shared pixel panel components, original landscape/cast art and native
+  48×48 cached rendering.
+- [x] Compact Home overview with six Pixels and a working link to the full
+  roster; measured gateway latency and honest runtime labels.
+- [x] Reviewed Pixel builder with strict names, adult age, layer, briefing and
+  capability validation; correctly labelled model/template results.
+- [x] Actual tool/skill pins, manual host approvals, disabled inherited MCP
+  servers, versioned persona metadata and partial-creation error handling.
+- [x] Appearance metadata persistence with revision checks.
+- [x] Companion list/tail/steer/interrupt UI and failed-delegation visibility.
+- [x] Pixel mentions in direct chat.
+- [x] Generation-fenced model/reasoning/Stop controls and running-state restoration.
+- [x] Canonical recovered approval and clarify responses.
+- [x] Transient secret/vault/code/login prompts with transport ownership.
+- [x] Reconnect timeout ownership and cancellation-aware iOS RPC waiters.
+- [x] Remote harness error/retry/teardown and encrypted saved addresses.
+- [x] Remove the 81 MB guest image from the Hermes-only iOS target.
+- [x] Consolidated WCKD website, internal checks and Cloudflare deployment.
+- [x] Swift validation checks, Android unit tests, native build checks and
+  Home/review captures.
 
-## Experience
+These checkboxes record implementation and the listed checks. They do not
+replace the live integration acceptance criteria below.
 
-Five tabs: **Home · Pixels · Local · Activity · Settings**.
+## Next: prove the complete workflow
 
-- **Home**: pixel landscape hero, instance card (host/VPS, latency, tools,
-  access, local count), two-column character roster with companions, Local DSH
-  card with runtime resources and local agents.
-- **Pixels**: full roster, search, status, create/import, per-Pixel detail.
-- **Local**: local iSH DSH (iOS full), remote DSH URL (both), runtime status,
-  local agents, terminal/log affordances.
-- **Activity**: live turn/tool/approval stream, memory journey.
-- **Settings**: appearance, gateway, model defaults, permissions, integrations,
-  bot-build skill, diagnostics, legal/disclaimers.
+- [ ] Run the workshop against a provider-backed gateway: valid generation,
+  invalid generation, no model, inaccessible catalog, duplicate slug and
+  failure after profile creation.
+- [ ] Verify copied skills, effective tool pins, manual approvals, credential
+  inheritance and metadata compare-and-swap against the actual host.
+- [ ] Create multiple distinct Pixels and verify canonical DMs, @mentions,
+  durable group rooms and reconnect attribution.
+- [ ] Delegate actual tasks; inspect live tails, failed work, steering delivery,
+  interruption and ownership after reconnect.
+- [ ] Exercise approval/clarify recovery and cancellation across transports.
+- [ ] Verify physical-device accessibility, dynamic type, keyboard behaviour,
+  connection loss, battery usage and large histories.
 
-Chat stays a focused full-screen surface with the character/companion in the
-header, approval cards, tools, rooms and routines.
+## Complete the Hermes surface
 
-## Art system
+Prioritize these domains without replacing backend behaviour with simulations:
 
-- 32×32 indexed pixel sprites, nearest-neighbour, transparent background.
-- 16×16 companions, 2–3 colours + outline.
-- Palettes: deep plum/ink, lavender ion, mint companion light, skin/hair range.
-- Cast: Orion (research mage), Nova (cyber creative), Forge (automation),
-  Sage (knowledge/druid), Nyx (security/rogue), Astra (vision/pilot), plus
-  additional male/female archetypes for variety.
-- Character selection: curated, random, AI-designed, or palette/companion edit.
-- Companion: one per Pixel, separate sprite, used in cards and chat.
-- App icon: a lowercase ore-cut **n** with a companion pixel spark, purple on
-  white; WCKD's one-letter/one-colour brand system.
+1. **Admissions and replay:** retained outbox IDs, receipts/cancel, uncertain
+   delivery, queue editing, steer/redirect, replay cursors and epoch changes.
+2. **Sessions and models:** history paging, rename/archive/delete/export,
+   provider/account management and live reasoning acceptance.
+3. **Connections:** connector account/catalog/policy flows and connection
+   operation cards; MCP testing, OAuth, setup and status.
+4. **Knowledge and projects:** skill details/install/edit, command catalog,
+   memory journey editing, projects and workspace mutation.
+5. **Rooms:** state, rename, stop, approvals, retry, attachments and qualified
+   cross-connection identities.
+6. **Files and voice:** file/PDF attachment, upload bounds/downsampling, host
+   recording/TTS and supported device bridges.
+7. **Background delivery:** durable reconciliation and a native notification
+   design that respects mobile execution limits.
+8. **Android local runtime:** select and implement an actual embedded Linux
+   runtime, then prove DSH boot, host bridge, API-key handling, supervision,
+   persistence and licensing. Remote DSH is the current Android path.
 
-## AI builder — `bot-build.md`
+## Release gates
 
-A portable agent skill (agentskills.io-compatible) that produces a strict JSON
-`PixelSpec`:
+- Both native clients and the iOS full target compile.
+- Permission and contract tests pass with meaningful failure cases.
+- Live gateway scenarios above pass, including reconnect and partial failure.
+- Small/large phone and tablet layouts, both themes and accessibility are
+  inspected.
+- APK and device-signed iOS artifacts are validated for their intended audience.
+- README, website, Plane and public release notes describe the same state.
+- Website links/assets and deployed content are verified; browser QA limits
+  are recorded explicitly.
+- Full Hermes parity is claimed only after the remaining domain work and live
+  acceptance checks are complete.
 
-```json
-{
-  "name": "nova",
-  "title": "Nova",
-  "role": "Creative director",
-  "personality": ["..."],
-  "soul": "...",
-  "permissions": {"approval_mode": "ask", "network": false},
-  "toolsets": ["web", "image_gen"],
-  "skills": ["..."],
-  "connectors": ["..."],
-  "character": {"archetype": "cyber", "gender": "woman", "palette": "ion"},
-  "companion": {"kind": "cat", "name": "Miso"}
-}
-```
+## Release and next implementation steps
 
-The app sends the user's sentence + `bot-build.md` to `llm.oneshot`, validates the
-JSON, creates the Hermes profile (`profiles.create`), applies the soul and tools
-(`profiles.configure`), saves the character/companion locally, and opens the new
-Pixel. If the model is unavailable, a deterministic template is used and marked
-as such.
+- Publish v2 as a beta with Android APK, full iOS TestFlight archive/IPA and
+  checksums; preserve the known limits in release notes.
+- Run the native/shared suite and Greptile review before the release is final.
+- Activate the daily [Hermes watcher](docs/HERMES-UPDATES.md) on main; review
+  new contracts and tools before updating the audited baseline.
+- First follow-up: [Android embedded DSH](docs/ANDROID-DSH.md), using APK-packaged
+  PRoot with a pinned Ubuntu/Node environment and device acceptance gates.
+- Then complete receipts/replay, connector authorization and room control.
+- Polish modular character art to the standard of the authored adult cast.
 
-## Hermes parity
-
-The canonical/legacy wire split is fixed in v1.1. v2 adds, in order:
-sessions/history + mutations, model/reasoning picker, usage/context, skills +
-commands, MCP status, approvals recovery, subagents, projects/workspace, PDF/file
-attach, connectors. `docs/HERMES-PARITY.md` is the source of truth.
-
-## Platforms
-
-- iOS 18+, SwiftUI, Swift 6, no third-party dependencies.
-- Android 9+ (API 28), Kotlin + Compose Material 3.
-- Shared product spec, copy, palette, sprite ids and bot-build schema; platform
-  UI is native.
-- iOS full build embeds iSH/Alpine DSH and is GPLv3; Android uses remote DSH.
-
-## Site
-
-A WCKD lab site in the same static system as invincible.sh / sovware.sh /
-nightfall.sh: one stylesheet, monochrome, JetBrains Mono, 2px rules, purple mark
-only. Pages: home, system, local/DSH, build, releases, legal. Deployed with
-Cloudflare Workers Static Assets via Wrangler.
-
-## Plane
-
-Plane is the project ledger. Modules: Foundation, Art, Home, Bot Builder, Parity,
-Local/Remote, Site, Release. Issues are the tickets in `plane/issues.csv`, with
-IDs matching this plan. The bootstrap script reads `PLANE_API_KEY` and
-`PLANE_WORKSPACE_SLUG`; without credentials it validates the payload and writes a
-dry-run JSON. No secrets are committed.
-
-## Status (2026-10-22)
-
-- **M0 Foundation** — done. v2 branch/PR #1, README/plan, legal.
-- **M1 Art** — done. 32×32 cast + companions, hero, n icon.
-- **M2 Home** — done. Five tabs, Home, Local, cast grid.
-- **M3 Builder** — done in code; live-model path needs a configured provider.
-- **M4 Parity** — in progress. Canonical fixes, model picker, chats, usage done; skills/MCP/subagents/vault/attachments remain.
-- **M5 Local** — done. iOS local DSH, both remote.
-- **M6 Site** — deployed at niobium.sh; Plane project NIO created.
-- **M7 Release** — 2.0 preview APK/IPA built and installed; stable release pending.
-
-## Milestones
-
-- **M0 Foundation** — v2 branch, tokens, README, Plane import, disclaimers.
-- **M1 Art** — 32×32 cast + companions, hero, icon, light/dark tokens.
-- **M2 Home** — five-tab shell, dashboard, instance card, Pixel grid.
-- **M3 Builder** — bot-build.md skill, AI spec, create/configure flow, fallback.
-- **M4 Parity** — sessions, models, usage, skills/MCP, approvals recovery.
-- **M5 Local** — iOS local DSH + both remote harness, status/resources.
-- **M6 Site** — WCKD static site, Wrangler config, build + dry run.
-- **M7 Release** — screenshots, docs, signed APK/IPA, GitHub release.
-
-## Acceptance
-
-- App launches to Home in under 1.5s (demo, warm); no DSH boot at launch.
-- Every Pixel has a 32×32 character and companion in light and dark.
-- AI builder creates a valid profile on a live gateway, or clean fallback.
-- All five tabs work on iPhone, iPad and Android; chat/approval flows intact.
-- Site builds to static assets and `wrangler deploy --dry-run` passes.
-- No affiliation claims; legal copy visible on site and in app.
+Reproducible verification is in [TESTING.md](docs/TESTING.md).

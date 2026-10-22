@@ -53,13 +53,13 @@ object Nb {
             else -> !systemDark
         }
 
-    val Void: Color get() = if (light) Color(0xFFF7F4FC) else Color(0xFF07050C)
+    val Void: Color get() = if (light) Color(0xFFF8F7FF) else Color(0xFF07050C)
     val Ink: Color get() = if (light) Color(0xFFFFFFFF) else Color(0xFF0B0812)
     val Surface: Color get() = if (light) Color(0xFFFFFFFF) else Color(0xFF120E1B)
     val Raised: Color get() = if (light) Color(0xFFF2ECFA) else Color(0xFF191324)
     val Hover: Color get() = if (light) Color(0xFFEDE6F8) else Color(0xFF22192F)
-    val Line: Color get() = if (light) Color(0x141B1326) else Color(0x12FFFFFF)
-    val LineStrong: Color get() = if (light) Color(0x241B1326) else Color(0x21FFFFFF)
+    val Line: Color get() = if (light) Color(0x298B6FE0) else Color(0x12FFFFFF)
+    val LineStrong: Color get() = if (light) Color(0x3D8B6FE0) else Color(0x21FFFFFF)
     val Fill: Color get() = if (light) Color(0x0C1B1326) else Color(0x0EFFFFFF)
     val FillSoft: Color get() = if (light) Color(0x081B1326) else Color(0x07FFFFFF)
     val FillStrong: Color get() = if (light) Color(0x141B1326) else Color(0x1AFFFFFF)
@@ -67,7 +67,7 @@ object Nb {
     val Code: Color get() = if (light) Color(0x0C1B1326) else Color(0x42000000)
     val Text: Color get() = if (light) Color(0xFF1B1326) else Color(0xFFF6F2FF)
     val Secondary: Color get() = if (light) Color(0xFF625671) else Color(0xFFADA3BD)
-    val Tertiary: Color get() = if (light) Color(0xFF9387A3) else Color(0xFF736A82)
+    val Tertiary: Color get() = if (light) Color(0xFF74698D) else Color(0xFF736A82)
     val Ion: Color get() = if (light) Color(0xFF7C3AED) else Color(0xFFA78BFA)
     val IonDeep: Color get() = if (light) Color(0xFF6D28D9) else Color(0xFF7C3AED)
     val Violet: Color get() = if (light) Color(0xFF5B21B6) else Color(0xFFE9D5FF)

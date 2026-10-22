@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "113BEA3ABA4003CB8BC42258"
-               BuildableName = "DSH.app"
+               BuildableName = "Niobium.app"
                BlueprintName = "Niobium"
                ReferencedContainer = "container:NiobiumDSH.xcodeproj">
             </BuildableReference>
@@ -31,7 +31,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "113BEA3ABA4003CB8BC42258"
-            BuildableName = "DSH.app"
+            BuildableName = "Niobium.app"
             BlueprintName = "Niobium"
             ReferencedContainer = "container:NiobiumDSH.xcodeproj">
          </BuildableReference>
@@ -54,7 +54,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "113BEA3ABA4003CB8BC42258"
-            BuildableName = "DSH.app"
+            BuildableName = "Niobium.app"
             BlueprintName = "Niobium"
             ReferencedContainer = "container:NiobiumDSH.xcodeproj">
          </BuildableReference>
@@ -71,7 +71,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "113BEA3ABA4003CB8BC42258"
-            BuildableName = "DSH.app"
+            BuildableName = "Niobium.app"
             BlueprintName = "Niobium"
             ReferencedContainer = "container:NiobiumDSH.xcodeproj">
          </BuildableReference>

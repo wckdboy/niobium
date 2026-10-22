@@ -59,6 +59,8 @@ import androidx.compose.ui.unit.sp
 fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = {}) {
     val state = vm.state
     var draft by remember { mutableStateOf("") }
+    var showCompanions by remember { mutableStateOf(false) }
+    var showMentions by remember { mutableStateOf(false) }
     var showCast by remember { mutableStateOf(false) }
     var showModels by remember { mutableStateOf(false) }
     var showChats by remember { mutableStateOf(false) }
@@ -89,7 +91,8 @@ fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = 
     Column(Modifier.fillMaxSize().background(Nb.Void).statusBarsPadding().imePadding()) {
         ChatHeader(bot, state, onOpenTools = onOpenTools, onOpenMascot = { showCast = true },
             onOpenRoutines = { showRoutines = true }, onOpenModels = { showModels = true },
-            onOpenChats = { showChats = true }, onOpenUsage = { showUsage = true }) { vm.closeBot() }
+            onOpenChats = { showChats = true }, onOpenUsage = { showUsage = true },
+            onOpenCompanions = { showCompanions = true }, onMention = { showMentions = true }) { vm.closeBot() }
         Box(Modifier.fillMaxWidth().height(1.dp).background(Nb.Line))
         Box(Modifier.weight(1f)) {
             if (state.messages.isEmpty() && state.loadingChat) {
@@ -162,6 +165,19 @@ fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = 
     state.clarify?.let { request ->
         ClarifyDialog(request) { answers -> vm.resolveClarify(answers) }
     }
+    if (showCompanions) CompanionsSheet(vm, bot) { showCompanions = false }
+    if (showMentions) {
+        androidx.compose.material3.AlertDialog(onDismissRequest = { showMentions = false }, containerColor = Nb.Ink,
+            title = { Text("Mention a Pixel", color = Nb.Text) },
+            text = { androidx.compose.foundation.lazy.LazyColumn {
+                items(state.bots.filter { it.name != bot.name }, key = { it.name }) { teammate ->
+                    Text(teammate.title + "  @" + teammate.name, color = Nb.Secondary, fontSize = 13.sp,
+                        modifier = Modifier.fillMaxWidth().clickable {
+                            draft += (if (draft.isBlank()) "" else " ") + "@" + teammate.name + " "; showMentions = false
+                        }.padding(12.dp))
+                }
+            } }, confirmButton = { androidx.compose.material3.TextButton(onClick = { showMentions = false }) { Text("Done") } })
+    }
     if (showUsage) {
         UsageSheet(vm) { showUsage = false }
     }
@@ -175,7 +191,7 @@ fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = 
         RoutinesSheet(vm, bot) { showRoutines = false }
     }
     if (showCast) {
-        CastStudioSheet(profile = bot.name, title = bot.title) { showCast = false }
+        CastStudioSheet(vm, profile = bot.name, title = bot.title) { showCast = false }
     }
 }
 
@@ -183,6 +199,7 @@ fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = 
 private fun ChatHeader(bot: BotProfile, state: NbState, onOpenTools: () -> Unit,
                        onOpenMascot: () -> Unit, onOpenRoutines: () -> Unit,
                        onOpenModels: () -> Unit, onOpenChats: () -> Unit, onOpenUsage: () -> Unit,
+                       onOpenCompanions: () -> Unit, onMention: () -> Unit,
                        onBack: () -> Unit) {
     var menuOpen by remember { mutableStateOf(false) }
     val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
@@ -216,6 +233,10 @@ private fun ChatHeader(bot: BotProfile, state: NbState, onOpenTools: () -> Unit,
                 onDismissRequest = { menuOpen = false },
                 containerColor = Nb.Raised
             ) {
+                DropdownMenuItem(text = { Text("Companion tasks", color = Nb.Text, fontSize = 13.sp) },
+                    onClick = { menuOpen = false; onOpenCompanions() })
+                DropdownMenuItem(text = { Text("Mention a Pixel", color = Nb.Text, fontSize = 13.sp) },
+                    onClick = { menuOpen = false; onMention() })
                 DropdownMenuItem(
                     text = { Text("Toolbox", color = Nb.Text, fontSize = 13.sp) },
                     onClick = { menuOpen = false; onOpenTools() }

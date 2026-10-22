@@ -45,6 +45,7 @@ struct ToolsView: View {
                 Picker("Mode", selection: $mode) {
                     Text("Toolsets").tag(0)
                     Text("Skills").tag(1)
+                    Text("MCP").tag(2)
                 }
                 .pickerStyle(.segmented)
                 .padding(.horizontal, 20)
@@ -52,6 +53,8 @@ struct ToolsView: View {
 
                 if mode == 1 {
                     skillsSection
+                } else if mode == 2 {
+                    mcpSection
                 } else {
                 VStack(alignment: .leading, spacing: 5) {
                     Text("\(totalTools)")
@@ -117,11 +120,46 @@ struct ToolsView: View {
             }
         }
         .scrollIndicators(.hidden)
-        .refreshable { await store.loadToolsets(); await store.loadSkills() }
+        .refreshable { await store.loadToolsets(); await store.loadSkills(); await store.loadMCP() }
         .task {
             if store.toolsets.isEmpty { await store.loadToolsets() }
             await store.loadSkills()
+            await store.loadMCP()
         }
+    }
+
+    private var mcpSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("\(store.mcpServers.count) configured MCP servers").font(.nbBody(11)).foregroundStyle(NB.tertiary)
+                Spacer()
+                Button { Task { await store.loadMCP() } } label: {
+                    Text("Refresh").font(.nbBody(11, weight: .medium)).foregroundStyle(NB.ion)
+                }.buttonStyle(.plain)
+            }
+            if store.mcpServers.isEmpty {
+                Text("No MCP servers configured for this profile.").font(.nbBody(11)).foregroundStyle(NB.tertiary)
+            } else {
+                ForEach(store.mcpServers) { server in
+                    HStack(spacing: 10) {
+                        Circle().fill(server.connected ? NB.mint : (server.enabled ? NB.amber : NB.tertiary))
+                            .frame(width: 7, height: 7)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(server.name).font(.nbMono(11, weight: .semibold)).foregroundStyle(NB.text)
+                            Text("\(server.transport) · \(server.tools) tools · \(server.status)")
+                                .font(.nbMono(8)).foregroundStyle(NB.tertiary)
+                        }
+                        Spacer()
+                    }
+                    .padding(11)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(NB.fillSoft))
+                    .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(NB.line, lineWidth: 1))
+                }
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 14)
+        .padding(.bottom, 36)
     }
 
     private var skillsSection: some View {

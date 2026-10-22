@@ -3,21 +3,25 @@ import SwiftUI
 struct CastMember: Identifiable, Equatable {
     let id: String
     let name: String
+    let portrait: String
     let companion: String
     let companionName: String
     let accentHex: String
+    var recipe: CharacterRecipe? = nil
     var accent: Color { NB.color(for: accentHex) }
 
     static let all: [CastMember] = [
-        .init(id: "orion", name: "Orion", companion: "owl", companionName: "Strix", accentHex: "#A78BFA"),
-        .init(id: "nova", name: "Nova", companion: "cat", companionName: "Miso", accentHex: "#F0ABFC"),
-        .init(id: "forge", name: "Forge", companion: "drone", companionName: "Cog", accentHex: "#F5C97A"),
-        .init(id: "sage", name: "Sage", companion: "slime", companionName: "Moss", accentHex: "#5EEAD4"),
-        .init(id: "nyx", name: "Nyx", companion: "bat", companionName: "Dusk", accentHex: "#FB7185"),
-        .init(id: "astra", name: "Astra", companion: "bunny", companionName: "Pip", accentHex: "#7DD3FC"),
-        .init(id: "vesper", name: "Vesper", companion: "moth", companionName: "Lumen", accentHex: "#C4B5FF"),
-        .init(id: "rook", name: "Rook", companion: "hawk", companionName: "Kite", accentHex: "#D6A45E")
+        .init(id: "orion", name: "Orion", portrait: "p02", companion: "owl", companionName: "Strix", accentHex: "#A78BFA", recipe: CharacterRecipe.cast["orion"]),
+        .init(id: "nova", name: "Nova", portrait: "p01", companion: "cat", companionName: "Miso", accentHex: "#F0ABFC", recipe: CharacterRecipe.cast["nova"]),
+        .init(id: "forge", name: "Forge", portrait: "p20", companion: "drone", companionName: "Cog", accentHex: "#F5C97A", recipe: CharacterRecipe.cast["forge"]),
+        .init(id: "sage", name: "Sage", portrait: "p04", companion: "slime", companionName: "Moss", accentHex: "#5EEAD4", recipe: CharacterRecipe.cast["sage"]),
+        .init(id: "nyx", name: "Nyx", portrait: "p08", companion: "bat", companionName: "Dusk", accentHex: "#FB7185", recipe: CharacterRecipe.cast["nyx"]),
+        .init(id: "astra", name: "Astra", portrait: "p14", companion: "bunny", companionName: "Pip", accentHex: "#7DD3FC", recipe: CharacterRecipe.cast["astra"]),
+        .init(id: "vesper", name: "Vesper", portrait: "p13", companion: "moth", companionName: "Lumen", accentHex: "#C4B5FF", recipe: CharacterRecipe.cast["vesper"]),
+        .init(id: "rook", name: "Rook", portrait: "p19", companion: "hawk", companionName: "Kite", accentHex: "#D6A45E", recipe: CharacterRecipe.cast["rook"])
     ]
+
+    static let portraitIDs: [String] = (1...24).map { String(format: "p%02d", $0) }
 
     static func seeded(_ profile: String, title: String = "") -> CastMember {
         let key = profile.lowercased()
@@ -41,21 +45,61 @@ final class CastStore: ObservableObject {
     func member(for profile: String, title: String = "") -> CastMember {
         let id = all()[profile.lowercased()]
         var member = id.flatMap { chosen in CastMember.all.first(where: { $0.id == chosen }) } ?? .seeded(profile, title: title)
+        let portraits = UserDefaults.standard.dictionary(forKey: "niobium.portraits.v1") as? [String: String] ?? [:]
+        if let portrait = portraits[profile.lowercased()] {
+            member = CastMember(id: member.id, name: member.name, portrait: portrait,
+                                companion: member.companion, companionName: member.companionName, accentHex: member.accentHex, recipe: member.recipe)
+        }
         let companions = UserDefaults.standard.dictionary(forKey: "niobium.companions.v1") as? [String: String] ?? [:]
         if let kind = companions[profile.lowercased()] {
-            member = CastMember(id: member.id, name: member.name, companion: kind,
+            member = CastMember(id: member.id, name: member.name, portrait: member.portrait, companion: kind,
                                 companionName: CastMember.all.first(where: { $0.companion == kind })?.companionName ?? member.companionName,
-                                accentHex: member.accentHex)
+                                accentHex: member.accentHex, recipe: member.recipe)
+        }
+        if let data = UserDefaults.standard.data(forKey: "niobium.recipe." + profile.lowercased()),
+           let recipe = try? JSONDecoder().decode(CharacterRecipe.self, from: data), recipe.isValid {
+            member.recipe = recipe
+        }
+        let names = UserDefaults.standard.dictionary(forKey: "niobium.companionNames.v1") as? [String: String] ?? [:]
+        if let name = names[profile.lowercased()] {
+            member = CastMember(id: member.id, name: member.name, portrait: member.portrait, companion: member.companion,
+                                companionName: name, accentHex: member.accentHex, recipe: member.recipe)
         }
         return member
+    }
+
+    func restore(profile: String, metadata: JSONObject) {
+        let spec = metadata.dict("pixel_spec")
+        let appearance = metadata.dict("appearance")
+        let character = spec?.dict("character")
+        guard let archetype = appearance?.string("archetype") ?? character?.string("archetype"),
+              var member = CastMember.all.first(where: { $0.id == archetype }) else { return }
+        if let raw = appearance?.dict("recipe") ?? character?.dict("recipe"),
+           let data = try? JSONSerialization.data(withJSONObject: raw),
+           let recipe = try? JSONDecoder().decode(CharacterRecipe.self, from: data), recipe.isValid { member.recipe = recipe }
+        let companion = appearance?.string("companion") ?? spec?.dict("companion")?.string("kind") ?? member.companion
+        let name = appearance?.string("companion_name") ?? spec?.dict("companion")?.string("name") ?? member.companionName
+        guard PixelSpec.companions.contains(companion), !name.isEmpty, name.count <= 24 else { return }
+        member = CastMember(id: member.id, name: member.name, portrait: member.portrait, companion: companion,
+                            companionName: name, accentHex: member.accentHex, recipe: member.recipe)
+        if self.member(for: profile) != member { select(member, for: profile) }
     }
 
     func select(_ member: CastMember, for profile: String) {
         var map = all(); map[profile.lowercased()] = member.id
         UserDefaults.standard.set(map, forKey: key)
+        var portraits = UserDefaults.standard.dictionary(forKey: "niobium.portraits.v1") as? [String: String] ?? [:]
+        portraits[profile.lowercased()] = member.portrait
+        UserDefaults.standard.set(portraits, forKey: "niobium.portraits.v1")
         var companions = UserDefaults.standard.dictionary(forKey: "niobium.companions.v1") as? [String: String] ?? [:]
         companions[profile.lowercased()] = member.companion
         UserDefaults.standard.set(companions, forKey: "niobium.companions.v1")
+        if let recipe = member.recipe, let data = try? JSONEncoder().encode(recipe) {
+            UserDefaults.standard.set(data, forKey: "niobium.recipe." + profile.lowercased())
+        } else { UserDefaults.standard.removeObject(forKey: "niobium.recipe." + profile.lowercased()) }
+        var names = UserDefaults.standard.dictionary(forKey: "niobium.companionNames.v1") as? [String: String] ?? [:]
+        names[profile.lowercased()] = member.companionName
+        UserDefaults.standard.set(names, forKey: "niobium.companionNames.v1")
         revision += 1
     }
 
@@ -63,6 +107,11 @@ final class CastStore: ObservableObject {
         var companions = UserDefaults.standard.dictionary(forKey: "niobium.companions.v1") as? [String: String] ?? [:]
         companions[profile.lowercased()] = kind
         UserDefaults.standard.set(companions, forKey: "niobium.companions.v1")
+        if let name, !name.isEmpty {
+            var names = UserDefaults.standard.dictionary(forKey: "niobium.companionNames.v1") as? [String: String] ?? [:]
+            names[profile.lowercased()] = name
+            UserDefaults.standard.set(names, forKey: "niobium.companionNames.v1")
+        }
         revision += 1
     }
 
@@ -88,17 +137,14 @@ struct CastPortrait: View {
             RoundedRectangle(cornerRadius: size * 0.20, style: .continuous)
                 .strokeBorder(LinearGradient(colors: [NB.lineStrong, NB.fillSoft],
                                              startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 1)
-            Image("Char_\(member.id)")
-                .resizable()
-                .interpolation(.none)
-                .scaledToFit()
+            CharacterSprite(member: member)
                 .padding(size * 0.04)
                 .shadow(color: showGlow ? member.accent.opacity(0.28) : .clear, radius: size * 0.10, y: size * 0.04)
-            if showCompanion {
+            if showCompanion && !CharacterEngine.shared.usesAuthored(member) {
                 Image("Comp_\(member.companion)")
                     .resizable()
                     .interpolation(.none)
-                    .frame(width: size * 0.29, height: size * 0.29)
+                    .frame(width: size * 0.34, height: size * 0.34)
                     .padding(size * 0.035)
                     .background(Circle().fill(NB.ink.opacity(0.92)))
                     .overlay(Circle().strokeBorder(member.accent.opacity(0.55), lineWidth: 1))
@@ -129,6 +175,8 @@ struct CastName: View {
 }
 
 struct CastStudioView: View {
+    @EnvironmentObject private var app: AppStore
+    @State private var saving = false
     @Environment(\.dismiss) private var dismiss
     let profile: String
     let title: String
@@ -139,6 +187,15 @@ struct CastStudioView: View {
         self.profile = profile
         self.title = title
         _selected = State(initialValue: CastStore.shared.member(for: profile, title: title))
+    }
+
+    private func layerOptions(_ field: String) -> [String] {
+        switch field {
+        case "palette": return CharacterRecipe.cast.keys.sorted()
+        case "hair": return Array(Set(CharacterRecipe.cast.values.map(\.hair))).sorted()
+        case "outfit": return Array(Set(CharacterRecipe.cast.values.map(\.outfit))).sorted()
+        default: return ["none", "visor", "goggles", "antlers", "cat_ears", "circlet", "veil", "headwrap"]
+        }
     }
 
     var body: some View {
@@ -154,7 +211,7 @@ struct CastStudioView: View {
                         }
                         Spacer()
                     }
-                    NBSectionHeader(title: "The cast", detail: "32 × 32")
+                    NBSectionHeader(title: "The cast", detail: "48 × 48")
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                         ForEach(CastMember.all) { member in
                             Button {
@@ -174,14 +231,42 @@ struct CastStudioView: View {
                             .buttonStyle(.plain)
                         }
                     }
+                    VStack(alignment: .leading, spacing: 10) {
+                        NBSectionHeader(title: "Make it yours", detail: "48 × 48 layers")
+                        ForEach(["palette", "hair", "outfit", "accessory"], id: \.self) { field in
+                            Menu {
+                                ForEach(layerOptions(field), id: \.self) { option in
+                                    Button(option.replacingOccurrences(of: "_", with: " ").capitalized) {
+                                        var recipe = selected.recipe ?? CharacterRecipe.cast[selected.id]!
+                                        switch field {
+                                        case "palette": recipe.palette = option
+                                        case "hair": recipe.hair = option
+                                        case "outfit": recipe.outfit = option
+                                        default: recipe.accessory = option
+                                        }
+                                        selected.recipe = recipe
+                                        CastStore.shared.select(selected, for: profile)
+                                    }
+                                }
+                            } label: {
+                                HStack {
+                                    Text(field.capitalized)
+                                    Spacer()
+                                    Image(systemName: "chevron.up.chevron.down")
+                                }.font(.nbBody(13)).foregroundStyle(NB.secondary).padding(12)
+                                    .background(RoundedRectangle(cornerRadius: 10).fill(NB.fillSoft))
+                            }
+                        }
+                    }
+
                     VStack(alignment: .leading, spacing: 9) {
                         NBSectionHeader(title: "Companion")
                         LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 9) {
                             ForEach(Array(Set(CastMember.all.map(\.companion))).sorted(), id: \.self) { kind in
                                 Button {
-                                    selected = CastMember(id: selected.id, name: selected.name, companion: kind,
+                                    selected = CastMember(id: selected.id, name: selected.name, portrait: selected.portrait, companion: kind,
                                                           companionName: CastMember.all.first(where: { $0.companion == kind })?.companionName ?? selected.companionName,
-                                                          accentHex: selected.accentHex)
+                                                          accentHex: selected.accentHex, recipe: selected.recipe)
                                     CastStore.shared.select(selected, for: profile)
                                 } label: {
                                     VStack(spacing: 4) {
@@ -209,7 +294,10 @@ struct CastStudioView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }.foregroundStyle(NB.ion)
+                    Button(saving ? "Saving…" : "Done") {
+                        saving = true
+                        Task { if await app.saveAppearance(selected, profile: profile) { dismiss() }; saving = false }
+                    }.foregroundStyle(NB.ion).disabled(saving)
                 }
             }
         }

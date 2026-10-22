@@ -15,10 +15,16 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,6 +36,7 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun ModelSheet(vm: NiobiumViewModel, bot: BotProfile, onDismiss: () -> Unit) {
     val choices = vm.state.modelChoices
+    var showReasoning by remember { mutableStateOf(false) }
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Nb.Ink,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         LazyColumn(contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp),
@@ -38,6 +45,15 @@ fun ModelSheet(vm: NiobiumViewModel, bot: BotProfile, onDismiss: () -> Unit) {
                 Text("Model", color = Nb.Text, style = NbDisplay, fontSize = 30.sp)
                 Text("The next turn runs on this provider and model. The session revision is fenced.",
                     color = Nb.Secondary, fontSize = 11.sp, lineHeight = 16.sp)
+                Box {
+                    Text("Reasoning: " + (vm.state.sessionReasoning ?: "profile default") + " ▾", color = Nb.Ion, fontSize = 12.sp,
+                        modifier = Modifier.clickable(enabled = !vm.state.demo && !vm.state.turnActive) { showReasoning = true }.padding(vertical = 14.dp))
+                    DropdownMenu(expanded = showReasoning, onDismissRequest = { showReasoning = false }) {
+                        listOf(null, "minimal", "low", "medium", "high", "xhigh", "max", "ultra").forEach { effort ->
+                            DropdownMenuItem(text = { Text(effort ?: "Profile default") }, onClick = { showReasoning = false; vm.setReasoning(effort) })
+                        }
+                    }
+                }
             }
             if (choices.isEmpty()) {
                 item {

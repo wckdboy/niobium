@@ -1,50 +1,51 @@
-from PIL import Image, ImageDraw
-ROOT='/Users/dearwolf/wckdboy/niobium'
-GRID=16; CELL=64; SIZE=GRID*CELL
-rows=[
-"................","................","....DDDDDD......","...DLLLLLLD.....","..DLLD..DLLD....","..DLD....DLD....","..DLD....DLD....","..DLD....DLD....","..DLD....DLD....","..DLD....DLD....","..DLD....DLD....","..DDD....DDD....","................","................","...........MM...","..........MMMM.."]
-colors={'D':(76,29,149),'M':(124,58,237),'L':(167,139,250),'m':(94,234,212)}
-img=Image.new('RGB',(SIZE,SIZE),'white'); d=ImageDraw.Draw(img)
-for y,row in enumerate(rows):
-    for x,ch in enumerate(row):
-        if ch in colors:
-            d.rectangle((x*CELL,y*CELL,x*CELL+CELL-1,y*CELL+CELL-1),fill=colors[ch])
-# one white facet inside the left stem
-for x,y in [(3,4),(3,5)]: d.rectangle((x*CELL,y*CELL,x*CELL+CELL-1,y*CELL+CELL-1),fill=(255,255,255))
-img.save(f'{ROOT}/brand/app-icon-n-1024.png')
-img.resize((512,512),Image.NEAREST).save(f'{ROOT}/brand/n-512.png')
-# transparent mark for UI
-tr=img.convert('RGBA'); px=tr.load()
-for yy in range(SIZE):
-    for xx in range(SIZE):
-        r,g,b,a=px[xx,yy]
-        if r>248 and g>248 and b>248: px[xx,yy]=(255,255,255,0)
-tr.save(f'{ROOT}/brand/n-mark.png')
-# rounded
-rounded=img.convert('RGBA'); mask=Image.new('L',(SIZE,SIZE),0)
-ImageDraw.Draw(mask).rounded_rectangle((0,0,SIZE,SIZE),radius=232,fill=255)
-rounded.putalpha(mask); rounded.save(f'{ROOT}/brand/app-icon-n-rounded.png')
-# iOS icon
-img.save(f'{ROOT}/ios/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png')
-# Android adaptive foreground
-fg=Image.new('RGBA',(512,512),(0,0,0,0)); ore=img.resize((340,340),Image.NEAREST).convert('RGBA'); p=ore.load()
-for yy in range(ore.height):
-    for xx in range(ore.width):
-        r,g,b,a=p[xx,yy]
-        if r>248 and g>248 and b>248: p[xx,yy]=(255,255,255,0)
-fg.alpha_composite(ore,(86,86))
-for density,size in [('mdpi',108),('hdpi',162),('xhdpi',216),('xxhdpi',324),('xxxhdpi',432)]:
-    fg.resize((size,size),Image.LANCZOS).save(f'{ROOT}/android/app/src/main/res/mipmap-{density}/ic_launcher_foreground.png')
-# monochrome
-small=img.resize((286,286),Image.NEAREST).convert('RGB'); m=Image.new('L',(286,286),0); sp=small.load(); mp=m.load()
-for yy in range(286):
-    for xx in range(286):
-        r,g,b=sp[xx,yy]
-        if r<248 or g<248 or b<248: mp[xx,yy]=255
-white=Image.new('RGBA',(286,286),(255,255,255,255)); white.putalpha(m)
-canvas=Image.new('RGBA',(432,432),(255,255,255,0)); canvas.alpha_composite(white,(73,73))
-canvas.save(f'{ROOT}/android/app/src/main/res/drawable-nodpi/ic_launcher_monochrome.png')
-# launch mark, transparent
-for size,name in [(160,'LaunchMark.png'),(320,'LaunchMark@2x.png'),(480,'LaunchMark@3x.png')]:
-    tr.resize((size,size),Image.NEAREST).save(f'{ROOT}/ios/Resources/Assets.xcassets/LaunchMark.imageset/{name}')
-print('n icon written')
+#!/usr/bin/env python3
+"""Rasterize the website's pixel SVG into native icons. Standard library only."""
+from pathlib import Path
+from xml.etree import ElementTree
+import struct
+import zlib
+
+ROOT = Path(__file__).resolve().parents[1]
+SVG = ROOT / "site/public/favicon.svg"
+COLOR = (167, 139, 250)
+RECTS = [tuple(int(node.attrib[k]) for k in ("x", "y", "width", "height"))
+         for node in ElementTree.parse(SVG).getroot() if node.tag.endswith("rect")]
+assert RECTS and all(x >= 0 and y >= 0 and x+w <= 16 and y+h <= 16 for x,y,w,h in RECTS)
+
+def png_chunk(kind, payload):
+    return struct.pack(">I", len(payload)) + kind + payload + struct.pack(">I", zlib.crc32(kind + payload))
+
+def render(size, extent, opaque=False, monochrome=False):
+    channels = 3 if opaque else 4
+    background = bytes((255,255,255) if opaque else (0,0,0,0))
+    color = (255,255,255) if monochrome else COLOR
+    ink = bytes(color if opaque else color + (255,))
+    pixels = bytearray(background * size * size)
+    start = (size - extent) // 2
+    for x, y, width, height in RECTS:
+        left, top = start + round(x*extent/16), start + round(y*extent/16)
+        right, bottom = start + round((x+width)*extent/16), start + round((y+height)*extent/16)
+        stripe = ink * (right-left)
+        for row in range(top, bottom):
+            offset = (row*size + left)*channels
+            pixels[offset:offset+len(stripe)] = stripe
+    stride = size*channels
+    scanlines = b"".join(b"\0" + pixels[row*stride:(row+1)*stride] for row in range(size))
+    header = struct.pack(">IIBBBBB", size, size, 8, 2 if opaque else 6, 0, 0, 0)
+    return b"\x89PNG\r\n\x1a\n" + png_chunk(b"IHDR", header) + png_chunk(b"IDAT", zlib.compress(scanlines, 9)) + png_chunk(b"IEND", b"")
+
+def save(relative, data):
+    path = ROOT / relative
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(data)
+
+icon = render(1024, 640, opaque=True)
+save("brand/app-icon-n-1024.png", icon)
+save("ios/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png", icon)
+save("brand/n-mark.png", render(512, 320))
+for density, size in [("mdpi",108),("hdpi",162),("xhdpi",216),("xxhdpi",324),("xxxhdpi",432)]:
+    save("android/app/src/main/res/mipmap-"+density+"/ic_launcher_foreground.png", render(size, round(size*0.56)))
+save("android/app/src/main/res/drawable-nodpi/ic_launcher_monochrome.png", render(432, 240, monochrome=True))
+for size, name in [(160,"LaunchMark.png"),(320,"LaunchMark@2x.png"),(480,"LaunchMark@3x.png")]:
+    save("ios/Resources/Assets.xcassets/LaunchMark.imageset/"+name, render(size, round(size*0.8)))
+print("Built native icons from site/public/favicon.svg on solid white.")

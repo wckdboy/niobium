@@ -252,7 +252,10 @@ struct ApprovalRequest: Identifiable, Equatable {
     var description: String
     var toolName: String
     var choices: [String]
-    var id: String { requestID.isEmpty ? "\(rpcID)" : requestID }
+    var promptID: String? = nil
+    var executionGeneration: Int? = nil
+    var recovered = false
+    var id: String { promptID ?? (requestID.isEmpty ? "\(rpcID)" : requestID) }
 }
 
 /// JSON-RPC ids can be strings or integers. Preserve whichever the server sent.
@@ -290,7 +293,8 @@ struct ClarifyRequest: Identifiable, Equatable {
     var rpcID: JSONValueID
     var sessionID: String
     var questions: [ClarifyQuestion]
-    var id: String { "\(rpcID)" }
+    var promptGenerations: [String: Int] = [:]
+    var id: String { promptGenerations.isEmpty ? "\(rpcID)" : questions.map(\.id).joined(separator: "|") }
 }
 
 struct Toolset: Identifiable, Equatable {
@@ -483,5 +487,27 @@ struct UsageStats: Equatable {
                           activeSubagents: json.int("active_subagents") ?? 0,
                           model: json.string("model") ?? "",
                           provider: json.string("provider") ?? "")
+    }
+}
+
+struct MCPServerRow: Identifiable, Equatable {
+    var name: String
+    var transport: String
+    var status: String
+    var connected: Bool
+    var enabled: Bool
+    var tools: Int
+    var source: String
+    var id: String { name }
+
+    static func parse(_ json: JSONObject, status: JSONObject?) -> MCPServerRow? {
+        guard let name = json.string("name"), !name.isEmpty else { return nil }
+        return MCPServerRow(name: name,
+                            transport: json.string("transport") ?? "stdio",
+                            status: status?.string("status") ?? (json.bool("enabled") == false ? "disabled" : "configured"),
+                            connected: status?.bool("connected") ?? false,
+                            enabled: json.bool("enabled") ?? true,
+                            tools: status?.int("tools") ?? 0,
+                            source: json.string("source") ?? "")
     }
 }

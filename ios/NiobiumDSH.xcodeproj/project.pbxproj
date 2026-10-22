@@ -150,6 +150,12 @@
 		F9A524098AB48F5A6CD7EE6F /* AccessibilityFixes.m in Sources */ = {isa = PBXBuildFile; fileRef = 583960BB0EA5EC7971F02FC9 /* AccessibilityFixes.m */; };
 		FDAC27D265A46C9698170F49 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB4BFE49991F8AEC9814C14F /* HomeView.swift */; };
 		FF4DEC7ADC10A17565765A88 /* DSHCallConfirmation.m in Sources */ = {isa = PBXBuildFile; fileRef = D2708D078035D35F4A9F2A05 /* DSHCallConfirmation.m */; };
+		240F35172B641C8B9AE69915 /* CharacterEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A4BB0050B45DDFCD78DC34 /* CharacterEngine.swift */; };
+		15D2976B5F96302BED94CDC6 /* CompanionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 363822455C249409C15716BA /* CompanionsView.swift */; };
+		799D5BF6D3A39ABF39DF1E8C /* PixelComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94CEBD9F7A488B67C354DA0C /* PixelComponents.swift */; };
+		E8D7EFBF21F40F2844F8C887 /* character_engine.json in Resources */ = {isa = PBXBuildFile; fileRef = F920BEF6D528F16A8B3FF112 /* character_engine.json */; };
+		90281C4CA8783BD21FA8EAC0 /* PixelBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 810777E429813CCC40983D88 /* PixelBuilder.swift */; };
+		01796E727B21BB47E990EB43 /* CredentialPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01DA6F698DD9E71F6F14BA96 /* CredentialPromptView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXBuildRule section */
@@ -408,6 +414,12 @@
 		FB710BE5B55795FBBF48038F /* DSHMain.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = DSHMain.m; sourceTree = "<group>"; };
 		FC2835A1206ACA50B2947A55 /* metal.png */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = image.png; path = metal.png; sourceTree = "<group>"; };
 		FE308E124BAEEEACC9FB33FF /* DSHShortcutsCapability.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = DSHShortcutsCapability.h; sourceTree = "<group>"; };
+		F2A4BB0050B45DDFCD78DC34 /* CharacterEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CharacterEngine.swift"; sourceTree = "<group>"; };
+		363822455C249409C15716BA /* CompanionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/CompanionsView.swift"; sourceTree = "<group>"; };
+		94CEBD9F7A488B67C354DA0C /* PixelComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/PixelComponents.swift"; sourceTree = "<group>"; };
+		F920BEF6D528F16A8B3FF112 /* character_engine.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Resources/character_engine.json; sourceTree = "<group>"; };
+		810777E429813CCC40983D88 /* PixelBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelBuilder.swift; sourceTree = "<group>"; };
+		01DA6F698DD9E71F6F14BA96 /* CredentialPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/CredentialPromptView.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -672,6 +684,7 @@
 				C5FFE48CC14DCE651E11ECA7 /* Info-DSH.plist */,
 				1AE8587AB2F10E0AE26457E1 /* Niobium.entitlements */,
 				046412635863985A61DE3490 /* Assets.xcassets */,
+				F920BEF6D528F16A8B3FF112 /* character_engine.json */,
 				F7AE1C4EA13A5057F13BE88C /* bot-build.md */,
 			);
 			sourceTree = "<group>";
@@ -757,6 +770,11 @@
 				B1E824540BC634ED4D59619B /* Mascot.swift */,
 				31E395CE6CD527B3A30F8834 /* RemoteHarnessView.swift */,
 				AA651D3EDDDBCA7CCE2B35D8 /* Cast.swift */,
+				F2A4BB0050B45DDFCD78DC34 /* CharacterEngine.swift */,
+				363822455C249409C15716BA /* CompanionsView.swift */,
+				94CEBD9F7A488B67C354DA0C /* PixelComponents.swift */,
+				810777E429813CCC40983D88 /* PixelBuilder.swift */,
+				01DA6F698DD9E71F6F14BA96 /* CredentialPromptView.swift */,
 				31D54E22F25D672BD7D866C2 /* PixelSpec.swift */,
 				DB4BFE49991F8AEC9814C14F /* HomeView.swift */,
 				72B2BC2661C3D00A0B085372 /* AIBuildView.swift */,
@@ -1065,6 +1083,7 @@
 				512975574BF08DBCAA06DE9A /* DSHLaunchScreen.storyboard in Resources */,
 				5AB3E8B4723ACA5413D492F4 /* PrivacyInfo.xcprivacy in Resources */,
 				C7D4ECAFC3A2118A50EF0601 /* Assets.xcassets in Resources */,
+				E8D7EFBF21F40F2844F8C887 /* character_engine.json in Resources */,
 				81B5360DC3FA28E5E5E529C1 /* bot-build.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1255,6 +1274,11 @@
 				4B3962C7CB61579C4E09648E /* Mascot.swift in Sources */,
 				077221BDEF95DD7EB26AFF54 /* RemoteHarnessView.swift in Sources */,
 				F712C580872086965296F647 /* Cast.swift in Sources */,
+				240F35172B641C8B9AE69915 /* CharacterEngine.swift in Sources */,
+				15D2976B5F96302BED94CDC6 /* CompanionsView.swift in Sources */,
+				799D5BF6D3A39ABF39DF1E8C /* PixelComponents.swift in Sources */,
+				90281C4CA8783BD21FA8EAC0 /* PixelBuilder.swift in Sources */,
+				01796E727B21BB47E990EB43 /* CredentialPromptView.swift in Sources */,
 				C0ECA2B9B8876E122BCE91F3 /* PixelSpec.swift in Sources */,
 				FDAC27D265A46C9698170F49 /* HomeView.swift in Sources */,
 				99D2BE82438C355A211540B5 /* AIBuildView.swift in Sources */,
@@ -1285,7 +1309,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Resources/Niobium.entitlements;
-				CURRENT_PROJECT_VERSION = 2;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = XKA8CGC2AB;
+				CURRENT_PROJECT_VERSION = 3;
 				DSH_ROOTFS_TARBALL = "$(SRCROOT)/Resources/root.tar.gz";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -1322,7 +1348,7 @@
 					"-framework",
 					SystemConfiguration,
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = io.sovware.niobium;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.wckd.niobium;
 				PRODUCT_MODULE_NAME = Niobium;
 				PRODUCT_NAME = Niobium;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) NIOBIUM_LOCAL_DSH";
@@ -1337,7 +1363,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Resources/Niobium.entitlements;
-				CURRENT_PROJECT_VERSION = 2;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = XKA8CGC2AB;
+				CURRENT_PROJECT_VERSION = 3;
 				DSH_ROOTFS_TARBALL = "$(SRCROOT)/Resources/root.tar.gz";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -1374,7 +1402,7 @@
 					"-framework",
 					SystemConfiguration,
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = io.sovware.niobium;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.wckd.niobium;
 				PRODUCT_MODULE_NAME = Niobium;
 				PRODUCT_NAME = Niobium;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) NIOBIUM_LOCAL_DSH";

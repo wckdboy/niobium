@@ -55,7 +55,7 @@ enum class NbTab(val title: String, val glyph: String) {
 fun NiobiumApp(vm: NiobiumViewModel, initialTab: String? = null, initialTools: Boolean = false) {
     val state = vm.state
     var tab by rememberSaveable { mutableStateOf(initialTab?.let { name -> NbTab.entries.firstOrNull { it.name.equals(name, true) } } ?: NbTab.HOME) }
-    var newBot by remember { mutableStateOf(false) }
+    var newBot by remember { mutableStateOf(initialTab in listOf("workshop", "pixel-review")) }
     var newGroup by remember { mutableStateOf(false) }
     var showTools by remember { mutableStateOf(initialTools) }
     var showAI by remember { mutableStateOf(false) }
@@ -77,7 +77,7 @@ fun NiobiumApp(vm: NiobiumViewModel, initialTab: String? = null, initialTools: B
                 NbBackground(intensity = 0.7f) {
                     Box(Modifier.fillMaxSize().padding(bottom = inner.calculateBottomPadding())) {
                         when (tab) {
-                            NbTab.HOME -> HomeScreen(vm, state, onNewPixel = { newBot = true })
+                            NbTab.HOME -> HomeScreen(vm, state, onNewPixel = { newBot = true }, onShowPixels = { tab = NbTab.PIXELS })
                             NbTab.PIXELS -> PixelsScreen(vm, state, onNewPixel = { newBot = true },
                                 onBuildAI = { showAI = true }, onOpenRooms = { showRooms = true })
                             NbTab.LOCAL -> LocalScreen(vm, state)
@@ -103,15 +103,11 @@ fun NiobiumApp(vm: NiobiumViewModel, initialTab: String? = null, initialTools: B
         }
     }
 
-    if (newBot) {
-        ModalBottomSheet(onDismissRequest = { newBot = false }, containerColor = Nb.Ink,
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-            NewBotSheet(vm) { newBot = false }
-        }
-    }
+    if (newBot) { AIBuildSheet(vm, preview = initialTab == "pixel-review") { newBot = false } }
     if (showAI) {
         AIBuildSheet(vm) { showAI = false }
     }
+    state.credentialRequests.firstOrNull()?.let { CredentialPrompt(vm, it) }
     if (newGroup) {
         ModalBottomSheet(onDismissRequest = { newGroup = false }, containerColor = Nb.Ink,
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {

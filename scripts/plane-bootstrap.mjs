@@ -1,41 +1,47 @@
 #!/usr/bin/env node
 /**
- * Create (or dry-run) the Niobium v2 Plane project and issues.
- * Requires: PLANE_API_KEY, PLANE_WORKSPACE_SLUG
- * Optional: PLANE_BASE_URL (default https://api.plane.so), PLANE_PROJECT_NAME
+ * Reconcile content on known Plane work items. Dry-run is the default.
+ * Stable server UUIDs prevent duplicate creation; workflow state stays in Plane.
+ * API: https://developers.plane.so/api-reference/v2/work-items/update-work-item
  */
 import { readFile } from 'node:fs/promises';
 
-const base = (process.env.PLANE_BASE_URL || 'https://api.plane.so').replace(/\/$/, '');
-const key = process.env.PLANE_API_KEY;
-const workspace = process.env.PLANE_WORKSPACE_SLUG;
-const projectName = process.env.PLANE_PROJECT_NAME || 'Niobium v2';
-const csv = await readFile(new URL('../plane/issues.csv', import.meta.url), 'utf8');
-const [header, ...rows] = csv.trim().split('\n');
-const cols = header.split(',');
-const issues = rows.map(line => Object.fromEntries(line.split(',').map((v, i) => [cols[i], v])));
-const payload = { project: { name: projectName, identifier: 'NIO', description: 'WCKD.ai Niobium v2' }, issues };
+const snapshot = JSON.parse(await readFile(new URL('../plane/snapshot.json', import.meta.url), 'utf8'));
+const apply = process.argv.slice(2).includes('--apply');
+const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+if (!uuid.test(snapshot.project_id)) throw new Error('Invalid project id');
+const seen = new Set();
+const escapeHTML = value => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;')
+  .replaceAll('>', '&gt;').replaceAll('"', '&quot;');
+const writes = snapshot.work_items.map(item => {
+  if (!uuid.test(item.id) || seen.has(item.id) || !item.name?.trim()) throw new Error('Invalid or duplicate work item');
+  seen.add(item.id);
+  const fields = { name: item.name, priority: item.priority };
+  if (item.description?.trim()) fields.description_html = '<p>' + escapeHTML(item.description) + '</p>';
+  return { id: item.id, identifier: 'NIO-' + item.sequence_id, fields };
+});
 
-if (!key || !workspace) {
-  console.log(JSON.stringify({ dryRun: true, reason: 'PLANE_API_KEY / PLANE_WORKSPACE_SLUG not set', ...payload }, null, 2));
+if (!apply) {
+  console.log(JSON.stringify({ dryRun: true, project: snapshot.project_id, updates: writes,
+    note: 'Use --apply to patch these existing records. This command never creates projects or work items and never changes workflow states.' }, null, 2));
   process.exit(0);
 }
-const headers = { 'X-API-Key': key, 'Content-Type': 'application/json' };
-const api = async (path, init = {}) => {
-  const res = await fetch(base + path, { ...init, headers: { ...headers, ...(init.headers || {}) } });
-  if (!res.ok) throw new Error(`${init.method || 'GET'} ${path}: ${res.status} ${await res.text()}`);
-  return res.status === 204 ? null : res.json();
-};
-const list = await api(`/api/v1/workspaces/${workspace}/projects/`);
-const results = list.results || list;
-let project = results.find(p => p.name === projectName);
-if (!project) {
-  project = await api(`/api/v1/workspaces/${workspace}/projects/`, { method: 'POST', body: JSON.stringify(payload.project) });
+
+const key = process.env.PLANE_API_KEY;
+const workspace = process.env.PLANE_WORKSPACE_SLUG;
+if (!key || !workspace) throw new Error('--apply requires PLANE_API_KEY and PLANE_WORKSPACE_SLUG');
+const base = new URL(process.env.PLANE_BASE_URL || 'https://api.plane.so');
+if (base.username || base.password || base.search || base.hash || !['http:', 'https:'].includes(base.protocol)) {
+  throw new Error('Invalid Plane API base URL');
 }
-for (const issue of issues) {
-  await api(`/api/v1/workspaces/${workspace}/projects/${project.id}/issues/`, {
-    method: 'POST',
-    body: JSON.stringify({ name: `${issue.id} · ${issue.title}`, description: `${issue.description}\n\nModule: ${issue.module}\nPriority: ${issue.priority}\nEstimate: ${issue.estimate}` })
+const prefix = '/api/v2/workspaces/' + encodeURIComponent(workspace) + '/projects/' + snapshot.project_id + '/work-items/';
+for (const write of writes) {
+  const response = await fetch(new URL(prefix + write.id + '/', base), {
+    method: 'PATCH',
+    headers: { 'X-API-Key': key, 'Content-Type': 'application/json' },
+    body: JSON.stringify(write.fields),
+    signal: AbortSignal.timeout(20_000)
   });
+  if (!response.ok) throw new Error('Plane update failed for ' + write.identifier + ': HTTP ' + response.status + '. Already completed patches are safe to run again.');
+  console.log('Updated ' + write.identifier);
 }
-console.log(`created ${issues.length} issues in ${projectName}`);

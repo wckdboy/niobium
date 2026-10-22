@@ -1,0 +1,173 @@
+{
+  "cell": 96,
+  "portraits": [
+    {
+      "id": "p01",
+      "sheet": 1,
+      "row": 0,
+      "col": 0,
+      "file": "portrait_01.png"
+    },
+    {
+      "id": "p02",
+      "sheet": 1,
+      "row": 0,
+      "col": 1,
+      "file": "portrait_02.png"
+    },
+    {
+      "id": "p03",
+      "sheet": 1,
+      "row": 0,
+      "col": 2,
+      "file": "portrait_03.png"
+    },
+    {
+      "id": "p04",
+      "sheet": 1,
+      "row": 0,
+      "col": 3,
+      "file": "portrait_04.png"
+    },
+    {
+      "id": "p05",
+      "sheet": 1,
+      "row": 1,
+      "col": 0,
+      "file": "portrait_05.png"
+    },
+    {
+      "id": "p06",
+      "sheet": 1,
+      "row": 1,
+      "col": 1,
+      "file": "portrait_06.png"
+    },
+    {
+      "id": "p07",
+      "sheet": 1,
+      "row": 1,
+      "col": 2,
+      "file": "portrait_07.png"
+    },
+    {
+      "id": "p08",
+      "sheet": 1,
+      "row": 1,
+      "col": 3,
+      "file": "portrait_08.png"
+    },
+    {
+      "id": "p09",
+      "sheet": 2,
+      "row": 0,
+      "col": 0,
+      "file": "portrait_09.png"
+    },
+    {
+      "id": "p10",
+      "sheet": 2,
+      "row": 0,
+      "col": 1,
+      "file": "portrait_10.png"
+    },
+    {
+      "id": "p11",
+      "sheet": 2,
+      "row": 0,
+      "col": 2,
+      "file": "portrait_11.png"
+    },
+    {
+      "id": "p12",
+      "sheet": 2,
+      "row": 0,
+      "col": 3,
+      "file": "portrait_12.png"
+    },
+    {
+      "id": "p13",
+      "sheet": 2,
+      "row": 1,
+      "col": 0,
+      "file": "portrait_13.png"
+    },
+    {
+      "id": "p14",
+      "sheet": 2,
+      "row": 1,
+      "col": 1,
+      "file": "portrait_14.png"
+    },
+    {
+      "id": "p15",
+      "sheet": 2,
+      "row": 1,
+      "col": 2,
+      "file": "portrait_15.png"
+    },
+    {
+      "id": "p16",
+      "sheet": 2,
+      "row": 1,
+      "col": 3,
+      "file": "portrait_16.png"
+    },
+    {
+      "id": "p17",
+      "sheet": 3,
+      "row": 0,
+      "col": 0,
+      "file": "portrait_17.png"
+    },
+    {
+      "id": "p18",
+      "sheet": 3,
+      "row": 0,
+      "col": 1,
+      "file": "portrait_18.png"
+    },
+    {
+      "id": "p19",
+      "sheet": 3,
+      "row": 0,
+      "col": 2,
+      "file": "portrait_19.png"
+    },
+    {
+      "id": "p20",
+      "sheet": 3,
+      "row": 0,
+      "col": 3,
+      "file": "portrait_20.png"
+    },
+    {
+      "id": "p21",
+      "sheet": 3,
+      "row": 1,
+      "col": 0,
+      "file": "portrait_21.png"
+    },
+    {
+      "id": "p22",
+      "sheet": 3,
+      "row": 1,
+      "col": 1,
+      "file": "portrait_22.png"
+    },
+    {
+      "id": "p23",
+      "sheet": 3,
+      "row": 1,
+      "col": 2,
+      "file": "portrait_23.png"
+    },
+    {
+      "id": "p24",
+      "sheet": 3,
+      "row": 1,
+      "col": 3,
+      "file": "portrait_24.png"
+    }
+  ]
+}

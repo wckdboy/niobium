@@ -53,6 +53,7 @@ class GatewayClient(private val listener: Listener) {
             }
 
             override fun onMessage(webSocket: WebSocket, text: String) {
+                if (socket !== webSocket) return
                 handle(text)
             }
 
@@ -144,10 +145,10 @@ class GatewayClient(private val listener: Listener) {
         ws.send(JSONObject().put("jsonrpc", "2.0").put("id", id).put("result", result).toString())
     }
 
-    fun respondError(id: Any, message: String) {
+    fun respondError(id: Any, message: String, code: Int = -32601) {
         val ws = socket ?: return
         ws.send(JSONObject().put("jsonrpc", "2.0").put("id", id)
-            .put("error", JSONObject().put("code", -32601).put("message", message)).toString())
+            .put("error", JSONObject().put("code", code).put("message", message)).toString())
     }
 
     fun disconnect(silent: Boolean = false) {

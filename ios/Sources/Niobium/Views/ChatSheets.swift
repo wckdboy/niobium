@@ -470,6 +470,16 @@ struct ModelPickerView: View {
                                 Text("Model").font(.nbDisplay(28)).foregroundStyle(NB.text)
                                 Text("The next turn runs on this provider and model. The session revision is fenced.")
                                     .font(.nbBody(11)).foregroundStyle(NB.secondary)
+                                Menu {
+                                    Button("Profile default") { Task { await store.setReasoning(nil) } }
+                                    ForEach(["minimal", "low", "medium", "high", "xhigh", "max", "ultra"], id: \.self) { effort in
+                                        Button(effort.capitalized) { Task { await store.setReasoning(effort) } }
+                                    }
+                                } label: {
+                                    Label("Reasoning: \(store.chatReasoning ?? "profile default")", systemImage: "brain")
+                                        .font(.nbBody(12, weight: .medium)).foregroundStyle(NB.ion).padding(.vertical, 10)
+                                }
+                                .disabled(store.isDemo || store.isTurnActive)
                             }
                             ForEach(grouped, id: \.0) { group in
                                 VStack(alignment: .leading, spacing: 7) {
@@ -542,7 +552,7 @@ struct ChatsView: View {
                                         Text(row.title).font(.nbBody(13, weight: .medium)).foregroundStyle(NB.text).lineLimit(1)
                                         HStack(spacing: 6) {
                                             Text(row.startedAt?.formatted(.dateTime.month().day().hour().minute()) ?? "—")
-                                            Text("· \\(row.messageCount) messages")
+                                            Text("· \(row.messageCount) messages")
                                             if row.running { Text("· running").foregroundStyle(NB.mint) }
                                         }
                                         .font(.nbMono(8)).foregroundStyle(NB.tertiary)

@@ -1,18 +1,21 @@
-# Niobium v2 — Plane
+# Niobium v2 in Plane
 
-Project: **Niobium v2** (`NIO`)
+[Niobium project](https://app.plane.so/wckd/projects/2fbcf987-20de-43dc-80ac-0a6bab7ec03a/issues/)
+in workspace `wckd`, identifier `NIO`, timezone Europe/Copenhagen.
 
-https://app.plane.so/wckd/projects/2fbcf987-20de-43dc-80ac-0a6bab7ec03a/issues/
+The 2026-10-22 reconciliation covers 36 work items, including explicit work for
+companions, connectors, memory, projects, Android local DSH, admissions,
+credentials, quality, Bot Mode, parity, replay and personas. Missing descriptions
+and priorities from the old CSV import have been restored.
 
-- Workspace: `wckd`
-- Project ID: `2fbcf987-20de-43dc-80ac-0a6bab7ec03a`
-- 24 issues imported from `plane/issues.csv`.
-- Status: Foundation/Art/Home/AI builder/model/session/remote DSH/site marked done or in progress; parity backlog remains.
+`snapshot.json` records server UUIDs and observed states; `issues.csv` is a
+correctly quoted export. Plane owns workflow state. The site ticket is complete;
+native work retains unverified live acceptance gates. See
+[HERMES-PARITY.md](../docs/HERMES-PARITY.md).
 
-Re-sync (idempotent issue creation is not guaranteed; the script currently creates
-new issues on each run):
-
-```sh
-set -a; . ~/.config/niobium/secrets.env; set +a
-node scripts/plane-bootstrap.mjs
-```
+`node scripts/plane-bootstrap.mjs` previews content reconciliation. The script
+never creates projects/work items or changes states, assignments or dates.
+With `PLANE_API_KEY` and `PLANE_WORKSPACE_SLUG`, `--apply` patches the known UUIDs
+using [Plane's partial-update API](https://developers.plane.so/api-reference/v2/work-items/update-work-item).
+Optional `PLANE_BASE_URL` supports self-hosting. Actual project updates used the
+connected Plane tools. The script is verified against a local test server.
