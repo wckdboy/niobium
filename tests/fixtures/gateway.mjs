@@ -18,10 +18,25 @@ server.on('upgrade', (request, socket) => {
     socket.write(Buffer.concat([header, data]));
   };
   const event = (type, payload) => send({ jsonrpc: '2.0', method: 'event', params: { type, session_id: 'fixture-session', payload } });
+  const calls = [], profiles = new Map();
+  let failMethod = '';
   const handle = frame => {
     const result = value => send({ jsonrpc: '2.0', id: frame.id, result: value });
+    const reject = message => send({ jsonrpc: '2.0', id: frame.id, error: { code: 4409, message } });
     if (!frame.method) { event('approval.answer', frame.result); return; }
+    if (!frame.method.startsWith('fixture.')) calls.push({ method: frame.method, params: frame.params });
+    if (frame.method === failMethod) { reject('Fixture setup failure'); return; }
     switch (frame.method) {
+      case 'fixture.configure': failMethod = frame.params.fail_method || ''; result({ ok: true }); break;
+      case 'fixture.state': result({ calls, profiles: Array.from(profiles.values()) }); break;
+      case 'profiles.create':
+        if (profiles.has(frame.params.name)) { reject('Profile already exists'); break; }
+        profiles.set(frame.params.name, { name: frame.params.name }); result({ ok: true }); break;
+      case 'profiles.describe': result({ skills: [{ name: 'audit' }, { name: 'extra' }] }); break;
+      case 'profiles.configure':
+        if (!profiles.has(frame.params.name)) { reject('Profile does not exist'); break; }
+        Object.assign(profiles.get(frame.params.name), frame.params); result({ ok: true }); break;
+      case 'config.set': result({ ok: true }); break;
       case 'echo': result(frame.params); break;
       case 'delayed': setTimeout(() => result({ label: frame.params.label }), frame.params.delay); break;
       case 'fail': send({ jsonrpc: '2.0', id: frame.id, error: { code: 4409, message: 'Fixture rejection' } }); break;
@@ -30,7 +45,7 @@ server.on('upgrade', (request, socket) => {
       case 'request_approval':
         send({ jsonrpc: '2.0', id: 'approval-7', method: 'approval', params: { session_id: 'fixture-session', request_id: 'queue-9', command: 'fixture', choices: ['once','deny'] } });
         result({ requested: true }); break;
-      default: result({}); break;
+      default: reject('Unsupported fixture method: ' + frame.method); break;
     }
   };
   let buffered = Buffer.alloc(0);

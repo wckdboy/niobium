@@ -24,10 +24,12 @@ cd android
 ./gradlew :app:assembleRelease
 ```
 
-Fourteen Android tests include real OkHttp HTTP/WebSocket exchanges with a local
+Sixteen Android tests include real OkHttp HTTP/WebSocket exchanges with a local
 Node fixture: reverse-proxy paths, token encoding/header authentication,
 out-of-order replies, server errors, timeout/cancellation recovery, typed
 server-request IDs, approval replies and disconnecting an in-flight request.
+Provisioning tests verify the actual creation fields, reviewed tool and skill
+pins, disabled MCP servers, and failure after creation without retrying it.
 Schema tests cover permissions, adult age, malformed output and custom
 companion persistence through serialization. The fixture uses no model provider.
 
@@ -41,8 +43,10 @@ xcodebuild -project Niobium.xcodeproj -scheme Niobium \
   CODE_SIGNING_ALLOWED=NO test
 ```
 
-Ten unit tests cover URL/auth handling, JSON-RPC IDs, cancellation and PixelSpec
-validation. Two UI tests launch only the labelled demo, verify the dashboard and
+Seventeen unit tests cover URL/auth handling, JSON-RPC IDs, cancellation,
+PixelSpec validation, reversed chat-selection responses, resumed streaming,
+recovered clarification dismissal, provisioning access and failed appearance saves.
+Two UI tests launch only the labelled demo, verify the dashboard and
 review flow, and retain screenshots in the xcresult. Native tests live in
 NativeTests; the lowercase tests symlink belongs to the DSH submodule.
 

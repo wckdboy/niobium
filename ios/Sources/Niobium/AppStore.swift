@@ -50,7 +50,7 @@ final class AppStore: ObservableObject {
     @Published var isLoadingChat = false
     @Published var lastSyncedAt: Date?
 
-    private var api: HermesRPCClient?
+    private var api: (any HermesRPC)?
     private var streamingMessageID: String?
     private var groupPollTask: Task<Void, Never>?
     private var toastTask: Task<Void, Never>?
@@ -59,7 +59,13 @@ final class AppStore: ObservableObject {
     private var chatEpoch = 0
     private var groupEpoch = 0
 
-    init() {
+    init(api: (any HermesRPC)? = nil) {
+        if let api {
+            self.api = api
+            wire(api)
+            needsConnection = false
+            return
+        }
         let env = ProcessInfo.processInfo.environment
         if env["NIOBIUM_DEMO"] == "1" || ProcessInfo.processInfo.arguments.contains("--demo") {
             enterDemo()
@@ -195,7 +201,7 @@ final class AppStore: ObservableObject {
         lastSyncedAt = Date()
     }
 
-    private func wire(_ client: HermesRPCClient) {
+    private func wire(_ client: any HermesRPC) {
         client.onNotification = { [weak self, weak client] type, sessionID, payload in
             Task { @MainActor in
                 guard let self, let client, self.api === client else { return }
@@ -371,23 +377,9 @@ final class AppStore: ObservableObject {
             }
             guard let result else { throw RPCError.malformed }
             guard chatEpoch == epoch, self.api === api else { return }
-            chatSessionID = result.string("session_id")
-            chatRevision = result.int("revision") ?? chatRevision
-            chatGeneration = result.int("execution_generation")
-            chatReasoning = result.dict("info")?.string("reasoning_effort")
-            isTurnActive = result.bool("running") ?? false
-            messages = parseTranscript(result.objects("messages"))
+            restoreChat(result)
             await loadModels()
             guard chatEpoch == epoch, self.api === api else { return }
-            if let inflight = result.dict("inflight") {
-                isTurnActive = result.bool("running") ?? inflight.bool("streaming") ?? false
-                let text = inflight.string("assistant") ?? ""
-                if !text.isEmpty {
-                    let msg = ChatMessage(id: "inflight", role: .assistant, text: text,
-                                          timestamp: Date(), toolStatus: .completed)
-                    messages.append(msg)
-                }
-            }
             recoverPrompts(result)
             await loadToolsets()
         } catch {
@@ -396,7 +388,28 @@ final class AppStore: ObservableObject {
         }
     }
 
+    private func restoreChat(_ result: JSONObject, fallbackSessionID: String? = nil) {
+        chatSessionID = result.string("session_id") ?? fallbackSessionID
+        chatRevision = result.int("revision") ?? 0
+        chatGeneration = result.int("execution_generation")
+        chatReasoning = result.dict("info")?.string("reasoning_effort")
+        let inflight = result.dict("inflight")
+        let streaming = inflight?.bool("streaming") ?? false
+        isTurnActive = result.bool("running") ?? streaming
+        turnStatus = ""
+        streamingReasoning = ""
+        streamingMessageID = nil
+        messages = parseTranscript(result.objects("messages"))
+        let partial = inflight?.string("assistant") ?? ""
+        if streaming || !partial.isEmpty {
+            messages.append(ChatMessage(id: "inflight", role: .assistant, text: partial,
+                                        timestamp: Date(), toolStatus: .completed, isStreaming: streaming))
+            if streaming { streamingMessageID = "inflight" }
+        }
+    }
+
     func send(_ rawText: String, attachment: UIImage? = nil) async {
+        guard !isLoadingChat else { return }
         let text = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty || attachment != nil else { return }
         guard isDemo || chatSessionID != nil else {
@@ -493,7 +506,10 @@ final class AppStore: ObservableObject {
 
     func resumeSession(_ row: SessionRow, for bot: BotProfile) async {
         guard !isDemo, let api else { return }
+        chatEpoch += 1
         let epoch = chatEpoch
+        isLoadingChat = true
+        defer { if chatEpoch == epoch { isLoadingChat = false } }
         do {
             let result = try await api.request("session.resume", params: [
                 "session_id": row.sessionID,
@@ -502,19 +518,7 @@ final class AppStore: ObservableObject {
             ], timeout: 90) as? JSONObject
             guard let result else { throw RPCError.malformed }
             guard chatEpoch == epoch, activeBot?.name == bot.name, self.api === api else { return }
-            chatSessionID = result.string("session_id") ?? row.sessionID
-            chatRevision = result.int("revision") ?? chatRevision
-            chatGeneration = result.int("execution_generation")
-            chatReasoning = result.dict("info")?.string("reasoning_effort")
-            isTurnActive = result.bool("running") ?? false
-            messages = parseTranscript(result.objects("messages"))
-            if let inflight = result.dict("inflight") {
-                isTurnActive = result.bool("running") ?? inflight.bool("streaming") ?? false
-                if let text = inflight.string("assistant"), !text.isEmpty {
-                    messages.append(ChatMessage(id: "inflight", role: .assistant, text: text,
-                                                timestamp: Date(), toolStatus: .completed))
-                }
-            }
+            restoreChat(result, fallbackSessionID: row.sessionID)
             recoverPrompts(result)
             await loadModels()
             guard chatEpoch == epoch, self.api === api else { return }
@@ -822,7 +826,7 @@ final class AppStore: ObservableObject {
             let revision = row.dict("ui_meta_revisions")?.int("niobium") ?? 0
             let result = try await api.request("profiles.configure", params: ["name": profile,
                 "ui_meta": ["niobium": metadata], "ui_meta_expected_revisions": ["niobium": revision]]) as? JSONObject
-            guard result?.bool("ok") == true else { throw RPCError.transport("This Pixel changed elsewhere. Refresh before saving again.") }
+            guard self.api === api, result?.bool("ok") == true else { throw RPCError.transport("This Pixel changed elsewhere. Refresh before saving again.") }
             CastStore.shared.select(member, for: profile)
             toastMessage("Character saved to Hermes")
             return true
@@ -931,8 +935,12 @@ final class AppStore: ObservableObject {
     func resolveClarify(_ answers: [String: String]) {
         guard let request = clarifyRequest else { return }
         guard let api, chatSessionID == request.sessionID else { return }
+        guard request.questions.allSatisfy({ !(answers[$0.id] ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
+            showError("Answer every question before sending. You can dismiss it and leave the task waiting.")
+            return
+        }
         if request.promptGenerations.isEmpty {
-            api.respond(id: request.rpcID, result: ["answers": answers, "outcome": answers.isEmpty ? "cancelled" : "submitted"])
+            api.respond(id: request.rpcID, result: ["answers": answers, "outcome": "submitted"])
             clarifyRequest = nil
             return
         }
@@ -942,7 +950,7 @@ final class AppStore: ObservableObject {
                     guard self.api === api, chatSessionID == request.sessionID,
                           let generation = request.promptGenerations[question.id] else { return }
                     _ = try await api.request("clarify.respond", params: ["session_id": request.sessionID,
-                        "execution_generation": generation, "prompt_id": question.id, "answer": answers[question.id] ?? ""])
+                        "execution_generation": generation, "prompt_id": question.id, "answer": answers[question.id]!])
                     guard self.api === api, chatSessionID == request.sessionID else { return }
                     clarifyRequest?.questions.removeAll { $0.id == question.id }
                     clarifyRequest?.promptGenerations.removeValue(forKey: question.id)
@@ -950,6 +958,14 @@ final class AppStore: ObservableObject {
                 clarifyRequest = nil
             } catch { showError("The answer was not accepted. \(error.localizedDescription)") }
         }
+    }
+
+    func cancelClarify() {
+        guard let request = clarifyRequest, let api, chatSessionID == request.sessionID else { return }
+        // Recovered prompts have no cancellable RPC request. Keep them pending on the host.
+        guard request.promptGenerations.isEmpty else { return }
+        api.respond(id: request.rpcID, result: ["answers": JSONObject(), "outcome": "cancelled"])
+        clarifyRequest = nil
     }
 
     // MARK: - Groups

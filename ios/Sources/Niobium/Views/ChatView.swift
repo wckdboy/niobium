@@ -28,6 +28,10 @@ struct ChatView: View {
             VStack(spacing: 0) {
                 header
                 Divider().overlay(NB.line)
+                if store.clarifyRequest != nil {
+                    Button("Your Pixel is waiting for an answer") { showClarify = true }
+                        .font(.nbBody(12)).foregroundStyle(NB.ion).padding(10)
+                }
                 messageScroll
                 composer
             }
@@ -64,7 +68,7 @@ struct ChatView: View {
                     store.resolveClarify(answers)
                     showClarify = false
                 } onCancel: {
-                    store.resolveClarify([:])
+                    store.cancelClarify()
                     showClarify = false
                 }
             }

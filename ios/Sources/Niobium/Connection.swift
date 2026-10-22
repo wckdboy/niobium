@@ -114,7 +114,28 @@ enum RPCError: LocalizedError {
 }
 
 @MainActor
-final class HermesRPCClient: NSObject {
+protocol HermesRPC: AnyObject {
+    var declinesNotShown: Bool { get }
+    var onNotification: ((String, String, JSONObject) -> Void)? { get set }
+    var onServerRequest: ((JSONValueID, String, JSONObject) -> Void)? { get set }
+    var onDisconnect: ((String) -> Void)? { get set }
+    func request(_ method: String, params: JSONObject, timeout: TimeInterval) async throws -> Any
+    func respond(id: JSONValueID, result: JSONObject)
+    func respondError(id: JSONValueID, code: Int, message: String)
+    func disconnect(notify: Bool)
+}
+
+extension HermesRPC {
+    func request(_ method: String, params: JSONObject = [:]) async throws -> Any {
+        try await request(method, params: params, timeout: 60)
+    }
+    func respondError(id: JSONValueID, message: String) {
+        respondError(id: id, code: -32601, message: message)
+    }
+}
+
+@MainActor
+final class HermesRPCClient: NSObject, HermesRPC {
     private var socket: URLSessionWebSocketTask?
     private var session: URLSession!
     private var nextID = 1

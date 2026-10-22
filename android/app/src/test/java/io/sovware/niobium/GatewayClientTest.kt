@@ -72,4 +72,43 @@ class GatewayClientTest {
         delay(30); client.disconnect(silent = true)
         assertTrue(withTimeout(2000) { pending.await() } is GatewayException)
     } }
+
+    @Test fun provisioningAppliesOnlyReviewedToolsSkillsAndNoMcpServers() { runBlocking {
+        val spec = PixelBuilder.fallback("security").copy(skills = listOf("audit"))
+        val draft = PixelDraft(spec, false, setOf("file", "delegation"), setOf("audit", "extra"), emptyList())
+        var created = false
+        PixelProvisioner.provision(draft, "#A78BFA", client::request) { created = true }
+        assertTrue(created)
+        val calls = client.request("fixture.state").objects("calls")
+        assertEquals(listOf("profiles.create", "config.set", "profiles.describe", "profiles.configure", "config.set"), calls.map { it.getString("method") })
+        val creation = calls[0].getJSONObject("params")
+        assertEquals(setOf("name", "description", "soul", "clone_from", "clone_all", "no_skills", "clone_channels"), creation.keys().asSequence().toSet())
+        assertEquals("default", creation.getString("clone_from"))
+        assertFalse(creation.getBoolean("clone_all")); assertFalse(creation.getBoolean("clone_channels"))
+        assertFalse(creation.getBoolean("no_skills"))
+        assertTrue(creation.getString("soul").contains(spec.soul))
+        val approval = calls[1].getJSONObject("params")
+        assertEquals("approvals.mode", approval.getString("key")); assertEquals("manual", approval.getString("value"))
+        val applied = calls[3].getJSONObject("params")
+        assertEquals(listOf("file", "delegation"), applied.getJSONArray("enabled_toolsets").let { a -> (0 until a.length()).map { a.getString(it) } })
+        assertEquals(0, applied.getJSONArray("enabled_mcp_servers").length())
+        assertEquals("[\"extra\"]", applied.getJSONArray("disabled_skills").toString())
+        val saved = applied.getJSONObject("ui_meta").getJSONObject("niobium")
+        assertEquals(2, saved.getInt("schema_version"))
+        assertEquals(spec.companion.name, saved.getJSONObject("pixel_spec").getJSONObject("companion").getString("name"))
+        assertEquals(spec.reasoning, calls[4].getJSONObject("params").getString("value"))
+    } }
+    @Test fun failureAfterCreationDoesNotCreateAgainOrApplyLaterSettings() { runBlocking {
+        client.request("fixture.configure", JSONObject().put("fail_method", "profiles.configure"))
+        val spec = PixelBuilder.fallback("security")
+        val draft = PixelDraft(spec, false, setOf("file", "delegation"), emptySet(), emptyList())
+        var created = false
+        try { PixelProvisioner.provision(draft, "#A78BFA", client::request) { created = true }; fail("Expected failure") }
+        catch (error: GatewayException) { assertEquals("Fixture setup failure", error.message) }
+        assertTrue(created)
+        val calls = client.request("fixture.state").objects("calls")
+        assertEquals(1, calls.count { it.getString("method") == "profiles.create" })
+        assertEquals("profiles.configure", calls.last().getString("method"))
+        assertEquals(1, client.request("fixture.state").getJSONArray("profiles").length())
+    } }
 }

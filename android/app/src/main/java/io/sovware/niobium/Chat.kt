@@ -59,6 +59,7 @@ import androidx.compose.ui.unit.sp
 fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = {}) {
     val state = vm.state
     var draft by remember { mutableStateOf("") }
+    var clarifyHidden by remember(state.clarify) { mutableStateOf(false) }
     var showCompanions by remember { mutableStateOf(false) }
     var showMentions by remember { mutableStateOf(false) }
     var showCast by remember { mutableStateOf(false) }
@@ -94,6 +95,9 @@ fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = 
             onOpenChats = { showChats = true }, onOpenUsage = { showUsage = true },
             onOpenCompanions = { showCompanions = true }, onMention = { showMentions = true }) { vm.closeBot() }
         Box(Modifier.fillMaxWidth().height(1.dp).background(Nb.Line))
+        if (state.clarify != null) androidx.compose.material3.TextButton(onClick = { clarifyHidden = false }, modifier = Modifier.fillMaxWidth()) {
+            Text("Your Pixel is waiting for an answer", color = Nb.Ion, fontSize = 12.sp)
+        }
         Box(Modifier.weight(1f)) {
             if (state.messages.isEmpty() && state.loadingChat) {
                 Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
@@ -162,8 +166,9 @@ fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = 
         )
     }
 
-    state.clarify?.let { request ->
-        ClarifyDialog(request) { answers -> vm.resolveClarify(answers) }
+    state.clarify?.takeUnless { clarifyHidden }?.let { request ->
+        ClarifyDialog(request, onSubmit = { answers -> vm.resolveClarify(answers); clarifyHidden = true },
+            onCancel = { vm.cancelClarify(); clarifyHidden = true })
     }
     if (showCompanions) CompanionsSheet(vm, bot) { showCompanions = false }
     if (showMentions) {
@@ -571,11 +576,11 @@ private fun GroupEventRow(event: RoomEvent, room: GroupRoom) {
 }
 
 @Composable
-private fun ClarifyDialog(request: ClarifyRequest, onSubmit: (Map<String, String>) -> Unit) {
+private fun ClarifyDialog(request: ClarifyRequest, onSubmit: (Map<String, String>) -> Unit, onCancel: () -> Unit) {
     val answers = remember { mutableStateMapOf<String, String>() }
     val complete = request.questions.all { answers[it.id]?.isNotBlank() == true }
     AlertDialog(
-        onDismissRequest = { onSubmit(emptyMap()) },
+        onDismissRequest = onCancel,
         title = { Text("A quick question", color = Nb.Text, fontWeight = FontWeight.SemiBold) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
@@ -622,7 +627,7 @@ private fun ClarifyDialog(request: ClarifyRequest, onSubmit: (Map<String, String
                 }.padding(10.dp))
         },
         dismissButton = {
-            Text("Cancel", color = Nb.Secondary, modifier = Modifier.clickable { onSubmit(emptyMap()) }.padding(10.dp))
+            Text("Cancel", color = Nb.Secondary, modifier = Modifier.clickable(onClick = onCancel).padding(10.dp))
         },
         containerColor = Nb.Raised
     )

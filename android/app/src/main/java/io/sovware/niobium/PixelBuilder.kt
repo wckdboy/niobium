@@ -2,6 +2,7 @@ package io.sovware.niobium
 
 import android.content.Context
 import org.json.JSONObject
+import org.json.JSONArray
 import org.json.JSONTokener
 import java.util.UUID
 
@@ -85,5 +86,34 @@ Your companion $companionName helps with bounded subtasks when a job becomes com
         if (missing.isNotEmpty()) notes.add("Unavailable skills excluded: ${missing.joinToString()}.")
         spec = spec.copy(skills = spec.skills.filter { it in skills })
         return PixelDraft(spec, parsed != null, tools, skills, notes)
+    }
+}
+
+object PixelProvisioner {
+    suspend fun provision(draft: PixelDraft, accentHex: String,
+                          request: suspend (String, JSONObject, Long) -> JSONObject,
+                          onCreated: () -> Unit = {}) {
+        val spec = draft.spec
+        require(spec.validationError == null) { spec.validationError ?: "Invalid Pixel" }
+        val slug = spec.name
+        val creation = request("profiles.create", JSONObject().put("name", slug).put("description", spec.role)
+            .put("soul", spec.soul + spec.policyBriefing).put("clone_from", "default").put("clone_all", false)
+            .put("no_skills", false).put("clone_channels", false), 120_000)
+        check(creation.optBoolean("ok")) { "The gateway did not confirm creation." }
+        onCreated()
+        request("config.set", JSONObject().put("profile", slug).put("key", "approvals.mode").put("value", "manual"), 60_000)
+        val inventory = request("profiles.describe", JSONObject().put("name", slug), 60_000)
+        val installed = inventory.objects("skills").mapNotNull { it.s("name") }.toSet()
+        check(installed.containsAll(spec.skills)) { "A selected skill was not copied by the gateway." }
+        val result = request("profiles.configure", JSONObject().put("name", slug)
+            .put("description", spec.role).put("soul", spec.soul + spec.policyBriefing)
+            .put("enabled_toolsets", JSONArray(draft.enabledToolsets)).put("enabled_mcp_servers", JSONArray())
+            .put("disabled_skills", JSONArray((installed - spec.skills.toSet()).sorted()))
+            .put("ui_meta", JSONObject().put("hermes-bots", JSONObject().put("title", spec.title)
+                .put("description", spec.role).put("color", accentHex).put("hidden", false))
+                .put("niobium", JSONObject().put("schema_version", 2).put("pixel_spec", spec.toJson())
+                    .put("builder", if (draft.usedModel) "model" else "template"))), 120_000)
+        check(result.optBoolean("ok")) { "The gateway could not apply all profile sections." }
+        request("config.set", JSONObject().put("profile", slug).put("key", "reasoning").put("value", spec.reasoning).put("scope", "global"), 60_000)
     }
 }

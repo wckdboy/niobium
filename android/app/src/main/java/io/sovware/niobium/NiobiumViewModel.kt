@@ -315,16 +315,7 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
                     .put("profile", bot.name).put("title", "Bot Chat").put("source", chatSource), 90_000)
             }
             if (chatEpoch != epoch || gateway !== client) return
-            val sessionId = result.s("session_id")
-            val revision = result.optInt("revision", state.sessionRevision)
-            val messages = parseTranscript(result.objects("messages"))
-            val inflight = result.o("inflight")
-            val withInflight = if (inflight != null) {
-                messages + ChatMessage("inflight", "assistant", inflight.s("assistant") ?: "",
-                    timestamp = System.currentTimeMillis())
-            } else messages
-            state = state.copy(sessionId = sessionId, sessionRevision = revision, sessionReasoning = result.o("info")?.s("reasoning_effort"), sessionGeneration = result.optInt("execution_generation").takeIf { result.has("execution_generation") }, messages = withInflight,
-                loadingChat = false, turnActive = result.optBoolean("running", inflight?.b("streaming") ?: false))
+            restoreChat(result)
             recoverPrompts(result)
             loadToolsets()
             loadModels()
@@ -344,7 +335,22 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
             usage = null, messages = emptyList(), approvals = emptyList(), clarify = null, turnActive = false, loadingChat = false)
     }
 
+    private fun restoreChat(snapshot: JSONObject, fallbackSessionId: String? = null) {
+        val inflight = snapshot.o("inflight")
+        val streaming = inflight?.optBoolean("streaming", false) ?: false
+        val partial = inflight?.s("assistant") ?: ""
+        val restored = parseTranscript(snapshot.objects("messages"))
+        streamingId = if (streaming) "inflight" else null
+        state = state.copy(sessionId = snapshot.s("session_id") ?: fallbackSessionId,
+            sessionRevision = snapshot.optInt("revision"), sessionReasoning = snapshot.o("info")?.s("reasoning_effort"),
+            sessionGeneration = snapshot.optInt("execution_generation").takeIf { snapshot.has("execution_generation") },
+            messages = restored + if (streaming || partial.isNotEmpty()) listOf(
+                ChatMessage("inflight", "assistant", partial, streaming = streaming)) else emptyList(),
+            loadingChat = false, turnActive = snapshot.optBoolean("running", streaming), turnStatus = "")
+    }
+
     fun send(text: String, imageBase64: String? = null, mime: String = "image/jpeg") {
+        if (state.loadingChat) return
         val value = text.trim()
         if (value.isEmpty() && imageBase64 == null) return
         if (!state.demo && state.sessionId == null) {
@@ -465,21 +471,23 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
 
     fun resumeSession(row: SessionRow, bot: BotProfile) {
         val client = gateway ?: return
-        val epoch = chatEpoch
+        val epoch = ++chatEpoch
+        state = state.copy(loadingChat = true)
         viewModelScope.launch {
             runCatching {
                 val result = client.request("session.resume", JSONObject()
                     .put("session_id", row.sessionId).put("profile", bot.name).put("source", chatSource), 90_000)
-                val sid = result.s("session_id") ?: row.sessionId
-                val revision = result.optInt("revision", state.sessionRevision)
-                val messages = parseTranscript(result.objects("messages"))
                 if (chatEpoch != epoch || state.activeBot?.name != bot.name || gateway !== client) return@runCatching
-                state = state.copy(sessionId = sid, sessionRevision = revision, sessionReasoning = result.o("info")?.s("reasoning_effort"),
-                    sessionGeneration = result.optInt("execution_generation").takeIf { result.has("execution_generation") }, messages = messages,
-                    turnActive = result.optBoolean("running", result.o("inflight")?.optBoolean("streaming", false) ?: false), loadingChat = false)
+                restoreChat(result, row.sessionId)
                 recoverPrompts(result)
                 loadModels(); loadToolsets()
-            }.onFailure { showError("Could not open chat. ${it.message}") }
+            }.onFailure {
+                if (it is kotlinx.coroutines.CancellationException) throw it
+                if (chatEpoch == epoch && gateway === client) {
+                    state = state.copy(loadingChat = false)
+                    showError("Could not open chat. ${it.message}")
+                }
+            }
         }
     }
 
@@ -718,7 +726,7 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
                 val result = client.request("profiles.configure", JSONObject().put("name", profile)
                     .put("ui_meta", JSONObject().put("niobium", meta))
                     .put("ui_meta_expected_revisions", JSONObject().put("niobium", revision)))
-                check(result.optBoolean("ok")) { "This Pixel changed elsewhere. Refresh before saving again." }
+                check(gateway === client && result.optBoolean("ok")) { "This Pixel changed elsewhere. Refresh before saving again." }
                 CastStore.put(context, profile, member); showToast("Character saved to Hermes"); onResult(true)
             } catch (e: kotlinx.coroutines.CancellationException) { throw e }
             catch (e: Exception) { showError("Could not save the character. " + e.message); onResult(false) }
@@ -858,6 +866,10 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
         val req = state.clarify ?: return
         val client = gateway ?: return
         if (state.sessionId != req.sessionId) return
+        if (req.questions.any { answers[it.id].isNullOrBlank() }) {
+            showError("Answer every question before sending. You can dismiss it and leave the task waiting.")
+            return
+        }
         if (req.promptGenerations.isNotEmpty()) {
             viewModelScope.launch {
                 try {
@@ -865,7 +877,7 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
                         if (gateway !== client || state.sessionId != req.sessionId) return@launch
                         val generation = req.promptGenerations[question.id] ?: continue
                         client.request("clarify.respond", JSONObject().put("session_id", req.sessionId)
-                            .put("execution_generation", generation).put("prompt_id", question.id).put("answer", answers[question.id] ?: ""))
+                            .put("execution_generation", generation).put("prompt_id", question.id).put("answer", answers.getValue(question.id)))
                         if (gateway !== client || state.sessionId != req.sessionId) return@launch
                         state = state.copy(clarify = state.clarify?.copy(questions = state.clarify!!.questions.filterNot { it.id == question.id },
                             promptGenerations = state.clarify!!.promptGenerations - question.id))
@@ -878,7 +890,15 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
         }
         val obj = JSONObject()
         answers.forEach { (k, v) -> obj.put(k, v) }
-        client.respond(req.rpcId, JSONObject().put("answers", obj).put("outcome", if (answers.isEmpty()) "cancelled" else "submitted"))
+        client.respond(req.rpcId, JSONObject().put("answers", obj).put("outcome", "submitted"))
+        state = state.copy(clarify = null)
+    }
+
+    fun cancelClarify() {
+        val req = state.clarify ?: return
+        val client = gateway ?: return
+        if (state.sessionId != req.sessionId || req.promptGenerations.isNotEmpty()) return
+        client.respond(req.rpcId, JSONObject().put("answers", JSONObject()).put("outcome", "cancelled"))
         state = state.copy(clarify = null)
     }
 
@@ -1024,25 +1044,7 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
             val client = gateway ?: run { onError("Connect a gateway first."); return@launch }
             var created = false
             try {
-                val creation = client.request("profiles.create", JSONObject().put("name", slug).put("description", spec.role)
-                    .put("soul", spec.soul + spec.policyBriefing).put("clone_from", "default").put("clone_all", false)
-                    .put("no_skills", false).put("clone_channels", false), 120_000)
-                check(creation.optBoolean("ok")) { "The gateway did not confirm creation." }
-                created = true
-                client.request("config.set", JSONObject().put("profile", slug).put("key", "approvals.mode").put("value", "manual"))
-                val inventory = client.request("profiles.describe", JSONObject().put("name", slug))
-                val installed = inventory.objects("skills").mapNotNull { it.s("name") }.toSet()
-                check(installed.containsAll(spec.skills)) { "A selected skill was not copied by the gateway." }
-                val result = client.request("profiles.configure", JSONObject().put("name", slug)
-                    .put("description", spec.role).put("soul", spec.soul + spec.policyBriefing)
-                    .put("enabled_toolsets", JSONArray(draft.enabledToolsets)).put("enabled_mcp_servers", JSONArray())
-                    .put("disabled_skills", JSONArray((installed - spec.skills.toSet()).sorted()))
-                    .put("ui_meta", JSONObject().put("hermes-bots", JSONObject().put("title", spec.title)
-                        .put("description", spec.role).put("color", member.accentHex).put("hidden", false))
-                        .put("niobium", JSONObject().put("schema_version", 2).put("pixel_spec", spec.toJson())
-                            .put("builder", if (draft.usedModel) "model" else "template"))), 120_000)
-                check(result.optBoolean("ok")) { "The gateway could not apply all profile sections." }
-                client.request("config.set", JSONObject().put("profile", slug).put("key", "reasoning").put("value", spec.reasoning).put("scope", "global"))
+                PixelProvisioner.provision(draft, member.accentHex, client::request) { created = true }
                 CastStore.put(context, slug, member)
                 refreshRoster()
                 val bot = state.bots.firstOrNull { it.name == slug } ?: error("The roster has not refreshed. Refresh before trying again.")

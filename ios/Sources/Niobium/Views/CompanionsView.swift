@@ -26,6 +26,8 @@ struct CompanionsView: View {
     @State private var steer = ""
     @State private var actionError: String?
     @State private var working = false
+    @State private var detailEpoch = 0
+    @State private var detailTask: Task<Void, Never>?
 
     var body: some View {
         NavigationStack {
@@ -85,7 +87,8 @@ struct CompanionsView: View {
                     do { try await Task.sleep(for: .seconds(3)) } catch { break }
                 }
             }
-            .sheet(item: $selected) { child in
+            .onDisappear { closeDetail() }
+            .sheet(item: $selected, onDismiss: closeDetail) { child in
                 NavigationStack {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 16) {
@@ -105,26 +108,51 @@ struct CompanionsView: View {
                             if let actionError { Text(actionError).font(.nbBody(12)).foregroundStyle(NB.rose) }
                         }.padding(20)
                     }.background(NB.void).navigationTitle("Helper task").navigationBarTitleDisplayMode(.inline)
-                        .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { selected = nil } } }
+                        .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { closeDetail() } } }
                 }
             }
         }
     }
+    private func closeDetail() {
+        detailEpoch += 1
+        detailTask?.cancel()
+        detailTask = nil
+        working = false
+        selected = nil
+    }
     private func loadTranscript(_ child: CompanionTask) {
+        detailEpoch += 1
+        let epoch = detailEpoch
+        detailTask?.cancel()
+        working = false
         guard !child.failed else { transcript = child.lastTool; return }
         working = true
-        Task {
-            do { transcript = try await store.companionTranscript(child.id) }
-            catch { actionError = error.localizedDescription }
-            working = false
+        detailTask = Task {
+            do {
+                let text = try await store.companionTranscript(child.id)
+                guard !Task.isCancelled, detailEpoch == epoch, selected?.id == child.id else { return }
+                transcript = text
+            } catch {
+                guard !Task.isCancelled, detailEpoch == epoch, selected?.id == child.id else { return }
+                actionError = error.localizedDescription
+            }
+            if detailEpoch == epoch, selected?.id == child.id { working = false }
         }
     }
     private func control(_ child: CompanionTask, action: String) {
+        let epoch = detailEpoch
+        let text = steer
         working = true; actionError = nil
-        Task {
-            do { try await store.controlCompanion(child.id, action: action, text: steer); if action == "steer" { steer = "" } }
-            catch { actionError = error.localizedDescription }
-            working = false
+        detailTask = Task {
+            do {
+                try await store.controlCompanion(child.id, action: action, text: text)
+                guard !Task.isCancelled, detailEpoch == epoch, selected?.id == child.id else { return }
+                if action == "steer" { steer = "" }
+            } catch {
+                guard !Task.isCancelled, detailEpoch == epoch, selected?.id == child.id else { return }
+                actionError = error.localizedDescription
+            }
+            if detailEpoch == epoch, selected?.id == child.id { working = false }
         }
     }
 }

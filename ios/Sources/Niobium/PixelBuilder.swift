@@ -3,7 +3,7 @@ import Foundation
 @MainActor
 final class PixelBuilder {
     static let shared = PixelBuilder()
-    func draft(for prompt: String, api: HermesRPCClient?) async throws -> PixelDraft {
+    func draft(for prompt: String, api: (any HermesRPC)?) async throws -> PixelDraft {
         let clean = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty, clean.count <= 4000 else { throw RPCError.transport("Describe the job in 1–4,000 characters.") }
         let defaults: Set<String> = ["web", "file", "memory", "todo", "skills", "vision", "image_gen", "terminal", "delegation"]

@@ -41,6 +41,7 @@
 		D45C51613CB4CB18B345CFF2 /* GroupsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05A3A26E6798DCAE73848B78 /* GroupsView.swift */; };
 		D4F170BF6D4B3E6D749F3C5F /* bot-build.md in Resources */ = {isa = PBXBuildFile; fileRef = 623D954C5930F945CC968714 /* bot-build.md */; };
 		D9F87DE931CDF1E6396926B0 /* ChatSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EFC7420AC0F58E58F3CC658 /* ChatSheets.swift */; };
+		DCEA09CCFFFB651D1E24AAF6 /* GatewayStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 938BEFBAAE3079D4B9AF8B29 /* GatewayStateTests.swift */; };
 		E8DBAB18000A20347C28129C /* DemoData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110D1522BB2728DAA3278BAA /* DemoData.swift */; };
 		EA6F8D6787B86622517832FE /* CharacterEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADBEA0E543C94268B3082620 /* CharacterEngine.swift */; };
 		FAECABBDDAB7061AD24EB493 /* NiobiumSceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C22F988531A89583ECB5D3D /* NiobiumSceneDelegate.swift */; };
@@ -90,6 +91,7 @@
 		7DF3CEFC9C0EC54DC634DFF0 /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
 		7EAD7DDD7BB5986D38EE8947 /* CompanionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionsView.swift; sourceTree = "<group>"; };
 		8273CAA1922CA7D96927FEAC /* Cast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cast.swift; sourceTree = "<group>"; };
+		938BEFBAAE3079D4B9AF8B29 /* GatewayStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GatewayStateTests.swift; sourceTree = "<group>"; };
 		A12F3E948B506AC256E4A96B /* Info-DSH.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Info-DSH.plist"; sourceTree = "<group>"; };
 		A349F69E6A1F7B51DDEE1D53 /* NiobiumTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = NiobiumTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A3BFA967917BA7D913DCD694 /* RemoteHarnessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteHarnessView.swift; sourceTree = "<group>"; };
@@ -171,6 +173,7 @@
 		598221046B00F996D69AAD9F /* NativeTests */ = {
 			isa = PBXGroup;
 			children = (
+				938BEFBAAE3079D4B9AF8B29 /* GatewayStateTests.swift */,
 				B49BBE05B43B6B6AFAFFDA24 /* NiobiumTests.swift */,
 			);
 			path = NativeTests;
@@ -375,6 +378,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DCEA09CCFFFB651D1E24AAF6 /* GatewayStateTests.swift in Sources */,
 				BB69FCF61C90769403C69177 /* NiobiumTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -486,7 +490,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Resources/Niobium.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -525,7 +529,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Resources/Niobium.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (

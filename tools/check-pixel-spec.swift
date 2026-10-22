@@ -54,4 +54,3 @@ struct PixelSpecChecks {
         print("PASS: \(count) PixelSpec checks")
     }
 }
-

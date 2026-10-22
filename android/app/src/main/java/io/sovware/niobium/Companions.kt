@@ -40,6 +40,7 @@ fun CompanionsSheet(vm: NiobiumViewModel, bot: BotProfile, onDismiss: () -> Unit
     var steer by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     var working by remember { mutableStateOf(false) }
+    var detailEpoch by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
     LaunchedEffect(state.sessionId) {
         while (true) { vm.loadCompanions(); delay(3000) }
@@ -80,13 +81,18 @@ fun CompanionsSheet(vm: NiobiumViewModel, bot: BotProfile, onDismiss: () -> Unit
             }
             items(state.companionTasks, key = { it.id }) { child ->
                 Row(Modifier.fillMaxWidth().background(Nb.Surface, RoundedCornerShape(14.dp)).clickable {
-                    selected = child; transcript = ""; steer = ""; error = null
+                    detailEpoch++
+                    val epoch = detailEpoch
+                    selected = child; transcript = ""; steer = ""; error = null; working = false
                     if (child.failed) transcript = child.lastTool else {
                         working = true
                         scope.launch {
-                            try { transcript = vm.companionTranscript(child.id) }
-                            catch (e: Exception) { error = e.message }
-                            finally { working = false }
+                            try {
+                                val text = vm.companionTranscript(child.id)
+                                if (detailEpoch == epoch && selected?.id == child.id) transcript = text
+                            } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+                            catch (e: Exception) { if (detailEpoch == epoch && selected?.id == child.id) error = e.message }
+                            finally { if (detailEpoch == epoch && selected?.id == child.id) working = false }
                         }
                     }
                 }.padding(14.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -101,7 +107,7 @@ fun CompanionsSheet(vm: NiobiumViewModel, bot: BotProfile, onDismiss: () -> Unit
         }
     }
     selected?.let { child ->
-        AlertDialog(onDismissRequest = { selected = null }, containerColor = Nb.Ink,
+        AlertDialog(onDismissRequest = { detailEpoch++; selected = null; working = false }, containerColor = Nb.Ink,
             title = { Text(child.goal, color = Nb.Text, fontSize = 18.sp) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -114,19 +120,25 @@ fun CompanionsSheet(vm: NiobiumViewModel, bot: BotProfile, onDismiss: () -> Unit
                         OutlinedTextField(steer, { steer = it }, label = { Text("A correction for this helper…") }, maxLines = 3)
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             TextButton(enabled = !working && child.canSteer && steer.isNotBlank(), onClick = {
+                                val epoch = detailEpoch
+                                val text = steer
                                 working = true
                                 scope.launch {
-                                    try { vm.controlCompanion(child.id, "steer", steer); steer = "" }
-                                    catch (e: Exception) { error = e.message }
-                                    finally { working = false }
+                                    try { vm.controlCompanion(child.id, "steer", text); if (detailEpoch == epoch && selected?.id == child.id) steer = "" }
+                                    catch (e: kotlinx.coroutines.CancellationException) { throw e }
+                                    catch (e: Exception) { if (detailEpoch == epoch && selected?.id == child.id) error = e.message }
+                                    finally { if (detailEpoch == epoch && selected?.id == child.id) working = false }
                                 }
                             }) { Text("Send correction", color = Nb.Ion) }
                             TextButton(enabled = !working, onClick = {
+                                val epoch = detailEpoch
+                                val text = steer
                                 working = true
                                 scope.launch {
                                     try { vm.controlCompanion(child.id, "interrupt", "") }
-                                    catch (e: Exception) { error = e.message }
-                                    finally { working = false }
+                                    catch (e: kotlinx.coroutines.CancellationException) { throw e }
+                                    catch (e: Exception) { if (detailEpoch == epoch && selected?.id == child.id) error = e.message }
+                                    finally { if (detailEpoch == epoch && selected?.id == child.id) working = false }
                                 }
                             }) { Text("Stop helper", color = Nb.Rose) }
                         }
@@ -134,7 +146,7 @@ fun CompanionsSheet(vm: NiobiumViewModel, bot: BotProfile, onDismiss: () -> Unit
                     error?.let { Text(it, color = Nb.Rose, fontSize = 11.sp) }
                 }
             },
-            confirmButton = { TextButton(onClick = { selected = null }) { Text("Done", color = Nb.Ion) } })
+            confirmButton = { TextButton(onClick = { detailEpoch++; selected = null; working = false }) { Text("Done", color = Nb.Ion) } })
     }
 }
 private fun companionDrawable(kind: String) = when (kind) {

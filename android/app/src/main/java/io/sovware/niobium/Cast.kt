@@ -196,7 +196,6 @@ fun CastStudioSheet(vm: NiobiumViewModel, profile: String, title: String, onDism
                     androidx.compose.material3.Text("Surprise", color = Nb.Ion, fontSize = 12.sp,
                         modifier = androidx.compose.ui.Modifier.clickable {
                             selected = Cast.all.filter { it.id != selected.id }.random()
-                            CastStore.put(context, profile, selected)
                         }.padding(6.dp))
                 }
             }
@@ -210,7 +209,7 @@ fun CastStudioSheet(vm: NiobiumViewModel, profile: String, title: String, onDism
                             androidx.compose.ui.Modifier.weight(1f).clip(RoundedCornerShape(14.dp))
                                 .background(if (selected.id == member.id) Nb.Ion.copy(alpha = 0.10f) else Nb.FillSoft)
                                 .border(1.dp, if (selected.id == member.id) Nb.Ion.copy(alpha = 0.35f) else Nb.Line, RoundedCornerShape(14.dp))
-                                .clickable { selected = member; CastStore.put(context, profile, member) }
+                                .clickable { selected = member }
                                 .padding(8.dp),
                             horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
                         ) {
@@ -245,7 +244,7 @@ fun CastStudioSheet(vm: NiobiumViewModel, profile: String, title: String, onDism
                                         "outfit" -> recipe.copy(outfit = option)
                                         else -> recipe.copy(accessory = option)
                                     })
-                                    CastStore.put(context, profile, selected); expanded = false
+                                    expanded = false
                                 })
                             }
                         }
@@ -267,8 +266,7 @@ fun CastStudioSheet(vm: NiobiumViewModel, profile: String, title: String, onDism
                                 .clickable {
                                     selected = selected.copy(companion = kind,
                                         companionName = Cast.all.firstOrNull { it.companion == kind }?.companionName ?: selected.companionName)
-                                    CastStore.put(context, profile, selected)
-                                }.padding(5.dp),
+                                        }.padding(5.dp),
                             horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
                         ) {
                             Image(painterResource(compRes(kind)), null, modifier = androidx.compose.ui.Modifier.size(30.dp))

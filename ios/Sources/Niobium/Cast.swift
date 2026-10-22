@@ -216,7 +216,6 @@ struct CastStudioView: View {
                         ForEach(CastMember.all) { member in
                             Button {
                                 selected = member
-                                CastStore.shared.select(member, for: profile)
                                 Haptics.tap()
                             } label: {
                                 HStack(spacing: 10) {
@@ -245,7 +244,6 @@ struct CastStudioView: View {
                                         default: recipe.accessory = option
                                         }
                                         selected.recipe = recipe
-                                        CastStore.shared.select(selected, for: profile)
                                     }
                                 }
                             } label: {
@@ -267,7 +265,6 @@ struct CastStudioView: View {
                                     selected = CastMember(id: selected.id, name: selected.name, portrait: selected.portrait, companion: kind,
                                                           companionName: CastMember.all.first(where: { $0.companion == kind })?.companionName ?? selected.companionName,
                                                           accentHex: selected.accentHex, recipe: selected.recipe)
-                                    CastStore.shared.select(selected, for: profile)
                                 } label: {
                                     VStack(spacing: 4) {
                                         Image("Comp_\(kind)").resizable().interpolation(.none).frame(width: 34, height: 34)
@@ -283,7 +280,7 @@ struct CastStudioView: View {
                     }
 
                     Button {
-                        selected = CastStore.shared.random(for: profile)
+                        selected = CastMember.all.filter { $0.id != selected.id }.randomElement() ?? selected
                     } label: { Label("Surprise me", systemImage: "dice").frame(maxWidth: .infinity) }
                         .buttonStyle(NBQuietButtonStyle())
                 }

@@ -19,11 +19,14 @@ Do not paste tokens into chat or commit them. The repo ignores `.env*`,
 
 ```sh
 set -a; . ~/.config/niobium/secrets.env; set +a
-node scripts/plane-bootstrap.mjs          # creates project + 24 issues
+node scripts/plane-bootstrap.mjs          # preview changes to existing records
+node scripts/plane-bootstrap.mjs --apply  # apply the reviewed patch
 ```
 
-`plane/issues.csv` is the source ledger; `PLANE_API_KEY` needs project and issue
-write scope, `PLANE_WORKSPACE_SLUG` is the workspace URL slug.
+`plane/snapshot.json` is the source snapshot (36 known work item UUIDs);
+`plane/issues.csv` is its human-readable export. The script never creates projects
+or work items and never changes status or assignments. `PLANE_API_KEY` needs
+work item write scope; `PLANE_WORKSPACE_SLUG` is the workspace URL slug.
 
 ## Cloudflare
 
