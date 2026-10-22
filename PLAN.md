@@ -466,3 +466,36 @@ verification of these replacement artifacts.
 Next after this release: provider-key storage, real-account turns and delegation,
 physical Android/16 KB acceptance, named saved looks and expanded authored art,
 then Hermes replay and connector authorization. Full Hermes parity remains open.
+
+
+Verified beta.6 checkpoint: PR #9 merged to main at 6fa4b0c, whose Git tree
+matches CI-tested source 0e76310 exactly. All three CI jobs pass (39869124900).
+Independent Codex review completed with no findings; Greptile hit its trial quota.
+Beta.6 is published with Android code 11, full iOS build 14 and matching sources,
+metadata and checksums. Apple accepted build 14 for processing at 23:13:15 UTC
+on 22 October; tester availability remains unverified. Phone acceptance and
+release verification are recorded in docs/evidence/ios-build14-iphone-startup.json
+and docs/evidence/dsh-startup-release-validation.json.
+
+## Next product cycle: wardrobe, AI design and connected teams
+
+The owner requested both a much larger instant wardrobe and optional AI-created
+clothes, styles and companion art. Keep clearly adult character designs, stable
+identity, crisp 48px output, transparent creature cutouts and fast native controls.
+The existing creature sprites already have alpha; remove the opaque native
+backplates. AI design is explicit and reviewable; it must preserve the existing
+look until a new result is accepted and must not block the instant preview.
+
+Use OpenMausBot as interaction and architecture inspiration, pinned for research
+at 30b62aaf18adc22099c24a7181abf5e9ddead980. Keep Niobium's native pixel identity.
+Priorities: independent Hermes/DSH connection ownership, simultaneous or individual
+operation, durable DM/room routing with clear sender/engine attribution, then
+provider-backed acceptance. Existing Hermes messaging is implemented; local DSH
+currently advertises rooms as unsupported. Implement and test that capability
+before exposing it. Account authorization, cancellation, delivery uncertainty and
+mobile suspension must remain visible and recover safely.
+
+The matching beta.6 site is deployed and verified at niobium.sh (Cloudflare
+version c664c648-949c-4ea9-82c6-a935f5ff424f). Plane NIO-3/10/24/29/32/36 and
+both exports record the verified checkpoint and the expanded next-cycle scope,
+with all existing workflow states preserved.

@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "release_url": "https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.6",
+  "published_at": "2026-10-22T23:15:02Z",
+  "source_commit": "0e7631047af52c364e13defc58d21cf336394c7f",
+  "merge_commit": "6fa4b0c6b17a09eb52b2c0c9513684551310a84e",
+  "source_and_merge_git_tree": "b7e0758afe9ddc22ac3cb37344e0df993b8c4722",
+  "ci": {
+    "url": "https://github.com/wckdboy/niobium/actions/runs/39869124900",
+    "all_three_jobs": "passed",
+    "ios_unit_tests": 39,
+    "ios_ui_tests": 5,
+    "ios_opt_in_skips": 2
+  },
+  "codex_review": {
+    "source": "0e76310",
+    "status": "completed",
+    "findings": 0
+  },
+  "greptile": "50-credit trial limit prevented review",
+  "android": {
+    "version_code": 11,
+    "unit_tests": 30,
+    "arm64_emulator_tests": 10,
+    "lint": "passed",
+    "signature": "verified",
+    "packaged_runtime_hashes": "verified",
+    "elf_and_zip_16k_alignment": "verified",
+    "physical_16k_tested": false
+  },
+  "ios": {
+    "build": 14,
+    "apple_upload_accepted_at": "2026-10-22T23:13:15Z",
+    "apple_upload_status": "processing",
+    "tester_availability_verified": false,
+    "physical_smoke_runs": 4,
+    "startup_resets_recovered": 2,
+    "phone_evidence": "docs/evidence/ios-build14-iphone-startup.json",
+    "normal_launch_after_testing": true
+  },
+  "node_checks": 40,
+  "python_checks": 14,
+  "website": {
+    "url": "https://niobium.sh",
+    "deployment_id": "c664c648-949c-4ea9-82c6-a935f5ff424f",
+    "home_and_releases_verified": true,
+    "site_check": "7 HTML pages / 81 local links and assets"
+  },
+  "verified_github_assets": [
+    {
+      "name": "Niobium-2.0-beta.6.apk",
+      "size": 90701624,
+      "sha256": "12092b1a17f5186c7f350836e901b4a661cfd6640c55eb973cfae71dd4058929",
+      "download_url": "https://github.com/wckdboy/niobium/releases/download/v2.0.0-beta.6/Niobium-2.0-beta.6.apk"
+    },
+    {
+      "name": "Niobium-2.0-build14.ipa",
+      "size": 90399150,
+      "sha256": "2873528049fce2e1cb85407fc5811e28c39e592ab118ca2c4bd234450992baad",
+      "download_url": "https://github.com/wckdboy/niobium/releases/download/v2.0.0-beta.6/Niobium-2.0-build14.ipa"
+    },
+    {
+      "name": "Niobium-Android-runtime-sources.tar.gz",
+      "size": 1192756,
+      "sha256": "fd83f282aa64adb6a8faaf881801e896983fb5a39bf97dc373f1e2ee856a1c93",
+      "download_url": "https://github.com/wckdboy/niobium/releases/download/v2.0.0-beta.6/Niobium-Android-runtime-sources.tar.gz"
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "size": 372,
+      "sha256": "4d7d27e987c1e84ae384576f4796cd48dcf70e34d09a3bcda300c90d1cf8a8de",
+      "download_url": "https://github.com/wckdboy/niobium/releases/download/v2.0.0-beta.6/SHA256SUMS.txt"
+    },
+    {
+      "name": "release-metadata.json",
+      "size": 8656,
+      "sha256": "3dfd510013c50a217a93d5b2b27f22611a46b78661fb007d539f4d74536cb492",
+      "download_url": "https://github.com/wckdboy/niobium/releases/download/v2.0.0-beta.6/release-metadata.json"
+    }
+  ]
+}
