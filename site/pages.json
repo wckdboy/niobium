@@ -4,7 +4,7 @@
     "key": "home",
     "title": "Niobium — your pixels, everywhere",
     "heading": "your pixels, everywhere",
-    "label": "wckd / niobium / v2 in development",
+    "label": "wckd / niobium / 2.0 beta",
     "description": "A native client for your AI bots on iPhone, iPad and Android, built for Hermes, with a mature, beautiful pixel-art aesthetic: every bot a 48×48 character, the real gateway underneath."
   },
   {
@@ -37,7 +37,7 @@
     "title": "Releases — Niobium",
     "heading": "builds and releases",
     "label": "niobium / releases",
-    "description": "Niobium 1.1 is the public release. The v2 redesign and the Pixel workshop are in development."
+    "description": "Niobium 2.0 beta: signed Android APK, iOS TestFlight build, checksums, verification and remaining work."
   },
   {
     "slug": "legal",

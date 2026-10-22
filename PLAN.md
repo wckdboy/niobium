@@ -103,10 +103,13 @@ Prioritize these domains without replacing backend behaviour with simulations:
 
 ## Release and next implementation steps
 
-- Publish v2 as a beta with Android APK, full iOS TestFlight archive/IPA and
-  checksums; preserve the known limits in release notes.
-- Run the native/shared suite and Greptile review before the release is final.
-- Activate the daily [Hermes watcher](docs/HERMES-UPDATES.md) on main; review
+- Published [2.0.0-beta.1](https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.1)
+  with signed Android APK, full iOS distribution IPA, checksums, runtime/source
+  metadata and the complete improvement notes. iOS 2.0 (4) uploaded successfully
+  to App Store Connect and Apple began processing it. PR #1 is merged to main.
+- Native/shared suites passed. Greptile’s seven findings and six earlier Codex
+  findings were fixed and resolved; regression cases are in the native suites.
+- The daily [Hermes watcher](docs/HERMES-UPDATES.md) is on main; review
   new contracts and tools before updating the audited baseline.
 - First follow-up: [Android embedded DSH](docs/ANDROID-DSH.md), using APK-packaged
   PRoot with a pinned Ubuntu/Node environment and device acceptance gates.

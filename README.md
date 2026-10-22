@@ -8,7 +8,7 @@ A native iPhone, iPad and Android command deck for the Hermes agent on your
 computer or VPS. Pixels are persistent Hermes profiles with their own voice,
 memory, model, tools and creature companions.
 
-**Public release: 1.1.0. v2 is in development.** Full Hermes parity is the target;
+**New release: [2.0.0-beta.1](https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.1).** Full Hermes parity is the target;
 it is not finished. The current scope is in [PLAN.md](PLAN.md), the implementation
 audit is in [docs/HERMES-PARITY.md](docs/HERMES-PARITY.md), and the work is tracked
 in [Plane](https://app.plane.so/wckd/projects/2fbcf987-20de-43dc-80ac-0a6bab7ec03a/issues/).
@@ -103,10 +103,12 @@ node site/build.mjs
 node site/check.mjs
 ~~~
 
-The rebuild has passed 38 Swift PixelSpec checks, four Android test cases,
-Android debug/release builds and both iOS simulator build variants. Native Home and
-Pixel-review captures are in [screenshots](screenshots/README.md). These checks
-do not establish end-to-end parity with a live, provider-backed Hermes install.
+The beta passed 17 iOS unit tests, 2 native UI tests, 16 Android tests,
+13 upstream-watcher tests, 5 asset checks and 38 pure Swift PixelSpec assertions.
+Android debug/release builds and lint, both iOS variants and the signed full
+iOS archive/export/upload passed. Native Home and Pixel-review captures are in
+[screenshots](screenshots/README.md). These checks do not establish end-to-end
+parity with a live, provider-backed Hermes install.
 
 ## Current limits
 
@@ -119,8 +121,13 @@ provided.
 ## Site and licenses
 
 [niobium.sh](https://niobium.sh) uses the shared WCKD web design and is deployed
-with Cloudflare Workers Static Assets from this repository. Public downloads
-remain on the [1.1 release](https://github.com/wckdboy/niobium/releases/tag/v1.1.0).
+with Cloudflare Workers Static Assets from this repository. The
+[2.0 beta release](https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.1)
+includes the signed Android APK, iOS distribution IPA, checksums and complete
+release notes. iOS 2.0 (4), ai.wckd.niobium, was uploaded for TestFlight and
+accepted for Apple processing. TestFlight manages installation; the App Store
+IPA is not a universally sideloadable download. The last stable release is
+[1.1](https://github.com/wckdboy/niobium/releases/tag/v1.1.0).
 
 Android is MIT. The iOS full build combines GPLv3 components. Niobium is
 independent of Hermes/Nous Research and DeepSeek; see [NOTICE](NOTICE) and
