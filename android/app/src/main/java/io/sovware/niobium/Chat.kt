@@ -539,7 +539,7 @@ fun GroupChatScreen(vm: NiobiumViewModel, room: GroupRoom) {
 @Composable
 private fun GroupEventRow(event: RoomEvent, room: GroupRoom) {
     val isUser = event.actorKind == "user" || event.actorId == "user"
-    val member = room.members.firstOrNull { it.id == event.actorId || it.profile == event.actorId }
+    val member = room.member(event.actorId)
     val accent = Nb.colorFor(event.actorId)
     if (isUser) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {

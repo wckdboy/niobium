@@ -22,6 +22,7 @@ class MainActivity : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.dark(AndroidColor.TRANSPARENT)
         )
         super.onCreate(savedInstanceState)
+        android.webkit.WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
         Nb.appearance = getSharedPreferences("niobium", MODE_PRIVATE)
             .getString("niobium.appearance", "system") ?: "system"
         val vm: NiobiumViewModel by viewModels()

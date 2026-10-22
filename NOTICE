@@ -1,4 +1,4 @@
-Niobium — iOS local DeepSeek Harness build
+Niobium — local DeepSeek Harness distributions
 ==========================================
 
 This distribution includes and statically links the following components:
@@ -21,5 +21,16 @@ submodule. The guest image is reproducibly built by
 `ios/scripts/build-local-dsh.sh`; the exact DSH submodule revision is recorded
 by git.
 
-The Android application does not link iSH and remains MIT-licensed; see
-`android/` and the root license history.
+The Android native UI and runtime supervisor are MIT-licensed and do not link
+iSH. The Android APK also distributes separate PRoot executables (GPL-2.0),
+libtalloc (LGPL/GPL components), libandroid-shmem (BSD-3-Clause), and the same
+Alpine/DSH guest image. These components retain their respective licenses;
+the APK as a collection must not be described as entirely MIT-licensed.
+
+Exact Android package versions, checksums, source archive checksums and the
+Termux packaging revision are in config/android-runtime.json. Run
+python3 tools/prepare-android-runtime.py --sources to obtain the corresponding
+upstream source archives. Android release assets include those sources,
+Termux build recipes/patches, and this repository's supervisor source.
+The PRoot fork is https://github.com/termux/proot; Termux packaging is
+https://github.com/termux/termux-packages. Neither requires the Termux app.

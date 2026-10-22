@@ -27,9 +27,19 @@ class AssetsTests(unittest.TestCase):
             colors.update(tuple(row[x:x+3]) for x in range(1, len(row), 3))
         self.assertEqual(colors, {(255,255,255), (167,139,250)})
         self.assertIn("#A78BFA", (ROOT / "site/public/favicon.svg").read_text())
+        self.assertEqual(icon, (ROOT / "site/public/og/icon.png").read_bytes())
+        for scale, suffix in [(1, ""), (2, "@2x"), (3, "@3x")]:
+            mark = (ROOT / f"ios/Resources/Assets.xcassets/PixelNiobium.imageset/pixel-niobium@{scale}x.png").read_bytes()
+            self.assertEqual(mark, (ROOT / f"ios/Resources/Assets.xcassets/LaunchMark.imageset/LaunchMark{suffix}.png").read_bytes())
+            if scale == 3:
+                self.assertEqual(mark, (ROOT / "android/app/src/main/res/drawable-nodpi/pixel_niobium.png").read_bytes())
+        self.assertIn('src="/favicon.svg"', (ROOT / "site/layout.html").read_text())
 
     def test_skill_copies_cannot_drift(self):
         skill = (ROOT / "bot-build.md").read_bytes()
+        # A colon in a plain YAML description prevents DSH from discovering it.
+        description = next(line for line in skill.decode().splitlines() if line.startswith("description:"))
+        self.assertIsInstance(json.loads(description.split(":", 1)[1].strip()), str)
         for name in ["skills/bot-build.md", "ios/Resources/bot-build.md",
                      "android/app/src/main/assets/bot_build.md", "site/public/bot-build.md"]:
             self.assertEqual(skill, (ROOT / name).read_bytes(), name)

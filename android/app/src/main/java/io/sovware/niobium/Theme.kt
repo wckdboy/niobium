@@ -40,6 +40,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.graphics.ImageBitmap
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -143,7 +145,8 @@ fun NbBackground(intensity: Float = 1f, content: @Composable () -> Unit) {
 @Composable
 fun AtomicMark(size: Dp = 36.dp, animated: Boolean = false) {
     Image(
-        painter = painterResource(R.drawable.pixel_niobium),
+        bitmap = ImageBitmap.imageResource(R.drawable.pixel_niobium),
+        filterQuality = androidx.compose.ui.graphics.FilterQuality.None,
         contentDescription = "Niobium",
         contentScale = ContentScale.FillBounds,
         modifier = Modifier

@@ -4,6 +4,14 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class PixelSpecTest {
+    @Test fun roomMembersUseQualifiedIDsWhenProfilesRepeat() {
+        val room = GroupRoom.parse(org.json.JSONObject("""{"room_id":"room","name":"Cross-gateway","members":[
+            {"member_id":"a:scout","profile":"scout","display_name":"Scout A"},
+            {"member_id":"b:scout","profile":"scout","display_name":"Scout B"}]}"""))!!
+        assertEquals("Scout A", room.member("a:scout")?.name)
+        assertEquals("Scout B", room.member("b:scout")?.name)
+        assertNull(room.member("scout"))
+    }
     @Test fun jsonRoundTripPreservesCustomCompanionAndRecipe() {
         val spec = PixelBuilder.fallback("security with an owl").copy(companion = PixelCompanion("owl", "Hex", "Counts loose threads."))
         val parsed = PixelBuilder.parse(spec.toJson().toString())

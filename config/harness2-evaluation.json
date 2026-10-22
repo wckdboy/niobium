@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "repository": "https://github.com/google-research/harness2",
+  "commit": "1cfe254e8d25b15f37048c3730134686abe60335",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "evaluated_at": "2026-10-22",
+  "status": "evaluated-not-integrated",
+  "python": ">=3.12,<3.14",
+  "existing_executors": [
+    "opencode",
+    "codex"
+  ],
+  "demo": {
+    "mode": "both",
+    "k": 2,
+    "tasks_completed": 2,
+    "tasks_failed": 0,
+    "execution_count": 28,
+    "editor_calls": 32,
+    "model_credentials_used": false
+  },
+  "niobium_next_step": "Build a bounded Hermes substrate experiment on PC/VPS. Keep keys and enforced permissions outside the editable surface; review evidence and versioned changes before adopting them."
+}

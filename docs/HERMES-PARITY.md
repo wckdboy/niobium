@@ -33,7 +33,7 @@ This is implementation coverage, not a claim of complete live parity.
   UI updates are scoped to the active profile/session.
 - Routines: cron.manage list/add/remove.
 - Photos and local dictation on both platforms.
-- DSH: embedded Alpine/iSH on iOS full; remote harness on both. Remote addresses
+- DSH: embedded Alpine/iSH on iOS full and PRoot/Alpine on ARM64 Android; remote harness on both. Remote addresses
   are stored in Keychain/Keystore, with visible retry/error controls and WebView
   teardown.
 
@@ -81,16 +81,19 @@ bundles, not download-size claims.
 - Browser/voice: complete host browser control, voice recording/TTS and device
   bridges.
 - Native background delivery/push.
-- Android embedded Linux/DSH runtime.
+- Android DSH physical/16 KB devices, provider turns, host bridges and native preset editor.
 
 ## Verification
 
 - 38 pure Swift PixelSpec checks: valid templates, adult/layer validation,
   typed decoding, permissions, unavailable tools and duplicate capabilities.
-- Four Android unit tests cover template validity and permission/catalog gates.
+- 23 Android JVM tests cover schemas, gateway WebSockets, provisioning and safe archive extraction.
+- Four Android app-domain runtime tests cover shell/Node/DSH, HTTP/WebSocket authentication,
+  session/skill APIs, WebView layout, foreground Start/Stop and workspace preservation.
+- 20 iOS unit tests and two UI tests cover transport, prompt races, room identity and native flows.
 - Android debug/release builds and iOS Hermes-only/full-DSH simulator builds.
 - Native Home and Pixel-review captures inspected on both platforms.
-- Website build, seven generated HTML pages, 73 internal links/assets and skill
+- Website build, seven generated HTML pages, 81 internal links/assets and skill
   copy consistency; Cloudflare deployment verified.
 - Full live gateway/provider execution, real account authorization and physical
   device background behaviour have not been established by these checks.

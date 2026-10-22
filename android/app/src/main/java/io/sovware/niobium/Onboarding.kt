@@ -45,7 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun OnboardingScreen(state: NbState, onConnect: (String, String, String) -> Unit, onDemo: () -> Unit) {
+fun OnboardingScreen(state: NbState, onConnect: (String, String, String) -> Unit, onDemo: () -> Unit, onLocal: () -> Unit) {
     var gateway by remember { mutableStateOf("http://127.0.0.1:9119") }
     var token by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("My Hermes") }
@@ -70,10 +70,23 @@ fun OnboardingScreen(state: NbState, onConnect: (String, String, String) -> Unit
             Text("Your pixels.\nIn your pocket.", color = Nb.Text, style = NbDisplay, fontSize = 46.sp, lineHeight = 47.sp, letterSpacing = (-2).sp)
             Spacer(Modifier.height(14.dp))
             Text(
-                "A quiet command deck for Hermes. Every pixel, every tool, every approval — right here.",
+                "Connect to Hermes, or give your Pixels a home right on this device.",
                 color = Nb.Secondary, fontSize = 15.sp, lineHeight = 22.sp
             )
             Spacer(Modifier.height(28.dp))
+
+            Column(Modifier.fillMaxWidth().pixelPanel(20.dp, accented = true).padding(18.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    PixelIcon(PixelGlyph.TERMINAL)
+                    Spacer(Modifier.width(10.dp))
+                    Text("No server? No problem.", color = Nb.Text, style = NbTitle, fontSize = 17.sp)
+                }
+                Text("Alpine Linux + DSH, on your Android. Bring your provider API keys and start a local Pixel.",
+                    color = Nb.Secondary, fontSize = 12.sp, lineHeight = 18.sp)
+                PixelButton("Run Pixels locally", PixelGlyph.PLAY, Modifier.fillMaxWidth(), onClick = onLocal)
+            }
+            Spacer(Modifier.height(16.dp))
 
             Column(
                 Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp))

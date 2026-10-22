@@ -70,7 +70,7 @@ fun RemoteHarnessScreen(onClose: () -> Unit) {
         if (active == null) {
             Column(Modifier.fillMaxSize().padding(22.dp).imePadding(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Text("Open the harness from your computer or VPS.", color = Nb.Text, style = NbTitle, fontSize = 24.sp)
-                Text("Run DSH with its web UI exposed, then enter its http(s) address. This is the same full harness UI and works on Android and iOS; the embedded Alpine guest is iOS-only.",
+                Text("Run DSH with its web UI exposed, then enter its http(s) address. Use the full DSH web UI from your server.",
                     color = Nb.Secondary, fontSize = 12.5.sp, lineHeight = 18.sp)
                 OutlinedTextField(
                     value = url, onValueChange = { url = it },
@@ -100,7 +100,7 @@ fun RemoteHarnessScreen(onClose: () -> Unit) {
                 }
                 error?.let { Text(it, color = Nb.Rose, fontSize = 11.sp) }
                 Spacer(Modifier.height(4.dp))
-                Text("Local Linux guest is available in the iOS full build (Settings → On device). Hermes gateway access stays in the Pixels tab.",
+                Text("For on-device DSH, return to Local. Hermes gateway access is in the Pixels tab.",
                     color = Nb.Tertiary, fontSize = 10.5.sp, lineHeight = 16.sp)
             }
         } else {
@@ -111,9 +111,11 @@ fun RemoteHarnessScreen(onClose: () -> Unit) {
                 }
             }
             androidx.compose.runtime.key(active, reloadID) { AndroidView(
-                modifier = Modifier.fillMaxSize().navigationBarsPadding(),
+                modifier = Modifier.fillMaxSize().navigationBarsPadding().imePadding(),
                 factory = { ctx ->
                     WebView(ctx).apply {
+                        layoutParams = android.view.ViewGroup.LayoutParams(
+                            android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT)
                         settings.javaScriptEnabled = true
                         settings.domStorageEnabled = true
                         settings.allowFileAccess = false

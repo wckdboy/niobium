@@ -25,8 +25,8 @@
     {
       "id": "d1bc8db7-ff94-489c-89f3-0245aca42ea6",
       "sequence_id": 3,
-      "name": "48×48 adult cast, original art and cached layer engine",
-      "description": "Original adult fantasy/cyborg cast and terrace generated. Native 48×48 cached portraits; shared layer recipes, palettes, outfit/hair/accessory choices, and companion names. Verify at small sizes, both themes, and actual native layouts; preserve asset provenance.",
+      "name": "48\u00d748 adult cast, original art and cached layer engine",
+      "description": "Original adult fantasy/cyborg cast and terrace generated. Native 48\u00d748 cached portraits; shared layer recipes, palettes, outfit/hair/accessory choices, and companion names. Verify at small sizes, both themes, and actual native layouts; preserve asset provenance.",
       "priority": "high",
       "state": "429820e5-f4b1-4754-9dd5-55b8a3c7cd64",
       "external_id": null,
@@ -95,7 +95,7 @@
     {
       "id": "fe3e3bba-6828-4a33-b1ed-c73b48deb3b4",
       "sequence_id": 10,
-      "name": "Validated PixelSpec and design → review → create",
+      "name": "Validated PixelSpec and design \u2192 review \u2192 create",
       "description": "Both clients validate adult age, character layers, names, traits, briefings and capability IDs. Query profiles.describe for the actual catalog; filter unclassified/disallowed tools; label model failure as a template. Review name, permissions, soul, skills and connector requests before creating.",
       "priority": "high",
       "state": "429820e5-f4b1-4754-9dd5-55b8a3c7cd64",
@@ -286,9 +286,9 @@
       "id": "9b6ed218-0ca5-41ca-80cb-9466338405c8",
       "sequence_id": 29,
       "name": "Android on-device DSH runtime",
-      "description": "Research completed 2026-10-22. Implement an ARM64 APK-packaged PRoot runtime with pinned Ubuntu/glibc + Node 24 + DSH. DSHA reference commit edcbe634874c57c3815170bf0fb44f11ed91af46 has both bxroot and PRoot; retain PRoot as the compatibility baseline and evaluate bxroot after the same device gates. Android target API 29+ blocks execve from writable app storage, so runtime executables/loaders must live in nativeLibraryDir, not an extracted Termux script.\nImplementation plan and primary sources: https://github.com/wckdboy/niobium/blob/v2/docs/ANDROID-DSH.md\nNext: pin source/binary hashes and licenses; prove cold-install shell + Node + DSH + provider turn in Niobium. Then validate native modules/PTYS, delegated work, per-run loopback authentication, Keystore secrets, process-tree ownership/Stop, process death, signed upgrade preserving workspace and 16 KB page-size compatibility on real ARM64 devices.\nCurrent Android release supports remote DSH only. Embedded stability is not yet established.",
+      "description": "Android on-device DSH beta implemented 2026-10-22. APK-packaged official Termux PRoot + pinned Alpine/Node/DSH image; no separate Termux app or remote Hermes connection required. Native pixel setup, stepped buttons, foreground Start/Stop, private Unix socket with authenticated loopback proxy, bounded verified extraction and persistent home/workspace. Four app-domain ARM64 Android 16/API36 emulator tests pass: shell/Node/DSH, HTTP/WebSocket authentication, session creation and bot-build discovery, foreground service/WebView layout/Stop, image replacement preserving workspace. JVM archive security tests and packaged ARM64/16 KB ELF/hash checks pass. Sources/recipes and NOTICE are bundled for redistribution. Documentation: https://github.com/wckdboy/niobium/blob/main/docs/ANDROID-DSH.md. Remaining acceptance: provider-backed turns, physical ARM64 and 16 KB page operation, Android-version/OEM/battery/process-death coverage, PTYs/uploads/delegation, native DSH Pixel preset integration and Keystore-backed provider vault. DSH provider settings currently remain in app-private guest home; per-Pixel isolation is not provided by PRoot.",
       "priority": "high",
-      "state": "67b7c35f-9516-4123-b1cf-b9d32aeaadb0",
+      "state": "429820e5-f4b1-4754-9dd5-55b8a3c7cd64",
       "external_id": "android-local",
       "external_source": "niobium-v2-audit"
     },
@@ -356,11 +356,21 @@
       "id": "ae2dc110-9ec8-4fcd-8643-f3c6661a4be8",
       "sequence_id": 36,
       "name": "Distinct personas and creature generation quality",
-      "description": "Every new Pixel goes through bot-build.md. Validate 120–600 word personable operator briefings, adult 48×48 looks, opt-in mischievous voice, original named creatures, role-specific installed skills and requested connections. Ensure templates remain clearly labelled.",
+      "description": "Every new Pixel goes through bot-build.md. Validate 120\u2013600 word personable operator briefings, adult 48\u00d748 looks, opt-in mischievous voice, original named creatures, role-specific installed skills and requested connections. Ensure templates remain clearly labelled.",
       "priority": "high",
       "state": "429820e5-f4b1-4754-9dd5-55b8a3c7cd64",
       "external_id": "personas",
       "external_source": "niobium-v2-audit"
+    },
+    {
+      "id": "fd95b656-9094-44e4-89b4-d8c23b4ec67f",
+      "sequence_id": 37,
+      "name": "Evaluate Harness2 for evidence-based Pixel improvement",
+      "priority": "medium",
+      "state": "67b7c35f-9516-4123-b1cf-b9d32aeaadb0",
+      "external_id": "harness2-pixel-improvement",
+      "external_source": "niobium-v2-audit",
+      "description": "User-linked Harness2 evaluated at google-research/harness2 commit 1cfe254e8d25b15f37048c3730134686abe60335, Apache-2.0, Python 3.12/3.13. Deterministic credential-free demo passed parallel and sequential recursion at k=2: two tasks, zero failures, 28 executions and 32 editor calls. Existing executors are OpenCode/Codex; Hermes/DSH needs a substrate adapter. Proposed next experiment: one bounded probe step per explicitly selected test task on PC/VPS, evidence-based persona/skill/delegation suggestions shown as a reviewed PixelSpec diff, versioned adoption and rollback. Keep secrets, connector authorization and enforced access outside the editable harness. Do not replay side-effecting tasks as probes. Acceptance: real Hermes adapter, independent outcome checks, budget/cancellation/reconnect/partial-failure coverage, evidence redaction and unchanged access. Not integrated or shipped as a mobile runtime. Source and plan: https://github.com/google-research/harness2 and https://github.com/wckdboy/niobium/blob/main/PLAN.md."
     }
   ]
 }
