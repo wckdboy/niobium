@@ -50,7 +50,8 @@ fun UsageSheet(vm: NiobiumViewModel, onDismiss: () -> Unit) {
                     Column {
                         Text("Context", color = Nb.Text, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                         Text("${usage.contextTokens} / ${usage.contextLength ?: "—"} tokens", color = Nb.Tertiary, style = NbMono, fontSize = 8.sp)
-                        Text("${usage.apiCalls} calls · ${usage.compressionCount} compressions", color = Nb.Tertiary, style = NbMono, fontSize = 8.sp)
+                        Text(usage.apiCalls.toString() + " calls" + if (vm.state.engine == AgentEngine.HERMES) " · " + usage.compressionCount + " compressions" else "",
+                            color = Nb.Tertiary, style = NbMono, fontSize = 8.sp)
                     }
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {

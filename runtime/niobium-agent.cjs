@@ -286,10 +286,16 @@ function createProvider({rpc, postResponse, home = '/root/.dsh', workspace = '/r
       case 'local.models': return rpc('llm.models', {});
       case 'session.stats': {
         const h = await history(p.session_id);
-        const usage = h.events.filter(e => e.event.type === 'assistant/message').map(e => e.event.data.usage || {});
-        const input = usage.reduce((n,u) => n + (u.inputTokens || 0), 0), output = usage.reduce((n,u) => n + (u.outputTokens || 0), 0);
+        const projection = h.projections?.values;
+        const usage = projection?.tokenUsage;
+        if (!usage) throw new Error('Local usage is not available for this session yet.');
+        const input = (usage.uncachedInputTokens || 0) + (usage.cacheReadTokens || 0) + (usage.cacheWriteTokens || 0), output = usage.outputTokens || 0;
+        const jobs = await rpc('subagent.list', {parentSessionId: p.session_id});
+        const model = await rpc('session.models', {sessionId: p.session_id});
         return {input_tokens: input, output_tokens: output, total_tokens: input + output,
-          cache_read_tokens: usage.reduce((n,u) => n + (u.cacheReadTokens || 0), 0), api_calls: usage.length};
+          cache_read_tokens: usage.cacheReadTokens || 0, api_calls: projection.sessionStats?.steps || 0,
+          context_tokens: projection.contextPressure?.pressureTokens || 0, context_length: projection.contextPressure?.contextWindow,
+          active_subagents: jobs.entries.filter(e => e.kind === 'child' && e.activity === 'running').length, model: model.current.model};
       }
       case 'subagent.list': {
         const list = await rpc('subagent.list', {parentSessionId: p.session_id});

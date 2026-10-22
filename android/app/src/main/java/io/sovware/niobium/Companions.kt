@@ -19,12 +19,12 @@ import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 data class CompanionTask(val id: String, val goal: String, val status: String, val lastTool: String,
-                         val toolCount: Int, val canSteer: Boolean, val failed: Boolean = false) {
+                         val toolCount: Int?, val canSteer: Boolean, val failed: Boolean = false) {
     companion object {
         fun parse(j: JSONObject): CompanionTask? {
             val id = j.s("subagent_id") ?: return null
             return CompanionTask(id, j.s("goal") ?: "Delegated task", j.s("status") ?: "working",
-                j.s("last_tool") ?: "", j.optInt("tool_count"), j.optBoolean("accepting_steer"))
+                j.s("last_tool") ?: "", j.i("tool_count"), j.optBoolean("accepting_steer"))
         }
     }
 }
@@ -99,7 +99,7 @@ fun CompanionsSheet(vm: NiobiumViewModel, bot: BotProfile, onDismiss: () -> Unit
                     Image(painterResource(companionDrawable(member.companion)), null, modifier = Modifier.size(38.dp))
                     Column(Modifier.weight(1f)) {
                         Text(child.goal, color = Nb.Text, fontSize = 13.sp, maxLines = 3)
-                        Text(child.status + " · " + child.toolCount + " tools", color = if (child.failed) Nb.Rose else Nb.Secondary, style = NbMono, fontSize = 9.sp)
+                        Text(child.status + (child.toolCount?.let { " · " + it + " tools" } ?: ""), color = if (child.failed) Nb.Rose else Nb.Secondary, style = NbMono, fontSize = 9.sp)
                     }
                     Text("›", color = Nb.Tertiary)
                 }

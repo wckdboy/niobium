@@ -5,14 +5,14 @@ struct CompanionTask: Identifiable, Equatable {
     var goal: String
     var status: String
     var lastTool: String
-    var toolCount: Int
+    var toolCount: Int?
     var canSteer: Bool
     var failed: Bool
     static func parse(_ json: JSONObject) -> CompanionTask? {
         guard let id = json.string("subagent_id") else { return nil }
         return .init(id: id, goal: json.string("goal") ?? "Delegated task",
                      status: json.string("status") ?? "working", lastTool: json.string("last_tool") ?? "",
-                     toolCount: json.int("tool_count") ?? 0, canSteer: json.bool("accepting_steer") ?? false, failed: false)
+                     toolCount: json.int("tool_count"), canSteer: json.bool("accepting_steer") ?? false, failed: false)
     }
 }
 
@@ -69,7 +69,7 @@ struct CompanionsView: View {
                                 Image("Comp_\(member.companion)").resizable().interpolation(.none).frame(width: 38, height: 38)
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(child.goal).font(.nbBody(13, weight: .semibold)).foregroundStyle(NB.text).lineLimit(3)
-                                    Text("\(child.status) · \(child.toolCount) tools\(child.lastTool.isEmpty ? "" : " · \(child.lastTool)")")
+                                    Text(child.status + (child.toolCount.map { " · \($0) tools" } ?? "") + (child.lastTool.isEmpty ? "" : " · \(child.lastTool)"))
                                         .font(.nbMono(9)).foregroundStyle(child.failed ? NB.rose : NB.secondary)
                                 }
                                 Spacer()

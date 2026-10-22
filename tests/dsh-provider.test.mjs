@@ -158,6 +158,19 @@ test('older history requests preserve the upstream cursor and next-page state', 
   assert.equal(page.before_seq, 40); assert.equal(page.has_more, true); assert.equal(page.messages[0].text, 'Older');
 });
 
+test('usage totals come from the full-log projection rather than the history page', async () => {
+  const p = createProvider({rpc: async method => {
+    if (method === 'session.history') return {events: [], hasMore: true, projections: {values: {
+      tokenUsage: {uncachedInputTokens: 1000, outputTokens: 200, cacheReadTokens: 300, cacheWriteTokens: 0},
+      sessionStats: {steps: 20}, contextPressure: {pressureTokens: 800, contextWindow: 10000}}}};
+    if (method === 'subagent.list') return {entries: [{kind: 'child', activity: 'running'}]};
+    return {current: {model: 'fixture-model'}};
+  }});
+  const stats = await p.request('session.stats', {session_id: 'sid'});
+  assert.equal(stats.total_tokens, 1500); assert.equal(stats.api_calls, 20);
+  assert.equal(stats.active_subagents, 1); assert.equal(stats.context_length, 10000);
+});
+
 test('restored DSH transcript keeps user, assistant and tool rows without chunk duplicates', () => {
   const events = [
     {type: 'user/message', data: {content: [{type: 'text', text: 'Hello'}]}},

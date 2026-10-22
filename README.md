@@ -110,7 +110,7 @@ node site/check.mjs
 
 The beta passed 24 iOS unit tests, 3 native UI tests, 24 Android JVM tests,
 5 Android runtime instrumentation tests,
-16 DSH-adapter tests, 13 upstream-watcher tests, 5 asset checks and 38 pure Swift PixelSpec assertions.
+17 DSH-adapter tests, 13 upstream-watcher tests, 5 asset checks and 38 pure Swift PixelSpec assertions.
 Android debug/release builds and lint, both iOS variants and the signed full
 iOS archive/export/upload passed. Native Home and Pixel-review captures are in
 [screenshots](screenshots/README.md). These checks do not establish end-to-end

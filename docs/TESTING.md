@@ -66,7 +66,7 @@ Android runtime tests require an ARM64 Android device/emulator:
 Five app-domain tests verify Linux/Node/DSH, private authenticated HTTP/WebSocket access,
 real session creation and bot-build discovery, service Start/Stop, CSS viewport layout,
 workspace preservation through image replacement, and a full native preset/chat/history
-round trip through real DSH and a controlled model server. Sixteen shared adapter
+round trip through real DSH and a controlled model server. Seventeen shared adapter
 tests cover tool grants, adult/slug validation, model identity, pending approvals
 and questions, stream/transcript folding and explicit unsupported capabilities.
 See DSH-PROVIDER.md and ANDROID-DSH.md for limits.
