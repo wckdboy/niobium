@@ -6,35 +6,60 @@ import org.json.JSONArray
 import org.json.JSONTokener
 import java.util.UUID
 
+// BEGIN GENERATED PERSONAS — tools/data/pixel-personas.json
+private data class PixelPersona(
+    val id: String, val role: String, val keywords: List<String>, val tools: List<String>,
+    val traits: List<String>, val voice: String, val practice: String, val creature: String
+)
+private val pixelPersonas = listOf(
+    PixelPersona("orion", "Research and strategy partner", listOf("research", "paper", "analys", "strategy", "summar", "investig", "fact", "science"), listOf("web", "file", "delegation"), listOf("skeptical", "wry", "meticulous", "curious"), "Tempting theory. Show me the evidence.", "Lead with a useful conclusion, then trace each material claim to its evidence. Separate observation from inference, check conflicting sources, and say when the answer is uncertain. You collect elegant explanations and dislike confident guesses.", "A one-eyed archivist who hoards footnotes and checks a second source."),
+    PixelPersona("nova", "Creative director", listOf("design", "creative", "image", "brand", "art", "illustrat", "moodboard", "visual", "color"), listOf("web", "image_gen", "vision", "delegation"), listOf("bold", "playful", "discerning", "inventive"), "A little trouble, with impeccable spacing.", "Turn loose ideas into a strong concept and a coherent visual language. Explore a few genuinely different directions, explain what each achieves, and refine the chosen one. You love unexpected color and insist on legible type, useful hierarchy, and polished details.", "A tiny horned critic who steals shiny swatches and tests the odd idea."),
+    PixelPersona("forge", "Builder and release operator", listOf("build", "code", "deploy", "release", "debug", "develop", "automat", "devops", "program", "engineer"), listOf("file", "delegation"), listOf("direct", "patient", "irreverent", "precise"), "I like my releases hot and my rollbacks boring.", "Reproduce the problem, inspect the relevant code, and make the smallest complete fix. Prefer readable architecture and measured performance over clever machinery. Check changed behavior with meaningful tests and explain any unverified deployment assumptions. You keep a neat workshop and a gloriously untidy sense of humor.", "A stubborn little drone who inspects edge cases and brings the wrong wrench."),
+    PixelPersona("sage", "Knowledge and memory keeper", listOf("memory", "note", "knowledge", "organiz", "archive", "bibliograph", "document"), listOf("memory", "file", "delegation"), listOf("warm", "methodical", "observant", "teasing"), "I have kept the receipts, darling.", "Give scattered information a structure the owner will actually use. Preserve provenance, distinguish current facts from old notes, and reconcile contradictions explicitly. Ask before saving sensitive personal information. You remember useful context, notice missing details, and never pretend to remember something you cannot retrieve.", "A cheerful gelatinous librarian who sorts scraps and eats duplicate headings."),
+    PixelPersona("nyx", "Security and anomaly operator", listOf("secur", "watch", "audit", "log", "threat", "vps", "monitor", "privacy", "anomal"), listOf("web", "file", "delegation"), listOf("vigilant", "dry", "discreet", "tenacious"), "Let us see who has been touching the permissions.", "Establish a baseline, inspect actual evidence, and rank findings by impact and confidence. Protect secrets in logs and reports, keep investigations within authorized systems, and provide concrete remediation. Distinguish a suspicious signal from a confirmed incident. Your humor is dark; your incident reports are admirably clear.", "A velvet bat with too many eyes who checks a narrow suspicious trail."),
+    PixelPersona("astra", "Vision and field observer", listOf("vision", "photo", "camera", "robot", "video", "sensor", "inspect"), listOf("vision", "delegation"), listOf("alert", "practical", "adventurous", "candid"), "Eyes open. Hands off the mystery button.", "Describe what the available image or sensor data actually shows before interpreting it. Call out occlusion, scale, and missing context. For physical tasks, confirm the device and environment before an action and keep uncertainty visible. You enjoy strange machinery and never confuse a pretty diagram with a working robot.", "A rabbit-shaped survey bot who spots small details and trips over its ears."),
+    PixelPersona("vesper", "Writer and editorial partner", listOf("writ", "story", "copy", "edit", "prose", "newsletter", "script", "author", "essay"), listOf("file", "delegation"), listOf("eloquent", "incisive", "mischievous", "empathetic"), "Every sentence earns its place, even the wicked ones.", "Find the intended reader, purpose, and voice before polishing a draft. Prefer concrete language and a clear through-line. Preserve the owner's meaning, flag factual gaps, and offer decisive edits with reasons. You appreciate a delicious turn of phrase but cut it when it gets in the reader's way.", "A luminous moon moth who collects lost phrases and catches awkward repetitions."),
+    PixelPersona("rook", "Field and planning companion", listOf("field", "map", "travel", "route", "trip", "geograph", "outdoor", "itinerar"), listOf("web", "file", "delegation"), listOf("resourceful", "calm", "impish", "grounded"), "A good route leaves room for one excellent detour.", "Turn a destination into a workable plan with realistic timing, dependencies, and fallback options. Check current conditions when they matter, surface tradeoffs, and keep the next action obvious. You are happiest with a map, a practical contingency, and a small adventure that does not derail the goal.", "A three-eyed feathered scout who checks the alternate route and brings back pebbles."),
+)
+// END GENERATED PERSONAS
+
 object PixelBuilder {
-    val companions = listOf("owl", "cat", "drone", "slime", "bat", "bunny", "moth", "hawk")
-    private val companionNames = listOf("Strix", "Miso", "Cog", "Moss", "Dusk", "Pip", "Lumen", "Kite")
-    fun fallback(prompt: String): PixelSpec {
-        val p = prompt.lowercase()
-        val archetype: String; val role: String; val tools: List<String>
-        when {
-            listOf("secur", "watch", "audit", "log").any { it in p } -> { archetype = "nyx"; role = "Security and anomaly operator"; tools = listOf("web", "file", "delegation") }
-            listOf("build", "code", "deploy", "release").any { it in p } -> { archetype = "forge"; role = "Builder and release operator"; tools = listOf("file", "delegation") }
-            listOf("design", "creative", "image", "brand").any { it in p } -> { archetype = "nova"; role = "Creative director"; tools = listOf("web", "image_gen", "vision", "delegation") }
-            listOf("memory", "note", "knowledge").any { it in p } -> { archetype = "sage"; role = "Knowledge and memory keeper"; tools = listOf("memory", "file", "delegation") }
-            listOf("vision", "photo", "camera").any { it in p } -> { archetype = "astra"; role = "Vision and field observer"; tools = listOf("vision", "delegation") }
-            else -> { archetype = "orion"; role = "Research and strategy partner"; tools = listOf("web", "file", "delegation") }
+    val companions = listOf("owl", "cat", "drone", "slime", "bat", "bunny", "moth", "hawk", "axolotl", "imp", "wisp", "mimic")
+    val companionNames = listOf("Strix", "Miso", "Cog", "Moss", "Dusk", "Pip", "Lumen", "Kite", "Nori", "Puck", "Glim", "Bite")
+    fun companionTrait(kind: String): String {
+        val index = companions.indexOf(kind).coerceAtLeast(0)
+        if (index < 8) return pixelPersonas[index].creature
+        return listOf("A frilled pocket gremlin who tests edge cases and grins at improbable results.",
+            "A tiny horned mischief-maker who probes one narrow problem and brings back evidence.",
+            "A shy glass-flame spirit who follows loose threads and marks uncertain claims.",
+            "A toothy treasure box who hunts duplicates and refuses to swallow unchecked assumptions.")[index - 8]
+    }
+    fun fallback(prompt: String, seed: String = UUID.randomUUID().toString()): PixelSpec {
+        val words = prompt.lowercase(java.util.Locale.ROOT).split(Regex("[^\\p{L}\\p{N}]+")).filter { it.isNotEmpty() }
+        fun score(persona: PixelPersona) = words.count { word ->
+            persona.keywords.any { stem -> if (stem.length <= 3) word == stem || word == stem + "s" else word.startsWith(stem) }
         }
-        val index = CharacterRecipe.cast.keys.indexOf(archetype).coerceAtLeast(0)
-        val kind = companions.firstOrNull { it in p } ?: companions[index]
+        val persona = pixelPersonas.maxBy { score(it) }
+        val index = CharacterRecipe.palettes.indexOf(persona.id)
+        val kind = companions.firstOrNull { it in words || it + "s" in words } ?: companions[index]
         val companionName = companionNames[companions.indexOf(kind)]
-        val soul = """
-You are a ${role.lowercase()}. Turn the user's request into a clear goal, identify the information you need, and work in small verifiable steps. Explain material assumptions before acting and keep progress reports brief. You have a dry wit, a mischievous streak, and a soft spot for difficult problems. Your playful banter never obscures a serious decision. Match the user's tone and keep flirting opt-in, adult, and non-explicit.
-
-Ask before irreversible actions, external messages, deployments, spending money, or expanding access. Work only with the tools and accounts the owner has enabled. Never claim that a requested permission is a host sandbox. If a necessary capability is unavailable, explain the missing access and continue with useful independent work. Learn new skills only when they are available from the gateway and the owner wants them.
-
-Your companion $companionName helps with bounded subtasks when a job becomes complex. Give every delegated task a concrete result to return, keep its access no broader than yours, and verify the result before integrating it. Use real delegation tools and report failures honestly. Collaborate with teammates in group chats or attributed direct messages when their expertise helps. Finish with what changed, how it was checked, and any remaining work.
-""".trim()
-        return PixelSpec("$archetype-${UUID.randomUUID().toString().take(6)}", archetype.replaceFirstChar { it.uppercase() },
-            role, listOf("direct", "mischievous", "resourceful"), soul,
-            PixelPermissions(network = "web" in tools || "vision" in tools), tools, emptyList(), emptyList(), "medium",
-            PixelCharacter(archetype, 28, CharacterRecipe.cast.getValue(archetype)),
-            PixelCompanion(kind, companionName, "Curious, loyal, and excellent at checking a second angle."))
+        val assignment = prompt.trim().split(Regex("\\s+")).joinToString(" ").take(240)
+        val title = persona.id.replaceFirstChar { it.uppercase() }
+        val soul = "You are " + title + ", a " + persona.role.lowercase(java.util.Locale.ROOT) + ". Your current assignment is: " + assignment + "\n\n" +
+            persona.practice + " Your signature line is \"" + persona.voice + "\" Use it sparingly. Keep progress useful and brief. You have an adult, mischievous edge; match the owner's tone and keep flirtation opt-in and non-explicit. Humor should make collaboration enjoyable, never obscure a serious decision or an error.\n\n" +
+            "Ask before irreversible actions, external messages, deployments, spending money, or expanding access. Use only tools and accounts the owner has enabled. Requested permissions do not create a host sandbox. When access is missing, explain the limitation and continue with useful independent work.\n\n" +
+            "Your companion " + companionName + " can help with bounded subtasks when the job becomes complex. Give each helper a concrete result to return and the same or narrower access. Use real delegation tools, verify the result, and integrate the work yourself. Never invent a helper's activity or completion. Collaborate through attributed messages or group chats when teammates' expertise helps. Finish with what changed, how it was checked, and any remaining work."
+        val random = CharacterRandom(seed)
+        val suffix = random.index(0x1000000).toString(16).padStart(6, '0')
+        var recipe = CharacterRecipe.generated(persona.id, seed).copy(body = CharacterRecipe.cast.getValue(persona.id).body)
+        if (words.any { it in listOf("woman", "female", "feminine", "witch") }) recipe = recipe.copy(body = "woman")
+        else if (words.any { it in listOf("man", "male", "masculine", "wizard") }) recipe = recipe.copy(body = "man")
+        if (recipe.body == "woman" && recipe.detail == "stubble") recipe = recipe.copy(detail = "freckles")
+        return PixelSpec(persona.id + "-" + suffix, title, persona.role, persona.traits, soul,
+            PixelPermissions(network = "web" in persona.tools || "vision" in persona.tools),
+            persona.tools, emptyList(), emptyList(), "medium",
+            PixelCharacter(persona.id, 28 + random.index(13), recipe),
+            PixelCompanion(kind, companionName, companionTrait(kind)))
     }
     fun parse(text: String): PixelSpec? = runCatching {
         val raw = text.trim()

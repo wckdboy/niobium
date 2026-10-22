@@ -30,6 +30,32 @@ final class NiobiumUITests: XCTestCase {
         add(screenshot)
     }
     @MainActor
+    func testWorkshopRemixesPinnedTraitsAndOffersAllCompanions() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--demo", "--light", "--no-splash", "--pixel-review"]
+        app.launch()
+        XCTAssertTrue(app.staticTexts["Local template"].waitForExistence(timeout: 15))
+        app.buttons["Appearance & companion"].tap()
+        XCTAssertTrue(app.buttons["character.remix"].waitForExistence(timeout: 5))
+        let build = app.buttons["character.body"].label
+        app.buttons["character.remix"].tap()
+        XCTAssertEqual(app.buttons["character.body"].label, build)
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Pixel appearance editor"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+        let mimic = app.buttons["familiar.mimic"]
+        for _ in 0..<8 where !mimic.isHittable { app.swipeUp() }
+        XCTAssertTrue(mimic.isHittable)
+        mimic.tap()
+        XCTAssertTrue(mimic.isSelected)
+        let companions = XCTAttachment(screenshot: app.screenshot())
+        companions.name = "Twelve independent companions"
+        companions.lifetime = .keepAlways
+        add(companions)
+    }
+
+    @MainActor
     func testEnginesKeepTheStandardNavigationAndHideAdvancedDsh() {
         let app = XCUIApplication()
         app.launchArguments = ["--demo", "--light", "--no-splash", "--tab", "local"]

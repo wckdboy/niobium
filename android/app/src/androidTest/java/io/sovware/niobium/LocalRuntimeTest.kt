@@ -152,7 +152,7 @@ class LocalRuntimeTest {
         fun click(text: String) {
             repeat(60) {
                 val root = instrumentation.uiAutomation.rootInActiveWindow
-                for (node in walk(root).filter { it.text?.toString() == text }) {
+                for (node in walk(root).filter { it.isVisibleToUser && it.text?.toString() == text }) {
                     var current: android.view.accessibility.AccessibilityNodeInfo? = node
                     repeat(5) {
                         if (current?.isClickable == true && current?.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK) == true) {
@@ -185,6 +185,15 @@ class LocalRuntimeTest {
             Thread.sleep(300)
             assertTrue("Native dashboard was not shown", walk(instrumentation.uiAutomation.rootInActiveWindow).any { it.text?.toString() == "Your Pixels" })
             click("Engines")
+            // Connection completion inserts the provider card above this control.
+            // Wait for that layout before finding/clicking its accessibility node.
+            val readyDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30)
+            while (System.nanoTime() < readyDeadline && walk(instrumentation.uiAutomation.rootInActiveWindow).none {
+                it.text?.toString() == "Ready · chats and tasks run in Niobium"
+            }) Thread.sleep(100)
+            assertTrue("Local provider did not become ready", walk(instrumentation.uiAutomation.rootInActiveWindow).any {
+                it.text?.toString() == "Ready · chats and tasks run in Niobium"
+            })
             click("Advanced controls")
             click("Advanced DSH workspace")
             var cssHeight = 0.0

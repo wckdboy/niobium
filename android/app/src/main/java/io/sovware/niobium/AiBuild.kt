@@ -104,6 +104,21 @@ fun AIBuildSheet(vm: NiobiumViewModel, preview: Boolean = false, onDismiss: () -
                     Text(spec.companion.trait, color = Nb.Secondary, fontSize = 12.sp)
                 }
                 item {
+                    var appearanceExpanded by remember { mutableStateOf(false) }
+                    TextButton(onClick = { appearanceExpanded = !appearanceExpanded }, enabled = !working) {
+                        Text(if (appearanceExpanded) "Appearance & companion ↑" else "Appearance & companion ↓", color = Nb.Ion)
+                    }
+                    if (appearanceExpanded) Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        CharacterCustomizer(spec.character.recipe, spec.character.archetype, !working) {
+                            draft = current.copy(spec = spec.copy(character = spec.character.copy(recipe = it)))
+                        }
+                        SectionHeader("Companion")
+                        FamiliarPicker(spec.companion.kind, !working) {
+                            draft = current.copy(spec = spec.copy(companion = spec.companion.copy(kind = it, trait = PixelBuilder.companionTrait(it))))
+                        }
+                    }
+                }
+                item {
                     Column(Modifier.background(Nb.Surface, RoundedCornerShape(16.dp)).padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         SectionHeader("Access", "review before creation")

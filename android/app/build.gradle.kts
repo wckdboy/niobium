@@ -15,7 +15,7 @@ android {
         applicationId = "io.sovware.niobium"
         minSdk = 28
         targetSdk = 37
-        versionCode = 7
+        versionCode = 8
         versionName = "2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk { abiFilters += "arm64-v8a" }

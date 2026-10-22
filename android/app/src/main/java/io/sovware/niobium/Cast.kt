@@ -1,6 +1,12 @@
 package io.sovware.niobium
 
 import android.content.Context
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.*
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.*
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,6 +29,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -106,20 +113,22 @@ fun CastPortrait(member: CastMember, size: Dp = 64.dp, showCompanion: Boolean = 
         .background(Brush.linearGradient(listOf(accent.copy(alpha = 0.24f), Nb.Surface)))
         .border(1.dp, Nb.Line, RoundedCornerShape(size * 0.20f))) {
         val context = androidx.compose.ui.platform.LocalContext.current
-        val sprite = remember(member.recipe, member.companion) { CharacterEngine.authoredImage(context, member) ?: member.recipe?.let { CharacterEngine.image(context, it) } }
+        val sprite = remember(member.id, member.recipe) { CharacterEngine.authoredImage(context, member) ?: member.recipe?.let { CharacterEngine.image(context, it) } }
+        val spriteSide = with(androidx.compose.ui.platform.LocalDensity.current) {
+            (kotlin.math.floor(size.toPx() / 48f).toInt().coerceAtLeast(1) * 48).toDp()
+        }
         if (sprite != null) {
             Image(bitmap = sprite, contentDescription = member.name + ", adult pixel character",
                 contentScale = ContentScale.Fit, filterQuality = androidx.compose.ui.graphics.FilterQuality.None,
-                modifier = Modifier.size(size).padding(size * 0.03f))
+                modifier = Modifier.size(spriteSide).align(Alignment.Center))
         } else {
             Image(painterResource(portraitRes(member.portrait)), member.name,
-                contentScale = ContentScale.Fit, modifier = Modifier.size(size).padding(size * 0.03f))
+                contentScale = ContentScale.Fit, modifier = Modifier.size(spriteSide).align(Alignment.Center))
         }
-        if (showCompanion && !CharacterEngine.usesAuthored(member)) {
-            Box(Modifier.align(Alignment.BottomEnd).size(size * 0.30f).clip(RoundedCornerShape(size * 0.10f))
-                .background(Nb.Ink).border(1.dp, accent.copy(alpha = 0.5f), RoundedCornerShape(size * 0.10f))) {
-                Image(painterResource(compRes(member.companion)), null,
-                    contentScale = ContentScale.Fit, modifier = Modifier.size(size * 0.26f).align(Alignment.Center))
+        if (showCompanion) {
+            Box(Modifier.align(Alignment.BottomEnd).padding(size * 0.02f).size(size * 0.30f).clip(CircleShape)
+                .background(Nb.Ink).border(1.dp, accent.copy(alpha = 0.5f), CircleShape)) {
+                Box(Modifier.align(Alignment.Center)) { FamiliarSprite(member.companion, size * 0.26f) }
             }
         }
     }
@@ -153,7 +162,7 @@ private fun portraitRes(id: String): Int = when (id) {
     else -> R.drawable.portrait_p02
 }
 
-private fun compRes(id: String): Int = when (id) {
+internal fun compRes(id: String): Int = when (id) {
     "owl" -> R.drawable.comp_owl
     "cat" -> R.drawable.comp_cat
     "drone" -> R.drawable.comp_drone
@@ -162,133 +171,161 @@ private fun compRes(id: String): Int = when (id) {
     "bunny" -> R.drawable.comp_bunny
     "moth" -> R.drawable.comp_moth
     "hawk" -> R.drawable.comp_hawk
+    "axolotl" -> R.drawable.comp_axolotl
+    "imp" -> R.drawable.comp_imp
+    "wisp" -> R.drawable.comp_wisp
+    "mimic" -> R.drawable.comp_mimic
     else -> R.drawable.comp_cat
 }
 
 
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+fun FamiliarSprite(kind: String, size: Dp = 32.dp) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val resource = compRes(kind)
+    val bitmap = remember(resource) { androidx.compose.ui.graphics.ImageBitmap.imageResource(context.resources, resource) }
+    val side = with(androidx.compose.ui.platform.LocalDensity.current) {
+        (kotlin.math.floor(size.toPx()/16f).toInt().coerceAtLeast(1)*16).toDp()
+    }
+    Box(Modifier.size(size), contentAlignment = Alignment.Center) {
+        Image(bitmap, null, filterQuality = androidx.compose.ui.graphics.FilterQuality.None, modifier = Modifier.size(side))
+    }
+}
+
+internal fun characterFieldLabel(field: String) = mapOf(
+    "body" to "Build", "palette" to "Colors", "skin" to "Skin tone", "hair_tone" to "Hair color",
+    "hair" to "Hair style", "face" to "Expression", "outfit" to "Outfit", "accessory" to "Accessory", "detail" to "Detail"
+)[field] ?: field.replaceFirstChar { it.uppercase() }
+
+internal fun characterValueLabel(value: String, field: String): String {
+    if (value == "auto") return "Palette default"
+    if (field == "body") return if (value == "man") "Masculine" else "Feminine"
+    if (field == "hair") mapOf("silver_swept" to "Side sweep", "violet_bob" to "Bob", "cat_black" to "Long layers",
+        "white_pilot" to "Spiked crop", "silver_bob" to "Soft bob")[value]?.let { return it }
+    return value.replace('_', ' ').replaceFirstChar { it.uppercase() }
+}
+
+@Composable
+fun CharacterCustomizer(recipe: CharacterRecipe, archetype: String, enabled: Boolean = true, onChange: (CharacterRecipe) -> Unit) {
+    var pinned by remember(archetype) { mutableStateOf(setOf("body", "skin")) }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        PixelButton("Remix look", PixelGlyph.SPARK, Modifier.fillMaxWidth().testTag("character.remix"),
+            secondary = true, enabled = enabled && pinned.size < CharacterRecipe.fields.size) {
+            onChange(recipe.remixed(archetype, java.util.UUID.randomUUID().toString(), pinned))
+        }
+        Text("Pin your favorites, then remix the rest. Default skin and hair colors follow their palette.",
+            color = Nb.Tertiary, fontSize = 11.sp, lineHeight = 16.sp)
+        CharacterRecipe.fields.forEach { field ->
+            var expanded by remember(field) { mutableStateOf(false) }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.weight(1f)) {
+                    Row(Modifier.fillMaxWidth().heightIn(min = 46.dp).clip(RoundedCornerShape(10.dp))
+                        .background(Nb.FillSoft).clickable(enabled = enabled) { expanded = true }
+                        .testTag("character." + field).padding(horizontal = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(characterFieldLabel(field), color = Nb.Secondary, fontSize = 12.sp)
+                        Spacer(Modifier.weight(1f))
+                        Text(characterValueLabel(recipe.value(field), field), color = Nb.Text, fontSize = 12.sp, maxLines = 1)
+                        PixelIcon(PixelGlyph.BACK, Nb.Tertiary, 12.dp)
+                    }
+                    DropdownMenu(expanded && enabled, { expanded = false }) {
+                        CharacterRecipe.options(field).forEach { option ->
+                            DropdownMenuItem(text = { Text(characterValueLabel(option, field)) }, onClick = {
+                                onChange(recipe.withValue(field, option)); expanded = false
+                            })
+                        }
+                    }
+                }
+                Box(Modifier.size(46.dp).clip(RoundedCornerShape(10.dp))
+                    .background(if (field in pinned) Nb.Ion.copy(alpha = 0.12f) else Nb.FillSoft)
+                    .clickable(enabled = enabled, role = Role.Button) {
+                        pinned = if (field in pinned) pinned - field else pinned + field
+                    }.semantics {
+                        contentDescription = (if (field in pinned) "Unpin " else "Pin ") + characterFieldLabel(field).lowercase()
+                        stateDescription = if (field in pinned) "Pinned" else "Unpinned"
+                    }.testTag("character.pin." + field), contentAlignment = Alignment.Center) {
+                    PixelIcon(PixelGlyph.PIN, if (field in pinned) Nb.Ion else Nb.Tertiary, 20.dp)
+                }
+            }
+        }
+        TextButton(onClick = { onChange(CharacterRecipe.cast[archetype] ?: CharacterRecipe.cast.getValue("orion")) },
+            enabled = enabled, modifier = Modifier.testTag("character.restore")) {
+            Text("Restore original cast look", color = Nb.Secondary, fontSize = 12.sp)
+        }
+    }
+}
+
+@Composable
+fun FamiliarPicker(kind: String, enabled: Boolean = true, onChange: (String) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        PixelBuilder.companions.chunked(4).forEach { row ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                row.forEach { option ->
+                    Column(Modifier.weight(1f).clip(RoundedCornerShape(12.dp))
+                        .background(if (kind == option) Nb.Ion.copy(alpha = 0.12f) else Nb.FillSoft)
+                        .border(1.dp, if (kind == option) Nb.Ion.copy(alpha = 0.5f) else Nb.Line, RoundedCornerShape(12.dp))
+                        .clickable(enabled = enabled, role = Role.RadioButton) { onChange(option) }
+                        .semantics { contentDescription = option.replaceFirstChar { it.uppercase() } + " companion"; selected = kind == option }
+                        .testTag("familiar." + option).padding(vertical = 10.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        FamiliarSprite(option, 32.dp)
+                        Text(option.replaceFirstChar { it.uppercase() }, color = if (kind == option) Nb.Text else Nb.Secondary, fontSize = 10.sp)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CastStudioSheet(vm: NiobiumViewModel, profile: String, title: String, onDismiss: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    var saving by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
-    var selected by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(CastStore.get(context, if (vm.state.engine == AgentEngine.DSH) "dsh:" + profile else profile)) }
-    androidx.compose.material3.ModalBottomSheet(
-        onDismissRequest = onDismiss, containerColor = Nb.Ink,
-        sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ) {
-        androidx.compose.foundation.lazy.LazyColumn(
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp),
-            verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(10.dp)
-        ) {
+    var saving by remember { mutableStateOf(false) }
+    var selected by remember { mutableStateOf(CastStore.get(context, if (vm.state.engine == AgentEngine.DSH) "dsh:" + profile else profile)) }
+    ModalBottomSheet(onDismissRequest = { if (!saving) onDismiss() }, containerColor = Nb.Ink,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
             item {
-                androidx.compose.foundation.layout.Column(
-                    androidx.compose.ui.Modifier.fillMaxWidth(),
-                    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
-                ) {
-                    CastPortrait(selected, 140.dp)
-                    androidx.compose.material3.Text(title, color = Nb.Text, style = NbTitle, fontSize = 20.sp)
-                    androidx.compose.material3.Text("${selected.companionName} · companion", color = Nb.Tertiary, style = NbMono, fontSize = 9.sp)
+                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    CastPortrait(selected, 160.dp)
+                    Text(title, color = Nb.Text, style = NbTitle, fontSize = 22.sp)
+                    Text(selected.companionName + " · " + selected.companion.replaceFirstChar { it.uppercase() }, color = Nb.Secondary, fontSize = 11.sp)
                 }
             }
             item {
-                androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                    SectionHeader("The cast", "48 × 48", modifier = androidx.compose.ui.Modifier.weight(1f))
-                    androidx.compose.material3.Text("Surprise", color = Nb.Ion, fontSize = 12.sp,
-                        modifier = androidx.compose.ui.Modifier.clickable {
-                            selected = Cast.all.filter { it.id != selected.id }.random()
-                        }.padding(6.dp))
-                }
+                SectionHeader("Make it yours", "48 × 48")
+                Spacer(Modifier.height(10.dp))
+                CharacterCustomizer(selected.recipe ?: CharacterRecipe.cast.getValue(selected.id), selected.id, !saving) { selected = selected.copy(recipe = it) }
             }
+            item {
+                SectionHeader("Companion", "small creature, big ideas")
+                Spacer(Modifier.height(10.dp))
+                FamiliarPicker(selected.companion, !saving) { selected = selected.copy(companion = it) }
+            }
+            item { SectionHeader("The cast", "eight starting points") }
             items(4) { row ->
-                androidx.compose.foundation.layout.Row(
-                    androidx.compose.ui.Modifier.fillMaxWidth(),
-                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
-                ) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Cast.all.drop(row * 2).take(2).forEach { member ->
-                        androidx.compose.foundation.layout.Column(
-                            androidx.compose.ui.Modifier.weight(1f).clip(RoundedCornerShape(14.dp))
-                                .background(if (selected.id == member.id) Nb.Ion.copy(alpha = 0.10f) else Nb.FillSoft)
-                                .border(1.dp, if (selected.id == member.id) Nb.Ion.copy(alpha = 0.35f) else Nb.Line, RoundedCornerShape(14.dp))
-                                .clickable { selected = member }
-                                .padding(8.dp),
-                            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
-                        ) {
-                            CastPortrait(member, 62.dp, showCompanion = false)
-                            androidx.compose.material3.Text(member.name, color = Nb.Text, fontSize = 11.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium)
-                            androidx.compose.material3.Text(member.companionName, color = Nb.Tertiary, style = NbMono, fontSize = 8.sp)
+                        Row(Modifier.weight(1f).clip(RoundedCornerShape(14.dp))
+                            .background(if (selected.id == member.id) Nb.Ion.copy(alpha = 0.1f) else Nb.FillSoft)
+                            .border(1.dp, if (selected.id == member.id) Nb.Ion.copy(alpha = 0.4f) else Nb.Line, RoundedCornerShape(14.dp))
+                            .clickable(enabled = !saving) { selected = member.copy(companion = selected.companion, companionName = selected.companionName) }
+                            .padding(8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            CastPortrait(member, 54.dp, showCompanion = false)
+                            Text(member.name, color = Nb.Text, style = NbTitle, fontSize = 13.sp)
                         }
                     }
                 }
             }
             item {
-                SectionHeader("Make it yours", "48 × 48 layers")
-                listOf("palette", "hair", "outfit", "accessory").forEach { field ->
-                    var expanded by remember { mutableStateOf(false) }
-                    val options = when (field) {
-                        "palette" -> CharacterRecipe.cast.keys.sorted()
-                        "hair" -> CharacterRecipe.cast.values.map { it.hair }.distinct().sorted()
-                        "outfit" -> CharacterRecipe.cast.values.map { it.outfit }.distinct().sorted()
-                        else -> listOf("none", "visor", "goggles", "antlers", "cat_ears", "circlet", "veil", "headwrap")
-                    }
-                    Box {
-                        androidx.compose.material3.Text(field.replaceFirstChar { it.uppercase() } + "  ↕",
-                            color = Nb.Secondary, fontSize = 13.sp,
-                            modifier = Modifier.fillMaxWidth().clickable { expanded = true }.padding(12.dp))
-                        androidx.compose.material3.DropdownMenu(expanded, { expanded = false }) {
-                            options.forEach { option ->
-                                androidx.compose.material3.DropdownMenuItem(text = { androidx.compose.material3.Text(option.replace('_', ' ')) }, onClick = {
-                                    val recipe = selected.recipe ?: CharacterRecipe.cast.getValue(selected.id)
-                                    selected = selected.copy(recipe = when (field) {
-                                        "palette" -> recipe.copy(palette = option)
-                                        "hair" -> recipe.copy(hair = option)
-                                        "outfit" -> recipe.copy(outfit = option)
-                                        else -> recipe.copy(accessory = option)
-                                    })
-                                    expanded = false
-                                })
-                            }
-                        }
-                    }
+                PixelButton(if (saving) "Saving…" else "Use this character", PixelGlyph.PIXELS, Modifier.fillMaxWidth(), enabled = !saving) {
+                    saving = true
+                    val appearance = selected
+                    vm.saveAppearance(context, appearance, profile) { success -> saving = false; if (success) onDismiss() }
                 }
             }
-            item {
-                SectionHeader("Companion")
-                androidx.compose.foundation.layout.Spacer(androidx.compose.ui.Modifier.height(7.dp))
-                androidx.compose.foundation.layout.Row(
-                    androidx.compose.ui.Modifier.fillMaxWidth(),
-                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(5.dp)
-                ) {
-                    Cast.all.map { it.companion }.distinct().forEach { kind ->
-                        androidx.compose.foundation.layout.Column(
-                            androidx.compose.ui.Modifier.weight(1f).clip(RoundedCornerShape(9.dp))
-                                .background(if (selected.companion == kind) Nb.Ion.copy(alpha = 0.10f) else Nb.FillSoft)
-                                .border(1.dp, if (selected.companion == kind) Nb.Ion.copy(alpha = 0.35f) else Nb.Line, RoundedCornerShape(9.dp))
-                                .clickable {
-                                    selected = selected.copy(companion = kind,
-                                        companionName = Cast.all.firstOrNull { it.companion == kind }?.companionName ?: selected.companionName)
-                                        }.padding(5.dp),
-                            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
-                        ) {
-                            Image(painterResource(compRes(kind)), null, modifier = androidx.compose.ui.Modifier.size(30.dp))
-                            androidx.compose.material3.Text(kind, color = Nb.Tertiary, style = NbMono, fontSize = 6.5.sp)
-                        }
-                    }
-                }
-            }
-            item {
-                androidx.compose.foundation.layout.Box(
-                    androidx.compose.ui.Modifier.fillMaxWidth().clip(CircleShape)
-                        .background(Nb.Ion)
-                         .clickable(enabled = !saving) {
-                            saving = true
-                            vm.saveAppearance(context, selected, profile) { success -> saving = false; if (success) onDismiss() }
-                        }
-                        .padding(vertical = 13.dp), contentAlignment = androidx.compose.ui.Alignment.Center
-                ) {
-                    androidx.compose.material3.Text(if (saving) "Saving…" else "Use this character", color = Nb.OnIon, fontSize = 14.sp,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
-                }
-            }
+            item { Spacer(Modifier.height(16.dp)) }
         }
     }
 }

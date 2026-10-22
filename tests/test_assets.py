@@ -4,6 +4,9 @@ import json
 from pathlib import Path
 import struct
 import unittest
+import subprocess
+import sys
+from png_rgba import read_rgba
 import zlib
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -48,7 +51,7 @@ class AssetsTests(unittest.TestCase):
         manifest = json.loads((ROOT / "brand/art-provenance.json").read_text())
         for asset in manifest["assets"]:
             self.assertEqual(hashlib.sha256((ROOT / asset["file"]).read_bytes()).hexdigest(), asset["sha256"])
-        current = (ROOT / "brand/pixel-cast-atlas-v3.png").read_bytes()
+        current = (ROOT / "brand/pixel-cast-runtime-v4.png").read_bytes()
         self.assertEqual(current, (ROOT / "ios/Resources/Assets.xcassets/PixelCastAtlas.imageset/pixel-cast-atlas.png").read_bytes())
         self.assertEqual(current, (ROOT / "android/app/src/main/res/drawable-nodpi/pixel_cast_atlas.png").read_bytes())
 
@@ -57,10 +60,42 @@ class AssetsTests(unittest.TestCase):
         self.assertEqual(ios, (ROOT / "android/app/src/main/assets/character_engine.json").read_bytes())
         atlas = json.loads(ios)
         self.assertEqual(atlas["size"], 48)
-        for group in ["bodies", "outfits", "faces", "accessories"]:
+        for group in ["bodies", "outfits", "faces", "accessories", "details"]:
             for rows in atlas[group].values():
                 self.assertEqual(len(rows), 48)
                 self.assertTrue(all(len(row) == 48 for row in rows))
+
+    def test_authored_cast_has_exact_pixels_and_independent_companions(self):
+        width,height,pixels = read_rgba(ROOT / "brand/pixel-cast-runtime-v4.png")
+        self.assertEqual((width,height),(192,96))
+        for index in range(8):
+            cell=[row[(index%4)*48:(index%4+1)*48] for row in pixels[(index//4)*48:(index//4+1)*48]]
+            opaque={pixel[:3] for row in cell for pixel in row if pixel[3]}
+            self.assertLessEqual(len(opaque),32)
+            self.assertGreater(len(opaque),16)
+            self.assertEqual({p[3] for row in cell for p in row},{0,255})
+            self.assertTrue(all(p[3]==0 for p in cell[0]+cell[-1]))
+            self.assertTrue(all(row[0][3]==row[-1][3]==0 for row in cell))
+        atlas=json.loads((ROOT / "ios/Resources/character_engine.json").read_text())
+        self.assertEqual(len(atlas["companions"]),12)
+        hashes=set()
+        for name in atlas["companions"]:
+            ios=ROOT / f"ios/Resources/Assets.xcassets/Comp_{name}.imageset/Comp_{name}.png"
+            android=ROOT / f"android/app/src/main/res/drawable-nodpi/comp_{name}.png"
+            self.assertEqual(ios.read_bytes(),android.read_bytes())
+            w,h,rgba=read_rgba(ios)
+            self.assertEqual((w,h),(16,16))
+            self.assertEqual({p[3] for row in rgba for p in row},{0,255})
+            hashes.add(hashlib.sha256(ios.read_bytes()).hexdigest())
+        self.assertEqual(len(hashes),12)
+
+    def test_generated_catalogs_and_seed_fixtures_cannot_drift(self):
+        for tool in ["tools/character_engine48.py","tools/sync-pixel-personas.py"]:
+            subprocess.run([sys.executable,str(ROOT/tool),"--check"],cwd=ROOT,check=True,capture_output=True)
+        fixture=(ROOT/"tests/fixtures/character-recipes.json").read_bytes()
+        for path in ["ios/NativeTests/Fixtures/character-recipes.json","android/app/src/test/resources/character-recipes.json",
+                     "android/app/src/androidTest/assets/character-recipes.json"]:
+            self.assertEqual(fixture,(ROOT/path).read_bytes(),path)
 
     def test_plane_export_retains_every_field_and_stable_id(self):
         snapshot = json.loads((ROOT / "plane/snapshot.json").read_text())

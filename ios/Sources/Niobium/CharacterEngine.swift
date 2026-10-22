@@ -9,6 +9,9 @@ final class CharacterEngine {
         var size: Int
         var palettes: [String: [String: String]]
         var fixed: [String: String]
+        var skin_tones: [String: [String: String]]
+        var hair_tones: [String: [String: String]]
+        var details: [String: [String]]
         var bodies: [String: [String]]
         var hair: [String: Hair]
         var faces: [String: [String]]
@@ -24,34 +27,28 @@ final class CharacterEngine {
         cache.countLimit = 192
     }
     func usesAuthored(_ member: CastMember) -> Bool {
-        member.recipe == CharacterRecipe.cast[member.id] &&
-        CastMember.all.first(where: { $0.id == member.id })?.companion == member.companion
+        member.recipe == CharacterRecipe.cast[member.id]
     }
     func authoredImage(_ member: CastMember) -> UIImage? {
         guard usesAuthored(member), let index = CastMember.all.firstIndex(where: { $0.id == member.id }) else { return nil }
         let key = ("authored-" + member.id) as NSString
         if let image = cache.object(forKey: key) { return image }
         guard let sheet = UIImage(named: "PixelCastAtlas")?.cgImage else { return nil }
-        let width = CGFloat(sheet.width) / 4, height = CGFloat(sheet.height) / 2
-        // Generated source cells include a small overscan. Trim it on every edge
-        // so neighbouring portraits never leak into the cached sprite.
-        let inset = ceil(min(width, height) * 0.06)
-        guard let crop = sheet.cropping(to: CGRect(x: CGFloat(index % 4) * width, y: CGFloat(index / 4) * height, width: width, height: height).insetBy(dx: inset, dy: inset).integral) else { return nil }
-        let format = UIGraphicsImageRendererFormat(); format.scale = 1; format.opaque = false
-        let image = UIGraphicsImageRenderer(size: CGSize(width: 48, height: 48), format: format).image { context in
-            context.cgContext.interpolationQuality = .high
-            UIImage(cgImage: crop).draw(in: CGRect(x: 0, y: 0, width: 48, height: 48))
-        }
+        guard sheet.width == 192, sheet.height == 96,
+              let crop = sheet.cropping(to: CGRect(x: index % 4 * 48, y: index / 4 * 48, width: 48, height: 48)) else { return nil }
+        let image = UIImage(cgImage: crop)
         cache.setObject(image, forKey: key)
         return image
     }
     func image(for recipe: CharacterRecipe) -> UIImage? {
         guard recipe.isValid, let atlas, atlas.size == 48 else { return nil }
-        let key = "\(recipe.body)|\(recipe.palette)|\(recipe.hair)|\(recipe.face)|\(recipe.outfit)|\(recipe.accessory)" as NSString
+        let key = CharacterRecipe.fieldNames.map { recipe.value(for: $0) }.joined(separator: "|") as NSString
         if let image = cache.object(forKey: key) { return image }
-        let palette = atlas.fixed.merging(atlas.palettes[recipe.palette] ?? [:]) { _, value in value }
+        var palette = atlas.fixed.merging(atlas.palettes[recipe.palette] ?? [:]) { _, value in value }
+        palette.merge(atlas.skin_tones[recipe.skin] ?? [:]) { _, value in value }
+        palette.merge(atlas.hair_tones[recipe.hairTone] ?? [:]) { _, value in value }
         let layers = [atlas.hair[recipe.hair]?.back, atlas.bodies[recipe.body], atlas.outfits[recipe.outfit],
-                      atlas.faces[recipe.face], atlas.hair[recipe.hair]?.front, atlas.accessories[recipe.accessory]]
+                      atlas.faces[recipe.face], atlas.details[recipe.detail], atlas.hair[recipe.hair]?.front, atlas.accessories[recipe.accessory]]
         var pixels = [UInt8](repeating: 0, count: 48 * 48 * 4)
         for layer in layers.compactMap({ $0 }) {
             for (y, row) in layer.prefix(48).enumerated() {
@@ -77,16 +74,38 @@ final class CharacterEngine {
 
 struct CharacterSprite: View {
     let member: CastMember
+    @Environment(\.displayScale) private var displayScale
     var body: some View {
-        Group {
-            if let sprite = CharacterEngine.shared.authoredImage(member) {
-                Image(uiImage: sprite).resizable().interpolation(.none).scaledToFit()
-            } else if let recipe = member.recipe, let sprite = CharacterEngine.shared.image(for: recipe) {
-                Image(uiImage: sprite).resizable().interpolation(.none).scaledToFit()
-            } else {
-                Image("Portrait_\(member.portrait)").resizable().interpolation(.none).scaledToFit()
+        GeometryReader { proxy in
+            let side = max(1, floor(min(proxy.size.width, proxy.size.height) * displayScale / 48)) * 48 / displayScale
+            Group {
+                if let sprite = CharacterEngine.shared.authoredImage(member) {
+                    Image(uiImage: sprite).resizable().interpolation(.none)
+                } else if let recipe = member.recipe, let sprite = CharacterEngine.shared.image(for: recipe) {
+                    Image(uiImage: sprite).resizable().interpolation(.none)
+                } else {
+                    Image("Portrait_\(member.portrait)").resizable().interpolation(.none)
+                }
             }
+            .frame(width: side, height: side)
+            .offset(x: floor((proxy.size.width-side)*displayScale/2)/displayScale,
+                    y: floor((proxy.size.height-side)*displayScale/2)/displayScale)
         }
         .accessibilityLabel("\(member.name), adult pixel character")
+    }
+}
+
+struct FamiliarSprite: View {
+    let kind: String
+    var size: CGFloat = 32
+    @Environment(\.displayScale) private var displayScale
+    var body: some View {
+        let side = max(1, floor(size * displayScale / 16)) * 16 / displayScale
+        Image("Comp_\(kind)").resizable().interpolation(.none)
+            .frame(width: side, height: side)
+            .offset(x: floor((size-side)*displayScale/2)/displayScale,
+                    y: floor((size-side)*displayScale/2)/displayScale)
+            .frame(width: size, height: size, alignment: .topLeading)
+            .accessibilityHidden(true)
     }
 }

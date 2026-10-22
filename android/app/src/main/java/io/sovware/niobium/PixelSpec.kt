@@ -5,13 +5,53 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
 
-data class CharacterRecipe(val body: String, val palette: String, val hair: String, val face: String, val outfit: String, val accessory: String) {
+data class CharacterRecipe(
+    val body: String, val palette: String, val hair: String, val face: String,
+    val outfit: String, val accessory: String, val skin: String = "auto",
+    val hairTone: String = "auto", val detail: String = "none"
+) {
     fun toJson() = JSONObject().put("body", body).put("palette", palette).put("hair", hair)
         .put("face", face).put("outfit", outfit).put("accessory", accessory)
-    val valid: Boolean get() = body in listOf("man", "woman") && palette in cast &&
-        cast.values.any { it.hair == hair } && face in listOf("soft", "sharp", "calm", "fierce") &&
-        cast.values.any { it.outfit == outfit } && accessory in listOf("visor", "goggles", "antlers", "cat_ears", "circlet", "veil", "headwrap", "none")
+        .put("skin", skin).put("hair_tone", hairTone).put("detail", detail)
+    val valid: Boolean get() = fields.all { value(it) in options(it) }
+    fun value(field: String): String = when (field) {
+        "body" -> body; "palette" -> palette; "skin" -> skin; "hair_tone" -> hairTone
+        "hair" -> hair; "face" -> face; "outfit" -> outfit; "accessory" -> accessory; "detail" -> detail
+        else -> ""
+    }
+    fun withValue(field: String, value: String): CharacterRecipe {
+        if (value !in options(field)) return this
+        return when (field) {
+            "body" -> copy(body = value); "palette" -> copy(palette = value); "skin" -> copy(skin = value)
+            "hair_tone" -> copy(hairTone = value); "hair" -> copy(hair = value); "face" -> copy(face = value)
+            "outfit" -> copy(outfit = value); "accessory" -> copy(accessory = value); "detail" -> copy(detail = value)
+            else -> this
+        }
+    }
+    fun remixed(archetype: String, seed: String, locked: Set<String>): CharacterRecipe {
+        var next = generated(archetype, seed)
+        fields.filter { it in locked }.forEach { next = next.withValue(it, value(it)) }
+        if (("skin" in locked && skin == "auto") || ("hair_tone" in locked && hairTone == "auto")) {
+            next = next.copy(palette = palette)
+        }
+        return next
+    }
     companion object {
+        val fields = listOf("body", "palette", "skin", "hair_tone", "hair", "face", "outfit", "accessory", "detail")
+        val palettes = listOf("orion", "nova", "forge", "sage", "nyx", "astra", "vesper", "rook")
+        val hairStyles = listOf("silver_swept", "violet_bob", "undercut", "locs", "cat_black", "white_pilot", "silver_bob", "headwrap", "braid", "mohawk", "long_waves", "high_ponytail")
+        val faces = listOf("soft", "sharp", "calm", "fierce", "wry", "stern")
+        val outfits = listOf("mage", "cyber", "armor", "druid", "rogue", "pilot", "veil", "ranger", "corsair", "techwear", "battlemage", "astral")
+        val accessories = listOf("none", "visor", "goggles", "antlers", "cat_ears", "circlet", "veil", "headwrap", "horns", "antenna", "ear_cuff", "halo")
+        val skinTones = listOf("auto", "porcelain", "sand", "copper", "umber", "ebony")
+        val hairTones = listOf("auto", "silver", "ink", "violet", "moss", "copper", "rose", "ice", "gold")
+        val details = listOf("none", "freckles", "scar", "cyber_eye", "rune", "stubble")
+        val outfitPools = mapOf(
+            "orion" to listOf("mage", "battlemage", "astral", "veil"), "nova" to listOf("cyber", "astral", "corsair", "techwear"),
+            "forge" to listOf("armor", "techwear", "pilot", "battlemage"), "sage" to listOf("druid", "ranger", "astral", "mage"),
+            "nyx" to listOf("rogue", "techwear", "cyber", "corsair"), "astra" to listOf("pilot", "techwear", "armor", "corsair"),
+            "vesper" to listOf("veil", "astral", "mage", "corsair"), "rook" to listOf("ranger", "corsair", "armor", "techwear")
+        )
         val cast = linkedMapOf(
             "orion" to CharacterRecipe("man", "orion", "silver_swept", "calm", "mage", "circlet"),
             "nova" to CharacterRecipe("woman", "nova", "violet_bob", "soft", "cyber", "visor"),
@@ -22,10 +62,45 @@ data class CharacterRecipe(val body: String, val palette: String, val hair: Stri
             "vesper" to CharacterRecipe("woman", "vesper", "silver_bob", "calm", "veil", "veil"),
             "rook" to CharacterRecipe("man", "rook", "headwrap", "calm", "ranger", "headwrap")
         )
-        fun parse(j: JSONObject) = CharacterRecipe(j.getString("body"), j.getString("palette"), j.getString("hair"),
-            j.getString("face"), j.getString("outfit"), j.getString("accessory"))
+        fun options(field: String): List<String> = when (field) {
+            "body" -> listOf("man", "woman"); "palette" -> palettes; "skin" -> skinTones; "hair_tone" -> hairTones
+            "hair" -> hairStyles; "face" -> faces; "outfit" -> outfits; "accessory" -> accessories; "detail" -> details
+            else -> emptyList()
+        }
+        fun generated(archetype: String, seed: String): CharacterRecipe {
+            val random = CharacterRandom(archetype + "|" + seed)
+            var recipe = cast[archetype] ?: cast.getValue("orion")
+            fields.forEach { field ->
+                val choices = when (field) {
+                    "outfit" -> outfitPools[archetype] ?: outfits
+                    "skin" -> skinTones.drop(1); "hair_tone" -> hairTones.drop(1)
+                    else -> options(field)
+                }
+                recipe = recipe.withValue(field, choices[random.index(choices.size)])
+            }
+            return recipe
+        }
+        fun parse(j: JSONObject): CharacterRecipe {
+            fun string(key: String, fallback: String? = null): String =
+                if (!j.has(key) && fallback != null) fallback else j.get(key) as? String ?: error("Expected a string: " + key)
+            return CharacterRecipe(string("body"), string("palette"), string("hair"), string("face"), string("outfit"),
+                string("accessory"), string("skin", "auto"), string("hair_tone", "auto"), string("detail", "none"))
+        }
     }
 }
+
+internal class CharacterRandom(seed: String) {
+    private var state: UInt = 2166136261u
+    init {
+        seed.toByteArray(Charsets.UTF_8).forEach { state = (state xor it.toUByte().toUInt()) * 16777619u }
+        if (state == 0u) state = 0xA341316Cu
+    }
+    fun index(count: Int): Int {
+        state = state xor (state shl 13); state = state xor (state shr 17); state = state xor (state shl 5)
+        return (state % count.toUInt()).toInt()
+    }
+}
+
 data class PixelPermissions(val approvalMode: String = "ask", val network: Boolean = false, val filesystem: String = "workspace", val shell: Boolean = false) {
     fun toJson() = JSONObject().put("approval_mode", approvalMode).put("network", network).put("filesystem", filesystem).put("shell", shell)
 }

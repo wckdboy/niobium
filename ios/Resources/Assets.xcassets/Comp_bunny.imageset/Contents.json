@@ -2,8 +2,7 @@
   "images": [
     {
       "filename": "Comp_bunny.png",
-      "idiom": "universal",
-      "scale": "1x"
+      "idiom": "universal"
     }
   ],
   "info": {

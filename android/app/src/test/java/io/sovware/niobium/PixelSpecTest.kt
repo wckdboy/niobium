@@ -4,6 +4,55 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class PixelSpecTest {
+    @Test fun portableSeedsMatchTheSharedRecipeFixtures() {
+        val text = javaClass.getResourceAsStream("/character-recipes.json")!!.bufferedReader().use { it.readText() }
+        val fixtures = org.json.JSONArray(text)
+        for (i in 0 until fixtures.length()) {
+            val fixture = fixtures.getJSONObject(i)
+            assertEquals(CharacterRecipe.parse(fixture.getJSONObject("recipe")),
+                CharacterRecipe.generated(fixture.getString("archetype"), fixture.getString("seed")))
+        }
+    }
+    @Test fun legacyRecipesDecodeAndRejectInvalidOptionalTypes() {
+        val legacy = org.json.JSONObject("""{"body":"woman","palette":"nyx","hair":"cat_black","face":"fierce","outfit":"rogue","accessory":"cat_ears"}""")
+        val original = CharacterRecipe.parse(legacy)
+        assertEquals(CharacterRecipe.cast["nyx"], original)
+        listOf("skin" to true, "hair_tone" to org.json.JSONObject.NULL, "detail" to 7).forEach { (key, value) ->
+            assertTrue(runCatching { CharacterRecipe.parse(org.json.JSONObject(legacy.toString()).put(key, value)) }.isFailure)
+        }
+        assertFalse(original.copy(skin = "anything").valid)
+    }
+    @Test fun pinsPreserveTraitsAndInheritedColors() {
+        val original = CharacterRecipe.cast.getValue("nyx")
+        assertEquals(original, original.remixed("nyx", "new", CharacterRecipe.fields.toSet()))
+        CharacterRecipe.fields.forEach { field ->
+            listOf("first", "second", "æøå-星").forEach { seed ->
+                val next = original.remixed("nyx", seed, setOf(field))
+                assertEquals(original.value(field), next.value(field))
+                assertTrue(next.valid)
+                if (field in listOf("skin", "hair_tone")) assertEquals(original.palette, next.palette)
+            }
+        }
+    }
+    @Test fun distinctRolesAndExplicitCharacterIntent() {
+        val cases = listOf("research biology" to "orion", "creative art" to "nova", "release engineer who watches a build" to "forge",
+            "organize memory notes" to "sage", "audit security logs" to "nyx", "camera vision" to "astra",
+            "write a newsletter" to "vesper", "plan a travel route" to "rook")
+        val voices = cases.map { (prompt, expected) ->
+            val spec = PixelBuilder.fallback(prompt, "atelier")
+            assertEquals(prompt, expected, spec.character.archetype)
+            assertNull(spec.validationError)
+            assertTrue(spec.character.age in 28..40)
+            assertFalse(spec.permissions.shell)
+            assertTrue(spec.connectors.isEmpty())
+            spec.soul
+        }
+        assertEquals(8, voices.toSet().size)
+        assertEquals("woman", PixelBuilder.fallback("security witch", "same").character.recipe.body)
+        assertEquals("man", PixelBuilder.fallback("male creative director", "same").character.recipe.body)
+        assertEquals("axolotl", PixelBuilder.fallback("research with an axolotl", "same").companion.kind)
+        assertNotEquals(PixelBuilder.fallback("research", "one").character.recipe, PixelBuilder.fallback("research", "two").character.recipe)
+    }
     @Test fun identicalPixelNamesHaveSeparateProviderAndAppearanceIdentity() {
         val remote = BotProfile.parse(org.json.JSONObject().put("name", "scout"))!!
         val local = BotProfile.parse(org.json.JSONObject().put("name", "scout").put("origin", "dsh"))!!

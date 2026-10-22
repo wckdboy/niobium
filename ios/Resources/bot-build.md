@@ -70,13 +70,13 @@ vesper = oracle/writing; rook = ranger/field.
 Recipe values (exact identifiers):
 - body: man, woman
 - palette: orion, nova, forge, sage, nyx, astra, vesper, rook
-- hair: silver_swept, violet_bob, undercut, locs, cat_black, white_pilot, silver_bob, headwrap
-- face: soft, sharp, calm, fierce
-- outfit: mage, cyber, armor, druid, rogue, pilot, veil, ranger
-- accessory: none, visor, goggles, antlers, cat_ears, circlet, veil, headwrap
+- skin: auto, porcelain, sand, copper, umber, ebony\n- hair_tone: auto, silver, ink, violet, moss, copper, rose, ice, gold\n- hair: silver_swept, violet_bob, undercut, locs, cat_black, white_pilot, silver_bob, headwrap, braid, mohawk, long_waves, high_ponytail
+- face: soft, sharp, calm, fierce, wry, stern
+- outfit: mage, cyber, armor, druid, rogue, pilot, veil, ranger, corsair, techwear, battlemage, astral
+- accessory: none, visor, goggles, antlers, cat_ears, circlet, veil, headwrap, horns, antenna, ear_cuff, halo\n- detail: none, freckles, scar, cyber_eye, rune, stubble\n\nUse explicit skin and hair_tone for a new identity; auto inherits palette colors.\nThe client supports older six-field recipes with auto colors and no detail.\nThe review screen lets the owner pin individual traits and remix only the look;\nthis never changes personality, tools, connections or permissions.
 
 Companions are original freaky, adorable creatures using one of the available
-silhouettes: owl, cat, drone, slime, bat, bunny, moth, hawk. Their name and trait
+16×16 silhouettes: owl, cat, drone, slime, bat, bunny, moth, hawk, axolotl, imp, wisp, mimic.\nThey render independently of the character; keep creatures out of the portrait recipe. Their name and trait
 make the creature specific: a three-eyed audit bat, a pudding dragon, a snarky
 moth that hoards footnotes. Match its strengths to a subtask, not its outfit.
 A companion is the visual identity of real Hermes delegation, never simulated
@@ -84,7 +84,7 @@ work. Do not claim a helper ran before delegate_task returns real evidence.
 
 ## PixelSpec v2
 
-All fields are required. Unknown fields are unnecessary.
+All top-level fields are required. New recipes should include all nine visual\nfields; skin, hair_tone and detail remain optional for saved v2 compatibility.\nUnknown fields are unnecessary.
 
 ~~~json
 {
@@ -112,7 +112,7 @@ All fields are required. Unknown fields are unnecessary.
       "hair": "silver_bob",
       "face": "fierce",
       "outfit": "rogue",
-      "accessory": "circlet"
+      "accessory": "circlet",\n      "skin": "umber",\n      "hair_tone": "silver",\n      "detail": "rune"
     }
   },
   "companion": {

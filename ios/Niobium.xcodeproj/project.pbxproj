@@ -22,6 +22,7 @@
 		509A4E671F6E68A871DC6804 /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60029D35B25833C97FB3EE35 /* AppStore.swift */; };
 		55ADD8B9BD5D57FC91E0A453 /* PixelSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0BD636CA46D4C02C57B8406 /* PixelSpec.swift */; };
 		57ECAA5D4EFF73812A1CBEEB /* NiobiumUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B57601DD63B1EEF47A996E4F /* NiobiumUITests.swift */; };
+		6B21FAC38CE0AD90A671B232 /* character-recipes.json in Resources */ = {isa = PBXBuildFile; fileRef = DE00C4F548C347C129291A28 /* character-recipes.json */; };
 		6D2775B4258739F7CF2B4A84 /* NewBotView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E52F80CBF3907A307D7266D /* NewBotView.swift */; };
 		729B3290783DD31B41BBB098 /* DSHLocalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2071CB229CBC0CC7853AF958 /* DSHLocalView.swift */; };
 		7A433DA37FFE804525816BCC /* ToolsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19BCD2792FD6DE0F11367BF7 /* ToolsView.swift */; };
@@ -111,6 +112,7 @@
 		BD5A8D72D3F2FD723D9AAC2A /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		CB1B8325F9C3BF64283A69CD /* LocalDSHModelDeviceUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalDSHModelDeviceUITests.swift; sourceTree = "<group>"; };
 		D4553B863939692A6E694D56 /* NBLocalModelFixture.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NBLocalModelFixture.m; sourceTree = "<group>"; };
+		DE00C4F548C347C129291A28 /* character-recipes.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "character-recipes.json"; sourceTree = "<group>"; };
 		E0BD636CA46D4C02C57B8406 /* PixelSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelSpec.swift; sourceTree = "<group>"; };
 		E1E416EFDE39DF4BC9C54A79 /* PixelBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelBuilder.swift; sourceTree = "<group>"; };
 		E3A6FBE565A3A6026443339B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -181,6 +183,7 @@
 		598221046B00F996D69AAD9F /* NativeTests */ = {
 			isa = PBXGroup;
 			children = (
+				DD435E1AD9ACEFA4BD93AF97 /* Fixtures */,
 				938BEFBAAE3079D4B9AF8B29 /* GatewayStateTests.swift */,
 				B49BBE05B43B6B6AFAFFDA24 /* NiobiumTests.swift */,
 			);
@@ -219,6 +222,14 @@
 			path = Support;
 			sourceTree = "<group>";
 		};
+		DD435E1AD9ACEFA4BD93AF97 /* Fixtures */ = {
+			isa = PBXGroup;
+			children = (
+				DE00C4F548C347C129291A28 /* character-recipes.json */,
+			);
+			path = Fixtures;
+			sourceTree = "<group>";
+		};
 		F0DE187B6103F21E90C153AD /* Resources */ = {
 			isa = PBXGroup;
 			children = (
@@ -239,6 +250,7 @@
 			buildConfigurationList = E1B69030E42BAD013393456E /* Build configuration list for PBXNativeTarget "NiobiumTests" */;
 			buildPhases = (
 				92AA74A6FCEA4D6BF9D061FF /* Sources */,
+				F2F5B510AC442106B8582518 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -343,6 +355,14 @@
 				B56C999C035DC8EED69892AE /* PrivacyInfo.xcprivacy in Resources */,
 				D4F170BF6D4B3E6D749F3C5F /* bot-build.md in Resources */,
 				861CB68078F5E1334CBF279F /* character_engine.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F2F5B510AC442106B8582518 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6B21FAC38CE0AD90A671B232 /* character-recipes.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -514,7 +534,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Resources/Niobium.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -554,7 +574,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Resources/Niobium.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
