@@ -54,6 +54,7 @@ class AssetsTests(unittest.TestCase):
         current = (ROOT / "brand/pixel-cast-runtime-v4.png").read_bytes()
         self.assertEqual(current, (ROOT / "ios/Resources/Assets.xcassets/PixelCastAtlas.imageset/pixel-cast-atlas.png").read_bytes())
         self.assertEqual(current, (ROOT / "android/app/src/main/res/drawable-nodpi/pixel_cast_atlas.png").read_bytes())
+        self.assertEqual(current, (ROOT / "site/public/pixel-cast-atlas.png").read_bytes())
 
     def test_recipe_atlas_is_shared_and_48_pixels(self):
         ios = (ROOT / "ios/Resources/character_engine.json").read_bytes()

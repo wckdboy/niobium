@@ -257,7 +257,7 @@ In progress on feat/pixel-atelier, targeting beta.5 (Android code 8 / iOS build 
 - Eight offline persona voices and working methods, explicit character cues,
   corrected word-based role matching, and an updated bot-build skill.
 - Portable seed/RGBA fixtures, native renderer checks, pin/legacy/type tests,
-  iOS editor interactions and reproducible art/catalog checks.
+  native editor interactions and reproducible art/catalog checks.\n- Full build 9 DSH simulator model/history acceptance passed in 93.789 seconds.\n  Android’s five runtime, two renderer and new editor interaction tests passed.
 
 Next: lift custom layered portraits to the authored cast's quality; improve persona
 naming/voice variety within each offline role; add undoable appearance history;

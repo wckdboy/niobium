@@ -11,6 +11,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -226,7 +228,7 @@ fun CharacterCustomizer(recipe: CharacterRecipe, archetype: String, enabled: Boo
                         Text(characterFieldLabel(field), color = Nb.Secondary, fontSize = 12.sp)
                         Spacer(Modifier.weight(1f))
                         Text(characterValueLabel(recipe.value(field), field), color = Nb.Text, fontSize = 12.sp, maxLines = 1)
-                        PixelIcon(PixelGlyph.BACK, Nb.Tertiary, 12.dp)
+                        Box(Modifier.rotate(-90f)) { PixelIcon(PixelGlyph.BACK, Nb.Tertiary, 12.dp) }
                     }
                     DropdownMenu(expanded && enabled, { expanded = false }) {
                         CharacterRecipe.options(field).forEach { option ->
@@ -264,8 +266,8 @@ fun FamiliarPicker(kind: String, enabled: Boolean = true, onChange: (String) -> 
                     Column(Modifier.weight(1f).clip(RoundedCornerShape(12.dp))
                         .background(if (kind == option) Nb.Ion.copy(alpha = 0.12f) else Nb.FillSoft)
                         .border(1.dp, if (kind == option) Nb.Ion.copy(alpha = 0.5f) else Nb.Line, RoundedCornerShape(12.dp))
-                        .clickable(enabled = enabled, role = Role.RadioButton) { onChange(option) }
-                        .semantics { contentDescription = option.replaceFirstChar { it.uppercase() } + " companion"; selected = kind == option }
+                        .selectable(selected = kind == option, enabled = enabled, role = Role.RadioButton) { onChange(option) }
+                        .semantics { contentDescription = option.replaceFirstChar { it.uppercase() } + " companion" }
                         .testTag("familiar." + option).padding(vertical = 10.dp),
                         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         FamiliarSprite(option, 32.dp)

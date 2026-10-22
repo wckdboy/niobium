@@ -60,7 +60,7 @@ native DSH smoke test against the development-signed full app from an archive:
 
 ```sh
 python3 tools/check-ios-device.py --device YOUR_IPHONE_UDID \
-  --app dist/Niobium-2.0-8-final.xcarchive/Products/Applications/Niobium.app
+  --app dist/Niobium-2.0-9.xcarchive/Products/Applications/Niobium.app
 ```
 
 The helper builds the UI test runner and points its `UITargetAppPath` at the
@@ -91,7 +91,7 @@ turn. It holds the final SSE chunk until Niobium has spent eight seconds on the
 Home screen, then checks completion and history after a full app/guest restart.
 It uses a unique reply marker on each run, so old history cannot satisfy the
 stream/history assertions. It uses no real provider account. Sanitized simulator
-evidence is in [ios-build8-simulator-model.json](evidence/ios-build8-simulator-model.json). The production smoke also waits eight seconds
+evidence is in [ios-build9-simulator-model.json](evidence/ios-build9-simulator-model.json). The production smoke also waits eight seconds
 on the Home screen, checks engine readiness again after returning, and verifies
 that a temporary unsent draft can be submitted before clearing it.
 

@@ -43,9 +43,11 @@ class CharacterEngineTest {
             assertNotNull("Pinned build changed during remix", find("Feminine"))
             click("Mimic companion")
             val until = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(3)
-            // Compose exposes a selected radio button through Android's checked state.
-            while (System.nanoTime() < until && find("Mimic companion")?.isChecked != true) Thread.sleep(100)
-            assertTrue("Mimic selection was not retained", find("Mimic companion")?.isChecked == true)
+            // The label can be a child view; selection belongs to its radio ancestor.
+            fun selected() = generateSequence(find("Mimic companion")) { it.parent }.take(6).any { it.isChecked || it.isSelected }
+            while (System.nanoTime() < until && !selected()) Thread.sleep(100)
+            assertTrue("Mimic selection was not retained: " + generateSequence(find("Mimic companion")) { it.parent }
+                .take(6).joinToString { it.className.toString() + "/" + it.isChecked + "/" + it.isSelected }, selected())
         } finally { instrumentation.runOnMainSync { activity.finish() } }
     }
     @Test fun nativePixelsMatchTheSharedRgbaFixtures() {
