@@ -70,8 +70,12 @@ Twelve independent **16×16** companions can accompany any portrait.
 Pixel studio and the creation review share a nine-trait editor. Pin favorites,
 remix the remaining traits locally, or restore the authored cast. Garment colors,
 skin tone and hair color are independent. Legacy six-field recipes still load.
-Custom layered portraits remain experimental and need more art polish than the
-authored cast. Visual edits preserve the briefing and access.
+Custom layers use adult proportions, tailored bold outfits and an asymmetric
+pose. Large previews blink subtly and respect reduced motion. Both frames are
+cached; small roster portraits stay still. Visual edits preserve the briefing
+and access. The renderer remains a different art treatment from the authored cast.
+
+<img src="brand/pixel-studio-v3-gallery.png" width="576" alt="Eight actual custom adult Pixel recipes with tailored fantasy and cyborg outfits">
 
 The offline generator has eight role-specific working methods, voices and
 creature temperaments; it handles word boundaries and honors explicit build
@@ -86,7 +90,10 @@ The generated art source and exact prompt are versioned; the macOS Swift baking
 tool produces the canonical native atlas.
 
 [Art and prompts](brand/art-provenance.json) ·
-[Design reference](docs/reference-dashboard.png) ·\n[Dashboard](docs/evidence/pixel-atelier-dashboard.png) ·\n[Editor](docs/evidence/pixel-atelier-editor.png) ·\n[Companions](docs/evidence/pixel-atelier-companions.png)
+[Design reference](docs/reference-dashboard.png) ·
+[Dashboard](docs/evidence/pixel-atelier-dashboard.png) ·
+[Editor](docs/evidence/pixel-studio-v3-editor.png) ·
+[Companions](docs/evidence/pixel-atelier-companions.png)
 
 ## Build and check
 

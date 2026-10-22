@@ -11,6 +11,7 @@ final class NiobiumTests: XCTestCase {
             let seed: String
             let recipe: CharacterRecipe
             let rgba_sha256: String
+            let blink_rgba_sha256: String
         }
         let fixtures = try JSONDecoder().decode([Fixture].self, from: Data(contentsOf: url))
         for fixture in fixtures {
@@ -20,6 +21,12 @@ final class NiobiumTests: XCTestCase {
             XCTAssertEqual(cg.width, 48); XCTAssertEqual(cg.height, 48)
             let bytes = try XCTUnwrap(cg.dataProvider?.data) as Data
             XCTAssertEqual(SHA256.hash(data: bytes).map { String(format: "%02x", $0) }.joined(), fixture.rgba_sha256)
+            let closed = try XCTUnwrap(CharacterEngine.shared.image(for: recipe, blink: true))
+            let closedBytes = try XCTUnwrap(closed.cgImage?.dataProvider?.data) as Data
+            XCTAssertEqual(SHA256.hash(data: closedBytes).map { String(format: "%02x", $0) }.joined(), fixture.blink_rgba_sha256)
+            XCTAssertNotEqual(bytes, closedBytes)
+            XCTAssertTrue(closed === CharacterEngine.shared.image(for: recipe, blink: true))
+            XCTAssertEqual(bytes, CharacterEngine.shared.image(for: recipe)?.cgImage?.dataProvider?.data as Data?)
         }
     }
     func testLegacyRecipesDecodeAndRejectInvalidOptionalTypes() throws {

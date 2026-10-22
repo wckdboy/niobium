@@ -13,7 +13,8 @@
       "accessory": "veil",
       "detail": "stubble"
     },
-    "rgba_sha256": "ae3d037f8d9d2ad5756936b363eaf22297293747897ea45d1945b3f433843b9a"
+    "rgba_sha256": "8d411f1d94e7fb13e77e8ba20ff28004ee41ab0920a3258d353515b0b24cee6f",
+    "blink_rgba_sha256": "74cd9e949b424ba0b2e638731332da296a3c2bcb2943db301c498805ce01da8d"
   },
   {
     "archetype": "nova",
@@ -29,7 +30,8 @@
       "accessory": "veil",
       "detail": "cyber_eye"
     },
-    "rgba_sha256": "156e59eadb0ad730db922c5726b6533287534e43b37684c224ac65e5573fd1c5"
+    "rgba_sha256": "4dc1a778db62c47c9f50a88baf08aeef7754906e89e5ed5fc0bc8b504989a388",
+    "blink_rgba_sha256": "a99e35a7d7995b046bc81630811e0220f90409634002cd2f151b9ae08b31f167"
   },
   {
     "archetype": "forge",
@@ -45,7 +47,8 @@
       "accessory": "antenna",
       "detail": "freckles"
     },
-    "rgba_sha256": "8328a68005de2cc9e01f1d6c2eba6c91e1e1263b8aa52431a44a89e7c37b7fd8"
+    "rgba_sha256": "6d6e1fc20e1955e2b7bd86c2e3f64fef076c161f5c1dea7863687ca7436f2acd",
+    "blink_rgba_sha256": "9fb8414141711fbf2dc649e4b367fbe01210fefe24933ff46e7cc40898b5678f"
   },
   {
     "archetype": "nyx",
@@ -61,7 +64,8 @@
       "accessory": "halo",
       "detail": "freckles"
     },
-    "rgba_sha256": "ffa87764d624445c6a1891292a0f6c99486f59ac0574cfd78e373f62a39cc91f"
+    "rgba_sha256": "42865de1c27f2245175e52437414585ca16475b1cee9b7df2e9098c2a8c244e9",
+    "blink_rgba_sha256": "f81e00ad868baf2c0a3d4d388dc3be1c171c62a93b161c1bdfc4c945df4e41ff"
   },
   {
     "archetype": "vesper",
@@ -77,7 +81,8 @@
       "accessory": "circlet",
       "detail": "freckles"
     },
-    "rgba_sha256": "c2bcaa73f31924cf026921af8ba33a3f420e22a08c7d7300c723e57662ca100d"
+    "rgba_sha256": "0735319651e256665d3e39d09f88617dbe0af62efebcdd8760d29ad451f7b36a",
+    "blink_rgba_sha256": "bc61f09f31b8e83cf33fc307930ed17a1ea9fc9d325dac63bdf2ab7ad19e43b0"
   },
   {
     "archetype": "rook",
@@ -93,6 +98,7 @@
       "accessory": "ear_cuff",
       "detail": "cyber_eye"
     },
-    "rgba_sha256": "825cf311a981f71701a906afe724ff06e3f0d14cfd8eb7e147acc24f6f09412c"
+    "rgba_sha256": "9ecc8111b9fc71c1e6c1f4321f0f4c088cb5827e3edb22525be7df0fe7ec6f10",
+    "blink_rgba_sha256": "77f8798297bfc39b888efe66a12858515a15fd825d091e605918b66e2561b0ef"
   }
 ]

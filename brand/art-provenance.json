@@ -48,8 +48,43 @@
       ],
       "max_colors_per_cell": 32,
       "alpha": "0 or 255"
+    },
+    {
+      "file": "brand/pixel-studio-v3-reference.png",
+      "tool": "image_gen.imagegen",
+      "date": "2026-10-22",
+      "transparent": true,
+      "prompt_file": "brand/pixel-studio-v3-prompt.txt",
+      "purpose": "Visual direction for code-native modular portrait layers; not a runtime 48px atlas.",
+      "sha256": "98a43a7d3f39bbe7ba1a604aefca4a379ca3457eb3b15e34bb815a6e15a122ca"
+    },
+    {
+      "file": "brand/pixel-studio-v3-gallery.png",
+      "tool": "tools/character_engine48.py",
+      "source_reference": "tools/portrait_layers48.py",
+      "cell_size": [
+        48,
+        48
+      ],
+      "purpose": "Eight actual custom recipes, enlarged 5x with exact integer pixels.",
+      "sha256": "26ebf01f952e1c61e25244bda9bae92f3a6a20d0a6b65a1798e2af880c140861"
+    },
+    {
+      "file": "site/public/pixel-custom-atlas.png",
+      "tool": "tools/character_engine48.py",
+      "source_reference": "tools/portrait_layers48.py",
+      "size": [
+        192,
+        96
+      ],
+      "cell_size": [
+        48,
+        48
+      ],
+      "alpha": "0 or 255",
+      "sha256": "7dd2cb52e3bef7fc603f1f88b815db69d0494f17522922961e86272fd9d74611"
     }
   ],
-  "runtime_note": "Original generated atlases are retained at source resolution. The v4 pixel-styled source has no embedded companions. tools/bake-character-art.swift bakes a canonical 192×96 atlas: eight exact 48×48 cells, at most 32 opaque colors per cell, hard alpha and a transparent border. Both native clients crop those same pixels without resizing. Custom recipes compose code-native 48×48 layers; companions are independent code-native 16×16 sprites. Generated source art is not a claim of hand-placed 48×48 originals.",
+  "runtime_note": "Original generated atlases are retained at source resolution. The v4 pixel-styled source has no embedded companions. tools/bake-character-art.swift bakes a canonical 192\u00d796 atlas: eight exact 48\u00d748 cells, at most 32 opaque colors per cell, hard alpha and a transparent border. Both native clients crop those same pixels without resizing. Custom recipes compose code-native 48\u00d748 layers; companions are independent code-native 16\u00d716 sprites. Generated source art is not a claim of hand-placed 48\u00d748 originals. Modular engine v3 replaces the older layers with smaller adult heads, longer torsos, an asymmetric hip-set pose, two tailored outfit cuts and independently cached open/blink faces. Its code-native source is tools/portrait_layers48.py; the generated visual reference is not a claim of hand-placed 48px source art.",
   "reference": "docs/reference-dashboard.png is the user-supplied design reference, not generated product output."
 }

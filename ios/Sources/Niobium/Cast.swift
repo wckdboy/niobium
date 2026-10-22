@@ -137,7 +137,7 @@ struct CastPortrait: View {
             RoundedRectangle(cornerRadius: size * 0.20, style: .continuous)
                 .strokeBorder(LinearGradient(colors: [NB.lineStrong, NB.fillSoft],
                                              startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 1)
-            CharacterSprite(member: member)
+            CharacterSprite(member: member, animate: size >= 96)
                 .shadow(color: showGlow ? member.accent.opacity(0.28) : .clear, radius: size * 0.10, y: size * 0.04)
             if showCompanion {
                 FamiliarSprite(kind: member.companion, size: size * 0.26)

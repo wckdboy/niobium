@@ -287,3 +287,26 @@ existing certificate. niobium.sh and www were deployed as version
 49b8f0be-0d15-47fe-a678-7df3c88a0b58; all six pages, www, the stylesheet, icon,
 cast, familiar strip and downloadable skill match the built HTTP bytes.
 Plane NIO-3/10/12/24/29/32/36 and both local exports record the release and limits.
+
+
+## Modular portrait cycle — 2.0.0-beta.6 candidate
+
+- Rebuilt custom 48px source layers around smaller adult faces, longer torsos,
+  a tilted shoulder line and a hip-set pose. Twelve outfits have two tailored
+  cuts; skin, hair and garment pigments remain independent.
+- Bold opaque crop tops, strappy panels, open coats, bare shoulders and midriffs
+  retain adult fantasy/cyborg styling. All human characters remain 18+, with
+  28–40 as the workshop default. The authored cast stays independent.
+- Large custom previews use two cached open/blink frames. Small portraits stay
+  still; motion is scoped to mounted active previews and system preferences.
+- New structural art gates cover eye occlusion, every outfit cut, semantic
+  pigments and silhouette stability. Swift/Kotlin hash both actual frames.
+- Generated visual reference, exact prompt, actual custom gallery, outfit-cut
+  sheet and frame comparison are versioned with provenance. The website shows
+  actual custom recipes, not the higher-resolution reference.
+- Android candidate code 9; full iOS candidate build 10. Release and upload
+  status will be recorded after verification.
+
+Next: undoable appearance history, saved looks and names with more variation
+within each offline role; physical/current real-account and Android 16 KB
+acceptance; provider-key vault, actual delegation and Hermes replay.

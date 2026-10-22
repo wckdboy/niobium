@@ -14,53 +14,8 @@ import zlib
 ROOT = Path(__file__).resolve().parents[1]
 TRANSPARENT = "."
 
-class Canvas:
-    def __init__(self, size=48):
-        self.size = size
-        self.grid = [[TRANSPARENT] * size for _ in range(size)]
-    def pixel(self, x, y, color):
-        if 0 <= x < self.size and 0 <= y < self.size:
-            self.grid[y][x] = color
-    def rect(self, x, y, w, h, color):
-        for yy in range(y, y + h):
-            for xx in range(x, x + w): self.pixel(xx, yy, color)
-    def line(self, x0, y0, x1, y1, color):
-        dx, dy = abs(x1-x0), -abs(y1-y0)
-        sx, sy = (1 if x0 < x1 else -1), (1 if y0 < y1 else -1)
-        error = dx + dy
-        while True:
-            self.pixel(x0, y0, color)
-            if x0 == x1 and y0 == y1: break
-            twice = 2 * error
-            if twice >= dy: error += dy; x0 += sx
-            if twice <= dx: error += dx; y0 += sy
-    def polygon(self, points, color):
-        for y in range(max(0, min(p[1] for p in points)), min(self.size, max(p[1] for p in points)+1)):
-            crossings = []
-            for a, b in zip(points, points[1:] + points[:1]):
-                if (a[1] <= y < b[1]) or (b[1] <= y < a[1]):
-                    crossings.append(a[0] + (y-a[1]) * (b[0]-a[0]) / (b[1]-a[1]))
-            crossings.sort()
-            for left, right in zip(crossings[::2], crossings[1::2]):
-                for x in range(max(0, int(left+0.5)), min(self.size, int(right+0.5)+1)):
-                    self.pixel(x, y, color)
-        for a, b in zip(points, points[1:] + points[:1]): self.line(*a, *b, color)
-    def ellipse(self, cx, cy, rx, ry, color):
-        for y in range(cy-ry, cy+ry+1):
-            for x in range(cx-rx, cx+rx+1):
-                if ((x-cx)/max(rx,1))**2 + ((y-cy)/max(ry,1))**2 <= 1.02:
-                    self.pixel(x,y,color)
-    def outline(self):
-        boundary=[]
-        for y in range(self.size):
-            for x in range(self.size):
-                if self.grid[y][x] != TRANSPARENT: continue
-                if any(0<=x+dx<self.size and 0<=y+dy<self.size and self.grid[y+dy][x+dx] not in (TRANSPARENT,"K")
-                       for dx,dy in ((1,0),(-1,0),(0,1),(0,-1))): boundary.append((x,y))
-        for x,y in boundary: self.pixel(x,y,"K")
-        return self
-    def rows(self): return ["".join(row) for row in self.grid]
-    p=pixel; r=rect; e=ellipse; poly=polygon
+from pixel_canvas import Canvas
+from portrait_layers48 import body, hair, face, outfit, accessory, detail
 
 # Pigment roles are shared by every layer. Skin and hair overrides never change
 # clothing, and garment colors never change the character's complexion.
@@ -109,187 +64,6 @@ OUTFITS = ["mage","cyber","armor","druid","rogue","pilot","veil","ranger","corsa
 ACCESSORIES = ["none","visor","goggles","antlers","cat_ears","circlet","veil","headwrap","horns","antenna","ear_cuff","halo"]
 DETAILS = ["none","freckles","scar","cyber_eye","rune","stubble"]
 COMPANIONS = ["owl","cat","drone","slime","bat","bunny","moth","hawk","axolotl","imp","wisp","mimic"]
-
-
-def body(kind):
- c=Canvas(); masculine=kind=="man"
- c.poly([(16,27),(22,25),(29,25),(35,28),(41,32),(42,43),(38,47),(10,47),(7,42),(9,32)],"O")
- if masculine:
-  c.poly([(9,31),(15,29),(18,33),(16,43),(12,47),(7,44)],"S")
-  c.poly([(35,29),(41,32),(43,44),(38,47),(34,40)],"S")
-  c.line(10,34,9,42,"L");c.line(39,34,41,42,"s");c.line(11,44,15,43,"s")
- else:
-  c.poly([(12,29),(16,30),(16,36),(13,43),(9,44),(9,37)],"S")
-  c.poly([(34,29),(38,31),(40,41),(37,45),(34,40)],"S")
-  c.line(11,33,10,40,"L");c.line(37,34,39,41,"s")
- c.poly([(22,22),(28,22),(29,28),(32,30),(28,34),(21,33),(17,29),(22,27)],"S")
- c.r(26,24,3,5,"s");c.line(20,29,23,30,"L");c.line(28,30,30,29,"s")
- c.poly([(19,9),(29,8),(33,12),(33,20),(30,24),(26,26),(22,25),(18,21),(17,14)],"S")
- c.poly([(18,14),(20,12),(20,20),(24,24),(23,25),(18,21)],"s")
- c.line(22,11,29,10,"L");c.line(30,14,31,18,"L");c.line(27,24,30,22,"s")
- c.r(16,16,2,4,"S");c.p(16,17,"L");c.p(17,19,"s");c.r(33,16,2,3,"s")
- # Opaque base garments remain behind all outfits, including cropped designs.
- c.poly([(18,32),(24,34),(31,31),(35,38),(33,47),(16,47),(15,38)],"O")
- c.r(17,45,17,3,"o");c.line(18,35,16,43,"B");c.line(32,37,34,44,"o")
- return c.outline()
-
-
-def hair(style):
- b,f=Canvas(),Canvas()
- # A common adult head anchor keeps all hair/outfit/body combinations aligned.
- if style in ("locs","cat_black","long_waves","high_ponytail","braid"):
-  b.poly([(17,9),(22,5),(30,6),(34,11),(36,28),(39,38),(33,42),(29,30),(18,35),(12,32),(14,21)],"h")
-  b.poly([(17,12),(19,9),(18,27),(15,36),(12,36),(15,24)],"H")
-  b.poly([(31,9),(34,13),(34,25),(38,36),(34,37),(31,27)],"H")
- else:
-  b.poly([(17,9),(21,5),(29,6),(34,10),(35,20),(32,27),(29,23),(19,25),(15,20),(15,12)],"h")
- if style=="silver_swept":
-  f.poly([(16,14),(18,7),(23,7),(25,4),(31,6),(34,8),(31,10),(24,12),(21,15),(20,11)],"H")
-  f.line(19,8,26,8,"G");f.line(23,10,30,8,"G");f.line(16,14,17,19,"h");f.p(32,11,"G")
- elif style in ("violet_bob","silver_bob"):
-  b.poly([(14,15),(16,9),(18,11),(17,30),(14,31),(12,28)],"H")
-  b.poly([(32,12),(35,14),(36,29),(32,31),(31,24)],"H")
-  f.poly([(16,11),(20,6),(29,6),(34,10),(32,13),(27,12),(22,16),(21,12),(17,17)],"H")
-  f.line(19,9,25,8,"G");f.line(15,18,14,26,"G");f.line(33,17,34,27,"h")
-  if style=="silver_bob": f.poly([(29,9),(32,11),(29,17),(26,16)],"H")
- elif style in ("undercut","mohawk"):
-  f.poly([(17,13),(18,8),(22,8),(22,5),(25,7),(28,4),(30,7),(34,8),(32,12),(24,13),(21,11)],"H")
-  f.line(21,9,29,9,"G");f.line(16,13,17,16,"h")
-  if style=="mohawk": f.poly([(23,8),(23,3),(26,5),(28,2),(30,7),(29,11)],"H");f.line(25,5,25,8,"G")
- elif style=="locs":
-  for x,y in [(15,10),(18,7),(22,6),(26,6),(30,8),(33,11)]:
-   f.poly([(x,y),(x+2,y-1),(x+3,y+6),(x+1,y+10),(x-1,y+7)],"H");f.p(x+1,y+2,"G")
-  for x in [13,16,33,36]: b.line(x,24,x+1,35,"H");b.p(x,28,"G");b.p(x+1,33,"G")
- elif style=="cat_black":
-  f.poly([(16,13),(18,7),(25,6),(31,8),(34,12),(30,12),(26,10),(22,15),(20,12),(17,18)],"H")
-  f.line(19,9,23,8,"G");f.p(31,10,"G");b.line(14,24,14,31,"G")
- elif style=="white_pilot":
-  f.poly([(16,14),(16,9),(19,9),(18,6),(22,7),(23,4),(26,7),(30,5),(30,8),(34,8),(32,12),(27,12),(23,14),(21,11)],"H")
-  f.line(19,9,25,8,"G");f.p(30,10,"G");f.r(16,15,2,3,"H")
- elif style=="headwrap":
-  b.poly([(14,13),(16,8),(22,6),(29,7),(34,11),(35,29),(38,34),(34,36),(30,27),(31,15)],"H")
-  f.poly([(16,11),(18,7),(29,7),(33,10),(32,14),(26,12),(20,14)],"H")
-  f.line(18,10,30,11,"G");f.line(17,13,23,12,"h")
- elif style=="braid":
-  f.poly([(16,13),(18,7),(27,6),(32,9),(32,12),(24,12),(20,16),(20,11)],"H");f.line(19,9,26,8,"G")
-  for i in range(6):
-   x=33+(i%2);y=22+i*3;b.poly([(x,y),(x+2,y-1),(x+3,y+2),(x+1,y+3),(x-1,y+1)],"H");b.p(x+1,y,"G")
-  b.r(34,40,3,2,"A")
- elif style=="long_waves":
-  f.poly([(16,14),(17,9),(21,6),(29,6),(33,10),(30,13),(27,11),(22,12),(19,17),(19,11)],"H")
-  for x in [14,34]:
-   b.line(x,20,x+2,25,"G");b.line(x+2,25,x,31,"H");b.line(x,31,x+2,36,"G")
-  f.line(20,8,27,8,"G")
- elif style=="high_ponytail":
-  b.poly([(26,7),(28,3),(34,3),(38,7),(37,14),(40,22),(39,33),(35,38),(35,23),(33,17),(34,11)],"H")
-  b.line(35,7,36,12,"G");b.line(37,22,37,31,"G");b.r(28,6,5,2,"A")
-  f.poly([(16,14),(18,8),(24,6),(30,8),(33,11),(29,12),(23,11),(19,14)],"H");f.line(19,9,25,8,"G")
- b.outline(); f.outline()
- # Hair frames the adult face; every variant keeps both eye anchors readable.
- for y in range(16,21):
-  for x in range(20,32): f.grid[y][x]=TRANSPARENT
- return b,f
-
-
-def face(kind):
- c=Canvas()
- # Small eyes, a defined nose/jaw and asymmetric mouths avoid oversized doll faces.
- left,right=21,28
- if kind in ("sharp","fierce","stern"):
-  c.line(20,14,23,15,"h");c.line(28,15,31,14,"h")
- else:
-  c.line(20,14,23,14,"h");c.line(28,14,31,14,"h")
- for x in [left,right]:
-  c.r(x-1,17,4,1,"D");c.p(x,17,"W");c.p(x+1,17,"E");c.p(x+1,18,"D")
- c.p(26,18,"s");c.p(26,20,"s");c.p(27,21,"L")
- if kind=="soft": c.line(24,23,27,23,"s");c.p(27,24,"s");c.p(29,21,"L")
- elif kind=="calm": c.line(24,23,27,23,"s");c.p(28,22,"s")
- elif kind=="wry": c.line(24,23,27,22,"s");c.p(28,21,"s");c.p(21,13,"h")
- elif kind=="fierce": c.line(24,23,27,23,"s");c.p(24,22,"L");c.p(29,18,"a")
- elif kind=="stern": c.line(24,23,27,23,"s");c.p(23,24,"s");c.p(29,24,"s")
- else: c.line(24,23,27,22,"s");c.p(22,21,"s")
- return c
-
-
-def outfit(kind):
- c=Canvas()
- # All chest panels are opaque. Exposed pixels are arms, neck or midriff only.
- if kind in ("mage","battlemage","veil"):
-  c.poly([(16,26),(20,29),(19,40),(16,47),(5,47),(8,32)],"O")
-  c.poly([(30,27),(34,28),(40,34),(43,47),(32,47),(30,39)],"O")
-  c.poly([(8,34),(13,29),(12,43),(8,47)],"o");c.line(15,29,19,34,"A");c.line(30,29,34,34,"A")
-  c.poly([(21,31),(26,33),(30,31),(30,45),(20,45)],"o");c.line(24,34,24,43,"B")
-  c.r(19,44,14,3,"m");c.r(24,44,4,3,"A");c.p(25,45,"W")
-  if kind=="battlemage":
-   c.poly([(7,30),(15,28),(18,33),(15,37),(6,36)],"m");c.line(8,31,14,30,"M");c.r(34,34,5,7,"m");c.line(35,35,37,35,"A")
-  if kind=="veil":
-   c.poly([(19,30),(23,32),(26,33),(31,29),(33,36),(30,42),(20,42),(17,35)],"A");c.line(23,33,27,39,"a");c.r(18,43,16,2,"m");c.p(26,43,"W")
- elif kind in ("cyber","rogue","astral"):
-  c.poly([(16,30),(21,32),(26,33),(31,30),(34,35),(30,39),(18,39),(14,35)],"O")
-  c.line(18,31,17,36,"B");c.line(30,32,32,35,"B");c.line(20,38,29,38,"A")
-  c.poly([(19,40),(30,40),(32,44),(18,44)],"S");c.line(27,40,28,43,"s");c.p(23,42,"L")
-  c.r(16,44,19,4,"o");c.r(17,44,17,1,"m");c.r(26,44,3,2,"A");c.p(27,44,"W")
-  if kind=="cyber":
-   c.poly([(11,29),(17,28),(18,32),(15,35),(15,39),(7,38),(7,33)],"O")
-   c.poly([(31,28),(36,30),(40,36),(34,39),(32,33)],"O")
-   c.line(10,31,14,30,"B");c.line(16,31,14,35,"A");c.r(8,35,3,2,"A");c.p(9,35,"a");c.line(35,32,37,35,"B")
-  elif kind=="rogue":
-   c.line(16,28,20,35,"o");c.line(32,29,28,36,"o");c.line(17,29,21,34,"m");c.line(29,38,32,41,"m")
-   c.poly([(8,28),(16,27),(21,31),(16,34),(6,34)],"O");c.line(9,29,14,29,"B");c.r(10,39,3,6,"o");c.r(36,39,3,6,"o")
-  else:
-   c.poly([(29,27),(34,28),(38,32),(39,41),(35,47),(31,43)],"O");c.line(31,29,36,34,"A");c.r(20,32,3,2,"a");c.p(21,31,"W");c.p(21,34,"W")
- elif kind=="armor":
-  c.poly([(8,29),(15,28),(19,33),(17,37),(7,36),(5,33)],"m");c.line(8,30,14,30,"M");c.line(7,34,14,35,"B")
-  c.poly([(32,28),(39,30),(42,35),(39,39),(32,36),(29,32)],"m");c.line(34,30,39,33,"M");c.r(35,39,6,6,"m");c.line(36,40,39,40,"A")
-  c.poly([(18,31),(23,33),(26,33),(31,30),(31,40),(26,43),(19,40)],"O");c.line(20,34,24,37,"B");c.line(29,33,27,38,"A");c.r(17,44,17,3,"o");c.r(23,44,5,2,"A")
- elif kind=="druid":
-  c.poly([(16,30),(20,30),(25,34),(30,29),(33,31),(32,38),(28,41),(20,39),(17,36)],"O")
-  for x,y in [(17,32),(21,35),(28,32),(29,37)]: c.poly([(x,y),(x+4,y-2),(x+2,y+3)],"B");c.p(x+2,y,"A")
-  c.r(20,41,10,3,"S");c.line(26,41,27,43,"s");c.r(17,44,18,3,"o");c.r(25,43,3,4,"A");c.p(26,44,"W")
-  c.poly([(10,33),(12,32),(14,35),(11,38),(8,37)],"O");c.line(9,35,12,34,"B");c.r(35,36,3,3,"A")
- elif kind in ("pilot","ranger","corsair"):
-  c.poly([(12,28),(19,29),(21,33),(19,47),(9,47),(7,35)],"O")
-  c.poly([(30,29),(36,29),(40,35),(39,47),(30,47),(29,34)],"O")
-  c.line(14,30,19,34,"B");c.line(30,31,33,35,"B");c.r(21,33,9,11,"o")
-  c.line(20,33,21,43,"m");c.line(31,33,29,43,"m");c.r(20,37,4,2,"A");c.r(28,37,4,2,"A");c.r(17,44,17,2,"m")
-  if kind=="ranger": c.line(18,30,32,44,"m");c.line(17,30,31,44,"A");c.r(11,37,5,5,"o");c.line(11,37,15,37,"B")
-  if kind=="corsair": c.poly([(9,28),(15,27),(18,33),(14,37),(6,39)],"o");c.line(8,31,14,29,"A");c.r(22,33,7,3,"S");c.r(22,45,5,2,"A")
- elif kind=="techwear":
-  c.poly([(18,29),(22,30),(28,30),(32,29),(35,37),(33,47),(17,47),(15,37)],"O")
-  c.r(21,28,9,3,"o");c.line(20,32,19,42,"B");c.line(30,32,32,41,"A");c.r(22,34,7,4,"o");c.r(23,35,3,1,"A");c.r(16,44,19,2,"m");c.r(25,44,3,2,"A")
-  c.r(9,39,5,7,"o");c.line(10,40,12,40,"A");c.r(36,39,5,7,"o")
- return c.outline()
-
-
-def accessory(kind):
- c=Canvas()
- if kind=="visor": c.line(19,12,31,12,"m");c.r(21,11,10,2,"A");c.r(22,11,4,1,"a");c.r(32,12,2,4,"m")
- elif kind=="goggles":
-  c.line(17,10,33,10,"m");c.r(19,9,5,4,"o");c.r(27,9,5,4,"o");c.r(20,10,3,2,"A");c.r(28,10,3,2,"A");c.p(20,10,"a");c.p(28,10,"a")
- elif kind=="antlers":
-  for x,dx in [(16,-1),(33,1)]: c.line(x,10,x+dx*2,3,"m");c.line(x+dx,7,x+dx*5,5,"m");c.p(x+dx*2,3,"A");c.p(x+dx*5,4,"A")
- elif kind=="cat_ears":
-  c.poly([(14,9),(14,3),(20,8)],"h");c.poly([(30,8),(35,3),(35,11)],"h");c.line(15,5,17,8,"A");c.line(33,6,32,8,"A")
- elif kind=="circlet": c.line(19,11,31,11,"m");c.poly([(24,10),(26,8),(28,10),(26,12)],"A");c.p(26,9,"W")
- elif kind=="veil": c.line(15,9,16,26,"O");c.line(34,9,34,28,"O");c.line(18,8,30,7,"A");c.p(28,8,"W")
- elif kind=="headwrap": c.poly([(16,9),(20,7),(30,8),(34,11),(32,13),(19,12)],"A");c.line(19,9,30,10,"a");c.line(34,12,37,23,"O")
- elif kind=="horns": c.poly([(17,10),(12,7),(12,2),(15,6),(20,7)],"m");c.poly([(30,8),(34,6),(36,2),(36,8),(33,12)],"m");c.p(13,3,"M");c.p(35,4,"M")
- elif kind=="antenna": c.line(17,15,14,10,"m");c.line(14,10,15,5,"m");c.r(14,4,3,2,"A");c.p(15,4,"a");c.r(33,16,3,4,"m");c.p(34,17,"A")
- elif kind=="ear_cuff": c.r(16,17,2,3,"m");c.p(16,18,"A");c.p(17,21,"W");c.r(33,17,2,2,"A")
- elif kind=="halo": c.line(18,3,30,3,"A");c.line(16,4,17,5,"A");c.line(31,4,33,5,"A");c.line(18,6,30,6,"a");c.p(24,2,"W")
- return c.outline()
-
-
-def detail(kind):
- c=Canvas()
- if kind=="freckles":
-  for p in [(21,20),(23,21),(29,20),(31,20)]:c.p(*p,"s")
- elif kind=="scar": c.line(29,14,27,20,"L");c.p(28,18,"d");c.p(29,15,"d")
- elif kind=="cyber_eye":c.r(27,16,5,3,"m");c.r(28,17,3,1,"A");c.p(29,17,"W");c.line(31,19,32,22,"m")
- elif kind=="rune":c.line(20,19,20,22,"A");c.p(21,20,"a");c.p(19,21,"a")
- elif kind=="stubble":
-  for p in [(20,22),(21,23),(22,24),(24,25),(26,25),(28,24),(30,22)]:c.p(*p,"d")
- return c
 
 
 COMP_COLORS = {
@@ -341,23 +115,24 @@ def companion(kind):
 
 
 def atlas():
- return dict(version=2,size=48,companion_size=16,palettes=PALETTES,fixed=FIXED,
+ return dict(version=3,size=48,companion_size=16,palettes=PALETTES,fixed=FIXED,
   skin_tones=SKIN_TONES,hair_tones=HAIR_TONES,
   bodies={k:body(k).rows() for k in ["man","woman"]},
   hair={k:dict(back=hair(k)[0].rows(),front=hair(k)[1].rows()) for k in HAIR},
-  faces={k:face(k).rows() for k in FACES},outfits={k:outfit(k).rows() for k in OUTFITS},
+  faces={k:face(k).rows() for k in FACES},blink_faces={k:face(k,blink=True).rows() for k in FACES},
+  outfits={k:{build:outfit(k,build).rows() for build in ["man","woman"]} for k in OUTFITS},
   accessories={k:accessory(k).rows() for k in ACCESSORIES},details={k:detail(k).rows() for k in DETAILS},
   companions={k:companion(k).rows() for k in COMPANIONS},cast=CAST)
 
 
-def compose(recipe, data=None):
+def compose(recipe, data=None, blink=False):
  data=data or atlas()
  palette={**data['fixed'],**data['palettes'][recipe['palette']],
           **data['skin_tones'].get(recipe.get('skin','auto'),{}),
           **data['hair_tones'].get(recipe.get('hair_tone','auto'),{})}
  hair=data['hair'][recipe['hair']]
- layers=[hair['back'],data['bodies'][recipe['body']],data['outfits'][recipe['outfit']],
-         data['faces'][recipe['face']],data['details'][recipe.get('detail','none')],hair['front'],data['accessories'][recipe['accessory']]]
+ layers=[hair['back'],data['bodies'][recipe['body']],data['outfits'][recipe['outfit']][recipe['body']],
+         data['blink_faces' if blink else 'faces'][recipe['face']],data['details'][recipe.get('detail','none')],hair['front'],data['accessories'][recipe['accessory']]]
  pixels=[[None]*48 for _ in range(48)]
  for layer in layers:
   for y,row in enumerate(layer):
@@ -404,8 +179,20 @@ def recipe_fixtures():
   recipe=generated(archetype,seed)
   rgba=bytes(channel for row in compose(recipe,data) for color in row
              for channel in (list(bytes.fromhex(color[1:]))+[255] if color else [0,0,0,0]))
-  rows.append(dict(archetype=archetype,seed=seed,recipe=recipe,rgba_sha256=hashlib.sha256(rgba).hexdigest()))
+  closed=bytes(channel for row in compose(recipe,data,blink=True) for color in row
+             for channel in (list(bytes.fromhex(color[1:]))+[255] if color else [0,0,0,0]))
+  rows.append(dict(archetype=archetype,seed=seed,recipe=recipe,rgba_sha256=hashlib.sha256(rgba).hexdigest(),
+                   blink_rgba_sha256=hashlib.sha256(closed).hexdigest()))
  return (json.dumps(rows,indent=2,ensure_ascii=False)+"\n").encode()
+
+
+def contact_sheet(recipes, data, columns=4):
+ rows=(len(recipes)+columns-1)//columns
+ sheet=[[None]*(columns*48) for _ in range(rows*48)]
+ for index,recipe in enumerate(recipes):
+  for y,row in enumerate(compose(recipe,data)):
+   sheet[index//columns*48+y][index%columns*48:(index%columns+1)*48]=row
+ return sheet
 
 
 def artifacts():
@@ -417,6 +204,27 @@ def artifacts():
  encoded=(json.dumps(data,separators=(',',':'))+'\n').encode()
  for path in ['ios/Resources/character_engine.json','android/app/src/main/assets/character_engine.json']:outputs[path]=encoded
  for name,recipe in CAST.items():outputs[f'brand/cast/{name}-engine.png']=png(compose(recipe,data),6)
+ # This sheet shows the actual custom generator, never the stock portrait path.
+ examples=[{**CAST[key],"skin":skin,"hair_tone":tone,"hair":style,"detail":detail}
+           for key,skin,tone,style,detail in [
+            ("nova","copper","violet","high_ponytail","cyber_eye"),
+            ("orion","sand","silver","silver_swept","scar"),
+            ("sage","ebony","silver","locs","freckles"),
+            ("forge","umber","copper","mohawk","stubble"),
+            ("nyx","porcelain","ink","long_waves","none"),
+            ("astra","copper","ice","undercut","none"),
+            ("vesper","copper","rose","silver_bob","rune"),
+            ("rook","ebony","moss","undercut","stubble")]]
+ examples[6].update(outfit="astral",accessory="circlet")
+ sheet=contact_sheet(examples,data)
+ outputs["site/public/pixel-custom-atlas.png"]=png(sheet)
+ outputs["brand/pixel-studio-v3-gallery.png"]=png(sheet,5)
+ checks=[{**CAST["nova"],"body":build,"outfit":look,"hair":HAIR[index],"accessory":ACCESSORIES[index]}
+         for build in ["woman","man"] for index,look in enumerate(OUTFITS)]
+ outputs["brand/pixel-studio-v3-cuts.png"]=png(contact_sheet(checks,data,6),4)
+ outputs["brand/pixel-studio-v3-recipes.json"]=(json.dumps(dict(examples=examples,cuts=checks),indent=2)+"\n").encode()
+ open_frame=compose(examples[0],data);closed_frame=compose(examples[0],data,blink=True)
+ outputs["brand/pixel-studio-v3-blink.png"]=png([a+b for a,b in zip(open_frame,closed_frame)],6)
  # Actual 16px creature sprites, shared byte-for-byte by the native clients.
  familiar_strip=[[] for _ in range(16)]
  for name in COMPANIONS:

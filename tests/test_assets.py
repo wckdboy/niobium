@@ -67,10 +67,16 @@ class AssetsTests(unittest.TestCase):
         self.assertEqual(ios, (ROOT / "android/app/src/main/assets/character_engine.json").read_bytes())
         atlas = json.loads(ios)
         self.assertEqual(atlas["size"], 48)
-        for group in ["bodies", "outfits", "faces", "accessories", "details"]:
+        self.assertEqual(atlas["version"], 3)
+        for group in ["bodies", "faces", "blink_faces", "accessories", "details"]:
             for rows in atlas[group].values():
                 self.assertEqual(len(rows), 48)
                 self.assertTrue(all(len(row) == 48 for row in rows))
+        for cuts in atlas["outfits"].values():
+            self.assertEqual(set(cuts), {"man", "woman"})
+            for rows in cuts.values():
+                self.assertEqual(len(rows),48)
+                self.assertTrue(all(len(row)==48 for row in rows))
 
     def test_authored_cast_has_exact_pixels_and_independent_companions(self):
         width,height,pixels = read_rgba(ROOT / "brand/pixel-cast-runtime-v4.png")

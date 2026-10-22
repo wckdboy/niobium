@@ -27,7 +27,7 @@ Write a 120–600 word SOUL in the second person. Include:
 
 An adult, mischievous or flirtatious edge is welcome when requested. Keep flirting
 opt-in and non-explicit; banter must never hide a failure or a decision. Every
-human character is visibly an adult, age 25–40 by default, minimum 18. Fantasy,
+human character is visibly an adult, age 28–40 by default, minimum 18. Fantasy,
 cyborg, bold silhouettes, open jackets, crop tops, sleeveless armour, leather
 and exposed shoulders are fine. No nudity, explicit acts or minors. Characters
 and creatures must be original; never imitate a real person or another mascot.
@@ -80,6 +80,15 @@ Recipe values (exact identifiers):
 
 Use explicit skin and hair_tone for a new identity; auto inherits palette colors.
 The client supports older six-field recipes with auto colors and no detail.
+
+Choose a distinct adult face, strong fantasy/cyborg silhouette and deliberate
+contrast between hair, skin and clothing. Bold skimpy designs may use cropped
+jackets, opaque strappy tops, bare shoulders or a midriff; coverage stays opaque.
+The shared renderer supplies adult proportions, a hip-set pose and tailored
+outfit cuts. Do not request chibi proportions or enlarge the eyes. Large custom
+previews blink subtly; this is decorative, not a claim that the agent is working.
+Keep the same recipe across idle, active and disconnected states.
+Do not add an image URL, animation flag or invented layer identifier to the JSON.
 The review screen lets the owner pin individual traits and remix only the look;
 this never changes personality, tools, connections or permissions.
 
@@ -145,7 +154,7 @@ skills: 0–6 installed names. connectors: 0–4 known IDs.
 reasoning: low, medium or high.
 permissions.approval_mode: ask, workspace_session or session.
 permissions.filesystem: none, workspace or unrestricted.
-character.age: 18–120, default 25–40.
+character.age: 18–120, default 28–40.
 companion.name: 1–24 characters. companion.trait: at most 240.
 
 Validate every identifier and length before returning JSON. If the request is

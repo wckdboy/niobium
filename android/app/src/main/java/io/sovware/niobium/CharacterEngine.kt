@@ -26,15 +26,17 @@ object CharacterEngine {
         }
         return authored?.get(member.id)
     }
-    private val cache = LruCache<CharacterRecipe, ImageBitmap>(192)
+    private data class RenderKey(val recipe: CharacterRecipe, val blink: Boolean)
+    private val cache = LruCache<RenderKey, ImageBitmap>(192)
     @Synchronized
-    fun image(context: Context, recipe: CharacterRecipe): ImageBitmap? {
-        cache.get(recipe)?.let { return it }
+    fun image(context: Context, recipe: CharacterRecipe, blink: Boolean = false): ImageBitmap? {
+        val key = RenderKey(recipe, blink)
+        cache.get(key)?.let { return it }
         if (!recipe.valid) return null
         val data = atlas ?: runCatching {
             context.applicationContext.assets.open("character_engine.json").bufferedReader().use { JSONObject(it.readText()) }
         }.getOrNull()?.also { atlas = it } ?: return null
-        if (data.optInt("size") != 48) return null
+        if (data.optInt("version") != 3 || data.optInt("size") != 48) return null
         val palette = mutableMapOf<Char, Int>()
         for (colors in listOf(data.optJSONObject("fixed"), data.optJSONObject("palettes")?.optJSONObject(recipe.palette),
             data.optJSONObject("skin_tones")?.optJSONObject(recipe.skin), data.optJSONObject("hair_tones")?.optJSONObject(recipe.hairTone))) {
@@ -45,8 +47,9 @@ object CharacterEngine {
         val hair = data.optJSONObject("hair")?.optJSONObject(recipe.hair)
         val layers = listOf(hair?.optJSONArray("back"),
             data.optJSONObject("bodies")?.optJSONArray(recipe.body),
-            data.optJSONObject("outfits")?.optJSONArray(recipe.outfit),
-            data.optJSONObject("faces")?.optJSONArray(recipe.face), data.optJSONObject("details")?.optJSONArray(recipe.detail), hair?.optJSONArray("front"),
+            data.optJSONObject("outfits")?.optJSONObject(recipe.outfit)?.optJSONArray(recipe.body),
+            data.optJSONObject(if (blink) "blink_faces" else "faces")?.optJSONArray(recipe.face),
+            data.optJSONObject("details")?.optJSONArray(recipe.detail), hair?.optJSONArray("front"),
             data.optJSONObject("accessories")?.optJSONArray(recipe.accessory))
         val pixels = IntArray(48 * 48)
         for (layer in layers.filterNotNull()) {
@@ -56,6 +59,6 @@ object CharacterEngine {
                 }
             }
         }
-        return Bitmap.createBitmap(pixels, 48, 48, Bitmap.Config.ARGB_8888).asImageBitmap().also { cache.put(recipe, it) }
+        return Bitmap.createBitmap(pixels, 48, 48, Bitmap.Config.ARGB_8888).asImageBitmap().also { cache.put(key, it) }
     }
 }

@@ -1,6 +1,7 @@
 package io.sovware.niobium
 
 import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.activity.compose.setContent
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.*
@@ -16,6 +17,28 @@ import java.security.MessageDigest
 @RunWith(AndroidJUnit4::class)
 class CharacterEngineTest {
     @get:Rule val compose = createEmptyComposeRule()
+
+    @Test fun disablingPreviewMotionImmediatelyRestoresTheOpenFrame() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val activity = instrumentation.startActivitySync(android.content.Intent(instrumentation.targetContext, MainActivity::class.java)
+            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK).putExtra("demo", true)) as MainActivity
+        val enabled = androidx.compose.runtime.mutableStateOf(true)
+        val observed = java.util.concurrent.atomic.AtomicBoolean(false)
+        val recipe = CharacterRecipe.generated("nova", "motion-preview")
+        try {
+            instrumentation.runOnMainSync {
+                activity.setContent {
+                    val blinking = portraitBlink(recipe,enabled.value)
+                    androidx.compose.runtime.SideEffect { observed.set(blinking) }
+                    androidx.compose.material3.Text(if (blinking) "Closed" else "Open")
+                }
+            }
+            compose.waitUntil(timeoutMillis = 7500) { observed.get() }
+            instrumentation.runOnMainSync { enabled.value = false }
+            compose.waitUntil(timeoutMillis = 1500) { !observed.get() }
+            assertFalse(observed.get())
+        } finally { instrumentation.runOnMainSync { activity.finish() } }
+    }
 
     @Test fun workshopKeepsPinnedBuildAndSelectsNewCompanions() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
@@ -44,7 +67,9 @@ class CharacterEngineTest {
         for (i in 0 until fixtures.length()) {
             val fixture = fixtures.getJSONObject(i)
             val recipe = CharacterRecipe.generated(fixture.getString("archetype"), fixture.getString("seed"))
-            val image = requireNotNull(CharacterEngine.image(instrumentation.targetContext, recipe)).asAndroidBitmap()
+            for (blink in listOf(false,true)) {
+            val rendered = requireNotNull(CharacterEngine.image(instrumentation.targetContext, recipe, blink))
+            val image = rendered.asAndroidBitmap()
             assertEquals(48, image.width); assertEquals(48, image.height)
             val rgba = ByteArray(48 * 48 * 4)
             for (y in 0 until 48) for (x in 0 until 48) {
@@ -54,7 +79,9 @@ class CharacterEngineTest {
                 rgba[at+2] = pixel.toByte(); rgba[at+3] = (pixel ushr 24).toByte()
             }
             val digest = MessageDigest.getInstance("SHA-256").digest(rgba).joinToString("") { "%02x".format(it.toInt() and 255) }
-            assertEquals(fixture.getString("rgba_sha256"), digest)
+            assertEquals(fixture.getString(if (blink) "blink_rgba_sha256" else "rgba_sha256"), digest)
+            assertSame(rendered, CharacterEngine.image(instrumentation.targetContext, recipe, blink))
+            }
         }
     }
     @Test fun familiarChoicePreservesAuthoredPixels() {

@@ -130,3 +130,31 @@ round trip through real DSH and a controlled model server. Eighteen shared adapt
 tests cover tool grants, adult/slug validation, model identity, pending approvals
 and questions, stream/transcript folding and explicit unsupported capabilities.
 See DSH-PROVIDER.md and ANDROID-DSH.md for limits.
+
+
+## Modular portrait quality
+
+`python3 -m unittest discover -s tests -p 'test_*.py' -v` runs eleven checks.
+The art-specific checks inspect 288 hair/headwear/build combinations for
+readable eyes, all 24 outfit cuts for opaque chest coverage, and 864
+build/outfit/expression/detail combinations for stable silhouettes across
+open/blink frames. Colors stay on the hard 48×48 grid. These structural checks
+complement visual review; they do not measure attractiveness.
+
+`python3 tools/character_engine48.py --check` verifies all 56 generated files.
+The source layers live in `tools/portrait_layers48.py`; drawing primitives are
+in `tools/pixel_canvas.py`. The original generated reference and exact prompt
+are retained alongside the actual custom gallery, all outfit cuts, recipe list
+and open/blink sheet in `brand/pixel-studio-v3-*`. The reference is visual
+direction, not the runtime source atlas. The website custom sheet uses the same
+code-native recipes as the app.
+
+Swift and on-device Kotlin compare both rendered frames with shared RGBA
+fixtures and verify independent cache entries. Android also exercises the actual
+Compose preview coroutine, waits for a blink, disables motion and checks that
+the open frame is restored. Large previews cancel decorative motion when
+leaving the active scene/lifecycle or when system motion is disabled. Small
+roster portraits stay still. Both caches remain bounded to 192 images.
+
+Native demo captures and the contact sheets are reviewed visually before
+release. Current device/account limitations remain in PLAN.md.

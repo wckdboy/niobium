@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,6 +37,14 @@ import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.MotionDurationScale
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.isActive
 
 data class CastMember(val id: String, val name: String, val portrait: String, val companion: String, val companionName: String, val accentHex: String, val recipe: CharacterRecipe? = null)
 
@@ -111,11 +121,14 @@ object CastStore {
 @Composable
 fun CastPortrait(member: CastMember, size: Dp = 64.dp, showCompanion: Boolean = true) {
     val accent = Nb.colorFor(member.accentHex)
+    val blink = portraitBlink(member.recipe, size >= 96.dp && !CharacterEngine.usesAuthored(member))
     Box(Modifier.size(size).clip(RoundedCornerShape(size * 0.20f))
         .background(Brush.linearGradient(listOf(accent.copy(alpha = 0.24f), Nb.Surface)))
         .border(1.dp, Nb.Line, RoundedCornerShape(size * 0.20f))) {
         val context = androidx.compose.ui.platform.LocalContext.current
-        val sprite = remember(member.id, member.recipe) { CharacterEngine.authoredImage(context, member) ?: member.recipe?.let { CharacterEngine.image(context, it) } }
+        val sprite = remember(member.id, member.recipe, blink) {
+            CharacterEngine.authoredImage(context, member) ?: member.recipe?.let { CharacterEngine.image(context, it, blink) }
+        }
         val spriteSide = with(androidx.compose.ui.platform.LocalDensity.current) {
             (kotlin.math.floor(size.toPx() / 48f).toInt().coerceAtLeast(1) * 48).toDp()
         }
@@ -134,6 +147,34 @@ fun CastPortrait(member: CastMember, size: Dp = 64.dp, showCompanion: Boolean = 
             }
         }
     }
+}
+
+// Only large previews blink. Composition, lifecycle and system motion scale all
+// own cancellation; the renderer caches two exact frames, with no per-frame draw.
+@Composable
+internal fun portraitBlink(recipe: CharacterRecipe?, enabled: Boolean): Boolean {
+    var blink by remember(recipe) { mutableStateOf(false) }
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    LaunchedEffect(recipe, enabled, lifecycle) {
+        blink = false
+        if (!enabled || recipe == null) return@LaunchedEffect
+        val motion = currentCoroutineContext()[MotionDurationScale]
+        snapshotFlow { motion?.scaleFactor ?: 1f }.collectLatest { scale ->
+            blink = false
+            if (scale > 0f) lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                try {
+                    val offset = recipe.toJson().toString().toByteArray(Charsets.UTF_8).sumOf { it.toInt() and 255 } % 1400
+                    while (isActive) {
+                        delay(4200L + offset)
+                        blink = true
+                        delay(140)
+                        blink = false
+                    }
+                } finally { blink = false }
+            }
+        }
+    }
+    return blink && enabled
 }
 
 private fun portraitRes(id: String): Int = when (id) {
