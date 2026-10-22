@@ -363,6 +363,61 @@ function streamFrames(envelope, state) {
   }
 }
 
+// DSH binds HTTP before registering its event upgrade route. A native client
+// may therefore reach our status endpoint while that route still resets its
+// socket. Wait only for this initial attachment; never reconnect or replay an
+// established stream, whose session state must be recovered by the client.
+function connectEventStream({connect, onOpen, onMessage, onFailure, onWaiting = () => {},
+  timeoutMs = 10000, retryDelayMs = 100}) {
+  let socket, retryTimer, deadlineTimer, stopped = false, opened = false, attempts = 0, lastFailure;
+  const stop = () => {
+    if (stopped) return;
+    stopped = true;
+    clearTimeout(retryTimer); clearTimeout(deadlineTimer);
+    socket?.terminate();
+  };
+  const fail = message => { if (stopped) return; stop(); onFailure(message); };
+  const attempt = () => {
+    if (stopped) return;
+    attempts++;
+    let own;
+    try { own = connect(); } catch { fail('DSH event stream unavailable'); return; }
+    socket = own;
+    let ended = false;
+    const unavailable = (message, retryable) => {
+      if (stopped || ended || socket !== own) return;
+      ended = true;
+      own.terminate();
+      if (!opened && retryable) {
+        lastFailure = message;
+        if (attempts === 1) onWaiting(message);
+        retryTimer = setTimeout(attempt, Math.min(retryDelayMs * 2 ** Math.min(attempts - 1, 4), 500));
+      } else fail(message);
+    };
+    own.on('open', () => {
+      if (stopped || ended || socket !== own) return;
+      opened = true;
+      clearTimeout(deadlineTimer);
+      onOpen();
+    });
+    own.on('message', raw => { if (!stopped && !ended && socket === own) onMessage(raw); });
+    own.on('unexpected-response', (_request, response) => {
+      response.resume();
+      unavailable('DSH event stream HTTP ' + response.statusCode, [404, 503].includes(response.statusCode));
+    });
+    own.on('error', error => {
+      // No URLs, headers, exception messages or peer-supplied close reasons.
+      const code = /^[A-Z][A-Z0-9_]{0,30}$/.test(error.code || '') ? ' (' + error.code + ')' : '';
+      unavailable('DSH event stream unavailable' + code,
+        ['ECONNRESET', 'ECONNREFUSED', 'EPIPE', 'ETIMEDOUT'].includes(error.code));
+    });
+    own.on('close', code => unavailable('DSH event stream closed', !opened && code === 1006));
+  };
+  deadlineTimer = setTimeout(() => fail(lastFailure ? lastFailure + '; startup timed out' : 'DSH event stream startup timed out'), timeoutMs);
+  attempt();
+  return stop;
+}
+
 function install() {
   const WebSocket = require('/usr/local/lib/node_modules/ws');
   const port = Number(process.env.DSH_PORT || 3080);
@@ -403,13 +458,15 @@ function install() {
     return a.length === b.length && crypto.timingSafeEqual(a, b);
   }
   wss.on('connection', async ws => {
+    console.error('[niobium] native provider socket opened');
     let selected = null;
     let attachEpoch = 0, buffering = false, baseline = -1, buffered = [];
     const states = new Map();
     const send = value => { if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(value)); };
-    const upstream = new WebSocket('ws://127.0.0.1:' + port + '/api/events.mux', socketPath ? {
-      createConnection: () => require('node:net').connect(socketPath)} : {});
-    upstream.on('message', raw => {
+    const stopUpstream = connectEventStream({
+      connect: () => new WebSocket('ws://127.0.0.1:' + port + '/api/events.mux', socketPath ? {
+        createConnection: () => require('node:net').connect(socketPath)} : {}),
+      onMessage: raw => {
       try {
         const full = JSON.parse(raw.toString()); provider.capture(full);
         const sid = full.payload.sessionId;
@@ -421,22 +478,19 @@ function install() {
         if (!states.has(sid)) states.set(sid, {text: '', stepText: '', priorStep: false});
         streamFrames(full, states.get(sid)).forEach(send);
       } catch { ws.close(1011, 'Invalid DSH event'); }
+      },
+      onOpen: () => {
+        console.error('[niobium] DSH event stream opened');
+        send({jsonrpc: '2.0', method: 'event', params: {type: 'gateway.ready', payload: {provider: 'dsh'}}});
+      },
+      onWaiting: reason => console.error('[niobium] waiting for startup: ' + reason),
+      onFailure: reason => {
+        console.error('[niobium] ' + reason);
+        ws.close(1011, reason);
+      }
     });
-    upstream.on('open', () => send({jsonrpc: '2.0', method: 'event', params: {type: 'gateway.ready', payload: {provider: 'dsh'}}}));
-    // Preserve a bounded, non-sensitive cause. Never include URLs, headers or
-    // exception messages here: those may contain credentials or private data.
-    upstream.on('unexpected-response', (_request, response) => {
-      response.resume();
-      ws.close(1011, 'DSH event stream HTTP ' + response.statusCode);
-      upstream.terminate();
-    });
-    upstream.on('error', error => {
-      const code = /^[A-Z][A-Z0-9_]{0,30}$/.test(error.code || '') ? ' (' + error.code + ')' : '';
-      ws.close(1011, 'DSH event stream unavailable' + code);
-    });
-    upstream.on('close', () => ws.close(1011, 'DSH event stream closed'));
-    ws.on('close', () => upstream.close());
-    ws.on('error', () => upstream.close());
+    ws.on('close', stopUpstream);
+    ws.on('error', stopUpstream);
     ws.on('message', async raw => {
       let frame;
       try {
@@ -489,5 +543,5 @@ function install() {
   };
 }
 
-module.exports = {createProvider, composition, transcript, streamFrames};
+module.exports = {createProvider, composition, transcript, streamFrames, connectEventStream};
 if (process.env.NIOBIUM_AGENT_TOKEN && process.argv.some(v => v.endsWith('/dsh/lib/bin.js')) && process.argv.includes('web')) install();

@@ -99,6 +99,13 @@ tool produces the canonical native atlas.
 
 ## Build and check
 
+Shared runtime and contract checks:
+
+~~~sh
+npm ci --prefix runtime --ignore-scripts
+node --test tests/*.test.mjs
+~~~
+
 Android requires JDK 17, SDK platform android-37.0 and NDK 30.0.16248370.
 The verified Alpine image and pinned native packages are prepared automatically.
 
