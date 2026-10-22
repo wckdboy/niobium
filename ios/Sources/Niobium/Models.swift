@@ -442,10 +442,11 @@ struct ModelChoice: Identifiable, Equatable {
 struct SessionRow: Identifiable, Equatable {
     var sessionID: String
     var title: String
-    var messageCount: Int
+    var messageCount: Int?
     var model: String
     var startedAt: Date?
     var running: Bool
+    var lastActiveAt: Date? = nil
     var id: String { sessionID }
 
     static func parse(_ json: JSONObject) -> SessionRow? {
@@ -453,10 +454,11 @@ struct SessionRow: Identifiable, Equatable {
         guard let id, !id.isEmpty else { return nil }
         return SessionRow(sessionID: id,
                           title: json.string("title") ?? "Untitled",
-                          messageCount: json.int("message_count") ?? 0,
+                          messageCount: json.int("message_count"),
                           model: json.string("model") ?? "",
                           startedAt: epochDate(json.double("started_at")),
-                          running: json.bool("running") ?? false)
+                          running: json.bool("running") ?? false,
+                          lastActiveAt: epochDate(json.double("updated_at")))
     }
 }
 

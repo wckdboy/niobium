@@ -53,6 +53,9 @@ final class AppStore: ObservableObject {
     @Published var errorBanner: String?
     @Published var isRefreshing = false
     @Published var isLoadingChat = false
+    @Published var historyHasMore = false
+    @Published var historyBeforeSeq: Int?
+    @Published var isLoadingHistory = false
     @Published var lastSyncedAt: Date?
 
     private var api: (any HermesRPC)?
@@ -181,6 +184,15 @@ final class AppStore: ObservableObject {
         guard let connection, !connection.isDemo else { return }
         let token = ConnectionPrefs.token(for: connection)
         await connect(url: connection.baseURL, token: token, name: connection.name)
+    }
+
+    func resumeConnection() async {
+        guard !isDemo, !needsConnection, !isConnecting, !connectionState.isConnected else { return }
+#if NIOBIUM_LOCAL_DSH
+        // Foregrounding must not undo an explicit Stop from Engines.
+        if engine == .dsh && DSHHarness.shared().state == .stopped { return }
+#endif
+        await reconnect()
     }
 
     func disconnect(forget: Bool = false) {
@@ -425,6 +437,7 @@ final class AppStore: ObservableObject {
     // MARK: - Direct bot chat
 
     func openBot(_ bot: BotProfile) {
+        historyHasMore = false; historyBeforeSeq = nil; isLoadingHistory = false
         chatEpoch += 1
         let epoch = chatEpoch
         demoTurnTask?.cancel()
@@ -501,9 +514,11 @@ final class AppStore: ObservableObject {
             guard let result else { throw RPCError.malformed }
             guard chatEpoch == epoch, self.api === api else { return }
             restoreChat(result)
+            recoverPrompts(result)
+            if engine == .dsh { _ = try await api.request("local.attach", params: ["session_id": chatSessionID ?? ""]) }
+            guard chatEpoch == epoch, self.api === api else { return }
             await loadModels()
             guard chatEpoch == epoch, self.api === api else { return }
-            recoverPrompts(result)
             await loadToolsets()
         } catch {
             guard chatEpoch == epoch, self.api === api else { return }
@@ -523,11 +538,31 @@ final class AppStore: ObservableObject {
         streamingReasoning = ""
         streamingMessageID = nil
         messages = parseTranscript(result.objects("messages"))
+        historyHasMore = result.bool("history_has_more") ?? false
+        historyBeforeSeq = result.int("history_before_seq")
+        isLoadingHistory = false
         let partial = inflight?.string("assistant") ?? ""
         if streaming || !partial.isEmpty {
             messages.append(ChatMessage(id: "inflight", role: .assistant, text: partial,
                                         timestamp: Date(), toolStatus: .completed, isStreaming: streaming))
             if streaming { streamingMessageID = "inflight" }
+        }
+    }
+
+    func loadOlderMessages() async {
+        guard let api, let session = chatSessionID, let before = historyBeforeSeq, historyHasMore, !isLoadingHistory else { return }
+        isLoadingHistory = true
+        do {
+            let result = try await api.request("session.history", params: ["session_id": session, "before_seq": before]) as? JSONObject
+            guard self.api === api, chatSessionID == session else { return }
+            var seen = Set<String>()
+            messages = (parseTranscript(result?.objects("messages") ?? []) + messages).filter { seen.insert($0.id).inserted }
+            historyHasMore = result?.bool("has_more") ?? false
+            historyBeforeSeq = result?.int("before_seq")
+            isLoadingHistory = false
+        } catch {
+            guard self.api === api, chatSessionID == session else { return }
+            isLoadingHistory = false; showError(error.localizedDescription)
         }
     }
 
@@ -643,6 +678,7 @@ final class AppStore: ObservableObject {
             guard chatEpoch == epoch, activeBot?.name == bot.name, self.api === api else { return }
             restoreChat(result, fallbackSessionID: row.sessionID)
             recoverPrompts(result)
+            if engine == .dsh { _ = try await api.request("local.attach", params: ["session_id": chatSessionID ?? ""]) }
             await loadModels()
             guard chatEpoch == epoch, self.api === api else { return }
             toastMessage("Opened \(row.title)")
@@ -766,6 +802,14 @@ final class AppStore: ObservableObject {
         case "reasoning.available":
             streamingReasoning = payload.string("text") ?? streamingReasoning
             updateStreamingReasoning(streamingReasoning)
+        case "message.segment":
+            ensureStreamingMessage()
+            if let id = streamingMessageID, let index = messages.firstIndex(where: { $0.id == id }) {
+                if messages[index].text.isEmpty { messages[index].text = payload.string("text") ?? "" }
+                messages[index].isStreaming = false
+            }
+            streamingMessageID = nil
+            streamingReasoning = ""
         case "message.complete":
             completeTurn(payload)
         case "tool.start":
@@ -841,7 +885,7 @@ final class AppStore: ObservableObject {
         streamingMessageID = nil
         streamingReasoning = ""
         if let bot = activeBot {
-            addActivity(.message, title: "Reply from \(bot.title)", detail: String(finalText.prefix(120)), bot: bot.name)
+            addActivity(.message, title: "Reply from \(bot.title)", detail: String((payload.string("summary") ?? finalText).prefix(120)), bot: bot.name)
         }
     }
 
@@ -1071,15 +1115,18 @@ final class AppStore: ObservableObject {
         }
     }
 
-    func resolveClarify(_ answers: [String: String]) {
+    func resolveClarify(_ answers: [String: String], selections: [String: [String]] = [:]) {
         guard let request = clarifyRequest else { return }
         guard let api, chatSessionID == request.sessionID else { return }
-        guard request.questions.allSatisfy({ !(answers[$0.id] ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
+        let flattened = answers.merging(selections.mapValues { $0.joined(separator: ", ") }, uniquingKeysWith: { _, new in new })
+        guard request.questions.allSatisfy({ !(flattened[$0.id] ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
             showError("Answer every question before sending. You can dismiss it and leave the task waiting.")
             return
         }
         if request.promptGenerations.isEmpty {
-            api.respond(id: request.rpcID, result: ["answers": answers, "outcome": "submitted"])
+            var wire: JSONObject = flattened
+            if engine == .dsh { for (id, values) in selections { wire[id] = values } }
+            api.respond(id: request.rpcID, result: ["answers": wire, "outcome": "submitted"])
             clarifyRequest = nil
             return
         }
@@ -1090,7 +1137,7 @@ final class AppStore: ObservableObject {
                           let generation = request.promptGenerations[question.id],
                           clarifyRequest?.promptGenerations[question.id] == generation else { return }
                     _ = try await api.request("clarify.respond", params: ["session_id": request.sessionID,
-                        "execution_generation": generation, "prompt_id": question.id, "answer": answers[question.id]!])
+                        "execution_generation": generation, "prompt_id": question.id, "answer": flattened[question.id]!])
                     guard self.api === api, chatSessionID == request.sessionID,
                           clarifyRequest?.promptGenerations[question.id] == generation else { return }
                     clarifyRequest?.questions.removeAll { $0.id == question.id }

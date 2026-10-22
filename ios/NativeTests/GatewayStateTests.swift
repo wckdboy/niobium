@@ -54,6 +54,33 @@ private final class FixtureRPC: HermesRPC {
 
 @MainActor
 final class GatewayStateTests: XCTestCase {
+    func testCompletedDshStepsStayDistinctWithoutEndingTheTurn() async {
+        let rpc = FixtureRPC()
+        let subject = AppStore(api: rpc)
+        subject.chatSessionID = "sid"
+        rpc.onNotification?("message.delta", "sid", ["text": "First step"])
+        rpc.onNotification?("message.segment", "sid", ["text": "First step"])
+        for _ in 0..<1000 { if subject.messages.last?.isStreaming == false { break }; await Task.yield() }
+        XCTAssertEqual(subject.messages.map(\.text), ["First step"])
+        XCTAssertTrue(subject.isTurnActive)
+        rpc.onNotification?("message.delta", "sid", ["text": "Second step"])
+        rpc.onNotification?("message.segment", "sid", ["text": "Second step"])
+        rpc.onNotification?("message.complete", "sid", ["text": "", "summary": "Second step"])
+        for _ in 0..<1000 { if !subject.isTurnActive { break }; await Task.yield() }
+        XCTAssertEqual(subject.messages.map(\.text), ["First step", "Second step"])
+        XCTAssertTrue(subject.messages.allSatisfy { !$0.isStreaming })
+    }
+    func testLocalMultiSelectResponsePreservesAllOptions() {
+        let rpc = FixtureRPC()
+        let store = AppStore(api: rpc)
+        store.engine = .dsh
+        store.chatSessionID = "sid"
+        store.clarifyRequest = ClarifyRequest(rpcID: .string("q"), sessionID: "sid",
+            questions: [.init(id: "a", question: "Which?", choices: ["A", "B"], multiSelect: true)])
+        store.resolveClarify([:], selections: ["a": ["A", "B"]])
+        XCTAssertEqual(rpc.responses.first?.1.dict("answers")?["a"] as? [String], ["A", "B"])
+        XCTAssertNil(store.clarifyRequest)
+    }
     func testLocalPixelCreationUsesNativeDshPresetEndpoint() async throws {
         let rpc = FixtureRPC()
         let subject = AppStore(api: rpc)

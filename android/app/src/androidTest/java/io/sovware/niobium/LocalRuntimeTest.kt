@@ -289,8 +289,10 @@ class LocalRuntimeTest {
             waitFor("Native roster connected") { vm!!.state.connected && vm!!.state.bots.isNotEmpty() }
             assertFalse(vm!!.state.needsConnection)
             assertEquals(AgentEngine.DSH, vm!!.state.engine)
-            val fallback = PixelBuilder.fallback("Research").copy(name = profile)
-            val drafted = PixelDraft(fallback, false, setOf("web", "file", "todo", "skills", "delegation"), emptySet(), emptyList())
+            val tools = setOf("web", "file", "terminal", "todo", "skills", "delegation")
+            val original = PixelBuilder.fallback("Research")
+            val fallback = original.copy(name = profile, toolsets = tools.toList(), permissions = original.permissions.copy(shell = true))
+            val drafted = PixelDraft(fallback, false, tools, emptySet(), emptyList())
             instrumentation.runOnMainSync {
                 vm!!.buildPixel(context, drafted, {}, { error("Native creation failed: " + it) })
             }

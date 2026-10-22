@@ -61,6 +61,9 @@ data class NbState(
     val clarify: ClarifyRequest? = null,
     val credentialRequests: List<CredentialRequest> = emptyList(),
     val loadingChat: Boolean = false,
+    val historyHasMore: Boolean = false,
+    val historyBeforeSeq: Int? = null,
+    val loadingHistory: Boolean = false,
     val refreshing: Boolean = false,
     val error: String? = null,
     val toast: String? = null,
@@ -385,7 +388,8 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
         state.credentialRequests.forEach { gateway?.respond(it.rpcId, JSONObject().put("value", "")) }
         state = state.copy(activeBot = bot, messages = emptyList(), sessionId = null, companionTasks = emptyList(), companionError = null,
             sessionRevision = 0, sessionGeneration = null, sessionReasoning = null, modelChoices = emptyList(), usage = null, credentialRequests = emptyList(),
-            loadingChat = true, approvals = emptyList(), clarify = null, turnActive = false, turnStatus = "")
+            loadingChat = true, historyHasMore = false, historyBeforeSeq = null, loadingHistory = false,
+            approvals = emptyList(), clarify = null, turnActive = false, turnStatus = "")
         viewModelScope.launch {
             if (state.demo) {
                 delay(260)
@@ -415,6 +419,7 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
             if (chatEpoch != epoch || gateway !== client) return
             restoreChat(result)
             recoverPrompts(result)
+            if (state.engine == AgentEngine.DSH) client.request("local.attach", JSONObject().put("session_id", state.sessionId))
             loadToolsets()
             loadModels()
         } catch (e: Exception) {
@@ -445,6 +450,26 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
             messages = restored + if (streaming || partial.isNotEmpty()) listOf(
                 ChatMessage("inflight", "assistant", partial, streaming = streaming)) else emptyList(),
             loadingChat = false, turnActive = snapshot.optBoolean("running", streaming), turnStatus = "")
+        state = state.copy(historyHasMore = snapshot.optBoolean("history_has_more"), historyBeforeSeq = snapshot.i("history_before_seq"), loadingHistory = false)
+    }
+
+    fun loadOlderMessages() {
+        val client = gateway ?: return
+        val session = state.sessionId ?: return
+        val before = state.historyBeforeSeq ?: return
+        if (!state.historyHasMore || state.loadingHistory) return
+        state = state.copy(loadingHistory = true)
+        viewModelScope.launch {
+            try {
+                val result = client.request("session.history", JSONObject().put("session_id", session).put("before_seq", before))
+                if (gateway !== client || state.sessionId != session) return@launch
+                val older = parseTranscript(result.objects("messages"))
+                state = state.copy(messages = (older + state.messages).distinctBy { it.id }, historyHasMore = result.optBoolean("has_more"),
+                    historyBeforeSeq = result.i("before_seq"), loadingHistory = false)
+            } catch (e: Exception) {
+                if (gateway === client && state.sessionId == session) state = state.copy(loadingHistory = false, error = e.message ?: "Could not load older messages.")
+            }
+        }
     }
 
     fun send(text: String, imageBase64: String? = null, mime: String = "image/jpeg") {
@@ -578,6 +603,8 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
                 if (chatEpoch != epoch || state.activeBot?.name != bot.name || gateway !== client) return@runCatching
                 restoreChat(result, row.sessionId)
                 recoverPrompts(result)
+                if (state.engine == AgentEngine.DSH) client.request("local.attach", JSONObject().put("session_id", state.sessionId))
+                if (gateway !== client || state.sessionId != row.sessionId) return@runCatching
                 loadModels(); loadToolsets()
             }.onFailure {
                 if (it is kotlinx.coroutines.CancellationException) throw it
@@ -722,6 +749,12 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
                     clarify = state.clarify?.takeUnless { it.rpcId.toString() == id },
                     credentialRequests = state.credentialRequests.filterNot { it.rpcId.toString() == id })
             }
+            "message.segment" -> {
+                ensureStreaming()
+                val id = streamingId
+                state = state.copy(messages = state.messages.map { if (it.id == id) it.copy(text = it.text.ifEmpty { payload.s("text") ?: "" }, streaming = false) else it })
+                streamingId = null
+            }
             "message.complete" -> completeTurn(payload)
             "tool.start" -> startTool(payload)
             "tool.complete" -> completeTool(payload)
@@ -768,7 +801,7 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
         }
         state.activeBot?.let { bot ->
             addActivity(ActivityItem(UUID.randomUUID().toString(), "message", "Reply from ${bot.title}",
-                text.take(120), botName = bot.name))
+                (payload.s("summary") ?: text).take(120), botName = bot.name))
         }
     }
 
@@ -973,11 +1006,12 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun resolveClarify(answers: Map<String, String>) {
+    fun resolveClarify(answers: Map<String, String>, selections: Map<String, List<String>> = emptyMap()) {
         val req = state.clarify ?: return
         val client = gateway ?: return
         if (state.sessionId != req.sessionId) return
-        if (req.questions.any { answers[it.id].isNullOrBlank() }) {
+        val flattened = answers + selections.mapValues { it.value.joinToString(", ") }
+        if (req.questions.any { flattened[it.id].isNullOrBlank() }) {
             showError("Answer every question before sending. You can dismiss it and leave the task waiting.")
             return
         }
@@ -989,7 +1023,7 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
                         val generation = req.promptGenerations[question.id] ?: continue
                         if (state.clarify?.promptGenerations?.get(question.id) != generation) return@launch
                         client.request("clarify.respond", JSONObject().put("session_id", req.sessionId)
-                            .put("execution_generation", generation).put("prompt_id", question.id).put("answer", answers.getValue(question.id)))
+                            .put("execution_generation", generation).put("prompt_id", question.id).put("answer", flattened.getValue(question.id)))
                         if (gateway !== client || state.sessionId != req.sessionId ||
                             state.clarify?.promptGenerations?.get(question.id) != generation) return@launch
                         state = state.copy(clarify = state.clarify?.copy(questions = state.clarify!!.questions.filterNot { it.id == question.id },
@@ -1002,7 +1036,8 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
             return
         }
         val obj = JSONObject()
-        answers.forEach { (k, v) -> obj.put(k, v) }
+        flattened.forEach { (k, v) -> obj.put(k, v) }
+        if (state.engine == AgentEngine.DSH) selections.forEach { (k, v) -> obj.put(k, JSONArray(v)) }
         client.respond(req.rpcId, JSONObject().put("answers", obj).put("outcome", "submitted"))
         state = state.copy(clarify = null)
     }

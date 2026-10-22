@@ -64,8 +64,8 @@ struct ChatView: View {
         }
         .sheet(isPresented: $showClarify) {
             if let request = store.clarifyRequest {
-                ClarifySheet(request: request) { answers in
-                    store.resolveClarify(answers)
+                ClarifySheet(request: request) { answers, selected in
+                    store.resolveClarify(answers, selections: selected)
                     showClarify = false
                 } onCancel: {
                     store.cancelClarify()
@@ -174,6 +174,10 @@ struct ChatView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 16) {
+                    if store.historyHasMore {
+                        Button(store.isLoadingHistory ? "Loading earlier messages…" : "Load earlier messages") { Task { await store.loadOlderMessages() } }
+                            .font(.nbBody(12)).foregroundStyle(NB.ion).disabled(store.isLoadingHistory)
+                    }
                     if store.messages.isEmpty && !store.isLoadingChat {
                         chatPreamble
                     }
@@ -204,7 +208,7 @@ struct ChatView: View {
             }
             .scrollDismissesKeyboard(.interactively)
             .scrollIndicators(.hidden)
-            .onChange(of: store.messages.count) { _, _ in scroll(proxy, animated: true) }
+            .onChange(of: store.messages.last?.id) { _, _ in scroll(proxy, animated: true) }
             .onChange(of: store.messages.last?.text) { _, _ in scroll(proxy, animated: false) }
             .onChange(of: store.isTurnActive) { _, active in
                 if active { scroll(proxy, animated: true) }
@@ -575,9 +579,10 @@ struct ApprovalCard: View {
 
 struct ClarifySheet: View {
     let request: ClarifyRequest
-    var onSubmit: ([String: String]) -> Void
+    var onSubmit: ([String: String], [String: [String]]) -> Void
     var onCancel: () -> Void
     @State private var answers: [String: String] = [:]
+    @State private var selected: [String: Set<String>] = [:]
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -601,19 +606,23 @@ struct ClarifySheet: View {
                                     .background(RoundedRectangle(cornerRadius: 12).fill(NB.surface))
                                 } else {
                                     ForEach(question.choices, id: \.self) { choice in
+                                        let chosen = question.multiSelect ? selected[question.id, default: []].contains(choice) : answers[question.id] == choice
                                         Button {
-                                            answers[question.id] = choice
+                                            if question.multiSelect {
+                                                if selected[question.id, default: []].contains(choice) { selected[question.id, default: []].remove(choice) }
+                                                else { selected[question.id, default: []].insert(choice) }
+                                            } else { answers[question.id] = choice }
                                         } label: {
                                             HStack {
                                                 Text(choice).font(.nbBody(13.5)).foregroundStyle(NB.text)
                                                 Spacer()
-                                                Image(systemName: answers[question.id] == choice ? "checkmark.circle.fill" : "circle")
-                                                    .foregroundStyle(answers[question.id] == choice ? NB.ion : NB.tertiary)
+                                                Image(systemName: chosen ? "checkmark.circle.fill" : "circle")
+                                                    .foregroundStyle(chosen ? NB.ion : NB.tertiary)
                                             }
                                             .padding(12)
                                             .background(RoundedRectangle(cornerRadius: 12).fill(NB.surface))
                                             .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(
-                                                answers[question.id] == choice ? NB.ion.opacity(0.4) : NB.line, lineWidth: 1))
+                                                chosen ? NB.ion.opacity(0.4) : NB.line, lineWidth: 1))
                                         }
                                         .buttonStyle(.plain)
                                     }
@@ -632,9 +641,13 @@ struct ClarifySheet: View {
                         .foregroundStyle(NB.secondary)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Send") { onSubmit(answers); dismiss() }
+                    Button("Send") {
+                        var selections: [String: [String]] = [:]
+                        for q in request.questions where q.multiSelect && !q.choices.isEmpty { selections[q.id] = q.choices.filter { selected[q.id, default: []].contains($0) } }
+                        onSubmit(answers, selections); dismiss()
+                    }
                         .foregroundStyle(NB.ion)
-                        .disabled(answers.count < request.questions.count)
+                        .disabled(!request.questions.allSatisfy { q in q.multiSelect && !q.choices.isEmpty ? !selected[q.id, default: []].isEmpty : !(answers[q.id] ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty })
                 }
             }
             .toolbarBackground(NB.ink, for: .navigationBar)

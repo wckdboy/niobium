@@ -551,8 +551,8 @@ struct ChatsView: View {
                                     VStack(alignment: .leading, spacing: 3) {
                                         Text(row.title).font(.nbBody(13, weight: .medium)).foregroundStyle(NB.text).lineLimit(1)
                                         HStack(spacing: 6) {
-                                            Text(row.startedAt?.formatted(.dateTime.month().day().hour().minute()) ?? "—")
-                                            Text("· \(row.messageCount) messages")
+                                            Text((row.lastActiveAt ?? row.startedAt)?.formatted(.dateTime.month().day().hour().minute()) ?? "—")
+                                            if let count = row.messageCount { Text("· \(count) messages") }
                                             if row.running { Text("· running").foregroundStyle(NB.mint) }
                                         }
                                         .font(.nbMono(8)).foregroundStyle(NB.tertiary)

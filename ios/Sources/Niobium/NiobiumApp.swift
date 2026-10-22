@@ -14,10 +14,7 @@ struct NiobiumApp: App {
                 }
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active, !store.isDemo, !store.connectionState.isConnected,
-               store.connection != nil, !store.isConnecting, !store.needsConnection {
-                Task { await store.reconnect() }
-            }
+            if phase == .active { Task { await store.resumeConnection() } }
         }
     }
 }

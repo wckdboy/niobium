@@ -63,14 +63,20 @@ function createProvider({rpc, postResponse, home = '/root/.dsh', workspace = '/r
   const attachments = new Map();
   const approvalRPCs = new Map();
   async function metadata() {
-    try { return JSON.parse(await fs.readFile(metadataPath, 'utf8')); }
+    try {
+      const value = JSON.parse(await fs.readFile(metadataPath, 'utf8'));
+      if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Local Pixel metadata needs repair. Its original file has been preserved.');
+      return value;
+    }
     catch (error) { if (error.code === 'ENOENT') return {}; throw error; }
   }
   async function save(data) {
     await fs.mkdir(home, {recursive: true, mode: 0o700});
     const stage = metadataPath + '.' + crypto.randomUUID();
-    await fs.writeFile(stage, JSON.stringify(data), {mode: 0o600});
-    await fs.rename(stage, metadataPath);
+    try {
+      await fs.writeFile(stage, JSON.stringify(data), {mode: 0o600});
+      await fs.rename(stage, metadataPath);
+    } finally { await fs.rm(stage, {force: true}); }
   }
   async function history(sessionId) { return rpc('session.history', {sessionId, maxMessages: 250}); }
   async function summary(sessionId) {
@@ -106,6 +112,11 @@ function createProvider({rpc, postResponse, home = '/root/.dsh', workspace = '/r
     else response = {ok: true, value: {sessionId: f.sessionId, answer: {answers: f.questions.map(q => {
       const value = String(result.answers?.[q.id] || '');
       const labels = (q.options || []).map(o => o.label);
+      const raw = result.answers?.[q.id];
+      if (Array.isArray(raw)) {
+        if (!q.multiSelect || raw.length === 0 || raw.some(v => typeof v !== 'string' || !labels.includes(v))) throw new Error('Choose valid options for this question.');
+        return {id: q.id, selected: [...new Set(raw)]};
+      }
       return {id: q.id, selected: labels.includes(value) ? [value] : [], ...(labels.includes(value) ? {} : {custom: value})};
     })}}};
     const receipt = await postResponse({type: 'client-response', rpcId: String(id), result: response});
@@ -117,9 +128,10 @@ function createProvider({rpc, postResponse, home = '/root/.dsh', workspace = '/r
     const [s, h] = await Promise.all([summary(sessionId), history(sessionId)]);
     const partial = {text: '', stepText: '', priorStep: false};
     for (const {event} of h.events) streamFrames({payload: {type: 'session/event', sessionId, event}}, partial);
-    return {session_id: sessionId, revision: h.events.at(-1)?.event.seq || 0, running: s.running,
+    return {session_id: sessionId, revision: h.events.at(-1)?.event.seq ?? -1, running: s.running,
       messages: omit ? [] : transcript(h.events), history_has_more: h.hasMore,
-      info: {}, prompts: [], inflight: {streaming: s.running, assistant: s.running ? partial.text : ''},
+      history_before_seq: h.events[0]?.event.seq,
+      info: {}, prompts: [], inflight: {streaming: s.running, assistant: s.running ? partial.stepText : ''},
       local_stream_state: partial, local_requests: [...pending.values()].filter(p => p.payload.sessionId === sessionId)};
   }
   async function request(method, p = {}) {
@@ -150,6 +162,7 @@ function createProvider({rpc, postResponse, home = '/root/.dsh', workspace = '/r
         // Appearance-only updates use an optimistic revision; agent composition
         // changes go through pixel.create and are never silently acknowledged.
         if (Object.keys(p).some(k => !['name', 'ui_meta', 'ui_meta_expected_revisions'].includes(k))) throw new Error('Edit local tool access when creating a Pixel.');
+        if (!slugOK(p.name)) throw new Error('Choose a valid Pixel profile.');
         const operation = edits.then(async () => {
           const meta = await metadata();
           const entry = meta[p.name] || {revision: 0, ui_meta: {}};
@@ -178,11 +191,17 @@ function createProvider({rpc, postResponse, home = '/root/.dsh', workspace = '/r
             const briefing = String(p.briefing || spec.soul) + '\nUse DSH subagent tools for real delegation. Local Pixels share the app workspace; requested scopes are operating rules, not an OS sandbox. Hermes rooms, agent mentions and scheduled jobs are unavailable on this engine.';
             await fs.writeFile(path.join(stage, 'agent.cordis.yml'), composition(spec, p.enabled_toolsets, briefing), {mode: 0o600});
             await fs.writeFile(path.join(stage, 'preset.yml'), JSON.stringify({name: spec.title, description: spec.role}), {mode: 0o600});
-            await fs.rename(stage, directory);
             const meta = await metadata();
+            const previous = meta[spec.name];
             meta[spec.name] = {revision: 1, enabled_toolsets: p.enabled_toolsets, ui_meta: {'hermes-bots': {title: spec.title, description: spec.role, color: p.accent},
               niobium: {schema_version: 2, pixel_spec: spec, builder: p.builder || 'template'}}};
             await save(meta);
+            try { await fs.rename(stage, directory); }
+            catch (error) {
+              if (previous === undefined) delete meta[spec.name]; else meta[spec.name] = previous;
+              await save(meta).catch(() => {});
+              throw error;
+            }
           } finally { await fs.rm(stage, {recursive: true, force: true}); }
           return {ok: true};
         });
@@ -190,8 +209,8 @@ function createProvider({rpc, postResponse, home = '/root/.dsh', workspace = '/r
       }
       case 'session.list': {
         const rows = (await rpc('session.list', {})).items.filter(s => s.origin !== 'subagent' && (!p.profile || presetID(p.profile) === presetID(s.agentPreset)));
-        return {sessions: rows.sort((a,b) => b.updatedAt-a.updatedAt).map(s => ({id: s.sessionId, session_id: s.sessionId,
-          title: 'Pixel chat', updated_at: s.updatedAt / 1000, model: 'DSH', running: s.running}))};
+        return {sessions: rows.sort((a,b) => b.updatedAt-a.updatedAt).slice(0, Math.min(p.limit || 60, 100)).map(s => ({id: s.sessionId, session_id: s.sessionId,
+          title: s.projections?.values?.title || 'Chat ' + s.sessionId.slice(-6), updated_at: s.updatedAt / 1000, model: 'DSH', running: s.running}))};
       }
       case 'session.create': {
         const made = await rpc('session.create', {cwd: workspace, agentPreset: presetID(p.profile)});
@@ -213,9 +232,13 @@ function createProvider({rpc, postResponse, home = '/root/.dsh', workspace = '/r
       }
       case 'prompt.submit': {
         const image = attachments.get(p.session_id);
-        const receipt = await rpc('session.prompt', {sessionId: p.session_id, mode: 'queue', content: [{type: 'text', text: p.text}, ...(image ? [image] : [])]});
         attachments.delete(p.session_id);
+        const receipt = await rpc('session.prompt', {sessionId: p.session_id, mode: 'queue', content: [{type: 'text', text: p.text}, ...(image ? [image] : [])]});
         return {accepted: receipt.accepted};
+      }
+      case 'session.history': {
+        const h = await rpc('session.history', {sessionId: p.session_id, beforeSeq: p.before_seq, maxMessages: 250});
+        return {messages: transcript(h.events), has_more: h.hasMore, before_seq: h.events[0]?.event.seq};
       }
       case 'session.interrupt': return rpc('session.cancel', {sessionId: p.session_id});
       case 'model.options': {
@@ -306,27 +329,27 @@ function streamFrames(envelope, state) {
   if (f.type !== 'session/event') return [];
   const e = f.event, d = e.data || {};
   switch (e.type) {
-    case 'turn/start': state.text = ''; state.stepText = ''; state.priorStep = false; return [notify('message.start', {})];
+    case 'turn/start': state.text = ''; state.stepText = ''; state.lastText = ''; return [notify('message.start', {})];
     case 'step/start': state.stepText = ''; return [];
     case 'assistant/chunk': {
       if (d.chunk?.type === 'reasoning-delta') return [notify('reasoning.delta', {text: d.chunk.text})];
       if (d.chunk?.type !== 'text-delta') return [];
-      const text = (state.priorStep && !state.stepText ? '\n\n' : '') + d.chunk.text;
+      const text = d.chunk.text;
       state.stepText += d.chunk.text; state.text += text;
       return [notify('message.delta', {text})];
     }
     case 'assistant/message': {
       const text = textOf(d.message?.content);
-      const missing = !state.stepText && text ? (state.priorStep ? '\n\n' : '') + text : '';
-      state.text += missing; state.priorStep ||= Boolean(text);
-      return missing ? [notify('message.delta', {text: missing})] : [];
+      if (!state.stepText) state.text += text;
+      state.stepText = ''; state.lastText = text;
+      return text ? [notify('message.segment', {text})] : [];
     }
     case 'tool/call': return [notify('tool.start', {tool_id: d.callId, name: d.name, args: d.arguments})];
     case 'tool/result': {
       const result = d.message?.content?.find(b => b.type === 'tool-result');
       return [notify('tool.complete', {tool_id: d.message?.source?.callId, result: textOf(result?.content), is_error: result?.isError || false})];
     }
-    case 'turn/end': return [notify('message.complete', {text: state.text || '',
+    case 'turn/end': return [notify('message.complete', {text: state.stepText || '', summary: state.lastText || '',
       ...(d.reason?.kind === 'error' ? {error: d.reason.error?.message || 'The local model request failed. Check your provider key under Engines.'} : {})})];
     default: return [];
   }
@@ -373,6 +396,7 @@ function install() {
   }
   wss.on('connection', async ws => {
     let selected = null;
+    let attachEpoch = 0, buffering = false, baseline = -1, buffered = [];
     const states = new Map();
     const send = value => { if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(value)); };
     const upstream = new WebSocket('ws://127.0.0.1:' + port + '/api/events.mux', socketPath ? {
@@ -382,6 +406,10 @@ function install() {
         const full = JSON.parse(raw.toString()); provider.capture(full);
         const sid = full.payload.sessionId;
         if (sid !== selected) return;
+        if (buffering) {
+          if (buffered.length >= 10000) { ws.close(1011, 'Reopen the chat to restore its latest state'); return; }
+          buffered.push(full); return;
+        }
         if (!states.has(sid)) states.set(sid, {text: '', stepText: '', priorStep: false});
         streamFrames(full, states.get(sid)).forEach(send);
       } catch { ws.close(1011, 'Invalid DSH event'); }
@@ -396,10 +424,24 @@ function install() {
       try {
         frame = JSON.parse(raw.toString());
         if (!frame.method) { await provider.respond(frame.id, frame.result || {}, frame.error); return; }
-        if (frame.method === 'session.resume') selected = frame.params?.session_id || null;
+        if (frame.method === 'local.attach') {
+          if (frame.params?.session_id !== selected) throw new Error('This local chat selection changed.');
+          const ready = buffered; buffered = []; buffering = false;
+          send({jsonrpc: '2.0', id: frame.id, result: {ok: true}});
+          for (const full of ready) {
+            if (full.payload.type === 'session/event' && full.payload.event.seq <= baseline) continue;
+            streamFrames(full, states.get(selected)).forEach(send);
+          }
+          return;
+        }
+        const attaching = ['session.resume', 'session.create'].includes(frame.method) && !frame.params?.omit_messages;
+        const epoch = attaching ? ++attachEpoch : attachEpoch;
+        if (attaching) { selected = frame.params?.session_id || null; buffered = []; buffering = true; }
         const result = await provider.request(frame.method, frame.params);
-        if (frame.method === 'session.create') selected = result.session_id;
-        if (result.local_stream_state) states.set(result.session_id, result.local_stream_state);
+        if (attaching && epoch === attachEpoch) {
+          selected = result.session_id; baseline = result.revision;
+          states.set(result.session_id, result.local_stream_state);
+        }
         send({jsonrpc: '2.0', id: frame.id, result});
       } catch (error) {
         if (frame?.method) send({jsonrpc: '2.0', id: frame.id, error: {code: -32000, message: error.message}});

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp, readFile, rm} from 'node:fs/promises';
+import {mkdtemp, readFile, writeFile, access, rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {createRequire} from 'node:module';
@@ -72,14 +72,90 @@ test('native questions map to DSH option answers and custom text', async () => {
   assert.deepEqual(response.result.value.answer.answers, [{id: 'a', selected: ['Yes']}, {id: 'b', selected: [], custom: 'My own answer'}]);
 });
 
-test('streaming multiple model steps never duplicates finalized text', () => {
+test('multi-select questions preserve every selected label in the DSH response', async () => {
+  let response;
+  const p = createProvider({rpc: async () => ({}), postResponse: async value => { response = value; return {accepted: true}; }});
+  p.capture({rpcId: 'q', payload: {type: 'question/requested', sessionId: 'sid', questions: [{id: 'a', multiSelect: true, options: [{label: 'A'}, {label: 'B'}]}]}});
+  await p.respond('q', {answers: {a: ['A', 'B']}});
+  assert.deepEqual(response.result.value.answer.answers, [{id: 'a', selected: ['A', 'B']}]);
+});
+
+test('metadata failure leaves no installed preset or duplicate-name trap', async () => {
+  const home = await mkdtemp(path.join(tmpdir(), 'niobium-provider-'));
+  const p = createProvider({home, rpc: async () => ({presets: []})});
+  const spec = {name: 'safe-pixel', title: 'Safe', role: 'Research', soul: 'Adult persona.', permissions: {}, character: {age: 30}, skills: [], connectors: []};
+  try {
+    await writeFile(path.join(home, 'niobium-pixels.json'), '{broken metadata');
+    await assert.rejects(p.request('pixel.create', {spec, enabled_toolsets: []}));
+    await assert.rejects(access(path.join(home, '.agent-presets/safe-pixel')));
+    assert.equal(await readFile(path.join(home, 'niobium-pixels.json'), 'utf8'), '{broken metadata');
+    await writeFile(path.join(home, 'niobium-pixels.json'), '{}');
+    assert.deepEqual(await p.request('pixel.create', {spec, enabled_toolsets: []}), {ok: true});
+  } finally { await rm(home, {recursive: true, force: true}); }
+});
+
+test('local session rows retain actual titles and activity without inventing counts', async () => {
+  const p = createProvider({rpc: async () => ({items: [
+    {sessionId: 'session-a', agentPreset: 'standard', updatedAt: 1700000000000, running: false, projections: {values: {title: 'Research notes'}}},
+    {sessionId: 'session-b', agentPreset: 'standard', updatedAt: 1700000001000, running: true, projections: {values: {title: 'Release work'}}}
+  ]})});
+  const rows = (await p.request('session.list', {profile: 'default'})).sessions;
+  assert.deepEqual(rows.map(r => r.title), ['Release work', 'Research notes']);
+  assert.equal(rows[0].updated_at, 1700000001);
+  assert.equal(rows[0].message_count, undefined);
+  assert.equal(rows[0].started_at, undefined);
+});
+
+test('each model step finalizes once and turn completion never repeats its text', () => {
   const state = {text: '', stepText: '', priorStep: false};
   const event = (type, data) => streamFrames({payload: {type: 'session/event', sessionId: 'sid', event: {type, data}}}, state);
   event('turn/start', {}); event('step/start', {});
   assert.equal(event('assistant/chunk', {chunk: {type: 'text-delta', text: 'First'}})[0].params.payload.text, 'First');
-  assert.deepEqual(event('assistant/message', {message: {content: [{type: 'text', text: 'First'}]}}), []);
-  event('step/start', {}); event('assistant/message', {message: {content: [{type: 'text', text: 'Second'}]}});
-  assert.equal(event('turn/end', {reason: {kind: 'completed'}})[0].params.payload.text, 'First\n\nSecond');
+  const first = event('assistant/message', {message: {content: [{type: 'text', text: 'First'}]}})[0];
+  assert.equal(first.params.type, 'message.segment'); assert.equal(first.params.payload.text, 'First');
+  event('step/start', {});
+  assert.equal(event('assistant/message', {message: {content: [{type: 'text', text: 'Second'}]}})[0].params.payload.text, 'Second');
+  assert.equal(event('turn/end', {reason: {kind: 'completed'}})[0].params.payload.text, '');
+});
+
+test('resuming between model steps separates saved replies from unfinished text', async () => {
+  const events = [
+    {type: 'turn/start', data: {}}, {type: 'step/start', data: {}},
+    {type: 'assistant/chunk', data: {chunk: {type: 'text-delta', text: 'First'}}},
+    {type: 'assistant/message', data: {message: {content: [{type: 'text', text: 'First'}]}}},
+    {type: 'tool/call', data: {callId: 'tool', name: 'read'}},
+    {type: 'step/start', data: {}}, {type: 'assistant/chunk', data: {chunk: {type: 'text-delta', text: 'Sec'}}}
+  ].map((event, seq) => ({event: {...event, seq, time: 1700000000000}}));
+  const p = createProvider({rpc: async method => method === 'session.list' ? {items: [{sessionId: 'sid', agentPreset: 'standard', running: true}]} : {events, hasMore: true}});
+  const result = await p.request('session.resume', {session_id: 'sid', profile: 'default'});
+  assert.deepEqual(result.messages.filter(m => m.role === 'assistant').map(m => m.text), ['First']);
+  assert.equal(result.inflight.assistant, 'Sec'); assert.equal(result.history_before_seq, 0);
+  assert.equal(result.local_stream_state.stepText, 'Sec');
+});
+
+test('a failed image send cannot silently attach its photo to the next message', async () => {
+  let first = true, content;
+  const p = createProvider({rpc: async (method, payload) => {
+    if (method === 'session.list') return {items: [{sessionId: 'sid'}]};
+    content = payload.content;
+    if (first) { first = false; throw new Error('Simulated rejected prompt'); }
+    return {accepted: true};
+  }});
+  await p.request('image.attach_bytes', {session_id: 'sid', mime: 'image/png', data: 'fixture'});
+  await assert.rejects(p.request('prompt.submit', {session_id: 'sid', text: 'Look'}));
+  await p.request('prompt.submit', {session_id: 'sid', text: 'Text only'});
+  assert.deepEqual(content, [{type: 'text', text: 'Text only'}]);
+});
+
+test('older history requests preserve the upstream cursor and next-page state', async () => {
+  let received;
+  const p = createProvider({rpc: async (method, payload) => {
+    assert.equal(method, 'session.history'); received = payload;
+    return {events: [{event: {seq: 40, time: 1700000000000, type: 'user/message', data: {content: [{type: 'text', text: 'Older'}]}}}], hasMore: true};
+  }});
+  const page = await p.request('session.history', {session_id: 'sid', before_seq: 100});
+  assert.deepEqual(received, {sessionId: 'sid', beforeSeq: 100, maxMessages: 250});
+  assert.equal(page.before_seq, 40); assert.equal(page.has_more, true); assert.equal(page.messages[0].text, 'Older');
 });
 
 test('restored DSH transcript keeps user, assistant and tool rows without chunk duplicates', () => {

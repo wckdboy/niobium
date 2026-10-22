@@ -16,9 +16,15 @@ cookie; DSH itself binds a private Unix socket. iOS uses guest loopback.
 
 The adapter maps real agent presets to Pixels, creates/resumes DSH sessions,
 streams DSH events into native chat, restores transcripts and pending questions,
+pages older history,
 submits images, cancels turns, switches models, and lists/inspects/controls
 continuable companion tasks. A Pixel's appearance identity includes its engine,
 so an identically named Hermes profile keeps its own character.
+
+Snapshot-to-stream handoff buffers events until native chat acknowledges its
+session, then replays only events newer than the snapshot. Completed model
+steps stay separate from the unfinished reply on reconnect. Failed photo
+submissions clear their queued attachment.
 
 The Pixel workshop uses the same bot-build skill and validated PixelSpec.
 AI drafting runs a tool-free minimal DSH session; a missing provider or invalid
