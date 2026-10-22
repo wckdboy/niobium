@@ -1,0 +1,50 @@
+[
+  {
+    "slug": "",
+    "key": "home",
+    "title": "Niobium — a Hermes agent client in pixel art",
+    "heading": "hermes, drawn in pixels",
+    "label": "wckd / niobium / v2 in development",
+    "description": "A native client for your Hermes agent on iPhone, iPad and Android, with a mature, beautiful pixel-art aesthetic: your agents as 48×48 characters, the real gateway underneath."
+  },
+  {
+    "slug": "system",
+    "key": "system",
+    "title": "System — Niobium",
+    "heading": "a pocket command deck",
+    "label": "niobium / system",
+    "description": "Native clients, real Hermes profiles, attributed chats and capability-aware tools, drawn in pixel art."
+  },
+  {
+    "slug": "local",
+    "key": "local",
+    "title": "Local and remote DSH — Niobium",
+    "heading": "your harness, your keys",
+    "label": "niobium / harness",
+    "description": "Run DeepSeek Harness in an on-device Alpine guest on iOS, or connect to a computer or VPS from either platform."
+  },
+  {
+    "slug": "build",
+    "key": "build",
+    "title": "Pixel workshop — Niobium",
+    "heading": "give them a purpose",
+    "label": "niobium / pixel workshop",
+    "description": "The bot-build skill turns an idea into a reviewed persona, an adult 48×48 character, a companion, skills and explicit access."
+  },
+  {
+    "slug": "releases",
+    "key": "releases",
+    "title": "Releases — Niobium",
+    "heading": "builds and releases",
+    "label": "niobium / releases",
+    "description": "Niobium 1.1 is the public release. The v2 redesign and the Pixel workshop are in development."
+  },
+  {
+    "slug": "legal",
+    "key": "legal",
+    "title": "Privacy and licenses — Niobium",
+    "heading": "plain terms",
+    "label": "niobium / privacy and licenses",
+    "description": "Niobium privacy, asset provenance, open-source licenses and independent project status."
+  }
+]

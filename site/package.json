@@ -6,7 +6,10 @@
     "build": "node build.mjs",
     "dev": "npm run build && wrangler dev",
     "deploy": "npm run build && wrangler deploy",
-    "dry": "npm run build && wrangler deploy --dry-run"
+    "dry": "npm run build && wrangler deploy --dry-run",
+    "check": "node check.mjs"
   },
-  "devDependencies": { "wrangler": "^4.151.1" }
+  "devDependencies": {
+    "wrangler": "^4.151.1"
+  }
 }
