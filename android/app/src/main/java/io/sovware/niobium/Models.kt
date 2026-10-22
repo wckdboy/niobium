@@ -107,6 +107,8 @@ data class GroupRoom(
     val disbanded: Boolean = false
 ) {
     val id get() = roomId
+    fun member(identity: String): GroupMember? = members.firstOrNull { it.id == identity }
+        ?: members.filter { it.profile == identity }.singleOrNull()
     companion object {
         fun parse(j: JSONObject): GroupRoom? {
             val id = j.s("room_id")?.takeIf { it.isNotBlank() } ?: return null

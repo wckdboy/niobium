@@ -129,7 +129,11 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
                     override fun onClosed(reason: String) {
                         viewModelScope.launch(Dispatchers.Main) {
                             if (state.demo || epoch != connectionEpoch) return@launch
-                            state = state.copy(connected = false, credentialRequests = emptyList(), error = reason)
+                            streamingId = null
+                            state = state.copy(connected = false, credentialRequests = emptyList(),
+                                approvals = emptyList(), clarify = null, turnActive = false,
+                                turnStatus = "Disconnected · reconnect to check",
+                                messages = state.messages.map { it.copy(streaming = false) }, error = reason)
                         }
                     }
                 })
@@ -876,13 +880,15 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
                     for (question in req.questions) {
                         if (gateway !== client || state.sessionId != req.sessionId) return@launch
                         val generation = req.promptGenerations[question.id] ?: continue
+                        if (state.clarify?.promptGenerations?.get(question.id) != generation) return@launch
                         client.request("clarify.respond", JSONObject().put("session_id", req.sessionId)
                             .put("execution_generation", generation).put("prompt_id", question.id).put("answer", answers.getValue(question.id)))
-                        if (gateway !== client || state.sessionId != req.sessionId) return@launch
+                        if (gateway !== client || state.sessionId != req.sessionId ||
+                            state.clarify?.promptGenerations?.get(question.id) != generation) return@launch
                         state = state.copy(clarify = state.clarify?.copy(questions = state.clarify!!.questions.filterNot { it.id == question.id },
                             promptGenerations = state.clarify!!.promptGenerations - question.id))
                     }
-                    state = state.copy(clarify = null)
+                    if (state.clarify?.questions?.isEmpty() == true) state = state.copy(clarify = null)
                 } catch (e: kotlinx.coroutines.CancellationException) { throw e }
                 catch (e: Exception) { showError("The answer was not accepted. " + e.message) }
             }

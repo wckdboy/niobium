@@ -1,6 +1,6 @@
 ---
 name: bot-build
-description: Design a complete Niobium Pixel from intent: a distinct adult persona, 48×48 layered fantasy/cyborg character, original creature companion, installed skills, requested connections, and explicit access.
+description: "Design a complete Niobium Pixel from intent: a distinct adult persona, 48\u00d748 layered fantasy/cyborg character, original creature companion, installed skills, requested connections, and explicit access."
 license: MIT
 ---
 

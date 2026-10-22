@@ -24,7 +24,7 @@ cd android
 ./gradlew :app:assembleRelease
 ```
 
-Sixteen Android tests include real OkHttp HTTP/WebSocket exchanges with a local
+Twenty-three Android JVM tests include real OkHttp HTTP/WebSocket exchanges with a local
 Node fixture: reverse-proxy paths, token encoding/header authentication,
 out-of-order replies, server errors, timeout/cancellation recovery, typed
 server-request IDs, approval replies and disconnecting an in-flight request.
@@ -43,7 +43,7 @@ xcodebuild -project Niobium.xcodeproj -scheme Niobium \
   CODE_SIGNING_ALLOWED=NO test
 ```
 
-Seventeen unit tests cover URL/auth handling, JSON-RPC IDs, cancellation,
+Twenty unit tests cover URL/auth handling, JSON-RPC IDs, cancellation,
 PixelSpec validation, reversed chat-selection responses, resumed streaming,
 recovered clarification dismissal, provisioning access and failed appearance saves.
 Two UI tests launch only the labelled demo, verify the dashboard and
@@ -56,4 +56,13 @@ options are in ios/Release.
 
 GitHub Actions runs shared, Android and iOS suites for pull requests and pushes.
 Live provider/connector authorization, physical-device background behaviour and
-Android embedded DSH remain explicit acceptance work in PLAN.md.
+physical-device Android DSH remain explicit acceptance work in PLAN.md.
+
+Android runtime tests require an ARM64 Android device/emulator:
+
+    ./gradlew :app:connectedDebugAndroidTest
+    python3 ../tools/check-android-runtime.py app/build/outputs/apk/debug/app-debug.apk
+
+Four app-domain tests verify Linux/Node/DSH, private authenticated HTTP/WebSocket access,
+real session creation and bot-build discovery, service Start/Stop, CSS viewport layout,
+and workspace preservation through image replacement. See ANDROID-DSH.md for limits.

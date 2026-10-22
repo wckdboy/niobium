@@ -159,6 +159,12 @@ struct GroupRoom: Identifiable, Equatable {
     var preview: String = ""
     var id: String { roomID }
 
+    func member(matching identity: String) -> GroupMember? {
+        if let exact = members.first(where: { $0.memberID == identity }) { return exact }
+        let legacy = members.filter { $0.profile == identity }
+        return legacy.count == 1 ? legacy.first : nil
+    }
+
     static func parse(_ json: JSONObject) -> GroupRoom? {
         guard let roomID = json.string("room_id"), !roomID.isEmpty else { return nil }
         return GroupRoom(roomID: roomID,

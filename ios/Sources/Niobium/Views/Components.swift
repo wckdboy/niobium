@@ -11,6 +11,7 @@ struct AtomicMark: View {
             .resizable()
             .interpolation(.none)
             .frame(width: size, height: size)
+            .accessibilityLabel("Niobium")
             .clipShape(RoundedRectangle(cornerRadius: size * 0.29, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: size * 0.29, style: .continuous)

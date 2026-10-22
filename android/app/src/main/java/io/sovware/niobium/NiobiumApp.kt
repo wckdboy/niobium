@@ -60,13 +60,21 @@ fun NiobiumApp(vm: NiobiumViewModel, initialTab: String? = null, initialTools: B
     var showTools by remember { mutableStateOf(initialTools) }
     var showAI by remember { mutableStateOf(false) }
     var showRooms by remember { mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val preferences = remember { context.getSharedPreferences("niobium", android.content.Context.MODE_PRIVATE) }
+    var localMode by rememberSaveable { mutableStateOf(preferences.getBoolean("local-mode", false) || initialTab == "local") }
 
     BackHandler(enabled = showTools) { showTools = false }
     BackHandler(enabled = state.activeBot != null && !showTools) { vm.closeBot() }
     BackHandler(enabled = state.activeGroup != null && !showTools) { vm.closeGroup() }
 
     when {
-        state.needsConnection -> OnboardingScreen(state, vm::connect) { vm.enterDemo() }
+        state.needsConnection && localMode -> LocalRuntimeScreen {
+            localMode = false; preferences.edit().putBoolean("local-mode", false).apply()
+        }
+        state.needsConnection -> OnboardingScreen(state, vm::connect, { vm.enterDemo() }) {
+            localMode = true; preferences.edit().putBoolean("local-mode", true).apply()
+        }
         state.activeBot != null -> ChatScreen(vm, state.activeBot!!, onOpenTools = { showTools = true })
         state.activeGroup != null -> GroupChatScreen(vm, state.activeGroup!!)
         else -> {
@@ -147,8 +155,13 @@ private fun NbTabBar(selected: NbTab, onSelect: (NbTab) -> Unit) {
                         ),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(tab.glyph, color = if (active) Nb.Ion else Nb.Tertiary, fontSize = 17.sp,
-                            fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal)
+                        PixelIcon(when (tab) {
+                            NbTab.HOME -> PixelGlyph.HOME
+                            NbTab.PIXELS -> PixelGlyph.PIXELS
+                            NbTab.LOCAL -> PixelGlyph.TERMINAL
+                            NbTab.ACTIVITY -> PixelGlyph.ACTIVITY
+                            NbTab.SETTINGS -> PixelGlyph.SETTINGS
+                        }, if (active) Nb.Ion else Nb.Tertiary, 22.dp)
                     }
                     Spacer(Modifier.height(3.dp))
                     Text(tab.title, color = if (active) Nb.Text else Nb.Tertiary, fontSize = 9.5.sp,

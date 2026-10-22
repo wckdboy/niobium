@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "abi": "arm64-v8a",
+  "ndk_version": "30.0.16248370",
+  "rootfs": {
+    "url": "https://github.com/wckdboy/niobium/releases/download/v2.0.0-beta.1/root.tar.gz",
+    "sha256": "4a1c639eedc8b96714b97dc7e743b566efa2cea310df180f9d13b730479c1874",
+    "source_commit": "bac298478545db7bb8762e82ba3db52f50ac6a5d",
+    "source_repository": "https://github.com/everettjf/dsh-ios",
+    "dsh_version": "0.1.0-rc.7",
+    "unpacked_bytes": 294519656
+  },
+  "package_repository": "https://packages.termux.dev/apt/termux-main/",
+  "source_recipes_commit": "76e6212b260cd0aa15e7ae642fe85b9cfe984878",
+  "packages": [
+    {
+      "name": "libandroid-shmem",
+      "version": "0.7",
+      "url": "https://packages.termux.dev/apt/termux-main/pool/main/liba/libandroid-shmem/libandroid-shmem_0.7_aarch64.deb",
+      "sha256": "0da3a24d558b93c92bcf8d611e0826a99ff96e396b148e6cdf33b47c47c57ff6"
+    },
+    {
+      "name": "libtalloc",
+      "version": "2.5.0",
+      "url": "https://packages.termux.dev/apt/termux-main/pool/main/libt/libtalloc/libtalloc_2.5.0_aarch64.deb",
+      "sha256": "556591f43bb773ad8777e1a29522640866a55f95dab71914418b94a8c58ad5a7"
+    },
+    {
+      "name": "proot",
+      "version": "5.1.107.98",
+      "url": "https://packages.termux.dev/apt/termux-main/pool/main/p/proot/proot_5.1.107.98_aarch64.deb",
+      "sha256": "29de40efea4daa2a6168b617915206511c63e8d46bf5f4b07d48723441ef7f3b"
+    }
+  ],
+  "sources": [
+    {
+      "name": "proot",
+      "url": "https://github.com/termux/proot/archive/v5.1.107.98.zip",
+      "sha256": "9de61bddd6f5016d065e2755b72ff4747290e5f992562f031785b107b51d02ba",
+      "license": "GPL-2.0"
+    },
+    {
+      "name": "talloc",
+      "url": "https://www.samba.org/ftp/talloc/talloc-2.5.0.tar.gz",
+      "sha256": "912afa237510ae542a7733998eb18a12bcda35ab6729c8e2ddb43e8d0ebab007",
+      "license": "GPL-3.0 (Termux package declaration; upstream library includes LGPL components)"
+    },
+    {
+      "name": "android-shmem",
+      "url": "https://github.com/termux/libandroid-shmem/archive/refs/tags/v0.7.tar.gz",
+      "sha256": "1e5ff8459bc0a8c229dd8a94b27d119987e09ef3414331c2b5ebfff20b98e867",
+      "license": "BSD-3-Clause"
+    }
+  ]
+}

@@ -11,6 +11,7 @@ private final class FixtureRPC: HermesRPC {
     var responses: [(JSONValueID, JSONObject)] = []
     var held: CheckedContinuation<RPCResult, Error>?
     var failConfigure = false
+    var holdClarify = false
     var createdName = "fixture-profile"
 
     func request(_ method: String, params: JSONObject, timeout: TimeInterval) async throws -> Any {
@@ -32,7 +33,10 @@ private final class FixtureRPC: HermesRPC {
         case "profiles.configure":
             if failConfigure { throw RPCError.server(code: 4409, message: "Fixture conflict") }
             return ["ok": true]
-        case "config.set", "clarify.respond": return ["ok": true]
+        case "clarify.respond":
+            if holdClarify { return try await withCheckedThrowingContinuation { held = $0 }.value }
+            return ["ok": true]
+        case "config.set": return ["ok": true]
         case "model.options": return ["providers": []]
         case "tools.list": return ["toolsets": []]
         default: throw RPCError.server(code: -32601, message: "Unsupported fixture method: " + method)
@@ -45,6 +49,46 @@ private final class FixtureRPC: HermesRPC {
 
 @MainActor
 final class GatewayStateTests: XCTestCase {
+    func testOldClarifyAcknowledgementCannotClearANewerPrompt() async throws {
+        let rpc = FixtureRPC()
+        // Use a wired fixture to exercise the actual asynchronous response path.
+        let store = AppStore(api: rpc)
+        rpc.holdClarify = true
+        store.chatSessionID = "sid"
+        store.clarifyRequest = ClarifyRequest(rpcID: .string(""), sessionID: "sid",
+            questions: [.init(id: "old", question: "Old?", choices: [], multiSelect: false)], promptGenerations: ["old": 4])
+        store.resolveClarify(["old": "yes"])
+        for _ in 0..<1000 { if rpc.held != nil { break }; await Task.yield() }
+        let pending = try XCTUnwrap(rpc.held)
+        store.clarifyRequest = ClarifyRequest(rpcID: .string(""), sessionID: "sid",
+            questions: [.init(id: "new", question: "New?", choices: [], multiSelect: false)], promptGenerations: ["new": 5])
+        pending.resume(returning: RPCResult(value: ["ok": true] as JSONObject))
+        for _ in 0..<20 { await Task.yield() }
+        XCTAssertEqual(store.clarifyRequest?.questions.map(\.id), ["new"])
+        XCTAssertEqual(store.clarifyRequest?.promptGenerations, ["new": 5])
+    }
+
+    func testDisconnectClearsTransportOwnedPromptsAndStreamingState() async {
+        let rpc = FixtureRPC()
+        let subject = AppStore(api: rpc)
+        subject.chatSessionID = "sid"
+        subject.clarifyRequest = ClarifyRequest(rpcID: .string("old-rpc"), sessionID: "sid", questions: [])
+        subject.isTurnActive = true
+        rpc.onDisconnect?("Fixture disconnected")
+        for _ in 0..<1000 { if subject.clarifyRequest == nil { break }; await Task.yield() }
+        XCTAssertNil(subject.clarifyRequest)
+        XCTAssertFalse(subject.isTurnActive)
+        XCTAssertEqual(subject.turnStatus, "Disconnected · reconnect to check")
+    }
+
+    func testQualifiedRoomMembersDoNotCollapseIdenticalProfileNames() throws {
+        let room = try XCTUnwrap(GroupRoom.parse(["room_id": "room", "name": "Cross-gateway", "members": [
+            ["member_id": "a:scout", "profile": "scout", "display_name": "Scout A"],
+            ["member_id": "b:scout", "profile": "scout", "display_name": "Scout B"]]]))
+        XCTAssertEqual(room.member(matching: "a:scout")?.name, "Scout A")
+        XCTAssertEqual(room.member(matching: "b:scout")?.name, "Scout B")
+        XCTAssertNil(room.member(matching: "scout"))
+    }
     func testLatestChatSelectionWinsWhenOlderReplyArrivesLast() async throws {
         let rpc = FixtureRPC()
         // The tested store owns the same transport throughout both overlapping requests.

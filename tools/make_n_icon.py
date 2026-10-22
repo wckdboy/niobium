@@ -42,10 +42,16 @@ def save(relative, data):
 icon = render(1024, 640, opaque=True)
 save("brand/app-icon-n-1024.png", icon)
 save("ios/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png", icon)
+save("site/public/og/icon.png", icon)
 save("brand/n-mark.png", render(512, 320))
 for density, size in [("mdpi",108),("hdpi",162),("xhdpi",216),("xxhdpi",324),("xxxhdpi",432)]:
     save("android/app/src/main/res/mipmap-"+density+"/ic_launcher_foreground.png", render(size, round(size*0.56)))
 save("android/app/src/main/res/drawable-nodpi/ic_launcher_monochrome.png", render(432, 240, monochrome=True))
-for size, name in [(160,"LaunchMark.png"),(320,"LaunchMark@2x.png"),(480,"LaunchMark@3x.png")]:
-    save("ios/Resources/Assets.xcassets/LaunchMark.imageset/"+name, render(size, round(size*0.8)))
-print("Built native icons from site/public/favicon.svg on solid white.")
+for scale, size in [(1,160),(2,320),(3,480)]:
+    mark = render(size, round(size*0.8), opaque=True)
+    suffix = "" if scale == 1 else "@"+str(scale)+"x"
+    save("ios/Resources/Assets.xcassets/LaunchMark.imageset/LaunchMark"+suffix+".png", mark)
+    save("ios/Resources/Assets.xcassets/PixelNiobium.imageset/pixel-niobium@"+str(scale)+"x.png", mark)
+    if scale == 3:
+        save("android/app/src/main/res/drawable-nodpi/pixel_niobium.png", mark)
+print("Built launcher, launch, in-app and web marks from site/public/favicon.svg.")

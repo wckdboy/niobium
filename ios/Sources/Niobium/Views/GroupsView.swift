@@ -89,10 +89,6 @@ struct GroupChatView: View {
     @State private var draft = ""
     @FocusState private var focused: Bool
 
-    private var members: [String: GroupMember] {
-        Dictionary(uniqueKeysWithValues: room.members.map { ($0.profile, $0) })
-    }
-
     var body: some View {
         ZStack {
             NB.void.ignoresSafeArea()
@@ -183,7 +179,7 @@ struct GroupChatView: View {
 
     private func eventRow(_ event: RoomEvent) -> some View {
         let isUser = event.actorKind == "user" || event.actorID == "user"
-        let member = members[event.actorID]
+        let member = room.member(matching: event.actorID)
         return HStack(alignment: .top, spacing: 9) {
             if isUser { Spacer(minLength: 52) }
             if !isUser {

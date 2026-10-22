@@ -218,6 +218,12 @@ final class AppStore: ObservableObject {
             Task { @MainActor in
                 guard let self, let client, self.api === client, !self.isDemo else { return }
                 self.credentialRequests = []
+                self.approvals = []
+                self.clarifyRequest = nil
+                self.isTurnActive = false
+                self.turnStatus = "Disconnected · reconnect to check"
+                self.streamingMessageID = nil
+                for index in self.messages.indices { self.messages[index].isStreaming = false }
                 self.connectionState = .failed(message)
                 self.showError("Connection lost. \(message)")
             }
@@ -948,14 +954,16 @@ final class AppStore: ObservableObject {
             do {
                 for question in request.questions {
                     guard self.api === api, chatSessionID == request.sessionID,
-                          let generation = request.promptGenerations[question.id] else { return }
+                          let generation = request.promptGenerations[question.id],
+                          clarifyRequest?.promptGenerations[question.id] == generation else { return }
                     _ = try await api.request("clarify.respond", params: ["session_id": request.sessionID,
                         "execution_generation": generation, "prompt_id": question.id, "answer": answers[question.id]!])
-                    guard self.api === api, chatSessionID == request.sessionID else { return }
+                    guard self.api === api, chatSessionID == request.sessionID,
+                          clarifyRequest?.promptGenerations[question.id] == generation else { return }
                     clarifyRequest?.questions.removeAll { $0.id == question.id }
                     clarifyRequest?.promptGenerations.removeValue(forKey: question.id)
                 }
-                clarifyRequest = nil
+                if clarifyRequest?.questions.isEmpty == true { clarifyRequest = nil }
             } catch { showError("The answer was not accepted. \(error.localizedDescription)") }
         }
     }

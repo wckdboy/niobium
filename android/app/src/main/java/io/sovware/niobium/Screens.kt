@@ -495,7 +495,7 @@ fun SettingsScreen(vm: NiobiumViewModel, state: NbState, onOpenTools: () -> Unit
         )
     }
     if (showHarness) {
-        RemoteHarnessScreen { showHarness = false }
+        LocalRuntimeScreen { showHarness = false }
         return
     }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 36.dp)) {
@@ -568,7 +568,7 @@ fun SettingsScreen(vm: NiobiumViewModel, state: NbState, onOpenTools: () -> Unit
                 }
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("Remote DeepSeek Harness", color = Nb.Text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Local Pixels · DSH", color = Nb.Text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                     Text("Open DSH on your computer or VPS", color = Nb.Tertiary, fontSize = 10.5.sp)
                 }
                 Text("›", color = Nb.Tertiary, fontSize = 16.sp)
@@ -642,7 +642,7 @@ fun SettingsScreen(vm: NiobiumViewModel, state: NbState, onOpenTools: () -> Unit
                 Column {
                     Text("Niobium", color = Nb.Text, style = NbTitle, fontSize = 18.sp)
                     Text("The pocket command deck for Hermes Agent.", color = Nb.Secondary, fontSize = 11.5.sp)
-                    Text("v2.0 (4) · Nb 41", color = Nb.Tertiary, style = NbMono, fontSize = 8.5.sp)
+                    Text("v" + BuildConfig.VERSION_NAME + " (" + BuildConfig.VERSION_CODE + ") · Nb 41", color = Nb.Tertiary, style = NbMono, fontSize = 8.5.sp)
                 }
             }
         }
@@ -661,7 +661,7 @@ fun HomeScreen(vm: NiobiumViewModel, state: NbState, onNewPixel: () -> Unit, onS
     val context = LocalContext.current
     var showHarness by remember { mutableStateOf(false) }
     var showInstance by remember { mutableStateOf(false) }
-    if (showHarness) { RemoteHarnessScreen { showHarness = false }; return }
+    if (showHarness) { LocalRuntimeScreen { showHarness = false }; return }
     if (showInstance) {
         androidx.compose.material3.AlertDialog(onDismissRequest = { showInstance = false }, containerColor = Nb.Ink,
             title = { Text("Hermes instance", color = Nb.Text) },
@@ -801,8 +801,8 @@ private fun LocalDSHCard(state: NbState, onOpen: () -> Unit) {
     Column(Modifier.fillMaxWidth().pixelPanel(20.dp, accented = true).padding(14.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("Remote DSH", color = Nb.Text, style = NbTitle, fontSize = 18.sp)
-                Text("Your harness on a computer or VPS.", color = Nb.Tertiary, fontSize = 10.sp)
+                Text("Local DSH", color = Nb.Text, style = NbTitle, fontSize = 18.sp)
+                Text("A Linux home for your Pixels.", color = Nb.Tertiary, fontSize = 10.sp)
             }
             Box(Modifier.clip(CircleShape).background(Nb.Ion.copy(alpha = 0.16f))
                 .border(1.dp, Nb.Ion.copy(alpha = 0.35f), CircleShape).clickable { onOpen() }
@@ -817,55 +817,17 @@ private fun LocalDSHCard(state: NbState, onOpen: () -> Unit) {
             Spacer(Modifier.width(8.dp))
             Column(Modifier.weight(1f)) {
                 Text("Harness runtime", color = Nb.Text, fontSize = 11.5.sp, fontWeight = FontWeight.Medium)
-                Text("Remote · computer or VPS", color = Nb.Tertiary, style = NbMono, fontSize = 8.sp)
+                Text("On device · Alpine Linux", color = Nb.Tertiary, style = NbMono, fontSize = 8.sp)
             }
             Text("Open to check", color = Nb.Tertiary, style = NbMono, fontSize = 8.sp)
         }
         Spacer(Modifier.height(9.dp))
-        Text("DSH is separate from Hermes. The local guest is iOS-only; remote works everywhere.",
+        Text("Run on-device with your provider keys, or connect to remote DSH.",
             color = Nb.Tertiary, fontSize = 8.5.sp, lineHeight = 12.sp)
     }
 }
 
 @Composable
 fun LocalScreen(vm: NiobiumViewModel, state: NbState) {
-    var showHarness by remember { mutableStateOf(false) }
-    if (showHarness) {
-        RemoteHarnessScreen { showHarness = false }
-        return
-    }
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp, 28.dp, 20.dp, 32.dp)) {
-        item {
-            Text("Harness · computer · VPS", color = Nb.Tertiary, style = NbLabel, fontSize = 9.sp, letterSpacing = 1.2.sp)
-            Text("Local", color = Nb.Text, style = NbDisplay, fontSize = 38.sp)
-            Spacer(Modifier.height(6.dp))
-            Text("Run a full harness next to your Pixels. The iOS full build embeds Alpine + iSH; both platforms can open DSH on a computer or VPS.",
-                color = Nb.Secondary, fontSize = 12.sp, lineHeight = 18.sp)
-            Spacer(Modifier.height(16.dp))
-            Box(Modifier.fillMaxWidth().clip(CircleShape).background(Brush.linearGradient(listOf(Nb.Ion, Nb.IonDeep)))
-                .clickable { showHarness = true }.padding(vertical = 14.dp), contentAlignment = Alignment.Center) {
-                Text(">_ Open DSH", color = Nb.OnIon, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-            }
-            Spacer(Modifier.height(8.dp))
-            Box(Modifier.fillMaxWidth().clip(CircleShape).background(Nb.FillSoft)
-                .clickable { showHarness = true }.padding(vertical = 13.dp), contentAlignment = Alignment.Center) {
-                Text("Connect to remote DSH", color = Nb.Text, fontSize = 13.sp)
-            }
-            Spacer(Modifier.height(18.dp))
-            Text("Pixels available to the harness", color = Nb.Text, style = NbTitle, fontSize = 18.sp)
-        }
-        items(state.bots.take(4).size) { index ->
-            val bot = state.bots[index]
-            Row(Modifier.fillMaxWidth().padding(bottom = 8.dp).clip(RoundedCornerShape(12.dp)).background(Nb.FillSoft)
-                .padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                CastPortrait(CastStore.get(LocalContext.current, bot.name), 38.dp, showCompanion = false)
-                Spacer(Modifier.width(9.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(bot.title, color = Nb.Text, fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                    Text("Hermes pixel · ${bot.model.ifBlank { "inherited model" }}", color = Nb.Tertiary, style = NbMono, fontSize = 8.sp)
-                }
-                Text(if (bot.isLive) "Running" else "Available", color = if (bot.isLive) Nb.Mint else Nb.Tertiary, style = NbMono, fontSize = 8.sp)
-            }
-        }
-    }
+    LocalRuntimeScreen()
 }

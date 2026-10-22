@@ -9,13 +9,16 @@ plugins {
 android {
     namespace = "io.sovware.niobium"
     compileSdk = 37
+    ndkVersion = "30.0.16248370"
 
     defaultConfig {
         applicationId = "io.sovware.niobium"
         minSdk = 28
         targetSdk = 37
-        versionCode = 4
+        versionCode = 5
         versionName = "2.0"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        ndk { abiFilters += "arm64-v8a" }
     }
 
     signingConfigs {
@@ -54,15 +57,31 @@ android {
     }
 
     packaging {
+        jniLibs.useLegacyPackaging = true
+        jniLibs.keepDebugSymbols += "**/libniobium_*.so"
         resources.excludes += setOf(
             "/META-INF/{AL2.0,LGPL2.1}",
             "/META-INF/*.version",
             "DebugProbesKt.bin"
         )
     }
+    sourceSets["main"].assets.directories += layout.buildDirectory.dir("generated/runtime/assets").get().asFile.path
+    sourceSets["main"].jniLibs.directories += layout.buildDirectory.dir("generated/runtime/jniLibs").get().asFile.path
+    androidResources.noCompress += "image"
 }
 
+val prepareLocalRuntime = tasks.register<Exec>("prepareLocalRuntime") {
+    workingDir = rootProject.projectDir.parentFile
+    commandLine("python3", "tools/prepare-android-runtime.py")
+    inputs.files("../../config/android-runtime.json", "../../tools/prepare-android-runtime.py",
+        "../runtime/supervisor.c", "../runtime/niobium-local.cjs")
+    outputs.dir(layout.buildDirectory.dir("generated/runtime"))
+}
+tasks.named("preBuild").configure { dependsOn(prepareLocalRuntime) }
+
 dependencies {
+    androidTestImplementation("androidx.test:runner:1.7.0")
+    androidTestImplementation("androidx.test.ext:junit:1.3.0")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20260814")
     implementation(platform("androidx.compose:compose-bom:2026.09.00"))

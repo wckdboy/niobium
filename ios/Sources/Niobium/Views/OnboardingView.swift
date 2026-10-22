@@ -6,6 +6,9 @@ struct OnboardingView: View {
     @State private var token = ""
     @State private var showToken = false
     @State private var appeared = false
+    #if NIOBIUM_LOCAL_DSH
+    @State private var showLocal = false
+    #endif
     @FocusState private var focused: Field?
     enum Field { case url, token }
 
@@ -30,12 +33,29 @@ struct OnboardingView: View {
                         .lineSpacing(-3)
                         .padding(.top, 42)
 
-                    Text("A quiet command deck for Hermes. Every pixel, every tool, every approval — right here.")
+                    Text("Connect to Hermes, or give your Pixels a home right on this device.")
                         .font(.nbBody(15))
                         .foregroundStyle(NB.secondary)
                         .lineSpacing(3)
                         .padding(.top, 14)
                         .frame(maxWidth: 350, alignment: .leading)
+
+                    #if NIOBIUM_LOCAL_DSH
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("No server? No problem.")
+                            .font(.nbBody(17, weight: .semibold)).foregroundStyle(NB.text)
+                        Text("Run local Pixels with Alpine Linux + DSH and your provider API keys.")
+                            .font(.nbBody(12)).foregroundStyle(NB.secondary)
+                        Button { showLocal = true } label: {
+                            Label("Run Pixels locally", systemImage: "terminal")
+                                .frame(maxWidth: .infinity)
+                        }.buttonStyle(NBPrimaryButtonStyle())
+                    }
+                    .padding(18)
+                    .background(RoundedRectangle(cornerRadius: 18).fill(NB.ink))
+                    .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(NB.ion.opacity(0.3)))
+                    .padding(.top, 24)
+                    #endif
 
                     VStack(alignment: .leading, spacing: 14) {
                         HStack {
@@ -152,6 +172,9 @@ struct OnboardingView: View {
         .onAppear {
             withAnimation(.easeOut(duration: 0.6)) { appeared = true }
         }
+        #if NIOBIUM_LOCAL_DSH
+        .sheet(isPresented: $showLocal) { DSHLocalScreen() }
+        #endif
     }
 
     private func field<Content: View>(_ label: String, icon: String, @ViewBuilder content: () -> Content) -> some View {

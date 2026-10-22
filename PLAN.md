@@ -83,9 +83,10 @@ Prioritize these domains without replacing backend behaviour with simulations:
    recording/TTS and supported device bridges.
 7. **Background delivery:** durable reconciliation and a native notification
    design that respects mobile execution limits.
-8. **Android local runtime:** select and implement an actual embedded Linux
-   runtime, then prove DSH boot, host bridge, API-key handling, supervision,
-   persistence and licensing. Remote DSH is the current Android path.
+8. **Android local runtime:** the ARM64 PRoot/Alpine beta now passes cold boot,
+   DSH HTTP/WebSocket, service Stop and image-swap preservation tests. Next prove
+   provider turns, host bridges, physical/16 KB devices, battery and encrypted
+   provider storage. Integrate the native Pixel workshop with real DSH presets.
 
 ## Release gates
 
@@ -117,3 +118,16 @@ Prioritize these domains without replacing backend behaviour with simulations:
 - Polish modular character art to the standard of the authored adult cast.
 
 Reproducible verification is in [TESTING.md](docs/TESTING.md).
+
+## Current cycle: 2.0.0-beta.2
+
+- Android now offers on-device DSH before Hermes setup, with native pixel controls.
+- The lowercase n is shared by website headers, app icons, launch and in-app marks.
+- Fixed clipped WebView dialogs, malformed skill frontmatter, same-profile room attribution,
+  stale clarification acknowledgements and disconnected transport prompts.
+- Next: accept the runtime on physical/16 KB devices with a provider-backed turn;
+  add native DSH preset creation, provider vault, files/PTY and actual delegation checks.
+- Hermes watcher detected upstream member_activity in groups.state at 81a55437f3f31a9f12a30c53b6c5d49d420898aa.
+  Add capability-gated room activity next; keep the audited baseline until acceptance passes.
+- Active-session build/test/review/release cycles work. Unattended continuation needs
+  a supported wake/timer integration; a shell sleep loop is not installed.
