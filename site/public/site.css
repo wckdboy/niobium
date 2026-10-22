@@ -21,7 +21,7 @@
   --rule-strong: #d3d0c9;
   --wash: #f6f5f2;
   --accent: #111111;
-  --mark: #1E8CFF;
+  --mark: #A78BFA;
 
   --sans: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --serif: var(--sans);
@@ -879,5 +879,5 @@ pre.term .t-add { color: #8FB573; }
 pre.term .t-del { color: #E06C5C; }
 pre.term .t-head { display: block; line-height: 1.02; }
 
-:root{--mark:#1E8CFF;--accent:#1E8CFF;--accent-paper:#1E8CFF;--accent-ink:#1E8CFF;--mark-paper:#1E8CFF;--mark-ink:#1E8CFF}
+:root{--mark:#A78BFA;--accent:#A78BFA;--accent-paper:#A78BFA;--accent-ink:#A78BFA;--mark-paper:#A78BFA;--mark-ink:#A78BFA}
 .product-art{margin:28px 0;background:var(--wash);border-block:1px solid var(--rule)}.product-art img{display:block;width:100%;height:auto;image-rendering:pixelated}.product-art figcaption{padding:12px 0;color:var(--muted);font-size:11px}.feature-list{padding-left:20px;max-width:72ch}.feature-list li{margin:12px 0}.pixel-stop{display:inline-block;width:.24em;height:.24em;margin-left:.12em;background:var(--mark)}pre{max-width:100%;overflow-x:auto}main{overflow-wrap:anywhere}

@@ -18,7 +18,7 @@ A pixel is a teammate, not a toy.
 ## Mark
 
 The symbol is the WCKD kit's lowercase pixel **n** with its companion pixel at the foot:
-`n.` on a 8 × 6 grid, in niobium blue `#1E8CFF` (the colour of anodised niobium), on a
+`n.` on a 8 × 6 grid, in pastel purple `#A78BFA` (Ion, the app's own accent), on a
 clean white field. It is one of the family (`w s a i o n n.`); the source is
 `brand/kit.json` in `wckdboy/autobot-www`, and the generated files live at
 https://niobium.sh/brand/ and https://wckd.ai/brand/niobium/. The same raster is the app
