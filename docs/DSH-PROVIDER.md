@@ -26,6 +26,14 @@ session, then replays only events newer than the snapshot. Completed model
 steps stay separate from the unfinished reply on reconnect. Failed photo
 submissions clear their queued attachment.
 
+DSH starts its HTTP listener before registering the event route. The adapter
+waits up to ten seconds for the initial event connection, backing off on early
+connection resets/refusals or temporary 404/503 responses. It sends `gateway.ready`
+only after that stream opens. Authorization errors fail immediately, and closing
+the native client cancels startup. An established stream closing fails visibly;
+the adapter does not reconnect or replay model requests. The native client owns
+session recovery through the snapshot handoff above.
+
 The Pixel workshop uses the same bot-build skill and validated PixelSpec.
 AI drafting runs a tool-free minimal DSH session; a missing provider or invalid
 output yields an explicitly labelled template. Creation writes a DSH preset from

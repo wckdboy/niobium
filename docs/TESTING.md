@@ -3,6 +3,7 @@
 Run shared checks from the repository root:
 
 ```sh
+npm ci --prefix runtime --ignore-scripts
 node --test tests/*.test.mjs
 python3 -m unittest discover -s tests -p 'test_*.py' -v
 node tools/check-plane-sync.mjs
@@ -26,7 +27,7 @@ cd android
 ./gradlew :app:assembleRelease
 ```
 
-Twenty-nine Android JVM tests include real OkHttp HTTP/WebSocket exchanges with a local
+Thirty Android JVM tests include real OkHttp HTTP/WebSocket exchanges with a local
 Node fixture: reverse-proxy paths, token encoding/header authentication,
 out-of-order replies, server errors, timeout/cancellation recovery, typed
 server-request IDs, approval replies and disconnecting an in-flight request.
@@ -205,8 +206,25 @@ animation while idle.
 
 The separately sandboxed full Debug iPhone acceptance passed an actual DSH
 model stream, eight seconds in the background and a cold-launch history restore:
-[evidence](evidence/ios-build10-iphone-model.json). The production Release sandbox
-still fails its DSH event-stream connection. A build-12 archive must reapply the
-changed adapter overlay; repeated diagnostic build-11 archives share an overlay
-version and are not a substitute for that replacement build. No production data
-was erased. Real-account model turns and production release acceptance remain open.
+[evidence](evidence/ios-build10-iphone-model.json). Production build 12 failed
+its native connection. Diagnostic build 13 passed once, then reproduced an
+initial `ECONNRESET` during repeated cold launches. DSH listens before registering
+its event upgrade route; the old HTTP readiness check accepts that early listener.
+
+Build 14 waits up to ten seconds for that initial event attachment, with bounded
+backoff for connection resets/refusals and temporary 404/503 responses. Once a
+stream has opened, disconnection fails visibly and is never retried by the
+adapter. Cancellation clears the deadline and pending retries. Authorization
+failures fail immediately. Forty Node checks include nine real-socket regressions
+for this startup window, response filtering, cancellation, timeout and established
+stream loss. The test-only `ws` dependency is pinned to the bundled DSH version;
+it is not another production runtime dependency.
+
+Build 14 passed the production phone smoke and all three repeated cold launches.
+Two repetitions hit the initial reset and recovered in 0.324 and 0.304 seconds.
+Each run verifies native roster/navigation, eight seconds in the background and
+Scout attachment with an unsent draft. The temporary runner was removed and a
+scoped query confirmed only production Niobium remains. No production app data
+was erased. [Sanitized evidence](evidence/ios-build14-iphone-startup.json) includes
+the before/after startup traces. Real-account turns and delegation remain separate
+acceptance work.

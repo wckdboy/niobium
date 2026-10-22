@@ -25,6 +25,7 @@ ios/Resources/root.tar.gz*
 ios/build-*/
 
 site/node_modules/
+runtime/node_modules/
 site/dist/
 site/.wrangler/
 

@@ -438,3 +438,31 @@ docs/evidence/ios-build12-iphone-install.json.
 
 Main merge CI also passes all three jobs (run 39862983795). The Release IPA
 executable excludes the Debug model-fixture hooks.
+
+## Production DSH startup follow-up — 23 October
+
+An unlocked-phone run reproduced build 12's connection failure. Diagnostic
+build 13 passed once, but three repeated cold launches included an initial
+`ECONNRESET`. The pinned DSH HTTP server accepts connections before registering
+its event upgrade route; the old readiness probe accepts that early listener.
+
+Android code 11 / iOS build 14 adds a bounded ten-second startup wait in the
+shared native adapter. Only the initial connection is retried, with backoff for
+transient socket failures and 404/503 responses. Authentication failures are
+immediate; client closure cancels all timers. An established stream failure is
+visible and never causes model requests to be replayed. Nine real-WebSocket
+regressions pass, bringing the shared Node suite to forty checks.
+
+The production build-14 phone test and all three repeated cold launches pass
+native startup, roster, Engines, eight seconds in the background and Scout's
+real chat attachment. Two initial resets recover in 0.324 and 0.304 seconds.
+Android passes 30 unit and ten ARM64 emulator tests, including a controlled DSH
+model turn; lint, the signed APK and iOS archive/export pass. Production was
+updated in place over Wi-Fi; Pixels, workspace and keys remain. The temporary
+runner was removed. Evidence: docs/evidence/ios-build14-iphone-startup.json.
+Release publication, Apple upload and website deployment follow fresh CI and
+verification of these replacement artifacts.
+
+Next after this release: provider-key storage, real-account turns and delegation,
+physical Android/16 KB acceptance, named saved looks and expanded authored art,
+then Hermes replay and connector authorization. Full Hermes parity remains open.

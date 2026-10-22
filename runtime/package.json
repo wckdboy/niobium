@@ -1,0 +1,8 @@
+{
+  "name": "niobium-runtime-tests",
+  "private": true,
+  "description": "WebSocket integration fixtures pinned to the bundled DSH transport",
+  "devDependencies": {
+    "ws": "8.21.3"
+  }
+}

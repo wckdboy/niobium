@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "verified_at": "2026-10-22T23:00:30.543391+00:00",
+  "device": {
+    "model": "iPhone 18 Pro Max",
+    "os": "iOS 27.0.1",
+    "transport": "paired Wi-Fi"
+  },
+  "app": {
+    "bundle_id": "ai.wckd.niobium",
+    "version": "2.0",
+    "build": 14,
+    "flavor": "full DSH Release",
+    "overlay_version": 100014
+  },
+  "installation": "in-place development-signed full Release archive; production app not uninstalled",
+  "production_data_erased": false,
+  "temporary_runner_cleanup": "verified removed; only production Niobium remains",
+  "test": "LocalDSHDeviceUITests/testLocalEngineUsesNativeNavigationAndRestoresAfterBackgrounding()",
+  "initial_run": {
+    "result": "Passed",
+    "duration_seconds": 58.304,
+    "result_bundle": "/private/tmp/NiobiumBuild14ProductionStartup.xcresult"
+  },
+  "repeated_runs": [
+    {
+      "result": "Passed",
+      "duration_seconds": 45.8288859128952
+    },
+    {
+      "result": "Passed",
+      "duration_seconds": 45.417031049728394
+    },
+    {
+      "result": "Passed",
+      "duration_seconds": 45.22948598861694
+    }
+  ],
+  "repeated_result_bundle": "/private/tmp/NiobiumBuild14ProductionRepeated.xcresult",
+  "verified": [
+    "actual local DSH startup and roster",
+    "native Engines and Home navigation without a WebView",
+    "eight-second Home-screen background and restoration",
+    "Scout session attachment; Send enabled for an unsent draft; draft cleared"
+  ],
+  "initial_socket_resets_observed_and_recovered": 2,
+  "recovery_delay_seconds": [
+    0.324,
+    0.304
+  ],
+  "real_account_model_request": false,
+  "api_keys_changed": false,
+  "before_fix": {
+    "build12": "failed: Socket is not connected",
+    "build13_repeated_runs": {
+      "passed": 2,
+      "failed": 1
+    },
+    "failure": "DSH event stream unavailable (ECONNRESET)",
+    "startup_trace": "DSH startup diagnostics\nstarted: 2026-10-23T00:49:58+02:00\napp: 2.0 (13)\ndevice: iPhone\nsystem: iOS 27.0.1\nlocale: en_US\n\n+   0.002s [perf] app boot coordinator started\n+   0.004s [perf] image preparation 0.002s\n+   0.016s [perf] guest kernel boot 0.012s\n+   0.016s [dsh-ios] guest boot ok (image 0.0s, total 0.0s)\n+   0.030s [dsh-ios] host bridge listening on 127.0.0.1:53510\n+   0.031s [dsh-ios] state -> starting\n+   0.031s [dsh-ios] launching /usr/local/bin/dsh-serve on port 3080\n+   0.032s [dsh-ios] guest pid 7\n+  16.232s [dsh-ios] server answered after 16.2s\n+  16.232s [dsh-ios] state -> ready\n+  16.302s [niobium] native provider socket opened\n+  16.314s [niobium] native provider connection failed: DSH event stream unavailable (ECONNRESET)\n+  16.315s [niobium] DSH event stream unavailable (ECONNRESET)\n+  16.315s [niobium] DSH event stream closed (1006)\n+  16.477s dsh web: http://127.0.0.1:3080\n"
+  },
+  "startup_traces": {
+    "launch-20261022-225521-100.log": "DSH startup diagnostics\nstarted: 2026-10-23T00:55:21+02:00\napp: 2.0 (14)\ndevice: iPhone\nsystem: iOS 27.0.1\nlocale: en_US\n\n+   0.002s [perf] app boot coordinator started\n+   0.003s [perf] image preparation 0.001s\n+   0.020s [perf] guest kernel boot 0.017s\n+   0.020s [dsh-ios] guest boot ok (image 0.0s, total 0.0s)\n+   0.035s [dsh-ios] host bridge listening on 127.0.0.1:53818\n+   0.035s [dsh-ios] state -> starting\n+   0.035s [dsh-ios] launching /usr/local/bin/dsh-serve on port 3080\n+   0.036s [dsh-ios] guest pid 7\n+  16.909s [dsh-ios] server answered after 16.9s\n+  16.909s [dsh-ios] state -> ready\n+  17.141s dsh web: http://127.0.0.1:3080\n+  17.308s [niobium] native provider socket opened\n+  17.320s [niobium] DSH event stream opened\n",
+    "launch-20261022-225622-258.log": "DSH startup diagnostics\nstarted: 2026-10-23T00:56:22+02:00\napp: 2.0 (14)\ndevice: iPhone\nsystem: iOS 27.0.1\nlocale: en_US\n\n+   0.002s [perf] app boot coordinator started\n+   0.005s [perf] image preparation 0.003s\n+   0.021s [perf] guest kernel boot 0.016s\n+   0.022s [dsh-ios] guest boot ok (image 0.0s, total 0.0s)\n+   0.038s [dsh-ios] host bridge listening on 127.0.0.1:53890\n+   0.038s [dsh-ios] state -> starting\n+   0.038s [dsh-ios] launching /usr/local/bin/dsh-serve on port 3080\n+   0.039s [dsh-ios] guest pid 7\n+  16.856s [dsh-ios] server answered after 16.8s\n+  16.857s [dsh-ios] state -> ready\n+  17.089s dsh web: http://127.0.0.1:3080\n+  17.258s [niobium] native provider socket opened\n+  17.271s [niobium] DSH event stream opened\n",
+    "launch-20261022-225707-797.log": "DSH startup diagnostics\nstarted: 2026-10-23T00:57:07+02:00\napp: 2.0 (14)\ndevice: iPhone\nsystem: iOS 27.0.1\nlocale: en_US\n\n+   0.002s [perf] app boot coordinator started\n+   0.004s [perf] image preparation 0.002s\n+   0.018s [perf] guest kernel boot 0.014s\n+   0.018s [dsh-ios] guest boot ok (image 0.0s, total 0.0s)\n+   0.032s [dsh-ios] host bridge listening on 127.0.0.1:53962\n+   0.032s [dsh-ios] state -> starting\n+   0.032s [dsh-ios] launching /usr/local/bin/dsh-serve on port 3080\n+   0.033s [dsh-ios] guest pid 7\n+  16.342s [dsh-ios] server answered after 16.3s\n+  16.343s [dsh-ios] state -> ready\n+  16.416s [niobium] native provider socket opened\n+  16.428s [niobium] waiting for startup: DSH event stream unavailable (ECONNRESET)\n+  16.593s dsh web: http://127.0.0.1:3080\n+  16.752s [niobium] DSH event stream opened\n",
+    "launch-20261022-225753-057.log": "DSH startup diagnostics\nstarted: 2026-10-23T00:57:53+02:00\napp: 2.0 (14)\ndevice: iPhone\nsystem: iOS 27.0.1\nlocale: en_US\n\n+   0.004s [perf] app boot coordinator started\n+   0.006s [perf] image preparation 0.001s\n+   0.018s [perf] guest kernel boot 0.012s\n+   0.018s [dsh-ios] guest boot ok (image 0.0s, total 0.0s)\n+   0.034s [dsh-ios] host bridge listening on 127.0.0.1:54033\n+   0.034s [dsh-ios] state -> starting\n+   0.034s [dsh-ios] launching /usr/local/bin/dsh-serve on port 3080\n+   0.035s [dsh-ios] guest pid 7\n+  16.188s [dsh-ios] server answered after 16.1s\n+  16.188s [dsh-ios] state -> ready\n+  16.283s [niobium] native provider socket opened\n+  16.295s [niobium] waiting for startup: DSH event stream unavailable (ECONNRESET)\n+  16.438s dsh web: http://127.0.0.1:3080\n+  16.599s [niobium] DSH event stream opened\n"
+  },
+  "source_sha256": {
+    "runtime/niobium-agent.cjs": "d6478d3dbd21719696a180562180300de314eddd6115e489fc8658cd126de0ff",
+    "ios/Sources/Niobium/Connection.swift": "81487c1dae9a482583114fed155b9df5dda16cfe7f3fc1228545b9d7ec16f14a",
+    "ios/Sources/Niobium/AppStore.swift": "2241f485166388eaef96a98ee542d6ce04cd4c55a2c6fe3b1f608be95f225826",
+    "ios/UITests/LocalDSHDeviceUITests.swift": "f0cba6b2f24a4ee9ca4d37973a093f410bd861102a15f7e4cf3535fc2f44056f",
+    "tests/dsh-stream-startup.test.mjs": "cfdb2ed9900d9ea7c6d0fbebdc5a7c607f9d6f804bba7e807008d694c264ba10"
+  },
+  "limits": [
+    "No production-account model request was sent.",
+    "Physical controlled-model acceptance was previously verified in a separate Debug sandbox on build10.",
+    "Long background suspension, real-account providers and delegation require separate acceptance."
+  ]
+}
