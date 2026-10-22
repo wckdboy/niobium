@@ -13,6 +13,21 @@ class PixelSpecTest {
                 CharacterRecipe.generated(fixture.getString("archetype"), fixture.getString("seed")))
         }
     }
+    @Test fun instantLookPreviewRoundTripsAndRemixPreservesThePortrait() {
+        val draft = PixelBuilder.preview("security witch")
+        val look = requireNotNull(draft.spec.character.look)
+        assertFalse(draft.usedModel)
+        assertFalse(draft.spec.permissions.shell)
+        assertEquals("woman", look.body)
+        val changed = look.remixed("different")
+        assertEquals(look.portrait, changed.portrait)
+        assertNotEquals(look.accent, changed.accent)
+        assertEquals(look, PixelLook.parse(look.toJson()))
+        assertEquals(look, PixelBuilder.parse(draft.spec.toJson().toString())?.character?.look)
+        assertFalse(PixelLook("https://example.org/image.png").valid)
+        assertFalse(PixelLook("nyx", "unknown").valid)
+        assertTrue(runCatching { PixelLook.parse(org.json.JSONObject().put("portrait", "nyx").put("accent", false)) }.isFailure)
+    }
     @Test fun legacyRecipesDecodeAndRejectInvalidOptionalTypes() {
         val legacy = org.json.JSONObject("""{"body":"woman","palette":"nyx","hair":"cat_black","face":"fierce","outfit":"rogue","accessory":"cat_ears"}""")
         val original = CharacterRecipe.parse(legacy)

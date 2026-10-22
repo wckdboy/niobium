@@ -8,153 +8,227 @@ struct AIBuildView: View {
     @State private var draft: PixelDraft?
     @State private var error: String?
     @State private var working = false
+    @State private var refining = false
+    @State private var section = "Look"
     @State private var showSoul = false
-    @State private var showAppearance = false
-    @State private var appearancePins: Set<String> = ["body", "skin"]
+    @State private var showDetails = false
+    @State private var history: [PixelLook] = []
     @State private var designTask: Task<Void, Never>?
+    @State private var refinementID = UUID()
+    @FocusState private var writing: Bool
 
-    private let ideas = [
-        "A sharp-tongued night-shift security witch for my VPS logs, with a tiny bat",
-        "A mischievous cyber creative director who makes images and moodboards",
-        "A calm release engineer with a wonky drone; asks before deploying",
-        "A scholarly forest mage with a pocket slime who reads papers and keeps notes"
+    private let sections = ["Look", "Creature", "Persona", "Access"]
+    private let ideas: [(String, String, String)] = [
+        ("Security", "bat", "A sharp-tongued security witch for my VPS logs, with a tiny bat"),
+        ("Creative", "cat", "A mischievous cyber creative director who makes images and moodboards"),
+        ("Builder", "drone", "A calm release engineer with a wonky drone; asks before deploying"),
+        ("Research", "slime", "A scholarly forest mage with a pocket slime who reads papers and keeps notes")
     ]
 
     var body: some View {
-        NavigationStack {
+        VStack(spacing: 0) {
+            HStack {
+                Button {
+                    designTask?.cancel(); refinementID = UUID(); refining = false
+                    if draft != nil { draft = nil; error = nil; history = [] } else { dismiss() }
+                } label: {
+                    HStack(spacing: 6) { PixelIcon(.back, size: 16); Text(draft == nil ? "Close" : "Back").font(.nbBody(13)) }
+                        .foregroundStyle(NB.secondary).frame(minWidth: 60, minHeight: 44)
+                }.buttonStyle(.plain).disabled(working)
+                Spacer()
+                Text(draft == nil ? "New Pixel" : "Your Pixel").font(.nbTitle(17)).foregroundStyle(NB.text)
+                Spacer()
+                PixelIcon(.spark, size: 20).frame(width: 60, height: 44)
+            }.padding(.horizontal, 16).padding(.top, 8)
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     if let current = draft {
-                        review(current)
-                    } else {
-                        Text("Meet your next Pixel.").font(.nbDisplay(30)).foregroundStyle(NB.text)
-                        Text("Give them a purpose. The bot-build skill designs their voice, adult character, companion, skills and access.")
-                            .font(.nbBody(13)).foregroundStyle(NB.secondary)
-                        TextEditor(text: $prompt)
-                            .font(.nbBody(15)).foregroundStyle(NB.text)
-                            .scrollContentBackground(.hidden).frame(minHeight: 130).padding(12)
-                            .background(RoundedRectangle(cornerRadius: 16).fill(NB.surface))
-                            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(NB.lineStrong))
-                            .accessibilityLabel("Describe your Pixel")
-                            .disabled(working)
-                        ForEach(ideas, id: \.self) { idea in
-                            Button { prompt = idea } label: {
-                                HStack {
-                                    Text(idea).font(.nbBody(12)).multilineTextAlignment(.leading)
-                                    Spacer()
-                                    Image(systemName: "arrow.up.left")
-                                }.foregroundStyle(NB.secondary).padding(12)
-                                    .background(RoundedRectangle(cornerRadius: 12).fill(NB.fillSoft))
-                            }.buttonStyle(.plain).disabled(working)
-                        }
-                        Button(action: design) {
-                            HStack {
-                                if working { ProgressView().tint(NB.onIon) }
-                                Text(working ? "Designing your Pixel…" : "Design a Pixel").frame(maxWidth: .infinity)
+                        identity(current)
+                        HStack(spacing: 4) {
+                            ForEach(sections, id: \.self) { name in
+                                Button { section = name } label: {
+                                    Text(name).font(.nbBody(12, weight: .semibold))
+                                        .foregroundStyle(section == name ? NB.ion : NB.secondary)
+                                        .frame(maxWidth: .infinity, minHeight: 44)
+                                        .background(PixelButtonShape().fill(section == name ? NB.ion.opacity(0.12) : NB.fillSoft))
+                                }.buttonStyle(.plain).accessibilityIdentifier("builder.tab." + name.lowercased())
+                                    .accessibilityAddTraits(section == name ? .isSelected : [])
                             }
-                        }.buttonStyle(NBPrimaryButtonStyle()).disabled(working || prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                        Text("You’ll review their character, briefing and permissions before creation. If the model is unavailable, the preview is labelled as a local template.")
-                            .font(.nbBody(11)).foregroundStyle(NB.tertiary)
+                        }
+                        details(current).disabled(working)
+                    } else {
+                        promptForm
                     }
                     if let error { Text(error).font(.nbBody(12)).foregroundStyle(NB.rose).textSelection(.enabled) }
-                }.padding(20)
-            }
-            .background(NB.void)
-            .navigationTitle(draft == nil ? "Pixel workshop" : "Review your Pixel")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(draft == nil ? "Cancel" : "Back") {
-                        if draft != nil { draft = nil; error = nil } else { designTask?.cancel(); dismiss() }
-                    }.disabled(working && draft != nil)
+                }.padding(.horizontal, 20).padding(.vertical, 16)
+            }.scrollDismissesKeyboard(.interactively)
+        }
+        .background(NB.void)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            VStack(spacing: 8) {
+                if let current = draft {
+                    Text(accessSummary(current.spec)).font(.nbBody(10)).foregroundStyle(NB.secondary).lineLimit(2)
+                    Button(action: create) {
+                        HStack(spacing: 8) {
+                            if working { ProgressView().tint(NB.onIon) } else { PixelIcon(.pixels, size: 18, tint: NB.onIon) }
+                            Text(working ? "Creating…" : "Create " + current.spec.title).frame(maxWidth: .infinity)
+                        }
+                    }.buttonStyle(NBPrimaryButtonStyle()).disabled(working || current.spec.validationError != nil)
+                    if let invalid = current.spec.validationError { Text(invalid).font(.nbBody(11)).foregroundStyle(NB.rose) }
+                } else {
+                    Button(action: preview) { PixelActionLabel("Preview Pixel", icon: .spark) }
+                        .buttonStyle(NBPrimaryButtonStyle()).disabled(prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || prompt.count > 4000)
                 }
-            }
-        }.task {
+            }.padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 10).background(NB.void)
+        }
+        .task {
             if store.isDemo && ProcessInfo.processInfo.arguments.contains("--pixel-review") {
-                draft = try? await store.draftPixel(prompt: "A sharp-tongued security witch for VPS logs, with a bat")
+                prompt = "A sharp-tongued security witch for VPS logs, with a bat"
+                preview()
             }
-        }.interactiveDismissDisabled(working && draft != nil)
-            .onDisappear { designTask?.cancel() }
+        }
+        .interactiveDismissDisabled(working)
+        .onDisappear { designTask?.cancel() }
     }
 
-    private func review(_ current: PixelDraft) -> some View {
+    private var promptForm: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Text("Give them a job.").font(.nbDisplay(28)).foregroundStyle(NB.text)
+            ZStack(alignment: .topLeading) {
+                if prompt.isEmpty { Text("A creative witch for my next project…").font(.nbBody(15)).foregroundStyle(NB.tertiary).padding(16) }
+                TextEditor(text: $prompt).font(.nbBody(15)).foregroundStyle(NB.text)
+                    .scrollContentBackground(.hidden).frame(minHeight: 110).padding(10)
+                    .accessibilityLabel("Describe your Pixel").focused($writing)
+            }.pixelPanel()
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                ForEach(ideas, id: \.0) { idea in
+                    Button { prompt = idea.2; Haptics.tap() } label: {
+                        HStack(spacing: 10) {
+                            FamiliarSprite(kind: idea.1, size: 24)
+                            Text(idea.0).font(.nbBody(12, weight: .medium)).foregroundStyle(NB.text)
+                            Spacer(minLength: 0)
+                        }.padding(12).pixelPanel()
+                    }.buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    private func identity(_ current: PixelDraft) -> some View {
         let spec = current.spec
         let base = CastMember.all.first { $0.id == spec.character.archetype } ?? CastMember.all[0]
         let member = CastMember(id: base.id, name: spec.title, portrait: base.portrait, companion: spec.companion.kind,
-                                companionName: spec.companion.name, accentHex: base.accentHex, recipe: spec.character.recipe)
-        return VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 16) {
-                CastPortrait(member: member, size: 110)
-                VStack(alignment: .leading, spacing: 6) {
-                    NBPill(text: current.usedModel ? "AI designed" : "Local template", tint: NB.ion)
-                    Text(spec.title).font(.nbTitle(23)).foregroundStyle(NB.text)
-                    Text(spec.role).font(.nbBody(12)).foregroundStyle(NB.secondary)
-                    Text("\(spec.character.age) · \(spec.personality.joined(separator: " · "))")
-                        .font(.nbBody(10)).foregroundStyle(NB.tertiary)
-                }
-            }
-            TextField("Profile name", text: Binding(get: { draft?.spec.name ?? "" }, set: { draft?.spec.name = $0 }))
-                .textInputAutocapitalization(.never).autocorrectionDisabled().font(.nbMono(13))
-                .padding(12).background(RoundedRectangle(cornerRadius: 10).fill(NB.surface))
-            Text("\(spec.companion.name) · \(spec.companion.kind)").font(.nbTitle(15)).foregroundStyle(NB.text)
-            Text(spec.companion.trait).font(.nbBody(12)).foregroundStyle(NB.secondary)
-            DisclosureGroup("Appearance & companion", isExpanded: $showAppearance) {
-                VStack(alignment: .leading, spacing: 18) {
-                    CharacterCustomizer(recipe: Binding(get: { draft?.spec.character.recipe ?? spec.character.recipe },
-                                                        set: { draft?.spec.character.recipe = $0 }),
-                                        archetype: spec.character.archetype, pinned: $appearancePins, enabled: !working)
-                    NBSectionHeader(title: "Companion")
-                    FamiliarPicker(kind: Binding(get: { draft?.spec.companion.kind ?? spec.companion.kind },
-                                                 set: { draft?.spec.companion.kind = $0; draft?.spec.companion.trait = PixelSpec.companionTrait($0) }), enabled: !working)
-                }.padding(.top, 12)
-            }.font(.nbBody(13)).foregroundStyle(NB.text)
-            VStack(alignment: .leading, spacing: 12) {
-                NBSectionHeader(title: "Access", detail: "reviewed before creation")
-                Toggle("Network tools", isOn: Binding(get: { draft?.spec.permissions.network ?? false }, set: { draft?.spec.permissions.network = $0 }))
-                Toggle("Shell & code execution", isOn: Binding(get: { draft?.spec.permissions.shell ?? false }, set: { draft?.spec.permissions.shell = $0 }))
-                Picker("Files", selection: Binding(get: { draft?.spec.permissions.filesystem ?? "workspace" }, set: { draft?.spec.permissions.filesystem = $0 })) {
-                    Text("None").tag("none"); Text("Workspace").tag("workspace"); Text("Unrestricted").tag("unrestricted")
-                }
-                Text("Tool choices are applied to the selected engine. Workspace scopes are operating instructions; the engine owns sandbox enforcement. Your Pixel uses the model credentials configured for that engine.")
-                    .font(.nbBody(10)).foregroundStyle(NB.tertiary)
-                Text("Tools: \(current.enabledToolsets.isEmpty ? "none" : current.enabledToolsets.joined(separator: ", "))")
-                    .font(.nbMono(11)).foregroundStyle(NB.secondary)
-                Text("Skills: \(spec.skills.isEmpty ? "none" : spec.skills.joined(separator: ", "))")
-                    .font(.nbBody(12)).foregroundStyle(NB.secondary)
-                Text("Requested connections: \(spec.connectors.isEmpty ? "none" : spec.connectors.joined(separator: ", "))")
-                    .font(.nbBody(12)).foregroundStyle(NB.secondary)
-            }.font(.nbBody(13)).tint(NB.ion).padding(16)
-                .background(RoundedRectangle(cornerRadius: 16).fill(NB.surface))
-            DisclosureGroup("Operator briefing", isExpanded: $showSoul) {
-                Text(spec.soul).font(.nbBody(12)).foregroundStyle(NB.secondary).textSelection(.enabled).padding(.top, 8)
-            }.foregroundStyle(NB.text)
-            ForEach(current.notes, id: \.self) { note in
-                Text(note).font(.nbBody(11)).foregroundStyle(NB.secondary)
-            }
-            Button(action: create) {
-                HStack {
-                    if working { ProgressView().tint(NB.onIon) }
-                    Text(working ? "Creating…" : "Create \(spec.title)").frame(maxWidth: .infinity)
-                }
-            }.buttonStyle(NBPrimaryButtonStyle()).disabled(working || spec.validationError != nil)
-            if let validation = spec.validationError { Text(validation).font(.nbBody(11)).foregroundStyle(NB.rose) }
-        }.disabled(working)
+                                companionName: spec.companion.name, accentHex: base.accentHex,
+                                recipe: spec.character.recipe, look: spec.character.look)
+        return HStack(spacing: 16) {
+            CastPortrait(member: member, size: 128, showGlow: false)
+            VStack(alignment: .leading, spacing: 8) {
+                NBPill(text: current.usedModel ? "AI persona" : "Local template")
+                TextField("Name", text: Binding(get: { draft?.spec.title ?? "" }, set: { draft?.spec.title = $0 }))
+                    .font(.nbTitle(23)).foregroundStyle(NB.text).accessibilityLabel("Pixel name").disabled(working)
+                Text(spec.role).font(.nbBody(12)).foregroundStyle(NB.secondary).lineLimit(2)
+                Text("\(spec.character.age) · adult").font(.nbMono(10)).foregroundStyle(NB.tertiary)
+                Text(spec.companion.name + " · " + spec.companion.kind).font(.nbBody(11)).foregroundStyle(NB.secondary)
+            }.frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
-    private func design() {
-        working = true; error = nil
-        appearancePins = ["body", "skin"]; showAppearance = false
+
+    @ViewBuilder
+    private func details(_ current: PixelDraft) -> some View {
+        let spec = current.spec
+        switch section {
+        case "Look":
+            PixelLookEditor(look: Binding(get: { draft?.spec.character.look ?? PixelLook(portrait: spec.character.archetype) },
+                                         set: { draft?.spec.character.look = $0 }), history: $history, enabled: !working)
+        case "Creature":
+            FamiliarPicker(kind: Binding(get: { draft?.spec.companion.kind ?? spec.companion.kind }, set: {
+                draft?.spec.companion.kind = $0
+                draft?.spec.companion.trait = PixelSpec.companionTrait($0)
+            }), enabled: !working)
+            TextField("Creature name", text: Binding(get: { draft?.spec.companion.name ?? "" }, set: { draft?.spec.companion.name = $0 }))
+                .font(.nbBody(14)).padding(12).pixelPanel().accessibilityLabel("Creature name")
+            Text(spec.companion.trait).font(.nbBody(12)).foregroundStyle(NB.secondary)
+        case "Persona":
+            TextField("Role", text: Binding(get: { draft?.spec.role ?? "" }, set: { draft?.spec.role = $0 }))
+                .font(.nbBody(14)).padding(12).pixelPanel()
+            Text(spec.personality.joined(separator: " · ")).font(.nbBody(12)).foregroundStyle(NB.secondary)
+            DisclosureGroup("Briefing", isExpanded: $showSoul) {
+                Text(spec.soul).font(.nbBody(12)).foregroundStyle(NB.secondary).textSelection(.enabled).padding(.top, 10)
+            }.font(.nbBody(13)).foregroundStyle(NB.text)
+            Button {
+                if refining { designTask?.cancel(); refinementID = UUID(); refining = false } else { refine() }
+            } label: {
+                HStack(spacing: 8) {
+                    if refining { ProgressView().tint(NB.ion) } else { PixelIcon(.spark, size: 18) }
+                    Text(refining ? "Cancel AI" : "Refine persona with AI").frame(maxWidth: .infinity)
+                }
+            }.buttonStyle(NBQuietButtonStyle()).disabled(working)
+            if !current.notes.isEmpty {
+                DisclosureGroup("Details", isExpanded: $showDetails) {
+                    ForEach(current.notes, id: \.self) { Text($0).font(.nbBody(11)).foregroundStyle(NB.secondary) }
+                }.font(.nbBody(12)).foregroundStyle(NB.secondary)
+            }
+        default:
+            VStack(spacing: 12) {
+                Toggle("Network", isOn: Binding(get: { draft?.spec.permissions.network ?? false }, set: { draft?.spec.permissions.network = $0 }))
+                Toggle("Shell", isOn: Binding(get: { draft?.spec.permissions.shell ?? false }, set: { draft?.spec.permissions.shell = $0 }))
+                Picker("Files", selection: Binding(get: { draft?.spec.permissions.filesystem ?? "workspace" }, set: { draft?.spec.permissions.filesystem = $0 })) {
+                    Text("None").tag("none"); Text("Workspace").tag("workspace"); Text("Full").tag("unrestricted")
+                }
+            }.font(.nbBody(13)).tint(NB.ion).padding(14).pixelPanel()
+            Text("Tools · " + current.enabledToolsets.joined(separator: ", ")).font(.nbBody(11)).foregroundStyle(NB.secondary)
+            if !spec.skills.isEmpty { Text("Skills · " + spec.skills.joined(separator: ", ")).font(.nbBody(11)).foregroundStyle(NB.secondary) }
+            if !spec.connectors.isEmpty { Text("Requested · " + spec.connectors.joined(separator: ", ")).font(.nbBody(11)).foregroundStyle(NB.secondary) }
+            DisclosureGroup("Access details") {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Tool choices are applied to the selected engine. Workspace scope is an instruction; the engine enforces sandboxing. Connections need separate account authorization.")
+                        .font(.nbBody(11)).foregroundStyle(NB.secondary)
+                    TextField("Profile ID", text: Binding(get: { draft?.spec.name ?? "" }, set: { draft?.spec.name = $0 }))
+                        .textInputAutocapitalization(.never).autocorrectionDisabled().font(.nbMono(12))
+                }.padding(.top, 10)
+            }.font(.nbBody(12)).foregroundStyle(NB.secondary)
+        }
+    }
+
+    private func accessSummary(_ spec: PixelSpec) -> String {
+        [spec.permissions.network ? "Network" : "No network",
+         spec.permissions.filesystem == "workspace" ? "Workspace" : spec.permissions.filesystem == "none" ? "No files" : "Full files",
+         spec.permissions.shell ? "Shell" : "No shell"].joined(separator: " · ")
+    }
+
+    private func preview() {
+        writing = false; error = nil; history = []; section = "Look"
+        draft = PixelBuilder.shared.preview(for: prompt.trimmingCharacters(in: .whitespacesAndNewlines))
+    }
+    private func refine() {
+        guard let start = draft else { return }
+        refining = true; error = nil
+        let requestID = UUID(); refinementID = requestID
         designTask = Task {
+            defer { if refinementID == requestID { refining = false } }
             do {
                 let result = try await store.draftPixel(prompt: prompt)
                 try Task.checkCancellation()
-                draft = result
-            }
+                guard refinementID == requestID, var current = draft else { return }
+                if current.spec.title == start.spec.title { current.spec.title = result.spec.title }
+                if current.spec.role == start.spec.role { current.spec.role = result.spec.role }
+                if current.spec.soul == start.spec.soul { current.spec.soul = result.spec.soul }
+                if current.spec.personality == start.spec.personality { current.spec.personality = result.spec.personality }
+                if current.spec.toolsets == start.spec.toolsets { current.spec.toolsets = result.spec.toolsets }
+                if current.spec.skills == start.spec.skills { current.spec.skills = result.spec.skills }
+                if current.spec.connectors == start.spec.connectors { current.spec.connectors = result.spec.connectors }
+                current.availableToolsets = result.availableToolsets
+                current.availableSkills = result.availableSkills
+                current.usedModel = result.usedModel
+                current.notes = result.notes
+                draft = current
+            } catch is CancellationError { }
             catch { self.error = error.localizedDescription }
-            working = false
         }
     }
     private func create() {
         guard let draft else { return }
+        designTask?.cancel(); refinementID = UUID(); refining = false
         working = true; error = nil
         Task {
             do { let bot = try await store.buildPixel(draft: draft); onBuilt(bot); dismiss() }

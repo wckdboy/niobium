@@ -10,6 +10,7 @@ private final class FixtureRPC: HermesRPC {
     var calls: [(String, JSONObject)] = []
     var responses: [(JSONValueID, JSONObject)] = []
     var held: CheckedContinuation<RPCResult, Error>?
+    var catalogTools = ["web", "file", "delegation"]
     var failConfigure = false
     var holdClarify = false
     var createdName = "fixture-profile"
@@ -43,7 +44,7 @@ private final class FixtureRPC: HermesRPC {
             madeLocally = true
             createdName = params.dict("spec")?.string("name") ?? ""
             return ["ok": true]
-        case "profiles.describe": return ["skills": [["name": "audit"], ["name": "extra"]]]
+        case "profiles.describe": return ["toolsets": catalogTools.map { ["name": $0] }, "skills": [["name": "audit"], ["name": "extra"]]]
         case "profiles.list": return ["profiles": [["name": createdName, "origin": madeLocally ? "dsh" : "hermes"]]]
         case "profiles.configure":
             if failConfigure { throw RPCError.server(code: 4409, message: "Fixture conflict") }
@@ -64,6 +65,22 @@ private final class FixtureRPC: HermesRPC {
 
 @MainActor
 final class GatewayStateTests: XCTestCase {
+    func testLocalConnectionFailureStaysVisibleWhileLinuxIsReady() {
+        let store = AppStore(api: FixtureRPC())
+        store.engine = .dsh
+        store.localReady = true
+        store.localStatus = "Running"
+        store.connectionState = .failed("Gateway returned HTTP 403.")
+        XCTAssertEqual(store.localConnectionError, "Gateway returned HTTP 403.")
+        store.connectionState = .connecting
+        XCTAssertNil(store.localConnectionError)
+        store.connectionState = .connected(version: "DSH")
+        XCTAssertNil(store.localConnectionError)
+        store.connectionState = .failed("Remote connection failed")
+        store.engine = .hermes
+        XCTAssertNil(store.localConnectionError)
+    }
+
     func testRepeatedOpenWhileAttachingUsesOneSession() async throws {
         let rpc = FixtureRPC(), bot = try XCTUnwrap(BotProfile.parse(["name": "scout", "origin": "dsh"]))
         rpc.holdListFor = bot.name
@@ -298,23 +315,35 @@ final class GatewayStateTests: XCTestCase {
             availableSkills: ["audit", "extra"], notes: [])
         let bot = try await subject.buildPixel(draft: draft)
         XCTAssertEqual(bot.name, spec.name)
-        XCTAssertEqual(rpc.calls.map { $0.0 }, ["profiles.create", "config.set", "profiles.describe", "profiles.configure", "config.set", "profiles.list"])
-        let created = rpc.calls[0].1
+        XCTAssertEqual(rpc.calls.map { $0.0 }, ["profiles.describe", "profiles.create", "config.set", "profiles.describe", "profiles.configure", "config.set", "profiles.list"])
+        let created = rpc.calls[1].1
         XCTAssertEqual(Set(created.keys), ["name", "description", "soul", "clone_from", "clone_all", "no_skills", "clone_channels"])
         XCTAssertEqual(created.string("clone_from"), "default")
         XCTAssertEqual(created.bool("clone_all"), false); XCTAssertEqual(created.bool("clone_channels"), false)
         XCTAssertEqual(created.bool("no_skills"), false)
         XCTAssertTrue(created.string("soul")?.contains(spec.soul) == true)
-        XCTAssertEqual(rpc.calls[1].1.string("key"), "approvals.mode")
-        XCTAssertEqual(rpc.calls[1].1.string("value"), "manual")
-        let access = rpc.calls[3].1
+        XCTAssertEqual(rpc.calls[2].1.string("key"), "approvals.mode")
+        XCTAssertEqual(rpc.calls[2].1.string("value"), "manual")
+        let access = rpc.calls[4].1
         XCTAssertEqual(access["enabled_toolsets"] as? [String], ["file", "delegation"])
         XCTAssertEqual(access["enabled_mcp_servers"] as? [String], [])
         XCTAssertEqual(access["disabled_skills"] as? [String], ["extra"])
         let saved = try XCTUnwrap(access.dict("ui_meta")?.dict("niobium"))
         XCTAssertEqual(saved.int("schema_version"), 2)
         XCTAssertEqual(saved.dict("pixel_spec")?.dict("companion")?.string("name"), spec.companion.name)
-        XCTAssertEqual(rpc.calls[4].1.string("value"), spec.reasoning)
+        XCTAssertEqual(rpc.calls[5].1.string("value"), spec.reasoning)
+    }
+
+    func testCreationRechecksCatalogBeforeMakingAProfileAndNeverBroadensReview() async throws {
+        let rpc = FixtureRPC(); rpc.catalogTools = ["web", "file"]
+        let subject = AppStore(api: rpc)
+        var spec = PixelSpec.fallback(for: "research"); spec.name = "fixture-catalog"
+        spec.toolsets = ["web", "file", "delegation"]
+        let draft = PixelDraft(spec: spec, usedModel: false, availableToolsets: ["file", "delegation"], availableSkills: [], notes: [])
+        _ = try await subject.buildPixel(draft: draft)
+        XCTAssertEqual(rpc.calls.first?.0, "profiles.describe")
+        let access = try XCTUnwrap(rpc.calls.first { $0.0 == "profiles.configure" }?.1)
+        XCTAssertEqual(access["enabled_toolsets"] as? [String], ["file"])
     }
 
     func testFailureAfterProfileCreationIsReportedWithoutCreatingAgain() async {

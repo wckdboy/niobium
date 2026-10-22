@@ -36,7 +36,7 @@ enum NB {
     static let mint = dynamic(0x5EEAD4, 0x0F9F8A)
     static let amber = dynamic(0xFBBF24, 0xB77900)
     static let rose = dynamic(0xFB7185, 0xD9485F)
-    static let onIon = Color.white
+    static let onIon = dynamic(0x1B1326, 0xFFFFFF)
     static let orbPalette: [Color] = [ion, dynamic(0xF0ABFC, 0xC026D3), mint, amber, dynamic(0xFDA4AF, 0xE11D48), dynamic(0xC4B5FD, 0x8B5CF6)]
 
     static func color(for name: String?) -> Color {
@@ -159,53 +159,44 @@ struct NBCard<Content: View>: View {
     var body: some View {
         content
             .padding(padding)
-            .background(
-                RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .fill(tint)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: radius, style: .continuous)
-                            .strokeBorder(
-                                LinearGradient(colors: [NB.fillStrong, NB.fillSoft],
-                                               startPoint: .topLeading, endPoint: .bottomTrailing),
-                                lineWidth: 1)
-                    )
-            )
+            .background(PixelButtonShape().fill(tint))
+            .overlay(PixelButtonShape().stroke(NB.lineStrong, lineWidth: 1))
+            .clipShape(PixelButtonShape())
     }
 }
 
 struct NBPrimaryButtonStyle: ButtonStyle {
     var tint: Color = NB.ion
     var compact = false
+    @Environment(\.isEnabled) private var enabled
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.nbBody(compact ? 14 : 15, weight: .semibold))
-            .foregroundStyle(.white)
+            .foregroundStyle(enabled ? NB.onIon : NB.tertiary)
             .padding(.horizontal, compact ? 16 : 22)
-            .frame(height: compact ? 38 : 52)
+            .frame(height: compact ? 44 : 50)
             .background(
                 PixelButtonShape()
-                    .fill(LinearGradient(colors: [tint, NB.ionDeep],
-                                         startPoint: .topLeading, endPoint: .bottomTrailing))
-                    .overlay(PixelButtonShape().stroke(NB.onIon.opacity(0.22), lineWidth: 1))
-                    .shadow(color: tint.opacity(configuration.isPressed ? 0.1 : 0.32), radius: 8, y: 3)
+                    .fill(enabled ? tint : NB.fillStrong)
+                    .shadow(color: enabled ? NB.ionDeep.opacity(0.7) : .clear, radius: 0, y: configuration.isPressed ? 0 : 2)
             )
-            .opacity(configuration.isPressed ? 0.82 : 1)
-            .scaleEffect(configuration.isPressed ? 0.975 : 1)
-            .animation(.spring(response: 0.28, dampingFraction: 0.8), value: configuration.isPressed)
+            .opacity(configuration.isPressed ? 0.9 : 1)
+            .offset(y: configuration.isPressed ? 2 : 0)
     }
 }
 
 struct NBQuietButtonStyle: ButtonStyle {
     var compact = false
+    @Environment(\.isEnabled) private var enabled
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.nbBody(compact ? 14 : 15, weight: .medium))
-            .foregroundStyle(NB.text)
+            .foregroundStyle(enabled ? NB.text : NB.tertiary)
             .padding(.horizontal, compact ? 14 : 20)
-            .frame(height: compact ? 38 : 50)
+            .frame(height: compact ? 44 : 50)
             .background(PixelButtonShape().fill(configuration.isPressed ? NB.fillStrong : NB.fill))
             .overlay(PixelButtonShape().stroke(NB.line, lineWidth: 1))
-            .opacity(configuration.isPressed ? 0.75 : 1)
+            .opacity(!enabled ? 0.55 : configuration.isPressed ? 0.75 : 1)
     }
 }
 
@@ -238,9 +229,9 @@ struct NBPill: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(
-                Capsule().fill(filled ? tint : tint.opacity(0.10))
+                PixelButtonShape(cut: 2).fill(filled ? tint : tint.opacity(0.10))
             )
-            .overlay(Capsule().strokeBorder(filled ? .clear : tint.opacity(0.26), lineWidth: 1))
+            .overlay(PixelButtonShape(cut: 2).stroke(filled ? .clear : tint.opacity(0.26), lineWidth: 1))
     }
 }
 

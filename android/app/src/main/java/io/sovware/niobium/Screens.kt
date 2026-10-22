@@ -37,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -663,7 +664,7 @@ fun HomeScreen(vm: NiobiumViewModel, state: NbState, onNewPixel: () -> Unit, onS
     LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 30.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
-            Box(Modifier.fillMaxWidth().height(152.dp)) {
+            Box(Modifier.fillMaxWidth().height(112.dp)) {
                 Image(painterResource(R.drawable.terrace_hero), null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                 Box(Modifier.fillMaxSize().background(Brush.verticalGradient(
                     0f to Nb.Void.copy(alpha = 0.99f),
@@ -676,10 +677,9 @@ fun HomeScreen(vm: NiobiumViewModel, state: NbState, onNewPixel: () -> Unit, onS
                     Spacer(Modifier.width(9.dp))
                     Column(Modifier.weight(1f)) {
                         Text("Niobium", color = Nb.Text, style = NbDisplay, fontSize = 24.sp)
-                        Text("YOUR PIXELS, EVERYWHERE.", color = Nb.Secondary, style = NbMono, fontSize = 7.sp, letterSpacing = 1.sp)
                     }
-                    Row(Modifier.clip(CircleShape).background(Nb.Ink.copy(alpha = 0.8f))
-                        .border(1.dp, Nb.Ion.copy(alpha = 0.22f), CircleShape).clickable { onOpenEngines() }
+                    Row(Modifier.clip(PixelButtonShape).background(Nb.Ink.copy(alpha = 0.8f))
+                        .border(1.dp, Nb.Ion.copy(alpha = 0.22f), PixelButtonShape).clickable { onOpenEngines() }
                         .padding(horizontal = 10.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
                         LiveDot(if (state.connected) Nb.Mint else Nb.Tertiary)
                         Spacer(Modifier.width(5.dp))
@@ -694,7 +694,6 @@ fun HomeScreen(vm: NiobiumViewModel, state: NbState, onNewPixel: () -> Unit, onS
             Row(Modifier.padding(horizontal = 16.dp).padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text("Your Pixels", color = Nb.Text, style = NbTitle, fontSize = 21.sp)
-                    Text("A little personality. A lot of purpose.", color = Nb.Tertiary, fontSize = 11.sp)
                 }
                 androidx.compose.material3.Button(onClick = onNewPixel,
                     enabled = state.connected || state.demo, shape = PixelButtonShape,
@@ -724,68 +723,38 @@ fun HomeScreen(vm: NiobiumViewModel, state: NbState, onNewPixel: () -> Unit, onS
 
 @Composable
 private fun InstanceCard(state: NbState) {
-    Column(Modifier.fillMaxWidth().pixelPanel(20.dp, accented = true).padding(14.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).background(Nb.Ion.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
-                PixelIcon(PixelGlyph.TERMINAL, size = 24.dp)
-            }
-            Spacer(Modifier.width(11.dp))
-            Column(Modifier.weight(1f)) {
-                Text(if (state.engine == AgentEngine.DSH) "On-device engine" else "Hermes instance", color = Nb.Text, style = NbTitle, fontSize = 16.sp)
-                Text(if (state.engine == AgentEngine.DSH) "DSH · private Linux workspace" else state.connection?.url?.removePrefix("http://")?.removePrefix("https://") ?: "self-hosted",
-                    color = Nb.Secondary, style = NbMono, fontSize = 9.sp, maxLines = 1)
-                Text(if (state.demo) "Demo workspace" else if (state.engine == AgentEngine.DSH) "On this device" else "Your computer or VPS", color = Nb.Tertiary, style = NbMono, fontSize = 8.5.sp)
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    LiveDot(if (state.connected) Nb.Mint else Nb.Tertiary)
-                    Spacer(Modifier.width(5.dp))
-                    Text(if (state.connected) "Online" else "Offline", color = if (state.connected) Nb.Mint else Nb.Tertiary, fontSize = 10.sp)
-                }
-                Text(if (state.demo) "preview" else if (state.engine == AgentEngine.DSH) "local" else "gateway", color = Nb.Tertiary, style = NbMono, fontSize = 8.5.sp)
-                Spacer(Modifier.width(2.dp))
-                Text("›", color = Nb.Tertiary, fontSize = 13.sp)
-            }
+    Row(Modifier.fillMaxWidth().pixelPanel(accented = true).padding(13.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Box(Modifier.size(42.dp).background(Nb.Ion.copy(alpha = 0.08f), PixelButtonShape), contentAlignment = Alignment.Center) {
+            PixelIcon(PixelGlyph.TERMINAL, size = 24.dp)
         }
-        Spacer(Modifier.height(11.dp))
-        Box(Modifier.fillMaxWidth().height(1.dp).background(Nb.Line))
-        Spacer(Modifier.height(11.dp))
-        Row {
-            HomeStat(if (state.engine == AgentEngine.DSH) "DSH" else "${state.toolsets.size}", if (state.engine == AgentEngine.DSH) "Engine" else "Toolsets", PixelGlyph.TERMINAL, Modifier.weight(1f))
-            HomeStat(if (state.demo) "Demo" else if (state.engine == AgentEngine.DSH) "Local" else "Host", "Policy", PixelGlyph.SHIELD, Modifier.weight(1f))
-            HomeStat(state.gatewayLatencyMs?.let { "$it ms" } ?: "—", "Latency", PixelGlyph.ACTIVITY, Modifier.weight(1f))
-            HomeStat("${state.bots.count { it.isLive }}/${state.bots.size}", "Working", PixelGlyph.PIXELS, Modifier.weight(1f))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(if (state.engine == AgentEngine.DSH) "On-device engine" else "Hermes instance",
+                color = Nb.Text, style = NbTitle, fontSize = 15.sp)
+            Text(if (state.engine == AgentEngine.DSH) state.engineStatus.ifEmpty { "On this device" }
+                else state.connection?.url?.removePrefix("http://")?.removePrefix("https://") ?: "Self-hosted",
+                color = Nb.Secondary, fontSize = 11.sp, maxLines = 2)
         }
-    }
-}
-
-@Composable
-private fun HomeStat(value: String, label: String, glyph: PixelGlyph, modifier: Modifier = Modifier) {
-    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            PixelIcon(glyph, size = 16.dp)
-            Text(value, color = Nb.Text, style = NbTitle, fontSize = 13.sp)
+        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            NbPill(if (state.demo) "Demo" else if (state.connected) "Connected" else "Offline",
+                if (state.connected) Nb.Mint else Nb.Tertiary)
+            state.gatewayLatencyMs?.let { Text("$it ms", color = Nb.Tertiary, style = NbMono, fontSize = 10.sp) }
         }
-        Text(label, color = Nb.Tertiary, fontSize = 9.sp)
+        Box(Modifier.rotate(180f)) { PixelIcon(PixelGlyph.BACK, Nb.Tertiary, 12.dp) }
     }
 }
 
 @Composable
 private fun HomePixelCard(context: android.content.Context, bot: BotProfile, modifier: Modifier = Modifier, onTap: () -> Unit) {
     val member = CastStore.get(context, bot.castKey)
-    Row(modifier.pixelPanel(16.dp).clickable { onTap() }.padding(8.dp).heightIn(min = 70.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-        CastPortrait(member, 64.dp, showCompanion = true)
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            Text(bot.title, color = Nb.Text, style = NbTitle, fontSize = 13.sp, maxLines = 1)
-            Text(bot.subtitle, color = Nb.Secondary, fontSize = 10.sp, maxLines = 2, lineHeight = 13.sp)
-            Row(Modifier.background((if (bot.isLive) Nb.Mint else Nb.Secondary).copy(alpha = 0.08f), CircleShape)
-                .padding(horizontal = 6.dp, vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
-                LiveDot(if (bot.isLive) Nb.Mint else Nb.Tertiary)
-                Spacer(Modifier.width(4.dp))
-                Text(if (bot.isLive) "Working" else "Ready", color = if (bot.isLive) Nb.Mint else Nb.Tertiary, fontSize = 9.sp)
-            }
+    Column(modifier.pixelPanel(accented = bot.isLive).clickable { onTap() }.padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { CastPortrait(member, 96.dp) }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(bot.title, color = Nb.Text, style = NbTitle, fontSize = 15.sp, maxLines = 1, modifier = Modifier.weight(1f))
+            Box(Modifier.size(5.dp).background(if (bot.isLive) Nb.Mint else Nb.Tertiary.copy(alpha = 0.4f)))
         }
+        Text(bot.subtitle, color = Nb.Secondary, fontSize = 11.sp, maxLines = 1)
     }
 }
 

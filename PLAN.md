@@ -287,3 +287,133 @@ existing certificate. niobium.sh and www were deployed as version
 49b8f0be-0d15-47fe-a678-7df3c88a0b58; all six pages, www, the stylesheet, icon,
 cast, familiar strip and downloadable skill match the built HTTP bytes.
 Plane NIO-3/10/12/24/29/32/36 and both local exports record the release and limits.
+
+
+## Modular portrait cycle — 2.0.0-beta.6 candidate
+
+- Rebuilt custom 48px source layers around smaller adult faces, longer torsos,
+  a tilted shoulder line and a hip-set pose. Twelve outfits have two tailored
+  cuts; skin, hair and garment pigments remain independent.
+- Bold opaque crop tops, strappy panels, open coats, bare shoulders and midriffs
+  retain adult fantasy/cyborg styling. All human characters remain 18+, with
+  28–40 as the workshop default. The authored cast stays independent.
+- Large custom previews use two cached open/blink frames. Small portraits stay
+  still; motion is scoped to mounted active previews and system preferences.
+- New structural art gates cover eye occlusion, every outfit cut, semantic
+  pigments and silhouette stability. Swift/Kotlin hash both actual frames.
+- Generated visual reference, exact prompt, actual custom gallery, outfit-cut
+  sheet and frame comparison are versioned with provenance. The website shows
+  actual custom recipes, not the higher-resolution reference.
+- Android candidate code 9; full iOS candidate build 10. Release and upload
+  status will be recorded after verification.
+
+Next: undoable appearance history, saved looks and names with more variation
+within each offline role; physical/current real-account and Android 16 KB
+acceptance; provider-key vault, actual delegation and Hermes replay.
+
+Candidate validation: 33+4 iOS tests, 29 Android JVM and nine final code-9
+ARM64 checks pass; eleven Python art/assets, 31 Node and 38 Swift assertions
+pass. Full build 10 DSH simulator model/background/cold-history acceptance
+passes in 99.595 seconds (docs/evidence/ios-build10-simulator-model.json).
+The full signed archive and distribution IPA pass current-resource, signature,
+identity and Release fixture-hook exclusion checks. Independent review of
+implementation eaefe46 reports no findings. A later wireless physical run boots
+DSH but fails native roster attachment. Physical acceptance has not passed;
+publication is held. Greptile remains at its trial quota.
+
+
+Candidate delivery status (22 October, after wireless device testing):
+
+- Signed Android 2.0 (9) and full iOS 2.0 (10), unchanged corresponding runtime
+  sources, metadata and checksums are uploaded to the unpublished
+  beta.6 draft (release ID 421093112).
+  All five GitHub names, lengths and digests match local staging.
+- Apple accepted build 10 for processing at 18:55:09 UTC. Tester availability
+  remains unverified.
+- [PR #8](https://github.com/wckdboy/niobium/pull/8) is open. The native
+  implementation reviewed at eaefe46 has no findings. The final metadata
+  follow-up review remains running; Greptile cannot review at its trial quota.
+- The latest Mac runner remained queued for about 20 minutes. The client suite
+  now pins the supported macOS 15 ARM64/Xcode 26.3 image, with the same tests.
+  [CI 39837175768](https://github.com/wckdboy/niobium/actions/runs/39837175768)
+  passed all three jobs: 37 iOS tests pass with two opt-in skips; shared and
+  Android also pass. Follow-up diagnostic source changes need fresh CI and
+  replacement signed iOS artifacts before release.
+- The paired iPhone is reachable over the local network without a cable. The
+  build-10 production smoke launches, boots Linux and reaches server readiness
+  in 17.229 seconds, then fails with an empty native roster and Error state.
+  The exact connection failure still needs diagnosis. The controlled model run
+  was blocked before app launch by the lock screen and cancelled. See
+  docs/evidence/ios-build10-wireless-device.json.
+- Follow-up source exposes connection failures in Home/Engines and redacted DSH
+  logs, prevents Auto-Lock during full-app acceptance, and improves helper lock
+  preflight/result collection. All 38 client tests pass (two opt-in skips),
+  including 19 gateway-state tests. The full diagnostic device app builds.
+  These source changes are not in the existing build-10 distribution artifact.
+- Beta.6 publication and site deployment remain held for the native connection
+  fix, fresh build and physical acceptance. Temporary physical QA-app cleanup
+  remains pending; the production app and data have been preserved.
+- Plane NIO-3/10/24/29/32/36 and both exports record the candidate and limits.
+  The public website/release remain beta.5 until beta.6 publication.
+
+Next cycle acceptance:
+
+1. Undo restores the complete draft appearance and companion identity. Keep a
+   bounded history in the parent editor so folds and lazy-list disposal retain it.
+2. Named saved looks use versioned recipes and provider-qualified identities,
+   with bounded storage and clear apply/delete controls. Save still uses the
+   existing metadata revision check.
+3. Offline roles gain deterministic name/voice variation while retaining explicit
+   user cues, stable profile IDs, adult ages and clearly labelled template output.
+4. Retry the physical build when unlocked, remove only isolated QA apps, then
+   complete real-account turns/delegation, physical Android/16 KB, provider-key
+   storage and Hermes replay.
+
+A scoped device query verifies ai.wckd.niobium 2.0 (10) is installed on the
+iPhone. No production uninstall was performed. Physical tests exited before
+launch after the lock-screen/runner connection block; behavior remains
+unverified. Evidence: docs/evidence/ios-build10-iphone-install.json.
+
+
+## Clean UI and instant portrait cycle — beta.6 replacement candidate
+
+The next candidate is Android code 10 / iOS build 12. Build 11 was diagnostic
+only; its shared overlay version makes it unsuitable for repeated adapter edits.
+
+- New Pixel previews are local and immediate. Optional AI refines persona;
+  it no longer blocks the first portrait behind a long model request.
+- Four short tabs separate Look, Creature, Persona and Access. The create
+  action stays visible. Dashboard telemetry and repeated explanations are reduced.
+- Cards, lists, controls and tab accents share flat stepped pixel frames.
+  Android idle status indicators no longer schedule an infinite animation.
+- Eight authored adult fantasy/cyborg silhouettes replace the default procedural
+  mixer. Garment colors, remix and bounded undo preserve face, hair and skin.
+  This is a curated library with color variants, not unlimited generated artwork.
+- Saved layered recipes still load with their original controls. Modern look
+  metadata round-trips through each provider; explicit appearance choices win.
+- The engine catalog is checked before creation and can only narrow reviewed
+  access. Persona refinement cannot overwrite changes made during the request.
+- A raw local WebSocket refusal regression verifies that the real socket error
+  reaches the caller immediately instead of becoming generic “not connected.”
+
+Validation: 39 iOS unit and five demo UI checks, 30 Android unit and ten ARM64
+emulator checks, fourteen Python checks, 31 Node checks and 38 standalone Swift
+assertions. Both native look renderers match sixteen shared RGBA fixtures.
+Build/lint, runtime package hashes and ELF alignment, site and Plane checks pass.
+Final remote CI and packaged release signatures remain separate release gates.
+
+The physical full Debug acceptance passed the controlled model/background/cold
+history workflow over Wi-Fi in 73.243 seconds on the existing test device;
+see docs/evidence/ios-build10-iphone-model.json. Production Release build 11
+loads DSH but fails its upstream event stream. The error now remains visible;
+a build-12 retry with bounded HTTP/error-code diagnostics is pending the unlocked
+phone. Keep beta.6 in draft until replacement artifacts and production acceptance
+are verified. Apple has accepted only the previous build 10; build 12 is not yet
+uploaded. Greptile remains unavailable at its trial quota.
+
+Next: finish the production event-stream diagnosis, accept the replacement on
+the paired phone, then publish verified artifacts and update the public site.
+After that, expand the authored portrait library with reviewed variants, add
+named saved looks, provider-key storage, real-account delegation and physical
+Android/16 KB acceptance. Look undo is implemented; a cross-creature history and
+unlimited bespoke sprite generation are not claimed.

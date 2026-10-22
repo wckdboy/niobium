@@ -213,6 +213,10 @@ final class HermesRPCClient: NSObject, HermesRPC {
     }
 
     func disconnect(notify: Bool) {
+        disconnect(notify: notify, failure: RPCError.notConnected)
+    }
+
+    private func disconnect(notify: Bool, failure: Error) {
         isClosing = true
         heartbeat?.cancel(); heartbeat = nil
         readyTimeoutTask?.cancel(); readyTimeoutTask = nil
@@ -223,10 +227,10 @@ final class HermesRPCClient: NSObject, HermesRPC {
         pending.removeAll()
         pendingTimeouts.values.forEach { $0.cancel() }
         pendingTimeouts.removeAll()
-        for (_, waiter) in waiters { waiter.resume(throwing: RPCError.notConnected) }
+        for (_, waiter) in waiters { waiter.resume(throwing: failure) }
         if let ready = readyContinuation {
             readyContinuation = nil
-            ready.resume(throwing: RPCError.notConnected)
+            ready.resume(throwing: failure)
         }
         if notify { onDisconnect?("Disconnected") }
     }
@@ -293,8 +297,9 @@ final class HermesRPCClient: NSObject, HermesRPC {
                 guard !isClosing, self.socket === task else { return }
                 // Close every waiter and timer, including a handshake still waiting
                 // for gateway.ready. A dead socket must not linger until timeout.
-                disconnect(notify: false)
-                onDisconnect?(Self.friendly(error))
+                let message = Self.friendly(error)
+                disconnect(notify: false, failure: RPCError.transport(message))
+                onDisconnect?(message)
                 return
             }
         }
@@ -381,7 +386,7 @@ extension HermesRPCClient: URLSessionWebSocketDelegate {
         Task { @MainActor in
             guard !self.isClosing, self.socket === webSocketTask else { return }
             let message = reason.flatMap { String(data: $0, encoding: .utf8) } ?? "Gateway closed the connection"
-            self.disconnect(notify: false)
+            self.disconnect(notify: false, failure: RPCError.transport(message))
             self.onDisconnect?(message)
         }
     }

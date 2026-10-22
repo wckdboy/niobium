@@ -8,6 +8,7 @@ struct CastMember: Identifiable, Equatable {
     let companionName: String
     let accentHex: String
     var recipe: CharacterRecipe? = nil
+    var look: PixelLook? = nil
     var accent: Color { NB.color(for: accentHex) }
 
     static let all: [CastMember] = [
@@ -65,6 +66,8 @@ final class CastStore: ObservableObject {
             member = CastMember(id: member.id, name: member.name, portrait: member.portrait, companion: member.companion,
                                 companionName: name, accentHex: member.accentHex, recipe: member.recipe)
         }
+        if let raw = UserDefaults.standard.data(forKey: "niobium.look." + profile.lowercased()),
+           let look = try? JSONDecoder().decode(PixelLook.self, from: raw), look.isValid { member.look = look }
         return member
     }
 
@@ -77,11 +80,14 @@ final class CastStore: ObservableObject {
         if let raw = appearance?.dict("recipe") ?? character?.dict("recipe"),
            let data = try? JSONSerialization.data(withJSONObject: raw),
            let recipe = try? JSONDecoder().decode(CharacterRecipe.self, from: data), recipe.isValid { member.recipe = recipe }
+        let lookValue = appearance?.keys.contains("look") == true ? appearance?.dict("look") : character?.dict("look")
+        if let raw = lookValue, let data = try? JSONSerialization.data(withJSONObject: raw),
+           let look = try? JSONDecoder().decode(PixelLook.self, from: data), look.isValid { member.look = look }
         let companion = appearance?.string("companion") ?? spec?.dict("companion")?.string("kind") ?? member.companion
         let name = appearance?.string("companion_name") ?? spec?.dict("companion")?.string("name") ?? member.companionName
         guard PixelSpec.companions.contains(companion), !name.isEmpty, name.count <= 24 else { return }
         member = CastMember(id: member.id, name: member.name, portrait: member.portrait, companion: companion,
-                            companionName: name, accentHex: member.accentHex, recipe: member.recipe)
+                            companionName: name, accentHex: member.accentHex, recipe: member.recipe, look: member.look)
         if self.member(for: profile) != member { select(member, for: profile) }
     }
 
@@ -97,6 +103,9 @@ final class CastStore: ObservableObject {
         if let recipe = member.recipe, let data = try? JSONEncoder().encode(recipe) {
             UserDefaults.standard.set(data, forKey: "niobium.recipe." + profile.lowercased())
         } else { UserDefaults.standard.removeObject(forKey: "niobium.recipe." + profile.lowercased()) }
+        if let look = member.look, let data = try? JSONEncoder().encode(look) {
+            UserDefaults.standard.set(data, forKey: "niobium.look." + profile.lowercased())
+        } else { UserDefaults.standard.removeObject(forKey: "niobium.look." + profile.lowercased()) }
         var names = UserDefaults.standard.dictionary(forKey: "niobium.companionNames.v1") as? [String: String] ?? [:]
         names[profile.lowercased()] = member.companionName
         UserDefaults.standard.set(names, forKey: "niobium.companionNames.v1")
@@ -131,24 +140,18 @@ struct CastPortrait: View {
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
-            RoundedRectangle(cornerRadius: size * 0.20, style: .continuous)
-                .fill(LinearGradient(colors: [member.accent.opacity(0.24), NB.surface.opacity(0.9)],
-                                     startPoint: .topLeading, endPoint: .bottomTrailing))
-            RoundedRectangle(cornerRadius: size * 0.20, style: .continuous)
-                .strokeBorder(LinearGradient(colors: [NB.lineStrong, NB.fillSoft],
-                                             startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 1)
-            CharacterSprite(member: member)
-                .shadow(color: showGlow ? member.accent.opacity(0.28) : .clear, radius: size * 0.10, y: size * 0.04)
+            PixelButtonShape().fill(member.accent.opacity(0.08))
+            CharacterSprite(member: member, animate: size >= 96)
             if showCompanion {
                 FamiliarSprite(kind: member.companion, size: size * 0.26)
                     .frame(width: size * 0.30, height: size * 0.30)
-                    .background(Circle().fill(NB.ink.opacity(0.92)))
-                    .overlay(Circle().strokeBorder(member.accent.opacity(0.55), lineWidth: 1))
+                    .background(PixelButtonShape(cut: 2).fill(NB.surface))
+                    .overlay(PixelButtonShape(cut: 2).stroke(NB.lineStrong, lineWidth: 1))
                     .padding(size * 0.02)
             }
         }
         .frame(width: size, height: size)
-        .clipShape(RoundedRectangle(cornerRadius: size * 0.20, style: .continuous))
+        .clipShape(PixelButtonShape())
     }
 }
 
@@ -184,6 +187,66 @@ extension CharacterRecipe {
                 ?? value.replacingOccurrences(of: "_", with: " ").capitalized
         }
         return value.replacingOccurrences(of: "_", with: " ").capitalized
+    }
+}
+
+struct PixelLookEditor: View {
+    @Binding var look: PixelLook
+    @Binding var history: [PixelLook]
+    var enabled = true
+
+    private func choose(_ value: PixelLook) {
+        guard value != look else { return }
+        history = Array((history + [look]).suffix(12))
+        look = value
+        Haptics.tap()
+    }
+    var body: some View {
+        VStack(spacing: 14) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
+                ForEach(PixelLook.portraits, id: \.self) { id in
+                    let base = CastMember.all.first { $0.id == id }!
+                    Button {
+                        var next = look; next.portrait = id; choose(next)
+                    } label: {
+                        VStack(spacing: 4) {
+                            CastPortrait(member: .init(id: id, name: base.name, portrait: base.portrait,
+                                companion: base.companion, companionName: base.companionName,
+                                accentHex: base.accentHex, look: .init(portrait: id)), size: 54, showCompanion: false, showGlow: false)
+                            Text(base.name).font(.nbBody(10)).foregroundStyle(NB.text).lineLimit(1)
+                        }
+                        .frame(maxWidth: .infinity).padding(.vertical, 6)
+                        .background(PixelButtonShape().fill(look.portrait == id ? NB.ion.opacity(0.12) : NB.fillSoft))
+                        .overlay(PixelButtonShape().stroke(look.portrait == id ? NB.ion : .clear, lineWidth: 1))
+                    }.buttonStyle(.plain).accessibilityLabel(base.name + " look")
+                        .accessibilityAddTraits(look.portrait == id ? .isSelected : [])
+                        .accessibilityIdentifier("look." + id)
+                }
+            }
+            HStack(spacing: 8) {
+                colorMenu("Outfit", options: ["auto"] + PixelLook.portraits, value: look.accent) { var next = look; next.accent = $0; choose(next) }
+            }
+            HStack(spacing: 8) {
+                Button { choose(look.remixed(seed: UUID().uuidString)) } label: { PixelActionLabel("Remix", icon: .spark) }
+                    .buttonStyle(NBQuietButtonStyle(compact: true)).accessibilityIdentifier("look.remix")
+                Button {
+                    if let previous = history.popLast() { look = previous; Haptics.tap() }
+                } label: { PixelActionLabel("Undo", icon: .back) }
+                    .buttonStyle(NBQuietButtonStyle(compact: true)).disabled(history.isEmpty).accessibilityIdentifier("look.undo")
+            }
+        }.disabled(!enabled)
+    }
+    private func colorMenu(_ title: String, options: [String], value: String, action: @escaping (String) -> Void) -> some View {
+        Menu {
+            ForEach(options, id: \.self) { option in
+                Button(option == "auto" ? "Original" : option.capitalized) { action(option) }
+            }
+        } label: {
+            VStack(spacing: 3) {
+                Text(title).font(.nbBody(11)).foregroundStyle(NB.secondary)
+                Text(value == "auto" ? "Original" : value.capitalized).font(.nbBody(11, weight: .semibold)).foregroundStyle(NB.text).lineLimit(1)
+            }.frame(maxWidth: .infinity, minHeight: 44).background(PixelButtonShape().fill(NB.fillSoft))
+        }.accessibilityLabel(title + " color").accessibilityValue(value).accessibilityIdentifier("look.color." + title.lowercased())
     }
 }
 
@@ -277,6 +340,7 @@ struct CastStudioView: View {
     let title: String
     @State private var selected: CastMember
     @State private var pinned: Set<String> = ["body", "skin"]
+    @State private var lookHistory: [PixelLook] = []
 
     init(profile: String, title: String, castKey: String? = nil) {
         self.profile = profile; self.title = title
@@ -289,7 +353,7 @@ struct CastStudioView: View {
         Binding(get: { selected.companion }, set: { kind in
             selected = CastMember(id: selected.id, name: selected.name, portrait: selected.portrait,
                                   companion: kind, companionName: selected.companionName,
-                                  accentHex: selected.accentHex, recipe: selected.recipe)
+                                  accentHex: selected.accentHex, recipe: selected.recipe, look: selected.look)
         })
     }
 
@@ -303,9 +367,16 @@ struct CastStudioView: View {
                         Text(selected.companionName + " · " + selected.companion.capitalized)
                             .font(.nbBody(11)).foregroundStyle(NB.secondary)
                     }.frame(maxWidth: .infinity)
-                    NBSectionHeader(title: "Make it yours", detail: "48 × 48")
-                    CharacterCustomizer(recipe: recipe, archetype: selected.id, pinned: $pinned, enabled: !saving)
-                    NBSectionHeader(title: "Companion", detail: "small creature, big ideas")
+                    if selected.look != nil {
+                        PixelLookEditor(look: Binding(get: { selected.look! }, set: { selected.look = $0 }), history: $lookHistory, enabled: !saving)
+                    } else {
+                        Button("Choose a new portrait") { selected.look = .init(portrait: selected.id) }
+                            .buttonStyle(NBQuietButtonStyle())
+                        DisclosureGroup("Original controls") {
+                            CharacterCustomizer(recipe: recipe, archetype: selected.id, pinned: $pinned, enabled: !saving)
+                        }.foregroundStyle(NB.secondary)
+                    }
+                    NBSectionHeader(title: "Creature")
                     FamiliarPicker(kind: companion, enabled: !saving)
                     NBSectionHeader(title: "The cast", detail: "eight starting points")
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {

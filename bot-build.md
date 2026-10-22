@@ -1,6 +1,6 @@
 ---
 name: bot-build
-description: "Design a complete Niobium Pixel from intent: a distinct adult persona, 48\u00d748 layered fantasy/cyborg character, original creature companion, installed skills, requested connections, and explicit access."
+description: "Design a complete Niobium Pixel from intent: a distinct adult persona, authored 48\u00d748 fantasy/cyborg portrait, original creature companion, installed skills, requested connections, and explicit access."
 license: MIT
 ---
 
@@ -27,7 +27,7 @@ Write a 120–600 word SOUL in the second person. Include:
 
 An adult, mischievous or flirtatious edge is welcome when requested. Keep flirting
 opt-in and non-explicit; banter must never hide a failure or a decision. Every
-human character is visibly an adult, age 25–40 by default, minimum 18. Fantasy,
+human character is visibly an adult, age 28–40 by default, minimum 18. Fantasy,
 cyborg, bold silhouettes, open jackets, crop tops, sleeveless armour, leather
 and exposed shoulders are fine. No nudity, explicit acts or minors. Characters
 and creatures must be original; never imitate a real person or another mascot.
@@ -59,15 +59,29 @@ requests for separate account authorization.
 
 ## Appearance
 
-Use a 48×48 layered recipe. Mix compatible layers deliberately; do not assign
-every new Pixel an unchanged default cast member. All layers use one shared
-palette so the result remains coherent. The eight archetypes are role seeds:
+Choose an authored 48×48 portrait in `character.look`. These are eight curated
+adult silhouettes, not an image-generation service or unlimited new artwork.
+The native preview is immediate; AI refines this JSON persona only when asked.
+Keep the supplied compatibility `recipe` valid for older clients, but `look`
+controls the appearance in current clients. It is independent of the role seed.
 
-orion = arcane researcher; nova = cyber creative; forge = engineer;
+Look fields (exact identifiers):
+- portrait: orion, nova, forge, sage, nyx, astra, vesper, rook
+- accent: auto, orion, nova, forge, sage, nyx, astra, vesper, rook
+
+Orion, Forge and Rook have masculine adult silhouettes; Nova, Sage, Nyx, Astra
+and Vesper have feminine adult silhouettes. Honor an explicitly requested build.
+`auto` keeps the authored outfit colors. Other accents dye only masked fabric;
+face, hair, skin, mechanical parts and silhouette stay authored. Do not invent
+skin, hair, outfit layers or image URLs inside `look`. Choose a coherent base
+and accent deliberately. The owner can change the look and use remix/undo
+without changing persona, tools, connections, permissions or the creature.
+
+Role seeds: orion = arcane researcher; nova = cyber creative; forge = engineer;
 sage = druid/knowledge; nyx = rogue/security; astra = pilot/vision;
 vesper = oracle/writing; rook = ranger/field.
 
-Recipe values (exact identifiers):
+Compatibility recipe values (exact identifiers):
 - body: man, woman
 - palette: orion, nova, forge, sage, nyx, astra, vesper, rook
 - skin: auto, porcelain, sand, copper, umber, ebony
@@ -78,10 +92,16 @@ Recipe values (exact identifiers):
 - accessory: none, visor, goggles, antlers, cat_ears, circlet, veil, headwrap, horns, antenna, ear_cuff, halo
 - detail: none, freckles, scar, cyber_eye, rune, stubble
 
-Use explicit skin and hair_tone for a new identity; auto inherits palette colors.
-The client supports older six-field recipes with auto colors and no detail.
-The review screen lets the owner pin individual traits and remix only the look;
-this never changes personality, tools, connections or permissions.
+The compatibility recipe has nine fields. Older six-field recipes decode with
+auto colors and no detail. Saved legacy recipes still use the layered renderer;
+the authored portrait renderer takes priority when a valid `look` is present.
+New portraits are static. A legacy layered preview may blink decoratively;
+this never indicates that an agent is working.
+
+Choose a distinct adult face, strong fantasy/cyborg silhouette and deliberate
+contrast. Bold skimpy designs may use cropped jackets, opaque strappy tops,
+bare shoulders or a midriff; coverage stays opaque. Keep one consistent look
+across idle, active and disconnected states. No chibi proportions or giant eyes.
 
 Companions are original freaky, adorable creatures using one of the available
 16×16 silhouettes: owl, cat, drone, slime, bat, bunny, moth, hawk, axolotl, imp, wisp, mimic.
@@ -93,9 +113,9 @@ work. Do not claim a helper ran before delegate_task returns real evidence.
 
 ## PixelSpec v2
 
-All top-level fields are required. New recipes should include all nine visual
-fields; skin, hair_tone and detail remain optional for saved v2 compatibility.
-Unknown fields are unnecessary.
+All top-level fields are required. Include `character.look` for new designs and
+all nine compatibility recipe fields. Saved v2 designs without a look remain
+readable. Unknown fields are unnecessary.
 
 ~~~json
 {
@@ -117,6 +137,7 @@ Unknown fields are unnecessary.
   "character": {
     "archetype": "nyx",
     "age": 29,
+    "look": {"portrait": "nyx", "accent": "auto"},
     "recipe": {
       "body": "woman",
       "palette": "nyx",
@@ -145,7 +166,7 @@ skills: 0–6 installed names. connectors: 0–4 known IDs.
 reasoning: low, medium or high.
 permissions.approval_mode: ask, workspace_session or session.
 permissions.filesystem: none, workspace or unrestricted.
-character.age: 18–120, default 25–40.
+character.age: 18–120, default 28–40.
 companion.name: 1–24 characters. companion.trait: at most 240.
 
 Validate every identifier and length before returning JSON. If the request is

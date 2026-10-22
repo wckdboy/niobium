@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-22T19:36:16.003015Z",
+  "release_candidate": "v2.0.0-beta.6",
+  "app": {
+    "bundle_id": "ai.wckd.niobium",
+    "version": "2.0",
+    "build": 10,
+    "variant": "full Release, development-signed archive"
+  },
+  "device": {
+    "model": "iPhone 18 Pro Max",
+    "os": "iOS 27.0.1",
+    "physical": true
+  },
+  "connection": {
+    "pairing_state": "paired",
+    "transport_type": "localNetwork",
+    "tunnel_state": "connected",
+    "cable_required": false
+  },
+  "production_smoke": {
+    "name": "LocalDSHDeviceUITests/testLocalEngineUsesNativeNavigationAndRestoresAfterBackgrounding",
+    "result": "failed",
+    "duration_seconds": 318.2724440097809,
+    "failure": "The real local DSH roster must load.",
+    "observed_native_state": "Error; empty roster; New Pixel disabled",
+    "linux_boot_succeeded": true,
+    "server_ready_after_seconds": 17.229,
+    "adapter_sha256": "8a12f316b36e6d11ed6b02eeb1fe72ec555fffedd7e236af03e05c0ab0d9d58a",
+    "model_request_sent": false,
+    "provider_keys_changed": false,
+    "root_cause": "Not yet determined; Linux/server readiness does not prove native provider attachment."
+  },
+  "controlled_model": {
+    "bundle_id": "ai.wckd.niobium.acceptance",
+    "result": "blocked_before_app_launch",
+    "reason": "iOS requires the paired phone to be unlocked",
+    "cancelled_while_waiting_for_unlock": true,
+    "model_background_history_assertions_executed": false
+  },
+  "follow_up": {
+    "physical_acceptance_passed": false,
+    "release_publication": "held",
+    "diagnostic_source_changes": [
+      "Show failed native provider connection details on Home and Engines",
+      "Record native local connection failures in the redacted DSH log",
+      "Prevent Auto-Lock for opt-in full-app acceptance launches",
+      "Check device lock state before building the runner",
+      "Collect both supplied app test outcomes while retaining an overall failing exit status"
+    ],
+    "diagnostic_gateway_state_tests_passed": 19,
+    "diagnostic_full_client_tests_passed": 38,
+    "diagnostic_full_client_tests_skipped": 2,
+    "diagnostic_full_device_app_build": "succeeded; not installed or physically accepted"
+  },
+  "remaining": [
+    "Unlock the paired iPhone and rerun with the diagnostic app",
+    "Determine and fix the native provider connection failure",
+    "Pass physical model/background/cold-history acceptance",
+    "Build and verify replacement release artifacts after source changes",
+    "Remove only temporary acceptance and UI-runner apps after verification"
+  ]
+}

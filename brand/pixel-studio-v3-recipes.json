@@ -1,0 +1,286 @@
+{
+  "examples": [
+    {
+      "body": "woman",
+      "palette": "nova",
+      "hair": "high_ponytail",
+      "face": "soft",
+      "outfit": "cyber",
+      "accessory": "visor",
+      "skin": "copper",
+      "hair_tone": "violet",
+      "detail": "cyber_eye"
+    },
+    {
+      "body": "man",
+      "palette": "orion",
+      "hair": "silver_swept",
+      "face": "calm",
+      "outfit": "mage",
+      "accessory": "circlet",
+      "skin": "sand",
+      "hair_tone": "silver",
+      "detail": "scar"
+    },
+    {
+      "body": "woman",
+      "palette": "sage",
+      "hair": "locs",
+      "face": "soft",
+      "outfit": "druid",
+      "accessory": "antlers",
+      "skin": "ebony",
+      "hair_tone": "silver",
+      "detail": "freckles"
+    },
+    {
+      "body": "man",
+      "palette": "forge",
+      "hair": "mohawk",
+      "face": "sharp",
+      "outfit": "armor",
+      "accessory": "goggles",
+      "skin": "umber",
+      "hair_tone": "copper",
+      "detail": "stubble"
+    },
+    {
+      "body": "woman",
+      "palette": "nyx",
+      "hair": "long_waves",
+      "face": "fierce",
+      "outfit": "rogue",
+      "accessory": "cat_ears",
+      "skin": "porcelain",
+      "hair_tone": "ink",
+      "detail": "none"
+    },
+    {
+      "body": "woman",
+      "palette": "astra",
+      "hair": "undercut",
+      "face": "sharp",
+      "outfit": "pilot",
+      "accessory": "visor",
+      "skin": "copper",
+      "hair_tone": "ice",
+      "detail": "none"
+    },
+    {
+      "body": "woman",
+      "palette": "vesper",
+      "hair": "silver_bob",
+      "face": "calm",
+      "outfit": "astral",
+      "accessory": "circlet",
+      "skin": "copper",
+      "hair_tone": "rose",
+      "detail": "rune"
+    },
+    {
+      "body": "man",
+      "palette": "rook",
+      "hair": "undercut",
+      "face": "calm",
+      "outfit": "ranger",
+      "accessory": "headwrap",
+      "skin": "ebony",
+      "hair_tone": "moss",
+      "detail": "stubble"
+    }
+  ],
+  "cuts": [
+    {
+      "body": "woman",
+      "palette": "nova",
+      "hair": "silver_swept",
+      "face": "soft",
+      "outfit": "mage",
+      "accessory": "none"
+    },
+    {
+      "body": "woman",
+      "palette": "nova",
+      "hair": "violet_bob",
+      "face": "soft",
+      "outfit": "cyber",
+      "accessory": "visor"
+    },
+    {
+      "body": "woman",
+      "palette": "nova",
+      "hair": "undercut",
+      "face": "soft",
+      "outfit": "armor",
+      "accessory": "goggles"
+    },
+    {
+      "body": "woman",
+      "palette": "nova",
+      "hair": "locs",
+      "face": "soft",
+      "outfit": "druid",
+      "accessory": "antlers"
+    },
+    {
+      "body": "woman",
+      "palette": "nova",
+      "hair": "cat_black",
+      "face": "soft",
+      "outfit": "rogue",
+      "accessory": "cat_ears"
+    },
+    {
+      "body": "woman",
+      "palette": "nova",
+      "hair": "white_pilot",
+      "face": "soft",
+      "outfit": "pilot",
+      "accessory": "circlet"
+    },
+    {
+      "body": "woman",
+      "palette": "nova",
+      "hair": "silver_bob",
+      "face": "soft",
+      "outfit": "veil",
+      "accessory": "veil"
+    },
+    {
+      "body": "woman",
+      "palette": "nova",
+      "hair": "headwrap",
+      "face": "soft",
+      "outfit": "ranger",
+      "accessory": "headwrap"
+    },
+    {
+      "body": "woman",
+      "palette": "nova",
+      "hair": "braid",
+      "face": "soft",
+      "outfit": "corsair",
+      "accessory": "horns"
+    },
+    {
+      "body": "woman",
+      "palette": "nova",
+      "hair": "mohawk",
+      "face": "soft",
+      "outfit": "techwear",
+      "accessory": "antenna"
+    },
+    {
+      "body": "woman",
+      "palette": "nova",
+      "hair": "long_waves",
+      "face": "soft",
+      "outfit": "battlemage",
+      "accessory": "ear_cuff"
+    },
+    {
+      "body": "woman",
+      "palette": "nova",
+      "hair": "high_ponytail",
+      "face": "soft",
+      "outfit": "astral",
+      "accessory": "halo"
+    },
+    {
+      "body": "man",
+      "palette": "nova",
+      "hair": "silver_swept",
+      "face": "soft",
+      "outfit": "mage",
+      "accessory": "none"
+    },
+    {
+      "body": "man",
+      "palette": "nova",
+      "hair": "violet_bob",
+      "face": "soft",
+      "outfit": "cyber",
+      "accessory": "visor"
+    },
+    {
+      "body": "man",
+      "palette": "nova",
+      "hair": "undercut",
+      "face": "soft",
+      "outfit": "armor",
+      "accessory": "goggles"
+    },
+    {
+      "body": "man",
+      "palette": "nova",
+      "hair": "locs",
+      "face": "soft",
+      "outfit": "druid",
+      "accessory": "antlers"
+    },
+    {
+      "body": "man",
+      "palette": "nova",
+      "hair": "cat_black",
+      "face": "soft",
+      "outfit": "rogue",
+      "accessory": "cat_ears"
+    },
+    {
+      "body": "man",
+      "palette": "nova",
+      "hair": "white_pilot",
+      "face": "soft",
+      "outfit": "pilot",
+      "accessory": "circlet"
+    },
+    {
+      "body": "man",
+      "palette": "nova",
+      "hair": "silver_bob",
+      "face": "soft",
+      "outfit": "veil",
+      "accessory": "veil"
+    },
+    {
+      "body": "man",
+      "palette": "nova",
+      "hair": "headwrap",
+      "face": "soft",
+      "outfit": "ranger",
+      "accessory": "headwrap"
+    },
+    {
+      "body": "man",
+      "palette": "nova",
+      "hair": "braid",
+      "face": "soft",
+      "outfit": "corsair",
+      "accessory": "horns"
+    },
+    {
+      "body": "man",
+      "palette": "nova",
+      "hair": "mohawk",
+      "face": "soft",
+      "outfit": "techwear",
+      "accessory": "antenna"
+    },
+    {
+      "body": "man",
+      "palette": "nova",
+      "hair": "long_waves",
+      "face": "soft",
+      "outfit": "battlemage",
+      "accessory": "ear_cuff"
+    },
+    {
+      "body": "man",
+      "palette": "nova",
+      "hair": "high_ponytail",
+      "face": "soft",
+      "outfit": "astral",
+      "accessory": "halo"
+    }
+  ]
+}

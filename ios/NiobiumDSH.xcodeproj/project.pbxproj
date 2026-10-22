@@ -1325,7 +1325,7 @@
 				CODE_SIGN_ENTITLEMENTS = Resources/Niobium.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = XKA8CGC2AB;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 12;
 				DSH_ROOTFS_TARBALL = "$(SRCROOT)/Resources/root.tar.gz";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -1380,7 +1380,7 @@
 				CODE_SIGN_ENTITLEMENTS = Resources/Niobium.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = XKA8CGC2AB;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 12;
 				DSH_ROOTFS_TARBALL = "$(SRCROOT)/Resources/root.tar.gz";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",

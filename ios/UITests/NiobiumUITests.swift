@@ -21,7 +21,7 @@ final class NiobiumUITests: XCTestCase {
         app.launchArguments = ["--demo", "--light", "--no-splash", "--pixel-review"]
         app.launch()
         XCTAssertTrue(app.staticTexts["Local template"].waitForExistence(timeout: 15))
-        XCTAssertTrue(app.staticTexts["Nyx"].firstMatch.exists)
+        XCTAssertEqual(app.textFields["Pixel name"].value as? String, "Nyx")
         XCTAssertTrue(app.buttons["Create Nyx"].exists)
         XCTAssertTrue(app.staticTexts["Dusk · bat"].exists)
         let screenshot = XCTAttachment(screenshot: app.screenshot())
@@ -30,40 +30,50 @@ final class NiobiumUITests: XCTestCase {
         add(screenshot)
     }
     @MainActor
-    func testWorkshopRemixesPinnedTraitsAndOffersAllCompanions() {
+    func testWorkshopPreservesThePortraitThroughRemixUndoAndTabChanges() {
         let app = XCUIApplication()
         app.launchArguments = ["--demo", "--light", "--no-splash", "--pixel-review"]
         app.launch()
-        XCTAssertTrue(app.staticTexts["Local template"].waitForExistence(timeout: 15))
-        app.buttons["Appearance & companion"].tap()
-        XCTAssertTrue(app.buttons["character.remix"].waitForExistence(timeout: 5))
-        let build = app.buttons["character.body"].label
-        app.buttons["character.remix"].tap()
-        XCTAssertEqual(app.buttons["character.body"].label, build)
-        let hair = app.buttons["character.hair"]
-        for _ in 0..<4 where !hair.isHittable { app.swipeUp() }
-        let style = hair.label
-        app.buttons["character.pin.hair"].tap()
-        let appearance = app.buttons["Appearance & companion"]
-        for _ in 0..<6 where !appearance.isHittable { app.swipeDown() }
-        appearance.tap()
-        appearance.tap()
-        XCTAssertEqual(app.buttons["character.pin.hair"].value as? String, "Pinned")
-        app.buttons["character.remix"].tap()
-        XCTAssertEqual(hair.label, style)
-        let screenshot = XCTAttachment(screenshot: app.screenshot())
-        screenshot.name = "Pixel appearance editor"
-        screenshot.lifetime = .keepAlways
-        add(screenshot)
+        XCTAssertTrue(app.buttons["look.nyx"].waitForExistence(timeout: 15))
+        let nyx = app.buttons["look.nyx"]
+        XCTAssertTrue(nyx.isSelected)
+        let color = app.buttons["look.color.outfit"]
+        let original = color.value as? String
+        let remix = app.buttons["look.remix"]
+        for _ in 0..<3 where !remix.isHittable { app.swipeUp() }
+        remix.tap()
+        XCTAssertTrue(nyx.isSelected)
+        XCTAssertNotEqual(color.value as? String, original)
+        app.buttons["look.undo"].tap()
+        XCTAssertEqual(color.value as? String, original)
+        app.buttons["builder.tab.creature"].tap()
         let mimic = app.buttons["familiar.mimic"]
-        for _ in 0..<8 where !mimic.isHittable { app.swipeUp() }
+        for _ in 0..<5 where !mimic.isHittable { app.swipeUp() }
         XCTAssertTrue(mimic.isHittable)
         mimic.tap()
         XCTAssertTrue(mimic.isSelected)
-        let companions = XCTAttachment(screenshot: app.screenshot())
-        companions.name = "Twelve independent companions"
-        companions.lifetime = .keepAlways
-        add(companions)
+        let creatures = XCTAttachment(screenshot: app.screenshot())
+        creatures.name = "Twelve independent creatures"; creatures.lifetime = .keepAlways; add(creatures)
+        let look = app.buttons["builder.tab.look"]
+        for _ in 0..<5 where !look.isHittable { app.swipeDown() }
+        look.tap()
+        XCTAssertTrue(nyx.isSelected)
+        XCTAssertEqual(color.value as? String, original)
+        XCTAssertTrue(app.buttons["Create Nyx"].isHittable)
+    }
+
+    @MainActor
+    func testPreviewAppearsWithoutWaitingForAnAIRequest() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--demo", "--light", "--no-splash"]
+        app.launch()
+        XCTAssertTrue(app.buttons["New Pixel"].waitForExistence(timeout: 15))
+        app.buttons["New Pixel"].tap()
+        app.buttons["Security"].tap()
+        app.buttons["Preview Pixel"].tap()
+        XCTAssertTrue(app.staticTexts["Local template"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.buttons["Create Nyx"].isHittable)
+        XCTAssertFalse(app.staticTexts["AI persona"].exists)
     }
 
     @MainActor
@@ -71,7 +81,7 @@ final class NiobiumUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["--demo", "--light", "--no-splash", "--tab", "local"]
         app.launch()
-        XCTAssertTrue(app.staticTexts["A home for every Pixel."].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts["On device"].waitForExistence(timeout: 15))
         XCTAssertTrue(app.staticTexts["On device"].exists)
         XCTAssertTrue(app.staticTexts["Hermes"].exists)
         XCTAssertTrue(app.buttons["Home"].exists)

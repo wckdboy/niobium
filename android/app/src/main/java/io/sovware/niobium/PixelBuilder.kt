@@ -24,6 +24,8 @@ private val pixelPersonas = listOf(
 // END GENERATED PERSONAS
 
 object PixelBuilder {
+    fun preview(prompt: String) = PixelDraft(fallback(prompt), false,
+        setOf("web", "file", "memory", "todo", "skills", "vision", "image_gen", "terminal", "delegation"), emptySet(), emptyList())
     val companions = listOf("owl", "cat", "drone", "slime", "bat", "bunny", "moth", "hawk", "axolotl", "imp", "wisp", "mimic")
     val companionNames = listOf("Strix", "Miso", "Cog", "Moss", "Dusk", "Pip", "Lumen", "Kite", "Nori", "Puck", "Glim", "Bite")
     fun companionTrait(kind: String): String {
@@ -51,14 +53,14 @@ object PixelBuilder {
             "Your companion " + companionName + " can help with bounded subtasks when the job becomes complex. Give each helper a concrete result to return and the same or narrower access. Use real delegation tools, verify the result, and integrate the work yourself. Never invent a helper's activity or completion. Collaborate through attributed messages or group chats when teammates' expertise helps. Finish with what changed, how it was checked, and any remaining work."
         val random = CharacterRandom(seed)
         val suffix = random.index(0x1000000).toString(16).padStart(6, '0')
-        var recipe = CharacterRecipe.generated(persona.id, seed).copy(body = CharacterRecipe.cast.getValue(persona.id).body)
+        var recipe = CharacterRecipe.generated(persona.id, seed).copy(body = PixelLook(persona.id).body)
         if (words.any { it in listOf("woman", "female", "feminine", "witch") }) recipe = recipe.copy(body = "woman")
         else if (words.any { it in listOf("man", "male", "masculine", "wizard") }) recipe = recipe.copy(body = "man")
         if (recipe.body == "woman" && recipe.detail == "stubble") recipe = recipe.copy(detail = "freckles")
         return PixelSpec(persona.id + "-" + suffix, title, persona.role, persona.traits, soul,
             PixelPermissions(network = "web" in persona.tools || "vision" in persona.tools),
             persona.tools, emptyList(), emptyList(), "medium",
-            PixelCharacter(persona.id, 28 + random.index(13), recipe),
+            PixelCharacter(persona.id, 28 + random.index(13), recipe, PixelLook.generated(persona.id, recipe.body, seed)),
             PixelCompanion(kind, companionName, companionTrait(kind)))
     }
     fun parse(text: String): PixelSpec? = runCatching {
@@ -81,7 +83,8 @@ object PixelBuilder {
         PixelSpec(string(j, "name"), string(j, "title"), string(j, "role"), arr("personality"), string(j, "soul"),
             PixelPermissions(string(p, "approval_mode"), boolean(p, "network"), string(p, "filesystem"), boolean(p, "shell")),
             arr("toolsets"), arr("skills"), arr("connectors"), string(j, "reasoning"),
-            PixelCharacter(string(c, "archetype"), age.toInt(), CharacterRecipe.parse(c.getJSONObject("recipe"))),
+            PixelCharacter(string(c, "archetype"), age.toInt(), CharacterRecipe.parse(c.getJSONObject("recipe")),
+                if (c.has("look") && !c.isNull("look")) PixelLook.parse(c.getJSONObject("look")) else null),
             PixelCompanion(string(companion, "kind"), string(companion, "name"), string(companion, "trait")))
             .takeIf { it.validationError == null }
     }.getOrNull()
@@ -91,7 +94,7 @@ object PixelBuilder {
         require(clean.isNotEmpty() && clean.length <= 4000) { "Describe the job in 1–4,000 characters." }
         val defaults = setOf("web", "file", "memory", "todo", "skills", "vision", "image_gen", "terminal", "delegation")
         if (client == null) return PixelDraft(fallback(clean), false, defaults, emptySet(), listOf("Local template. Review the briefing and access before creating."))
-        val catalog = client.request("profiles.describe", JSONObject().put("name", "default"))
+        val catalog = client.request("profiles.describe", JSONObject().put("name", "default"), 12_000)
         val tools = catalog.objects("toolsets").mapNotNull { it.s("name") }.toSet()
         val skills = catalog.objects("skills").mapNotNull { it.s("name") }.toSet()
         val skill = context.assets.open("bot_build.md").bufferedReader().use { it.readText() }
@@ -99,11 +102,13 @@ object PixelBuilder {
         val parsed = try {
             val result = client.request("llm.oneshot", JSONObject().put("profile", "default")
                 .put("instructions", "$skill\nAvailable toolsets: ${tools.sorted().joinToString()}. Available skills: ${skills.sorted().joinToString()}. Only request listed capabilities.")
-                .put("input", clean).put("max_tokens", 2600).put("temperature", 0.7), 90_000)
+                .put("input", clean).put("max_tokens", 1800).put("temperature", 0.7), 35_000)
             parse(result.s("text") ?: "").also { if (it == null) notes.add("The model returned an invalid PixelSpec. This is a local template.") }
         } catch (e: kotlinx.coroutines.CancellationException) { throw e }
         catch (_: Exception) { notes.add("The model was unavailable. This is a local template."); null }
         var spec = parsed ?: fallback(clean)
+        if (spec.character.look == null) spec = spec.copy(character = spec.character.copy(
+            look = PixelLook.generated(spec.character.archetype, spec.character.recipe.body, spec.name)))
         val removed = spec.toolsets.filter { it !in tools || it !in spec.permittedToolsets }
         if (removed.isNotEmpty()) notes.add("Excluded unavailable or disallowed tools: ${removed.joinToString()}.")
         if (spec.connectors.isNotEmpty()) notes.add("Connections are requests. Authorize accounts separately on your Hermes host.")

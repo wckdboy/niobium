@@ -186,9 +186,9 @@ fun PageHeader(eyebrow: String, title: String, trailing: (@Composable () -> Unit
 fun NbPill(text: String, tint: Color = Nb.Ion, filled: Boolean = false) {
     Box(
         Modifier
-            .clip(CircleShape)
+            .clip(PixelButtonShape)
             .background(if (filled) tint else tint.copy(alpha = 0.10f))
-            .border(1.dp, if (filled) Color.Transparent else tint.copy(alpha = 0.26f), CircleShape)
+            .border(1.dp, if (filled) Color.Transparent else tint.copy(alpha = 0.26f), PixelButtonShape)
             .padding(horizontal = 8.dp, vertical = 4.dp)
     ) {
         Text(text, color = if (filled) Nb.OnIon else tint,

@@ -15,7 +15,11 @@ final class LocalDSHDeviceUITests: XCTestCase {
 
         XCTAssertTrue(app.staticTexts["On-device engine"].waitForExistence(timeout: 20))
         let scout = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Scout,")).firstMatch
-        XCTAssertTrue(scout.waitForExistence(timeout: 300), "The real local DSH roster must load.")
+        let loadedOrFailed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            scout.exists || app.buttons["Error"].exists
+        }, object: app)
+        XCTAssertEqual(XCTWaiter.wait(for: [loadedOrFailed], timeout: 300), .completed)
+        XCTAssertTrue(scout.exists, "The real local DSH roster must load. Home: \(app.staticTexts.allElementsBoundByIndex.map(\.label).joined(separator: "; "))")
         XCTAssertTrue(app.buttons["New Pixel"].isEnabled)
         XCTAssertFalse(app.webViews.firstMatch.exists)
         capture(app, "Physical DSH Home")

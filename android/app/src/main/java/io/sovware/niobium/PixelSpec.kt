@@ -5,6 +5,30 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
 
+data class PixelLook(val portrait: String, val accent: String = "auto") {
+    val body get() = if (portrait in masculine) "man" else "woman"
+    val valid get() = portrait in portraits && accent in listOf("auto") + portraits
+    fun toJson() = JSONObject().put("portrait", portrait).put("accent", accent)
+    fun remixed(seed: String): PixelLook {
+        val random = CharacterRandom(seed)
+        val accents = (listOf("auto") + portraits).filter { it != accent }
+        return copy(accent = accents[random.index(accents.size)])
+    }
+    companion object {
+        val portraits = listOf("orion", "nova", "forge", "sage", "nyx", "astra", "vesper", "rook")
+        val masculine = setOf("orion", "forge", "rook")
+        fun generated(archetype: String, body: String, seed: String): PixelLook {
+            val choices = portraits.filter { (it in masculine) == (body == "man") }
+            val random = CharacterRandom(seed + "|look")
+            return PixelLook(if (archetype in choices) archetype else choices[random.index(choices.size)])
+        }
+        fun parse(j: JSONObject): PixelLook {
+            fun value(key: String, fallback: String = "auto") = if (j.has(key)) j.get(key) as? String ?: error("Expected $key") else fallback
+            return PixelLook(value("portrait", ""), value("accent"))
+        }
+    }
+}
+
 data class CharacterRecipe(
     val body: String, val palette: String, val hair: String, val face: String,
     val outfit: String, val accessory: String, val skin: String = "auto",
@@ -58,7 +82,7 @@ data class CharacterRecipe(
             "forge" to CharacterRecipe("man", "forge", "undercut", "sharp", "armor", "goggles"),
             "sage" to CharacterRecipe("woman", "sage", "locs", "soft", "druid", "antlers"),
             "nyx" to CharacterRecipe("woman", "nyx", "cat_black", "fierce", "rogue", "cat_ears"),
-            "astra" to CharacterRecipe("man", "astra", "white_pilot", "sharp", "pilot", "visor"),
+            "astra" to CharacterRecipe("woman", "astra", "white_pilot", "sharp", "pilot", "visor"),
             "vesper" to CharacterRecipe("woman", "vesper", "silver_bob", "calm", "veil", "veil"),
             "rook" to CharacterRecipe("man", "rook", "headwrap", "calm", "ranger", "headwrap")
         )
@@ -104,7 +128,7 @@ internal class CharacterRandom(seed: String) {
 data class PixelPermissions(val approvalMode: String = "ask", val network: Boolean = false, val filesystem: String = "workspace", val shell: Boolean = false) {
     fun toJson() = JSONObject().put("approval_mode", approvalMode).put("network", network).put("filesystem", filesystem).put("shell", shell)
 }
-data class PixelCharacter(val archetype: String, val age: Int, val recipe: CharacterRecipe)
+data class PixelCharacter(val archetype: String, val age: Int, val recipe: CharacterRecipe, val look: PixelLook? = null)
 data class PixelCompanion(val kind: String, val name: String, val trait: String)
 data class PixelSpec(
     val name: String, val title: String, val role: String, val personality: List<String>, val soul: String,
@@ -130,6 +154,7 @@ data class PixelSpec(
         skills.size > 6 || connectors.size > 4 || reasoning !in listOf("low", "medium", "high") -> "Invalid capability selection."
         connectors.any { it !in listOf("github", "notion", "linear", "slack", "google", "filesystem") } -> "Unknown connector."
         character.archetype !in CharacterRecipe.cast || character.age !in 18..120 || !character.recipe.valid -> "Choose an adult character and valid 48×48 layers."
+        character.look?.valid == false -> "Choose a valid portrait and colors."
         companion.kind !in PixelBuilder.companions || companion.name.isEmpty() || companion.name.length > 24 || companion.trait.length > 240 -> "Invalid companion."
         toolsets.size > 20 || toolsets.distinct().size != toolsets.size -> "Invalid tool selection."
         else -> null
@@ -148,7 +173,7 @@ Requested connections: ${connectors.joinToString(", ")}. A request does not auth
         .put("personality", JSONArray(personality)).put("soul", soul).put("permissions", permissions.toJson())
         .put("toolsets", JSONArray(toolsets)).put("skills", JSONArray(skills)).put("connectors", JSONArray(connectors))
         .put("reasoning", reasoning).put("character", JSONObject().put("archetype", character.archetype)
-            .put("age", character.age).put("recipe", character.recipe.toJson()))
+            .put("age", character.age).put("recipe", character.recipe.toJson()).apply { character.look?.let { put("look", it.toJson()) } })
         .put("companion", JSONObject().put("kind", companion.kind).put("name", companion.name).put("trait", companion.trait))
 }
 data class PixelDraft(val spec: PixelSpec, val usedModel: Boolean, val availableToolsets: Set<String>, val availableSkills: Set<String>, val notes: List<String>) {
