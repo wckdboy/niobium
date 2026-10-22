@@ -61,6 +61,7 @@ function createProvider({rpc, postResponse, home = '/root/.dsh', workspace = '/r
   let edits = Promise.resolve();
   const pending = new Map();
   const attachments = new Map();
+  const approvalRPCs = new Map();
   async function metadata() {
     try { return JSON.parse(await fs.readFile(metadataPath, 'utf8')); }
     catch (error) { if (error.code === 'ENOENT') return {}; throw error; }
@@ -84,6 +85,11 @@ function createProvider({rpc, postResponse, home = '/root/.dsh', workspace = '/r
       if (entry.payload.sessionId === f.sessionId) pending.delete(id);
     }
     if (f.type === 'approval/requested' || f.type === 'question/requested') pending.set(envelope.rpcId, envelope);
+    if (f.type === 'approval/requested') {
+      approvalRPCs.set(f.sessionId + ':' + f.approvalId, envelope.rpcId);
+      if (approvalRPCs.size > 256) approvalRPCs.delete(approvalRPCs.keys().next().value);
+    }
+    if (f.type === 'approval/resolved') f.resolvedRpcId = approvalRPCs.get(f.sessionId + ':' + f.approvalId);
     if (f.type === 'approval/resolved') for (const [id, p] of pending) {
       if (p.payload.sessionId === f.sessionId && p.payload.approvalId === f.approvalId) pending.delete(id);
     }
@@ -200,6 +206,8 @@ function createProvider({rpc, postResponse, home = '/root/.dsh', workspace = '/r
       case 'image.attach_bytes': {
         if (typeof p.data !== 'string' || p.data.length > 8 * 1024 * 1024 ||
             !['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(p.mime)) throw new Error('Choose an image smaller than 6 MB.');
+        if (!attachments.has(p.session_id) && attachments.size >= 4) throw new Error('Send or discard the current images before attaching more.');
+        await summary(p.session_id);
         attachments.set(p.session_id, {type: 'image', mediaType: p.mime, data: p.data, name: p.filename || 'image'});
         return {ok: true};
       }
@@ -294,7 +302,7 @@ function streamFrames(envelope, state) {
     description: f.reason || 'DSH requests permission to run this tool.', choices: ['once', 'deny']}}];
   if (f.type === 'question/requested') return [{jsonrpc: '2.0', id: envelope.rpcId, method: 'clarify', params: {session_id: sid,
     questions: f.questions.map(q => ({qid: q.id, question: q.question, choices: (q.options || []).map(o => o.label), multi_select: q.multiSelect || false}))}}];
-  if (f.type === 'approval/resolved' || f.type === 'question/resolved') return [notify('request.cancel', {id: f.questionRpcId || envelope.rpcId})];
+  if (f.type === 'approval/resolved' || f.type === 'question/resolved') return [notify('request.cancel', {id: f.questionRpcId || f.resolvedRpcId || envelope.rpcId})];
   if (f.type !== 'session/event') return [];
   const e = f.event, d = e.data || {};
   switch (e.type) {

@@ -55,6 +55,15 @@ test('recovered approval answers keep DSH correlation and fail on stale requests
   await assert.rejects(p.respond('approval-rpc', {choice: 'once'}), /already been resolved/);
 });
 
+test('approval resolved in another client cancels the original native request ID', () => {
+  const p = createProvider({rpc: async () => ({})});
+  p.capture({rpcId: 'request-id', payload: {type: 'approval/requested', sessionId: 'sid', approvalId: 'approval-id'}});
+  const resolved = {rpcId: 'different-broadcast-id', payload: {type: 'approval/resolved', sessionId: 'sid', approvalId: 'approval-id'}};
+  p.capture(resolved);
+  assert.equal(streamFrames(resolved, {})[0].params.payload.id, 'request-id');
+  assert.equal(p.pending.size, 0);
+});
+
 test('native questions map to DSH option answers and custom text', async () => {
   let response;
   const p = createProvider({rpc: async () => ({}), postResponse: async value => { response = value; return {accepted: true}; }});
