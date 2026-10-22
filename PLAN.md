@@ -354,3 +354,8 @@ Next cycle acceptance:
 4. Retry the physical build when unlocked, remove only isolated QA apps, then
    complete real-account turns/delegation, physical Android/16 KB, provider-key
    storage and Hermes replay.
+
+A scoped device query verifies ai.wckd.niobium 2.0 (10) is installed on the
+iPhone. No production uninstall was performed. Physical tests exited before
+launch after the lock-screen/runner connection block; behavior remains
+unverified. Evidence: docs/evidence/ios-build10-iphone-install.json.
