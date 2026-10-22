@@ -2,10 +2,10 @@
   {
     "slug": "",
     "key": "home",
-    "title": "Niobium — a Hermes agent client in pixel art",
-    "heading": "hermes, drawn in pixels",
+    "title": "Niobium — your pixels, everywhere",
+    "heading": "your pixels, everywhere",
     "label": "wckd / niobium / v2 in development",
-    "description": "A native client for your Hermes agent on iPhone, iPad and Android, with a mature, beautiful pixel-art aesthetic: your agents as 48×48 characters, the real gateway underneath."
+    "description": "A native client for your AI bots on iPhone, iPad and Android, built for Hermes, with a mature, beautiful pixel-art aesthetic: every bot a 48×48 character, the real gateway underneath."
   },
   {
     "slug": "system",
@@ -13,7 +13,7 @@
     "title": "System — Niobium",
     "heading": "a pocket command deck",
     "label": "niobium / system",
-    "description": "Native clients, real Hermes profiles, attributed chats and capability-aware tools, drawn in pixel art."
+    "description": "Native clients, real Hermes bot profiles, attributed chats and capability-aware tools, drawn in pixel art."
   },
   {
     "slug": "local",
