@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "verified_at": "2026-10-22T22:20:53.423600+00:00",
+  "device": "paired iPhone 18 Pro Max, iOS 27.0.1",
+  "transport": "Wi-Fi",
+  "app": {
+    "bundle_id": "ai.wckd.niobium",
+    "version": "2.0",
+    "build": 12
+  },
+  "installation": "in-place development-signed full Release archive",
+  "production_uninstall_performed": false,
+  "scoped_installed_app_query": "only ai.wckd.niobium remains; temporary acceptance and runner apps removed",
+  "production_runtime_acceptance": "pending_locked_phone",
+  "test_runner_prebuilt": true
+}

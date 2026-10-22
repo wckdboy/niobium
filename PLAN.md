@@ -417,3 +417,24 @@ After that, expand the authored portrait library with reviewed variants, add
 named saved looks, provider-key storage, real-account delegation and physical
 Android/16 KB acceptance. Look undo is implemented; a cross-creature history and
 unlimited bespoke sprite generation are not claimed.
+
+
+Verified merge and draft replacement (2026-10-22 UTC): PR #8 merged at e6d8fc1.
+All three CI jobs pass at 379cf8b (run 39861554438); its Git tree exactly matches
+the merge. Signed Android code 10 and full iOS build 12, current corresponding
+runtime sources, metadata and SHA256SUMS now replace the older draft payloads.
+All five GitHub asset names, sizes and SHA-256 digests match local staging; the
+old build-10 IPA was retired. The public release and website remain beta.5.
+
+Full Release build 12 also passes simulator native startup, roster, attachment
+and background restoration in 50.698 seconds with port 3080 deliberately busy
+and DSH on 3081. This does not reproduce the production phone failure. The
+scoped phone query confirms only Niobium 2.0 (12) remains after removing the
+temporary acceptance and UI-runner apps. Production was updated in place; it
+was not uninstalled. The device test runner is prebuilt to reduce the next
+unlocked-device wait. The phone remains locked and production acceptance stays
+pending. Evidence: docs/evidence/clean-pixels-validation.json and
+docs/evidence/ios-build12-iphone-install.json.
+
+Main merge CI also passes all three jobs (run 39862983795). The Release IPA
+executable excludes the Debug model-fixture hooks.
