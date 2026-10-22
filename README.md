@@ -7,12 +7,12 @@
 A native iPhone, iPad and Android home for Pixels: your agents on a Hermes host
 or in the on-device DSH engine, with their own personas, tools and companions.
 
-**New release: [2.0.0-beta.2](https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.2).** Full Hermes parity is the target;
+**New release: [2.0.0-beta.3](https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.3).** Full Hermes parity is the target;
 it is not finished. The current scope is in [PLAN.md](PLAN.md), the implementation
 audit is in [docs/HERMES-PARITY.md](docs/HERMES-PARITY.md), and the work is tracked
 in [Plane](https://app.plane.so/wckd/projects/2fbcf987-20de-43dc-80ac-0a6bab7ec03a/issues/).
 
-<img src="screenshots/ios-home-audit.png" width="280" alt="Niobium v2 on iPhone"> <img src="screenshots/android-home-audit.png" width="252" alt="Niobium v2 on Android">
+<img src="screenshots/ios-dsh-home.png" width="280" alt="Niobium v2 on iPhone"> <img src="screenshots/android-dsh-home.png" width="252" alt="Niobium v2 on Android">
 
 ## The app
 
@@ -112,7 +112,7 @@ The beta passed 24 iOS unit tests, 3 native UI tests, 24 Android JVM tests,
 5 Android runtime instrumentation tests,
 18 DSH-adapter tests, 13 upstream-watcher tests, 5 asset checks and 38 pure Swift PixelSpec assertions.
 Android debug/release builds and lint, both iOS variants and the signed full
-iOS archive/export/upload passed. Native Home and Pixel-review captures are in
+iOS archive/export passed. Native Home and Pixel-review captures are in
 [screenshots](screenshots/README.md). These checks do not establish end-to-end
 parity with a live, provider-backed Hermes install.
 
@@ -129,10 +129,11 @@ acceptance and actual delegation remain. Mobile gateway push delivery is not pro
 
 [niobium.sh](https://niobium.sh) uses the shared WCKD web design and is deployed
 with Cloudflare Workers Static Assets from this repository. The
-[2.0 beta release](https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.2)
+[2.0 beta release](https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.3)
 includes the signed Android APK, iOS distribution IPA, checksums and complete
-release notes. iOS 2.0 (6), ai.wckd.niobium, was uploaded for TestFlight and
-accepted for Apple processing. TestFlight manages installation; the App Store
+release notes. The full iOS 2.0 (7) package targets TestFlight under
+ai.wckd.niobium; the release notes track processing and availability. TestFlight
+manages installation; the App Store
 IPA is not a universally sideloadable download. The last stable release is
 [1.1](https://github.com/wckdboy/niobium/releases/tag/v1.1.0).
 
