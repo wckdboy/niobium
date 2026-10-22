@@ -1,60 +1,37 @@
 # Niobium for Android
 
-Kotlin + Jetpack Compose client for a Hermes Agent gateway. minSdk 28, target 37.
-OkHttp is the only runtime network dependency. A Hermes profile is a **Pixel**.
-
-## Build
+Native Kotlin and Jetpack Compose. minSdk 28, target 37, JDK 17.
+Use the committed wrapper from this directory:
 
 ```sh
-cd android
-echo "sdk.dir=$HOME/Library/Android/sdk" > local.properties
-gradle :app:assembleDebug
-gradle :app:assembleRelease
+./gradlew :app:testDebugUnitTest :app:assembleDebug
+./gradlew :app:assembleRelease
 ```
 
-Gradle 9.6+ and JDK 17. Release signing reads `android/keystore.properties`
-(git-ignored). Without it the release build is unsigned. R8 and resource shrinking
-are enabled; no analytics or third-party SDKs.
+Set the SDK path in ignored `local.properties`. Release signing reads ignored
+`keystore.properties`; R8 and resource shrinking are enabled.
 
-## Layout
+The v2 source has Home, Pixels, Local, Activity and Settings. New Pixels use the
+bot-build skill, validated personas, permission review and profile provisioning.
+`PixelSpec.kt`/`PixelBuilder.kt` own that flow; `CharacterEngine.kt`, `Cast.kt` and
+`PixelComponents.kt` own cached 48×48 art and shared panels. Custom layer art is
+experimental and visually less polished than the authored cast.
 
-- `GatewayClient.kt` — OkHttp WebSocket JSON-RPC, pending calls, text frames,
-  socket-identity guards against stale callbacks.
-- `NiobiumViewModel.kt` — state, roster, canonical chat, tools, groups, demo.
-- `SecurePrefs.kt` — AES-256-GCM token storage via Android Keystore.
-- `Ui.kt`, `Theme.kt` — Compose design system, pixel faces, markdown/tool cards.
-- `Screens.kt`, `Chat.kt`, `Sheets.kt`, `Onboarding.kt` — four-tab app,
-  Toolbox overlay, Pixels/Rooms/Activity/Settings.
+`GatewayClient.kt` handles RPC/socket lifetimes; `NiobiumViewModel.kt` owns
+profiles, chat, rooms, models/reasoning and approvals. `Companions.kt` exposes
+real delegated work. `CredentialPrompt.kt` uses transient secure forms;
+`SecurePrefs.kt` uses Android Keystore. `Harness.kt` hosts remote DSH with
+retry/error controls and teardown.
 
-## Demo / screenshots
+Launch demo: `adb shell am start -S -n io.sovware.niobium.debug/io.sovware.niobium.MainActivity --ez demo true`.
+Add `--es tab pixel-review` or `--es tab workshop` for creation captures;
+`--es bot forge`, `--es room demo-launch`, `--es tab rooms` and
+`--es tab activity` select other demo surfaces.
 
-```sh
-adb shell am start -n io.sovware.niobium/.MainActivity --ez demo true
-adb shell am start -n io.sovware.niobium/.MainActivity --ez demo true --es tab rooms
-adb shell am start -n io.sovware.niobium/.MainActivity --ez demo true --es tab activity
-adb shell am start -n io.sovware.niobium/.MainActivity --ez demo true --es room demo-launch
-adb shell am start -n io.sovware.niobium/.MainActivity \
-  --ez demo true --es bot forge --ez demoTool true
-adb shell am start -n io.sovware.niobium/.MainActivity --ez demo true --ez tools true
-```
+Photos, dictation and routine controls exist on both platforms. Android DSH is
+currently remote; an embedded Linux runtime remains a separate gate.
+Cleartext supports self-hosted LAN gateways; HTTPS/private networking also work.
 
-Live gateway on an emulator where Hermes binds loopback only:
-
-```sh
-adb reverse tcp:9119 tcp:9119
-adb shell am start -n io.sovware.niobium/.MainActivity \
-  --es gateway http://127.0.0.1:9119 --es token "$TOKEN" --es bot athena
-```
-
-## Lint
-
-`gradle :app:lintDebug` passes with zero errors. The remaining warnings are
-Compose modifier-parameter ordering, KTX suggestions and the intentional
-cleartext self-hosted gateway configuration.
-
-## Limitations
-
-- Photo attachment and dictation are iOS-only in 1.0.
-- Routines UI is iOS-only in 1.0.
-- Room-level approvals are not surfaced; direct pixel approvals are.
-- Cleartext HTTP is permitted for self-hosted gateways. Prefer HTTPS/Tailscale.
+See [HERMES-PARITY.md](../docs/HERMES-PARITY.md) for evidence and remaining gaps.
+Demo/build checks do not establish live provider, authorization or background
+behaviour.

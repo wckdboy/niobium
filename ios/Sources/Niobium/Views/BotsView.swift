@@ -4,6 +4,8 @@ struct BotsView: View {
     @EnvironmentObject private var store: AppStore
     @Binding var newBot: Bool
     @State private var appeared = false
+    @State private var showRooms = false
+    @State private var newRoom = false
 
     private var activePixels: [BotProfile] { store.bots.filter(\.isLive) }
 
@@ -136,6 +138,21 @@ struct BotsView: View {
         }
         .refreshable { await store.refreshAll() }
         .scrollIndicators(.hidden)
+        .sheet(isPresented: $showRooms) {
+            NavigationStack {
+                RoomsView(newGroup: $newRoom)
+                    .environmentObject(store)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") { showRooms = false }.foregroundStyle(NB.ion)
+                        }
+                    }
+            }
+            .presentationDetents([.large])
+        }
+        .sheet(isPresented: $newRoom) {
+            NewGroupView().environmentObject(store)
+        }
         .onAppear {
             withAnimation(.easeOut(duration: 0.45)) { appeared = true }
             Task { if !store.isDemo { await store.refreshRoster() } }
@@ -146,6 +163,14 @@ struct BotsView: View {
         HStack {
             Wordmark()
             Spacer()
+            Button { showRooms = true } label: {
+                Image(systemName: "person.2")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(NB.secondary)
+                    .frame(width: 32, height: 32)
+                    .background(Circle().fill(NB.fillSoft))
+            }
+            .buttonStyle(.plain)
             HStack(spacing: 7) {
                 StatusDot(color: store.connectionState.color, pulse: store.isConnecting)
                 Text(store.connectionState.isConnected ? "online" : store.connectionState.label.lowercased())

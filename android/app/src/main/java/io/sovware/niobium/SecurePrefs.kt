@@ -10,7 +10,7 @@ import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
-class SecurePrefs(context: Context) {
+class SecurePrefs(private val context: Context) {
     private val prefs = context.getSharedPreferences("niobium.prefs", Context.MODE_PRIVATE)
     private val alias = "niobium.gateway.token"
 
@@ -34,8 +34,20 @@ class SecurePrefs(context: Context) {
             .apply()
     }
 
+    fun loadHarnessUrl(): String {
+        prefs.getString("harness_url", null)?.let { return decrypt(it) ?: "" }
+        val legacy = context.getSharedPreferences("niobium", Context.MODE_PRIVATE)
+        val url = legacy.getString("niobium.harnessURL", "") ?: ""
+        if (url.isNotEmpty()) {
+            saveHarnessUrl(url)
+            legacy.edit().remove("niobium.harnessURL").apply()
+        }
+        return url
+    }
+    fun saveHarnessUrl(url: String) { prefs.edit().putString("harness_url", encrypt(url)).apply() }
     fun clear() {
-        prefs.edit().clear().apply()
+        prefs.edit().remove("has_connection").remove("gateway_url").remove("gateway_name")
+            .remove("demo").remove("gateway_token").apply()
     }
 
     private fun key(): SecretKey {

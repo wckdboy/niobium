@@ -1,0 +1,76 @@
+name: Niobium tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  shared:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - run: node --test tests/*.test.mjs
+      - run: python3 -m unittest discover -s tests -p 'test_*.py' -v
+      - run: node tools/check-plane-sync.mjs
+      - run: node site/build.mjs && node site/check.mjs
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools platforms;android-37.0 build-tools;37.0.0'
+          log-accepted-android-sdk-licenses: false
+      - name: Schema and real WebSocket fixture tests, debug build and lint
+        working-directory: android
+        run: ./gradlew :app:testDebugUnitTest :app:assembleDebug :app:lintDebug --console=plain
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: android-test-evidence
+          path: |
+            android/app/build/reports/tests/
+            android/app/build/test-results/
+            android/app/build/reports/lint-results-debug.html
+  ios:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - name: Generate client test project
+        run: |
+          brew install xcodegen
+          cd ios
+          xcodegen generate
+      - name: Select available iPhone simulator
+        id: simulator
+        run: |
+          xcrun simctl list devices available -j > /tmp/niobium-simulators.json
+          python3 -c 'import json; d=json.load(open("/tmp/niobium-simulators.json")); print("id="+next(v["udid"] for k,items in d["devices"].items() if "iOS" in k for v in items if "iPhone" in v["name"]))' >> "$GITHUB_OUTPUT"
+      - name: Native unit and UI tests
+        run: |
+          xcodebuild -project ios/Niobium.xcodeproj -scheme Niobium \
+            -destination 'platform=iOS Simulator,id=${{ steps.simulator.outputs.id }}' \
+            -parallel-testing-enabled NO -resultBundlePath /tmp/NiobiumTests.xcresult \
+            CODE_SIGNING_ALLOWED=NO test
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: ios-test-evidence
+          path: /tmp/NiobiumTests.xcresult

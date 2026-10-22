@@ -9,74 +9,124 @@
 /* Begin PBXBuildFile section */
 		068A51895F2CAB120697507A /* PulseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07A95B778EAAA3C963220A5C /* PulseView.swift */; };
 		0C71937DE535F00ED332DD62 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8A6C18F7A70DB585CADF863 /* RootView.swift */; };
+		16C551F33A5623C689152478 /* PixelComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F7CD6081B76DBAC20A77786 /* PixelComponents.swift */; };
 		16FA9B303A48F55CFA838885 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E704B906D738908DBF1156D /* Theme.swift */; };
 		2D34E9368C50EB82EA9C7628 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 063319FA4EED8BEB522CC64B /* OnboardingView.swift */; };
 		30BF5F4627D0D1CAA403A285 /* BotsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D65FE4758CBAF210B2115AA /* BotsView.swift */; };
+		333F26945B25F06F3F915D65 /* CredentialPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1AFDA3DFCA502228435D1AC /* CredentialPromptView.swift */; };
+		366546466059EA2DD9ACF061 /* CompanionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EAD7DDD7BB5986D38EE8947 /* CompanionsView.swift */; };
 		398B759D798DDA67DECD7DAE /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E3A6FBE565A3A6026443339B /* Assets.xcassets */; };
 		3B5D7DB9A04D07F561590266 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = F647741BA6B0932DB234342B /* Models.swift */; };
 		48DBA559639C4DC337E2716B /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DF3CEFC9C0EC54DC634DFF0 /* Components.swift */; };
 		509A4E671F6E68A871DC6804 /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60029D35B25833C97FB3EE35 /* AppStore.swift */; };
+		55ADD8B9BD5D57FC91E0A453 /* PixelSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0BD636CA46D4C02C57B8406 /* PixelSpec.swift */; };
+		57ECAA5D4EFF73812A1CBEEB /* NiobiumUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B57601DD63B1EEF47A996E4F /* NiobiumUITests.swift */; };
 		6D2775B4258739F7CF2B4A84 /* NewBotView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E52F80CBF3907A307D7266D /* NewBotView.swift */; };
 		729B3290783DD31B41BBB098 /* DSHLocalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2071CB229CBC0CC7853AF958 /* DSHLocalView.swift */; };
 		7A433DA37FFE804525816BCC /* ToolsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19BCD2792FD6DE0F11367BF7 /* ToolsView.swift */; };
 		7CF70C329DE1B31E268FFFCB /* Info-DSH.plist in Resources */ = {isa = PBXBuildFile; fileRef = A12F3E948B506AC256E4A96B /* Info-DSH.plist */; };
 		7D16A2386F60B968A0629201 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8FAE52FE38FEF029F62C7B9 /* ChatView.swift */; };
 		7FEBC27F6E852EAF94812DF3 /* NiobiumApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41196FDE9CF372B07CDC3D5A /* NiobiumApp.swift */; };
+		861CB68078F5E1334CBF279F /* character_engine.json in Resources */ = {isa = PBXBuildFile; fileRef = F37AC3B87D2C6BF8F8661C53 /* character_engine.json */; };
 		8B95B674ADE0585F7049B74E /* RemoteHarnessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3BFA967917BA7D913DCD694 /* RemoteHarnessView.swift */; };
 		90694DD2EB755CDC5C559B4B /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A73453351829E3FFB57BF67 /* SettingsView.swift */; };
+		940FB9622DFCA4D81EAECAC1 /* PixelBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E416EFDE39DF4BC9C54A79 /* PixelBuilder.swift */; };
+		963E259EB5A04F98028AA9C2 /* AIBuildView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C55B0D736E31F7FB52F44C2 /* AIBuildView.swift */; };
+		9A989906327CB4BB829218DE /* Cast.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8273CAA1922CA7D96927FEAC /* Cast.swift */; };
 		B56C999C035DC8EED69892AE /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 03DDC2C567BD154F7B787F7C /* PrivacyInfo.xcprivacy */; };
+		BB69FCF61C90769403C69177 /* NiobiumTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B49BBE05B43B6B6AFAFFDA24 /* NiobiumTests.swift */; };
 		BFB3799D4EE79F918EEF91F6 /* Connection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7881BF04B81903578F406EAE /* Connection.swift */; };
 		C17232758B3098EBF00DDA63 /* Speech.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78C7DCBA2FAED667AAA3E0B3 /* Speech.swift */; };
 		D1E7BD349940934F25DB3D5F /* Mascot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64F32D9115F33BE49C715624 /* Mascot.swift */; };
 		D45C51613CB4CB18B345CFF2 /* GroupsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05A3A26E6798DCAE73848B78 /* GroupsView.swift */; };
+		D4F170BF6D4B3E6D749F3C5F /* bot-build.md in Resources */ = {isa = PBXBuildFile; fileRef = 623D954C5930F945CC968714 /* bot-build.md */; };
 		D9F87DE931CDF1E6396926B0 /* ChatSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EFC7420AC0F58E58F3CC658 /* ChatSheets.swift */; };
+		DCEA09CCFFFB651D1E24AAF6 /* GatewayStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 938BEFBAAE3079D4B9AF8B29 /* GatewayStateTests.swift */; };
 		E8DBAB18000A20347C28129C /* DemoData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110D1522BB2728DAA3278BAA /* DemoData.swift */; };
-		F90AD3B99A38B7D1B1FF68B2 /* root.tar.gz in Resources */ = {isa = PBXBuildFile; fileRef = 2FA8138EF6A96A6EC561FB71 /* root.tar.gz */; };
+		EA6F8D6787B86622517832FE /* CharacterEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADBEA0E543C94268B3082620 /* CharacterEngine.swift */; };
 		FAECABBDDAB7061AD24EB493 /* NiobiumSceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C22F988531A89583ECB5D3D /* NiobiumSceneDelegate.swift */; };
+		FDB4611D1727E194BD250159 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD5A8D72D3F2FD723D9AAC2A /* HomeView.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		8C4A3A1B1306E3B6CA215D90 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4B53FBA035135390263A6877 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F3DE0165B795D4084F93D05C;
+			remoteInfo = Niobium;
+		};
+		DB31CDF840A2D3D80B5464EF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4B53FBA035135390263A6877 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F3DE0165B795D4084F93D05C;
+			remoteInfo = Niobium;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		03DDC2C567BD154F7B787F7C /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		05A3A26E6798DCAE73848B78 /* GroupsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupsView.swift; sourceTree = "<group>"; };
 		063319FA4EED8BEB522CC64B /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		07A95B778EAAA3C963220A5C /* PulseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PulseView.swift; sourceTree = "<group>"; };
+		0C55B0D736E31F7FB52F44C2 /* AIBuildView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIBuildView.swift; sourceTree = "<group>"; };
 		110D1522BB2728DAA3278BAA /* DemoData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoData.swift; sourceTree = "<group>"; };
 		19BCD2792FD6DE0F11367BF7 /* ToolsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolsView.swift; sourceTree = "<group>"; };
 		1E5C16B81C787644093F1ED4 /* Niobium.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Niobium.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2071CB229CBC0CC7853AF958 /* DSHLocalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSHLocalView.swift; sourceTree = "<group>"; };
 		2C22F988531A89583ECB5D3D /* NiobiumSceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NiobiumSceneDelegate.swift; sourceTree = "<group>"; };
-		2FA8138EF6A96A6EC561FB71 /* root.tar.gz */ = {isa = PBXFileReference; lastKnownFileType = archive.gzip; path = root.tar.gz; sourceTree = "<group>"; };
 		3D65FE4758CBAF210B2115AA /* BotsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BotsView.swift; sourceTree = "<group>"; };
 		3E52F80CBF3907A307D7266D /* NewBotView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewBotView.swift; sourceTree = "<group>"; };
 		41196FDE9CF372B07CDC3D5A /* NiobiumApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NiobiumApp.swift; sourceTree = "<group>"; };
 		4A73453351829E3FFB57BF67 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		4EFC7420AC0F58E58F3CC658 /* ChatSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatSheets.swift; sourceTree = "<group>"; };
+		4F7CD6081B76DBAC20A77786 /* PixelComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelComponents.swift; sourceTree = "<group>"; };
 		60029D35B25833C97FB3EE35 /* AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStore.swift; sourceTree = "<group>"; };
+		623D954C5930F945CC968714 /* bot-build.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "bot-build.md"; sourceTree = "<group>"; };
 		64F32D9115F33BE49C715624 /* Mascot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mascot.swift; sourceTree = "<group>"; };
 		6E704B906D738908DBF1156D /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		7881BF04B81903578F406EAE /* Connection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Connection.swift; sourceTree = "<group>"; };
 		78C7DCBA2FAED667AAA3E0B3 /* Speech.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Speech.swift; sourceTree = "<group>"; };
 		7DF3CEFC9C0EC54DC634DFF0 /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
+		7EAD7DDD7BB5986D38EE8947 /* CompanionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionsView.swift; sourceTree = "<group>"; };
+		8273CAA1922CA7D96927FEAC /* Cast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cast.swift; sourceTree = "<group>"; };
+		938BEFBAAE3079D4B9AF8B29 /* GatewayStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GatewayStateTests.swift; sourceTree = "<group>"; };
 		A12F3E948B506AC256E4A96B /* Info-DSH.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Info-DSH.plist"; sourceTree = "<group>"; };
+		A349F69E6A1F7B51DDEE1D53 /* NiobiumTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = NiobiumTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A3BFA967917BA7D913DCD694 /* RemoteHarnessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteHarnessView.swift; sourceTree = "<group>"; };
 		A8FAE52FE38FEF029F62C7B9 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
+		ADBEA0E543C94268B3082620 /* CharacterEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CharacterEngine.swift; sourceTree = "<group>"; };
+		B1AFDA3DFCA502228435D1AC /* CredentialPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CredentialPromptView.swift; sourceTree = "<group>"; };
+		B49BBE05B43B6B6AFAFFDA24 /* NiobiumTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NiobiumTests.swift; sourceTree = "<group>"; };
+		B57601DD63B1EEF47A996E4F /* NiobiumUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NiobiumUITests.swift; sourceTree = "<group>"; };
 		B5C551A6F8A4092D6F86964E /* Niobium-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Niobium-Bridging-Header.h"; sourceTree = "<group>"; };
 		B8A6C18F7A70DB585CADF863 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		BD5A8D72D3F2FD723D9AAC2A /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		E0BD636CA46D4C02C57B8406 /* PixelSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelSpec.swift; sourceTree = "<group>"; };
+		E1E416EFDE39DF4BC9C54A79 /* PixelBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelBuilder.swift; sourceTree = "<group>"; };
 		E3A6FBE565A3A6026443339B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		F37AC3B87D2C6BF8F8661C53 /* character_engine.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = character_engine.json; sourceTree = "<group>"; };
 		F647741BA6B0932DB234342B /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		F73F10F804C86581276C66BE /* NiobiumUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = NiobiumUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
 		48CD69214E8FB8AEEB34DC22 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				0C55B0D736E31F7FB52F44C2 /* AIBuildView.swift */,
 				3D65FE4758CBAF210B2115AA /* BotsView.swift */,
 				4EFC7420AC0F58E58F3CC658 /* ChatSheets.swift */,
 				A8FAE52FE38FEF029F62C7B9 /* ChatView.swift */,
+				7EAD7DDD7BB5986D38EE8947 /* CompanionsView.swift */,
 				7DF3CEFC9C0EC54DC634DFF0 /* Components.swift */,
+				B1AFDA3DFCA502228435D1AC /* CredentialPromptView.swift */,
 				05A3A26E6798DCAE73848B78 /* GroupsView.swift */,
+				BD5A8D72D3F2FD723D9AAC2A /* HomeView.swift */,
 				3E52F80CBF3907A307D7266D /* NewBotView.swift */,
 				063319FA4EED8BEB522CC64B /* OnboardingView.swift */,
+				4F7CD6081B76DBAC20A77786 /* PixelComponents.swift */,
 				07A95B778EAAA3C963220A5C /* PulseView.swift */,
 				B8A6C18F7A70DB585CADF863 /* RootView.swift */,
 				4A73453351829E3FFB57BF67 /* SettingsView.swift */,
@@ -89,6 +139,8 @@
 			isa = PBXGroup;
 			children = (
 				1E5C16B81C787644093F1ED4 /* Niobium.app */,
+				A349F69E6A1F7B51DDEE1D53 /* NiobiumTests.xctest */,
+				F73F10F804C86581276C66BE /* NiobiumUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -98,6 +150,8 @@
 			children = (
 				48CD69214E8FB8AEEB34DC22 /* Views */,
 				60029D35B25833C97FB3EE35 /* AppStore.swift */,
+				8273CAA1922CA7D96927FEAC /* Cast.swift */,
+				ADBEA0E543C94268B3082620 /* CharacterEngine.swift */,
 				7881BF04B81903578F406EAE /* Connection.swift */,
 				110D1522BB2728DAA3278BAA /* DemoData.swift */,
 				2071CB229CBC0CC7853AF958 /* DSHLocalView.swift */,
@@ -106,6 +160,8 @@
 				B5C551A6F8A4092D6F86964E /* Niobium-Bridging-Header.h */,
 				41196FDE9CF372B07CDC3D5A /* NiobiumApp.swift */,
 				2C22F988531A89583ECB5D3D /* NiobiumSceneDelegate.swift */,
+				E1E416EFDE39DF4BC9C54A79 /* PixelBuilder.swift */,
+				E0BD636CA46D4C02C57B8406 /* PixelSpec.swift */,
 				A3BFA967917BA7D913DCD694 /* RemoteHarnessView.swift */,
 				78C7DCBA2FAED667AAA3E0B3 /* Speech.swift */,
 				6E704B906D738908DBF1156D /* Theme.swift */,
@@ -114,22 +170,42 @@
 			path = Sources/Niobium;
 			sourceTree = "<group>";
 		};
+		598221046B00F996D69AAD9F /* NativeTests */ = {
+			isa = PBXGroup;
+			children = (
+				938BEFBAAE3079D4B9AF8B29 /* GatewayStateTests.swift */,
+				B49BBE05B43B6B6AFAFFDA24 /* NiobiumTests.swift */,
+			);
+			path = NativeTests;
+			sourceTree = "<group>";
+		};
 		82686F0B7890D2C0E145FB8A = {
 			isa = PBXGroup;
 			children = (
+				598221046B00F996D69AAD9F /* NativeTests */,
 				533C7ABD4FC058DB3E8B5F15 /* Niobium */,
 				F0DE187B6103F21E90C153AD /* Resources */,
+				B22F38AB97DDEC27EC73425A /* UITests */,
 				51CD45108A48D309086339B0 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		B22F38AB97DDEC27EC73425A /* UITests */ = {
+			isa = PBXGroup;
+			children = (
+				B57601DD63B1EEF47A996E4F /* NiobiumUITests.swift */,
+			);
+			path = UITests;
 			sourceTree = "<group>";
 		};
 		F0DE187B6103F21E90C153AD /* Resources */ = {
 			isa = PBXGroup;
 			children = (
 				E3A6FBE565A3A6026443339B /* Assets.xcassets */,
+				623D954C5930F945CC968714 /* bot-build.md */,
+				F37AC3B87D2C6BF8F8661C53 /* character_engine.json */,
 				A12F3E948B506AC256E4A96B /* Info-DSH.plist */,
 				03DDC2C567BD154F7B787F7C /* PrivacyInfo.xcprivacy */,
-				2FA8138EF6A96A6EC561FB71 /* root.tar.gz */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -137,6 +213,42 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		3088EC28E276A9F03575DFA2 /* NiobiumTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E1B69030E42BAD013393456E /* Build configuration list for PBXNativeTarget "NiobiumTests" */;
+			buildPhases = (
+				92AA74A6FCEA4D6BF9D061FF /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				8A0E86A3571CC24E0A272D29 /* PBXTargetDependency */,
+			);
+			name = NiobiumTests;
+			packageProductDependencies = (
+			);
+			productName = NiobiumTests;
+			productReference = A349F69E6A1F7B51DDEE1D53 /* NiobiumTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		6F976EB3602E2157631BDD96 /* NiobiumUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AE56AA1DB2AECBA2A13294B1 /* Build configuration list for PBXNativeTarget "NiobiumUITests" */;
+			buildPhases = (
+				5AEA388DE84859925D503274 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				8E8B52C696C7C66D44446E59 /* PBXTargetDependency */,
+			);
+			name = NiobiumUITests;
+			packageProductDependencies = (
+			);
+			productName = NiobiumUITests;
+			productReference = F73F10F804C86581276C66BE /* NiobiumUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		F3DE0165B795D4084F93D05C /* Niobium */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = AA96B80352234094EAD3B458 /* Build configuration list for PBXNativeTarget "Niobium" */;
@@ -164,8 +276,17 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 2700;
 				TargetAttributes = {
+					3088EC28E276A9F03575DFA2 = {
+						DevelopmentTeam = XKA8CGC2AB;
+						ProvisioningStyle = Automatic;
+					};
+					6F976EB3602E2157631BDD96 = {
+						DevelopmentTeam = XKA8CGC2AB;
+						ProvisioningStyle = Automatic;
+						TestTargetID = F3DE0165B795D4084F93D05C;
+					};
 					F3DE0165B795D4084F93D05C = {
-						DevelopmentTeam = "";
+						DevelopmentTeam = XKA8CGC2AB;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -185,6 +306,8 @@
 			projectRoot = "";
 			targets = (
 				F3DE0165B795D4084F93D05C /* Niobium */,
+				3088EC28E276A9F03575DFA2 /* NiobiumTests */,
+				6F976EB3602E2157631BDD96 /* NiobiumUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -197,7 +320,8 @@
 				398B759D798DDA67DECD7DAE /* Assets.xcassets in Resources */,
 				7CF70C329DE1B31E268FFFCB /* Info-DSH.plist in Resources */,
 				B56C999C035DC8EED69892AE /* PrivacyInfo.xcprivacy in Resources */,
-				F90AD3B99A38B7D1B1FF68B2 /* root.tar.gz in Resources */,
+				D4F170BF6D4B3E6D749F3C5F /* bot-build.md in Resources */,
+				861CB68078F5E1334CBF279F /* character_engine.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -208,21 +332,30 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				963E259EB5A04F98028AA9C2 /* AIBuildView.swift in Sources */,
 				509A4E671F6E68A871DC6804 /* AppStore.swift in Sources */,
 				30BF5F4627D0D1CAA403A285 /* BotsView.swift in Sources */,
+				9A989906327CB4BB829218DE /* Cast.swift in Sources */,
+				EA6F8D6787B86622517832FE /* CharacterEngine.swift in Sources */,
 				D9F87DE931CDF1E6396926B0 /* ChatSheets.swift in Sources */,
 				7D16A2386F60B968A0629201 /* ChatView.swift in Sources */,
+				366546466059EA2DD9ACF061 /* CompanionsView.swift in Sources */,
 				48DBA559639C4DC337E2716B /* Components.swift in Sources */,
 				BFB3799D4EE79F918EEF91F6 /* Connection.swift in Sources */,
+				333F26945B25F06F3F915D65 /* CredentialPromptView.swift in Sources */,
 				729B3290783DD31B41BBB098 /* DSHLocalView.swift in Sources */,
 				E8DBAB18000A20347C28129C /* DemoData.swift in Sources */,
 				D45C51613CB4CB18B345CFF2 /* GroupsView.swift in Sources */,
+				FDB4611D1727E194BD250159 /* HomeView.swift in Sources */,
 				D1E7BD349940934F25DB3D5F /* Mascot.swift in Sources */,
 				3B5D7DB9A04D07F561590266 /* Models.swift in Sources */,
 				6D2775B4258739F7CF2B4A84 /* NewBotView.swift in Sources */,
 				7FEBC27F6E852EAF94812DF3 /* NiobiumApp.swift in Sources */,
 				FAECABBDDAB7061AD24EB493 /* NiobiumSceneDelegate.swift in Sources */,
 				2D34E9368C50EB82EA9C7628 /* OnboardingView.swift in Sources */,
+				940FB9622DFCA4D81EAECAC1 /* PixelBuilder.swift in Sources */,
+				16C551F33A5623C689152478 /* PixelComponents.swift in Sources */,
+				55ADD8B9BD5D57FC91E0A453 /* PixelSpec.swift in Sources */,
 				068A51895F2CAB120697507A /* PulseView.swift in Sources */,
 				8B95B674ADE0585F7049B74E /* RemoteHarnessView.swift in Sources */,
 				0C71937DE535F00ED332DD62 /* RootView.swift in Sources */,
@@ -233,7 +366,37 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		5AEA388DE84859925D503274 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				57ECAA5D4EFF73812A1CBEEB /* NiobiumUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		92AA74A6FCEA4D6BF9D061FF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DCEA09CCFFFB651D1E24AAF6 /* GatewayStateTests.swift in Sources */,
+				BB69FCF61C90769403C69177 /* NiobiumTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		8A0E86A3571CC24E0A272D29 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F3DE0165B795D4084F93D05C /* Niobium */;
+			targetProxy = DB31CDF840A2D3D80B5464EF /* PBXContainerItemProxy */;
+		};
+		8E8B52C696C7C66D44446E59 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F3DE0165B795D4084F93D05C /* Niobium */;
+			targetProxy = 8C4A3A1B1306E3B6CA215D90 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		2C50B7E15CAB7A622D74F278 /* Debug */ = {
@@ -272,7 +435,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = XKA8CGC2AB;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
@@ -303,6 +466,23 @@
 			};
 			name = Debug;
 		};
+		38D821F736B7C9BBE364D093 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ai.wckd.niobium.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Niobium.app/Niobium";
+			};
+			name = Debug;
+		};
 		4280584DCC79923CBE24081B /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -310,20 +490,37 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Resources/Niobium.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 4;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
-				PRODUCT_BUNDLE_IDENTIFIER = io.sovware.niobium;
+				MARKETING_VERSION = 2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.wckd.niobium;
 				SDKROOT = iphoneos;
 				SUPPORTS_MACCATALYST = NO;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
+		};
+		44B6DECCA0F9C34605504D4E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ai.wckd.niobium.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Niobium;
+			};
+			name = Debug;
 		};
 		850902D9FE734217BDCAFCB9 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -332,20 +529,54 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Resources/Niobium.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 4;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
-				PRODUCT_BUNDLE_IDENTIFIER = io.sovware.niobium;
+				MARKETING_VERSION = 2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.wckd.niobium;
 				SDKROOT = iphoneos;
 				SUPPORTS_MACCATALYST = NO;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
+		};
+		91E128595D5BBB7122519857 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ai.wckd.niobium.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Niobium;
+			};
+			name = Release;
+		};
+		C3B228ACDB3575EDC0BCD3BF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ai.wckd.niobium.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Niobium.app/Niobium";
+			};
+			name = Release;
 		};
 		D8AFAC3A06A2588D2518FC10 /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -383,7 +614,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = XKA8CGC2AB;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
@@ -424,6 +655,24 @@
 			buildConfigurations = (
 				850902D9FE734217BDCAFCB9 /* Debug */,
 				4280584DCC79923CBE24081B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		AE56AA1DB2AECBA2A13294B1 /* Build configuration list for PBXNativeTarget "NiobiumUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				44B6DECCA0F9C34605504D4E /* Debug */,
+				91E128595D5BBB7122519857 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		E1B69030E42BAD013393456E /* Build configuration list for PBXNativeTarget "NiobiumTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				38D821F736B7C9BBE364D093 /* Debug */,
+				C3B228ACDB3575EDC0BCD3BF /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

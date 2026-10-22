@@ -6,30 +6,38 @@ object DemoData {
     private val now = System.currentTimeMillis() / 1000
 
     val bots = listOf(
-        BotProfile("athena", "Athena", "Research, strategy and long-horizon thinking.", "nous", "Hermes 4 405B", 18,
-            "demo-athena", "Three things need you today.", now - 38, true, false, false, "#A78BFA", false),
-        BotProfile("forge", "Forge", "Builds, codes and ships the work.", "openrouter", "Claude Sonnet 4.6", 24,
-            "demo-forge", "Clean build is green. Signing profile is the only open thread.", now - 140, true, false, false, "#F5C97A", false),
-        BotProfile("scout", "Scout", "Browses the web, watches signals and reports back.", "nous", "Hermes 4 70B", 14,
-            "demo-scout", "Two competitors shipped agent memory this week.", now - 760, false, false, false, "#5EEAD4", false),
-        BotProfile("hermes", "Hermes", "Your primary agent. Everything, connected.", "nous", "Hermes 4 405B", 42,
-            "demo-hermes", "The vault is unlocked and the workspace is ready.", now - 3600, false, true, false, "#C4B5FD", false)
+        BotProfile("orion", "Orion", "Research & analysis", "demo", "Demo model", 6,
+            "demo-orion", "Give me the question. I will bring the receipts.", now - 30, true, true, false, "#A78BFA", false),
+        BotProfile("nova", "Nova", "Creative direction", "demo", "Demo model", 7,
+            "demo-nova", "A little trouble, a better idea.", now - 360, false, false, false, "#F0ABFC", false),
+        BotProfile("forge", "Forge", "Automation & releases", "demo", "Demo model", 8,
+            "demo-forge", "Build first. Brag after the checks pass.", now - 420, false, false, false, "#F5C97A", false),
+        BotProfile("sage", "Sage", "Knowledge & memory", "demo", "Demo model", 9,
+            "demo-sage", "I kept the useful bits. And the strange ones.", now - 30, true, false, false, "#5EEAD4", false),
+        BotProfile("nyx", "Nyx", "Security & anomalies", "demo", "Demo model", 10,
+            "demo-nyx", "Quiet night. Suspiciously quiet.", now - 540, false, false, false, "#FB7185", false),
+        BotProfile("astra", "Astra", "Vision & field work", "demo", "Demo model", 11,
+            "demo-astra", "Eyes open. Instruments calibrated.", now - 600, false, false, false, "#7DD3FC", false),
+        BotProfile("vesper", "Vesper", "Writing & long memory", "demo", "Demo model", 12,
+            "demo-vesper", "The footnotes have secrets.", now - 660, false, false, false, "#C4B5FF", false),
+        BotProfile("rook", "Rook", "Research & reconnaissance", "demo", "Demo model", 13,
+            "demo-rook", "One more trail worth following.", now - 720, false, false, false, "#D6A45E", false)
     )
 
     val groups = listOf(
         GroupRoom("demo-launch", "Launch Room", listOf(
-            GroupMember("athena", "athena", "athena", "Athena"),
+            GroupMember("orion", "orion", "orion", "Orion"),
             GroupMember("forge", "forge", "forge", "Forge"),
-            GroupMember("scout", "scout", "scout", "Scout")
-        ), now - 420, 5, "Scout: I’ll check the sources and flag anything that looks off."),
+            GroupMember("rook", "rook", "rook", "Rook")
+        ), now - 420, 5, "Rook: I’ll check the sources and flag anything that looks off."),
         GroupRoom("demo-nightshift", "Night Shift", listOf(
-            GroupMember("hermes", "hermes", "hermes", "Hermes"),
-            GroupMember("scout", "scout", "scout", "Scout")
+            GroupMember("vesper", "vesper", "vesper", "Vesper"),
+            GroupMember("rook", "rook", "rook", "Rook")
         ), now - 7200, 2, "Hermes: Overnight sweep complete. Nothing on fire.")
     )
 
     val routines = listOf(
-        Routine("morning-brief", "Morning brief", "Every day at 08:00", "Summarise overnight signals and the top three things I need to decide.", true, "Tomorrow, 08:00", "athena"),
+        Routine("morning-brief", "Morning brief", "Every day at 08:00", "Summarise overnight signals and the top three things I need to decide.", true, "Tomorrow, 08:00", "orion"),
         Routine("release-check", "Release check", "Every Friday at 16:00", "Run the release checklist and report anything that would block shipping.", true, "Friday, 16:00", "forge")
     )
 
@@ -37,7 +45,7 @@ object DemoData {
         Toolset("terminal", "Run commands, manage background processes and work on the host.", listOf("terminal", "process_manage"), true),
         Toolset("web", "Search, extract and read the live web.", listOf("web_search", "web_extract"), true),
         Toolset("browser", "Drive a real browser: navigate, click, type, inspect.", listOf("browser_navigate", "browser_click", "browser_snapshot", "browser_vision"), true),
-        Toolset("coding", "Read, write and patch files across a workspace.", listOf("read_file", "write_file", "patch", "search_files"), true),
+        Toolset("file", "Read, write and patch files across a workspace.", listOf("read_file", "write_file", "patch", "search_files"), true),
         Toolset("delegation", "Spawn isolated subagents for parallel work.", listOf("delegate_task"), true),
         Toolset("memory", "Persistent memory across sessions and pixels.", listOf("memory", "session_search"), true),
         Toolset("skills", "Create, inspect and improve reusable procedures.", listOf("skill_manage", "skill_view", "skills_list"), true),
@@ -52,29 +60,29 @@ object DemoData {
 
     val activity = listOf(
         ActivityItem("a1", "tool", "release_check finished", "All 14 checks passed · 2m 08s", now - 260, "forge"),
-        ActivityItem("a2", "message", "Athena replied", "Three things need you today.", now - 480, "athena"),
-        ActivityItem("a3", "tool", "web_search finished", "Memory landscape · 8 sources", now - 900, "scout"),
-        ActivityItem("a4", "bot", "Launch Room settled", "3 pixels · 2 rounds · 1 decision", now - 1500, "athena"),
+        ActivityItem("a2", "message", "Orion replied", "Three things need you today.", now - 480, "orion"),
+        ActivityItem("a3", "tool", "web_search finished", "Memory landscape · 8 sources", now - 900, "rook"),
+        ActivityItem("a4", "bot", "Launch Room settled", "3 pixels · 2 rounds · 1 decision", now - 1500, "orion"),
         ActivityItem("a5", "approval", "Approval granted", "git push origin release/1.0", now - 3400, "forge")
     )
 
     fun messages(bot: BotProfile): List<ChatMessage> {
         val t = System.currentTimeMillis()
         return when (bot.name) {
-            "athena" -> listOf(
+            "orion" -> listOf(
                 ChatMessage("d1", "user", "Morning. What actually needs me today?", t - 720_000),
                 ChatMessage("d2", "tool", timestamp = t - 650_000, toolName = "session_search",
                     toolArgs = "{\n  \"query\": \"open threads since yesterday\"\n}",
-                    toolResult = "Found 6 sessions across Athena, Forge and Scout. 3 open threads.",
+                    toolResult = "Found 6 sessions across Orion, Forge and Rook. 3 open threads.",
                     toolStatus = ToolStatus.DONE, toolPreview = "6 sessions · 3 open threads", toolDuration = 0.4),
                 ChatMessage("d3", "assistant", """
                     Three things need you today.
 
                     **1 · Build is green.** Forge finished the clean build and the release notes are ready for review. The only open thread is the signing profile for the TestFlight build.
 
-                    **2 · Scout found a signal.** Two competitors shipped agent memory this week. I saved the teardown in *Research › Memory landscape* — the useful difference is their retrieval UI, not the storage layer.
+                    **2 · Rook found a signal.** Two competitors shipped agent memory this week. I saved the teardown in *Research › Memory landscape* — the useful difference is their retrieval UI, not the storage layer.
 
-                    **3 · One decision.** Athena recommends we ship Pixels before custom routines. I agree: the roster is the habit, routines are the power feature.
+                    **3 · One decision.** Orion recommends we ship Pixels before custom routines. I agree: the roster is the habit, routines are the power feature.
 
                     Say the word and I’ll open the release checklist.
                 """.trimIndent(), t - 480_000,
@@ -115,17 +123,17 @@ object DemoData {
         if (room.roomId == "demo-nightshift") return listOf(
             RoomEvent(1, room.roomId, "n1", "message.user", "user", "user", "You",
                 "Overnight sweep please. Only wake me for a real fire.", t - 8000, null, null),
-            RoomEvent(2, room.roomId, "n2", "message.member", "member", "hermes", "Hermes",
+            RoomEvent(2, room.roomId, "n2", "message.member", "member", "vesper", "Vesper",
                 "Overnight sweep complete. Nothing on fire. Two PRs are green and waiting for your review.", t - 7200, null, null)
         )
         return listOf(
             RoomEvent(1, room.roomId, "g1", "message.user", "user", "user", "You",
-                "Final pass on the launch. Athena, make the call on scope. Forge, check the build. Scout, watch the competition.", t - 1800, null, null),
-            RoomEvent(2, room.roomId, "g2", "message.member", "member", "athena", "Athena",
+                "Final pass on the launch. Orion, make the call on scope. Forge, check the build. Rook, watch the competition.", t - 1800, null, null),
+            RoomEvent(2, room.roomId, "g2", "message.member", "member", "orion", "Orion",
                 "Scope call: ship Pixels first, routines second. The roster is the habit; routines are the power feature. I’ll write the decision record.", t - 1600, null, null),
             RoomEvent(3, room.roomId, "g3", "message.member", "member", "forge", "Forge",
                 "Build is green. Signing profile is the only open thread. I can have TestFlight up today if we take the fresh profile.", t - 1450, null, null),
-            RoomEvent(4, room.roomId, "g4", "message.member", "member", "scout", "Scout",
+            RoomEvent(4, room.roomId, "g4", "message.member", "member", "rook", "Rook",
                 "Competitor watch is clean. No launches in the last 24h. I’ll check the sources and flag anything that looks off.", t - 420, null, null),
             RoomEvent(5, room.roomId, "g5", "message.user", "user", "user", "You", "Good. Forge, ship it.", t - 360, null, null)
         )

@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -42,8 +43,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 enum class NbTab(val title: String, val glyph: String) {
+    HOME("Home", "⌂"),
     PIXELS("Pixels", "▦"),
-    ROOMS("Rooms", "◎"),
+    LOCAL("Local", "▣"),
     ACTIVITY("Activity", "⌁"),
     SETTINGS("Settings", "≡")
 }
@@ -52,10 +54,12 @@ enum class NbTab(val title: String, val glyph: String) {
 @Composable
 fun NiobiumApp(vm: NiobiumViewModel, initialTab: String? = null, initialTools: Boolean = false) {
     val state = vm.state
-    var tab by rememberSaveable { mutableStateOf(initialTab?.let { name -> NbTab.entries.firstOrNull { it.name.equals(name, true) } } ?: NbTab.PIXELS) }
-    var newBot by remember { mutableStateOf(false) }
+    var tab by rememberSaveable { mutableStateOf(initialTab?.let { name -> NbTab.entries.firstOrNull { it.name.equals(name, true) } } ?: NbTab.HOME) }
+    var newBot by remember { mutableStateOf(initialTab in listOf("workshop", "pixel-review")) }
     var newGroup by remember { mutableStateOf(false) }
     var showTools by remember { mutableStateOf(initialTools) }
+    var showAI by remember { mutableStateOf(false) }
+    var showRooms by remember { mutableStateOf(false) }
 
     BackHandler(enabled = showTools) { showTools = false }
     BackHandler(enabled = state.activeBot != null && !showTools) { vm.closeBot() }
@@ -73,8 +77,10 @@ fun NiobiumApp(vm: NiobiumViewModel, initialTab: String? = null, initialTools: B
                 NbBackground(intensity = 0.7f) {
                     Box(Modifier.fillMaxSize().padding(bottom = inner.calculateBottomPadding())) {
                         when (tab) {
-                            NbTab.PIXELS -> PixelsScreen(vm, state, onNewPixel = { newBot = true })
-                            NbTab.ROOMS -> RoomsScreen(vm, state, onNewGroup = { newGroup = true })
+                            NbTab.HOME -> HomeScreen(vm, state, onNewPixel = { newBot = true }, onShowPixels = { tab = NbTab.PIXELS })
+                            NbTab.PIXELS -> PixelsScreen(vm, state, onNewPixel = { newBot = true },
+                                onBuildAI = { showAI = true }, onOpenRooms = { showRooms = true })
+                            NbTab.LOCAL -> LocalScreen(vm, state)
                             NbTab.ACTIVITY -> ActivityScreen(vm, state)
                             NbTab.SETTINGS -> SettingsScreen(vm, state, onOpenTools = { showTools = true })
                         }
@@ -84,18 +90,24 @@ fun NiobiumApp(vm: NiobiumViewModel, initialTab: String? = null, initialTools: B
         }
     }
 
+    if (showRooms && state.activeGroup == null) {
+        BackHandler { showRooms = false }
+        Box(Modifier.fillMaxSize().background(Nb.Void).statusBarsPadding()) {
+            RoomsScreen(vm, state, onNewGroup = { newGroup = true }, onClose = { showRooms = false })
+        }
+    }
+
     if (showTools && !state.needsConnection) {
         Box(Modifier.fillMaxSize().background(Nb.Void).navigationBarsPadding()) {
             ToolsScreen(vm, state, onClose = { showTools = false })
         }
     }
 
-    if (newBot) {
-        ModalBottomSheet(onDismissRequest = { newBot = false }, containerColor = Nb.Ink,
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-            NewBotSheet(vm) { newBot = false }
-        }
+    if (newBot) { AIBuildSheet(vm, preview = initialTab == "pixel-review") { newBot = false } }
+    if (showAI) {
+        AIBuildSheet(vm) { showAI = false }
     }
+    state.credentialRequests.firstOrNull()?.let { CredentialPrompt(vm, it) }
     if (newGroup) {
         ModalBottomSheet(onDismissRequest = { newGroup = false }, containerColor = Nb.Ink,
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {

@@ -1,0 +1,27 @@
+name: Hermes compatibility watch
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['config/hermes-upstream.json', 'tools/check-hermes-upstream.mjs', '.github/workflows/hermes-compatibility.yml']
+permissions:
+  contents: read
+  issues: write
+concurrency:
+  group: hermes-compatibility-watch
+  cancel-in-progress: false
+jobs:
+  upstream:
+    if: github.repository == 'wckdboy/niobium'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - name: Compare pinned contracts and maintain one issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node tools/check-hermes-upstream.mjs --issue

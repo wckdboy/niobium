@@ -252,7 +252,10 @@ struct ApprovalRequest: Identifiable, Equatable {
     var description: String
     var toolName: String
     var choices: [String]
-    var id: String { requestID.isEmpty ? "\(rpcID)" : requestID }
+    var promptID: String? = nil
+    var executionGeneration: Int? = nil
+    var recovered = false
+    var id: String { promptID ?? (requestID.isEmpty ? "\(rpcID)" : requestID) }
 }
 
 /// JSON-RPC ids can be strings or integers. Preserve whichever the server sent.
@@ -290,7 +293,8 @@ struct ClarifyRequest: Identifiable, Equatable {
     var rpcID: JSONValueID
     var sessionID: String
     var questions: [ClarifyQuestion]
-    var id: String { "\(rpcID)" }
+    var promptGenerations: [String: Int] = [:]
+    var id: String { promptGenerations.isEmpty ? "\(rpcID)" : questions.map(\.id).joined(separator: "|") }
 }
 
 struct Toolset: Identifiable, Equatable {
@@ -410,5 +414,100 @@ enum GatewayState: Equatable {
         case .connected: return NB.mint
         case .failed: return NB.rose
         }
+    }
+}
+
+struct ModelChoice: Identifiable, Equatable {
+    var provider: String
+    var providerName: String
+    var model: String
+    var current: Bool
+    var reasoning: Bool
+    var id: String { "\(provider)/\(model)" }
+    var label: String {
+        model.split(separator: "/").last.map(String.init) ?? model
+    }
+}
+
+struct SessionRow: Identifiable, Equatable {
+    var sessionID: String
+    var title: String
+    var messageCount: Int
+    var model: String
+    var startedAt: Date?
+    var running: Bool
+    var id: String { sessionID }
+
+    static func parse(_ json: JSONObject) -> SessionRow? {
+        let id = json.string("session_id") ?? json.string("id")
+        guard let id, !id.isEmpty else { return nil }
+        return SessionRow(sessionID: id,
+                          title: json.string("title") ?? "Untitled",
+                          messageCount: json.int("message_count") ?? 0,
+                          model: json.string("model") ?? "",
+                          startedAt: epochDate(json.double("started_at")),
+                          running: json.bool("running") ?? false)
+    }
+}
+
+struct UsageStats: Equatable {
+    var inputTokens: Int
+    var outputTokens: Int
+    var cacheRead: Int
+    var cacheWrite: Int
+    var totalTokens: Int
+    var apiCalls: Int
+    var contextTokens: Int
+    var contextLength: Int?
+    var compressionCount: Int
+    var avgLatency: Double?
+    var tokensPerSecond: Double?
+    var activeSubagents: Int
+    var model: String
+    var provider: String
+
+    var contextFraction: Double {
+        guard let contextLength, contextLength > 0 else { return 0 }
+        return min(1, Double(contextTokens) / Double(contextLength))
+    }
+
+    static func parse(_ json: JSONObject) -> UsageStats? {
+        guard json.int("total_tokens") != nil || json.int("input_tokens") != nil else { return nil }
+        return UsageStats(inputTokens: json.int("input_tokens") ?? 0,
+                          outputTokens: json.int("output_tokens") ?? 0,
+                          cacheRead: json.int("cache_read_tokens") ?? 0,
+                          cacheWrite: json.int("cache_write_tokens") ?? 0,
+                          totalTokens: json.int("total_tokens") ?? 0,
+                          apiCalls: json.int("api_calls") ?? 0,
+                          contextTokens: json.int("context_tokens") ?? 0,
+                          contextLength: json.int("context_length"),
+                          compressionCount: json.int("compression_count") ?? 0,
+                          avgLatency: json.double("avg_latency_s"),
+                          tokensPerSecond: json.double("tokens_per_s"),
+                          activeSubagents: json.int("active_subagents") ?? 0,
+                          model: json.string("model") ?? "",
+                          provider: json.string("provider") ?? "")
+    }
+}
+
+struct MCPServerRow: Identifiable, Equatable {
+    var name: String
+    var transport: String
+    var status: String
+    var connected: Bool
+    var enabled: Bool
+    var tools: Int
+    var source: String
+    var id: String { name }
+
+    static func parse(_ json: JSONObject, status: JSONObject?) -> MCPServerRow? {
+        guard let name = json.string("name"), !name.isEmpty else { return nil }
+        return MCPServerRow(name: name,
+                            transport: json.string("transport") ?? "stdio",
+                            status: status?.string("status") ?? (json.bool("enabled") == false ? "disabled" : "configured"),
+                            connected: status?.bool("connected") ?? false,
+                            enabled: json.bool("enabled") ?? true,
+                            tools: status?.int("tools") ?? 0,
+                            source: json.string("source") ?? "")
     }
 }

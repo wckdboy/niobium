@@ -188,13 +188,16 @@ data class Approval(
     val command: String,
     val description: String,
     val toolName: String,
-    val choices: List<String>
+    val choices: List<String>,
+    val promptId: String? = null,
+    val executionGeneration: Int? = null,
+    val recovered: Boolean = false
 ) {
-    val id get() = requestId.ifBlank { rpcId.toString() }
+    val id get() = promptId ?: requestId.ifBlank { rpcId.toString() }
 }
 
 data class ClarifyQuestion(val id: String, val question: String, val choices: List<String>, val multiSelect: Boolean)
-data class ClarifyRequest(val rpcId: Any, val sessionId: String, val questions: List<ClarifyQuestion>)
+data class ClarifyRequest(val rpcId: Any, val sessionId: String, val questions: List<ClarifyQuestion>, val promptGenerations: Map<String, Int> = emptyMap())
 
 data class Toolset(val name: String, val description: String, val tools: List<String>, val enabled: Boolean) {
     val id get() = name
@@ -227,3 +230,41 @@ data class Routine(val id: String, val name: String, val schedule: String, val p
 }
 
 fun clockTime(epochMillis: Long): String = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(epochMillis))
+
+data class ModelChoice(val provider: String, val providerName: String, val model: String, val current: Boolean) {
+    val id get() = "$provider/$model"
+    val label get() = model.substringAfterLast('/')
+}
+
+data class SessionRow(val sessionId: String, val title: String, val messageCount: Int, val model: String, val startedAt: Long?, val running: Boolean) {
+    val id get() = sessionId
+    companion object {
+        fun parse(j: JSONObject): SessionRow? {
+            val id = j.s("session_id") ?: j.s("id") ?: return null
+            return SessionRow(id, j.s("title") ?: "Untitled", j.optInt("message_count", 0),
+                j.s("model") ?: "", epochDate(j.d("started_at")), j.optBoolean("running", false))
+        }
+    }
+}
+
+data class UsageStats(
+    val inputTokens: Int, val outputTokens: Int, val cacheRead: Int, val totalTokens: Int,
+    val apiCalls: Int, val contextTokens: Int, val contextLength: Int?, val compressionCount: Int,
+    val avgLatency: Double?, val activeSubagents: Int, val model: String
+) {
+    val contextFraction: Float get() = if (contextLength == null || contextLength <= 0) 0f else (contextTokens.toFloat() / contextLength).coerceIn(0f, 1f)
+    companion object {
+        fun parse(j: JSONObject): UsageStats? {
+            if (!j.has("total_tokens") && !j.has("input_tokens")) return null
+            return UsageStats(j.optInt("input_tokens"), j.optInt("output_tokens"), j.optInt("cache_read_tokens"),
+                j.optInt("total_tokens"), j.optInt("api_calls"), j.optInt("context_tokens"),
+                if (j.has("context_length") && !j.isNull("context_length")) j.optInt("context_length") else null,
+                j.optInt("compression_count"), if (j.has("avg_latency_s") && !j.isNull("avg_latency_s")) j.optDouble("avg_latency_s") else null,
+                j.optInt("active_subagents"), j.optString("model"))
+        }
+    }
+}
+
+data class MCPServerRow(val name: String, val transport: String, val status: String, val connected: Boolean, val enabled: Boolean, val tools: Int, val source: String) {
+    val id get() = name
+}

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{{title}}</title>
+  <meta name="description" content="{{description}}">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#111111" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="{{canonical}}">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/site.css">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Niobium">
+  <meta property="og:title" content="{{title}}">
+  <meta property="og:description" content="{{description}}">
+  <meta property="og:url" content="{{canonical}}">
+  <meta property="og:image" content="https://niobium.sh/og/niobium.png">
+  <meta name="twitter:card" content="summary_large_image">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="masthead">
+    <div class="wrap masthead__in">
+      <a class="brand" href="/">
+        <span class="brand__mark"><svg viewBox="0 0 16 16" width="16" height="16" shape-rendering="crispEdges" aria-hidden="true"><path fill="currentColor" d="M0 2h2v2h-2zM2 2h2v2h-2zM4 2h2v2h-2zM6 2h2v2h-2zM8 2h2v2h-2zM0 4h2v2h-2zM2 4h2v2h-2zM8 4h2v2h-2zM10 4h2v2h-2zM0 6h2v2h-2zM2 6h2v2h-2zM8 6h2v2h-2zM10 6h2v2h-2zM0 8h2v2h-2zM2 8h2v2h-2zM8 8h2v2h-2zM10 8h2v2h-2zM0 10h2v2h-2zM2 10h2v2h-2zM8 10h2v2h-2zM10 10h2v2h-2zM0 12h2v2h-2zM2 12h2v2h-2zM8 12h2v2h-2zM10 12h2v2h-2zM14 12h2v2h-2z"/></svg></span>
+        niobium <span class="brand__sub">/ niobium.sh</span>
+      </a>
+      <nav class="nav" aria-label="Primary">
+        {{navigation}}
+        <a href="https://github.com/wckdboy/niobium" rel="noopener">source</a>
+      </nav>
+    </div>
+  </header>
+  <main id="main" class="wrap">
+    <p class="label">{{label}}</p>
+    <h1>{{heading}}<span class="pixel-stop" aria-hidden="true"></span></h1>
+    {{content}}
+  </main>
+  <footer class="footer">
+    <div class="wrap footer__in">
+      <p>niobium by <a href="https://wckd.ai">wckd.ai</a> · independent software.</p>
+      <div class="footer__links">
+        <a href="/legal/">privacy &amp; licenses</a>
+        <a href="https://autobot.sh">autobot</a>
+        <a href="https://invincible.sh">invincible</a>
+        <a href="https://omnie.sh">omnie</a>
+        <a href="https://nightfall.sh">nightfall</a>
+        <a href="https://sovware.io">sovware</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
+

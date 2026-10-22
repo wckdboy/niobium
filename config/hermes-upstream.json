@@ -1,0 +1,8 @@
+{
+  "repository": "NousResearch/hermes-agent",
+  "branch": "main",
+  "audited_commit": "1186b6bd5330185ba61c4f80fbfc073f7febbf0e",
+  "audited_release": null,
+  "contract_prefix": "tui_gateway/contracts/",
+  "tracking_marker": "niobium-hermes-compatibility-watch"
+}

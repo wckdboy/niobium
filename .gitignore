@@ -8,6 +8,8 @@ android/keystore.properties
 android/*.jks
 dist/*.xcarchive/
 .DS_Store
+__pycache__/
+*.pyc
 # Secrets
 *.p12
 *.mobileprovision
@@ -20,3 +22,14 @@ root.tar.gz
 ios/Resources/root.tar.gz*
 
 ios/build-*/
+
+site/node_modules/
+site/dist/
+site/.wrangler/
+
+# Local credentials / Wrangler secrets
+.env
+.env.*
+!.env.example
+.secrets/
+site/.dev.vars

@@ -10,11 +10,15 @@ enum ConnectionPrefs {
         return try? JSONDecoder().decode(GatewayConnection.self, from: data)
     }
 
-    static func save(_ connection: GatewayConnection, token: String) {
+    @discardableResult
+    static func save(_ connection: GatewayConnection, token: String) -> Bool {
+        let previous = load()
+        guard Keychain.set(token, service: tokenService, account: connection.id.uuidString) else { return false }
         if let data = try? JSONEncoder().encode(connection) {
             UserDefaults.standard.set(data, forKey: connectionKey)
         }
-        Keychain.set(token, service: tokenService, account: connection.id.uuidString)
+        if let previous, previous.id != connection.id { Keychain.delete(service: tokenService, account: previous.id.uuidString) }
+        return true
     }
 
     static func token(for connection: GatewayConnection) -> String {
@@ -35,7 +39,7 @@ enum ConnectionPrefs {
         guard var components = URLComponents(string: text),
               let scheme = components.scheme?.lowercased(),
               scheme == "http" || scheme == "https",
-              components.host != nil else { return nil }
+              components.host != nil, components.user == nil, components.password == nil else { return nil }
         components.path = components.path.replacingOccurrences(of: "/+$", with: "", options: .regularExpression)
         components.query = nil
         components.fragment = nil
@@ -44,18 +48,21 @@ enum ConnectionPrefs {
 }
 
 enum Keychain {
-    static func set(_ value: String, service: String, account: String) {
+    @discardableResult
+    static func set(_ value: String, service: String, account: String) -> Bool {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: account
         ]
-        SecItemDelete(query as CFDictionary)
-        guard let data = value.data(using: .utf8) else { return }
+        guard let data = value.data(using: .utf8) else { return false }
+        let status = SecItemUpdate(query as CFDictionary, [kSecValueData as String: data] as CFDictionary)
+        if status == errSecSuccess { return true }
+        guard status == errSecItemNotFound else { return false }
         var insert = query
         insert[kSecValueData as String] = data
         insert[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-        SecItemAdd(insert as CFDictionary, nil)
+        return SecItemAdd(insert as CFDictionary, nil) == errSecSuccess
     }
 
     static func get(service: String, account: String) -> String? {
@@ -107,7 +114,28 @@ enum RPCError: LocalizedError {
 }
 
 @MainActor
-final class HermesRPCClient: NSObject {
+protocol HermesRPC: AnyObject {
+    var declinesNotShown: Bool { get }
+    var onNotification: ((String, String, JSONObject) -> Void)? { get set }
+    var onServerRequest: ((JSONValueID, String, JSONObject) -> Void)? { get set }
+    var onDisconnect: ((String) -> Void)? { get set }
+    func request(_ method: String, params: JSONObject, timeout: TimeInterval) async throws -> Any
+    func respond(id: JSONValueID, result: JSONObject)
+    func respondError(id: JSONValueID, code: Int, message: String)
+    func disconnect(notify: Bool)
+}
+
+extension HermesRPC {
+    func request(_ method: String, params: JSONObject = [:]) async throws -> Any {
+        try await request(method, params: params, timeout: 60)
+    }
+    func respondError(id: JSONValueID, message: String) {
+        respondError(id: id, code: -32601, message: message)
+    }
+}
+
+@MainActor
+final class HermesRPCClient: NSObject, HermesRPC {
     private var socket: URLSessionWebSocketTask?
     private var session: URLSession!
     private var nextID = 1
@@ -115,6 +143,7 @@ final class HermesRPCClient: NSObject {
     private var pendingTimeouts: [Int: Task<Void, Never>] = [:]
     private var heartbeat: Task<Void, Never>?
     private var receiveTask: Task<Void, Never>?
+    private var readyTimeoutTask: Task<Void, Never>?
     private var readyContinuation: CheckedContinuation<Void, Error>?
     private var isClosing = false
 
@@ -122,6 +151,7 @@ final class HermesRPCClient: NSObject {
     var onServerRequest: ((JSONValueID, String, JSONObject) -> Void)?
     var onDisconnect: ((String) -> Void)?
     var onReady: ((JSONObject) -> Void)?
+    private(set) var declinesNotShown = false
 
     override init() {
         super.init()
@@ -157,6 +187,7 @@ final class HermesRPCClient: NSObject {
         do {
             let capabilities = try await request("client.capabilities", params: ["server_requests": true])
             if let dict = capabilities as? JSONObject {
+                declinesNotShown = dict.bool("declines_not_shown") ?? false
                 onReady?(dict)
             }
         } catch {
@@ -167,8 +198,11 @@ final class HermesRPCClient: NSObject {
     private func waitForReady(timeout: TimeInterval) async throws {
         try await withCheckedThrowingContinuation { continuation in
             readyContinuation = continuation
-            Task { @MainActor in
-                try? await Task.sleep(for: .seconds(timeout))
+            let expectedSocket = socket
+            readyTimeoutTask?.cancel()
+            readyTimeoutTask = Task { @MainActor [weak self] in
+                do { try await Task.sleep(for: .seconds(timeout)) } catch { return }
+                guard let self, self.socket === expectedSocket else { return }
                 if let waiting = self.readyContinuation {
                     self.readyContinuation = nil
                     waiting.resume(throwing: RPCError.timeout)
@@ -181,6 +215,7 @@ final class HermesRPCClient: NSObject {
     func disconnect(notify: Bool) {
         isClosing = true
         heartbeat?.cancel(); heartbeat = nil
+        readyTimeoutTask?.cancel(); readyTimeoutTask = nil
         receiveTask?.cancel(); receiveTask = nil
         socket?.cancel(with: .normalClosure, reason: nil)
         socket = nil
@@ -197,21 +232,26 @@ final class HermesRPCClient: NSObject {
     }
 
     func request(_ method: String, params: JSONObject = [:], timeout: TimeInterval = 60) async throws -> Any {
+        try Task.checkCancellation()
         guard let socket else { throw RPCError.notConnected }
         let id = nextID; nextID += 1
         let payload: JSONObject = ["jsonrpc": "2.0", "id": id, "method": method, "params": params]
         let data = try JSONSerialization.data(withJSONObject: payload)
 
-        let result: RPCResult = try await withCheckedThrowingContinuation { continuation in
-            pending[id] = continuation
-            pendingTimeouts[id] = Task { @MainActor in
-                try? await Task.sleep(for: .seconds(timeout))
-                self.failPending(id, error: RPCError.timeout)
+        let result: RPCResult = try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                pending[id] = continuation
+                pendingTimeouts[id] = Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(timeout))
+                    self.failPending(id, error: RPCError.timeout)
+                }
+                socket.send(.string(String(data: data, encoding: .utf8) ?? "{}")) { [weak self] error in
+                    guard let error else { return }
+                    Task { @MainActor in self?.failPending(id, error: RPCError.transport(error.localizedDescription)) }
+                }
             }
-            socket.send(.string(String(data: data, encoding: .utf8) ?? "{}")) { [weak self] error in
-                guard let error else { return }
-                Task { @MainActor in self?.failPending(id, error: RPCError.transport(error.localizedDescription)) }
-            }
+        } onCancel: {
+            Task { @MainActor [weak self] in self?.failPending(id, error: CancellationError()) }
         }
         return result.value
     }
@@ -251,10 +291,9 @@ final class HermesRPCClient: NSObject {
                 handle(object)
             } catch {
                 guard !isClosing, self.socket === task else { return }
-                self.socket = nil
-                let waiters = pending
-                pending.removeAll()
-                for (_, waiter) in waiters { waiter.resume(throwing: RPCError.transport(error.localizedDescription)) }
+                // Close every waiter and timer, including a handshake still waiting
+                // for gateway.ready. A dead socket must not linger until timeout.
+                disconnect(notify: false)
                 onDisconnect?(Self.friendly(error))
                 return
             }
@@ -286,6 +325,7 @@ final class HermesRPCClient: NSObject {
         let sessionID = params.string("session_id") ?? ""
         let payload = params.dict("payload") ?? [:]
         if type == "gateway.ready" {
+            readyTimeoutTask?.cancel(); readyTimeoutTask = nil
             onNotification?(type, sessionID, payload)
             if let ready = readyContinuation {
                 readyContinuation = nil
@@ -340,8 +380,8 @@ extension HermesRPCClient: URLSessionWebSocketDelegate {
                                 didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
         Task { @MainActor in
             guard !self.isClosing, self.socket === webSocketTask else { return }
-            self.socket = nil
             let message = reason.flatMap { String(data: $0, encoding: .utf8) } ?? "Gateway closed the connection"
+            self.disconnect(notify: false)
             self.onDisconnect?(message)
         }
     }

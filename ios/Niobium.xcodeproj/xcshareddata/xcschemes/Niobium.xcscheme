@@ -39,6 +39,28 @@
          </BuildableReference>
       </MacroExpansion>
       <Testables>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "3088EC28E276A9F03575DFA2"
+               BuildableName = "NiobiumTests.xctest"
+               BlueprintName = "NiobiumTests"
+               ReferencedContainer = "container:Niobium.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "6F976EB3602E2157631BDD96"
+               BuildableName = "NiobiumUITests.xctest"
+               BlueprintName = "NiobiumUITests"
+               ReferencedContainer = "container:Niobium.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
       <CommandLineArguments>
       </CommandLineArguments>

@@ -149,6 +149,10 @@ struct BotInfoSheet: View {
                         .background(RoundedRectangle(cornerRadius: 18).fill(NB.surface.opacity(0.7)))
                         .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(NB.line, lineWidth: 1))
 
+                        if let usage = store.usage {
+                            usageCard(usage)
+                        }
+
                         if !store.toolsets.isEmpty {
                             VStack(alignment: .leading, spacing: 10) {
                                 NBSectionHeader(title: "Enabled toolsets")
@@ -175,6 +179,50 @@ struct BotInfoSheet: View {
         }
         .presentationDetents([.large])
         .presentationBackground(NB.ink)
+        .task { await store.loadUsage() }
+    }
+
+    private func usageCard(_ usage: UsageStats) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            NBSectionHeader(title: "Usage", detail: usage.model.isEmpty ? nil : usage.model)
+            HStack(spacing: 10) {
+                ZStack {
+                    Circle().stroke(NB.line, lineWidth: 6)
+                    Circle().trim(from: 0, to: usage.contextFraction)
+                        .stroke(NB.ion, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                    Text("\(Int(usage.contextFraction * 100))%")
+                        .font(.nbMono(9, weight: .semibold)).foregroundStyle(NB.text)
+                }
+                .frame(width: 58, height: 58)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Context").font(.nbBody(11, weight: .medium)).foregroundStyle(NB.text)
+                    Text("\(usage.contextTokens.formatted()) / \(usage.contextLength?.formatted() ?? "—") tokens")
+                        .font(.nbMono(8)).foregroundStyle(NB.tertiary)
+                    Text("\(usage.apiCalls) calls · \(usage.compressionCount) compressions")
+                        .font(.nbMono(8)).foregroundStyle(NB.tertiary)
+                }
+                Spacer()
+            }
+            HStack(spacing: 0) {
+                usageStat("\(usage.inputTokens.formatted())", "in")
+                usageStat("\(usage.outputTokens.formatted())", "out")
+                usageStat("\(usage.cacheRead.formatted())", "cache")
+                usageStat(usage.avgLatency.map { String(format: "%.1fs", $0) } ?? "—", "latency")
+                usageStat("\(usage.activeSubagents)", "agents")
+            }
+        }
+        .padding(13)
+        .background(RoundedRectangle(cornerRadius: 16).fill(NB.surface.opacity(0.7)))
+        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(NB.line, lineWidth: 1))
+    }
+
+    private func usageStat(_ value: String, _ label: String) -> some View {
+        VStack(spacing: 2) {
+            Text(value).font(.nbMono(9, weight: .medium)).foregroundStyle(NB.text)
+            Text(label).font(.nbBody(8)).foregroundStyle(NB.tertiary)
+        }
+        .frame(maxWidth: .infinity)
     }
 
     private func infoRow(_ label: String, _ value: String) -> some View {
@@ -388,5 +436,146 @@ struct FlowLayout: Layout {
             x += size.width + spacing
             rowHeight = max(rowHeight, size.height)
         }
+    }
+}
+
+struct ModelPickerView: View {
+    @EnvironmentObject private var store: AppStore
+    @Environment(\.dismiss) private var dismiss
+    let bot: BotProfile
+
+    private var grouped: [(String, [ModelChoice])] {
+        Dictionary(grouping: store.modelChoices, by: \.providerName)
+            .sorted { $0.key.localizedCaseInsensitiveCompare($1.key) == .orderedAscending }
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                NBMeshBackground(intensity: 0.4)
+                if store.modelChoices.isEmpty {
+                    VStack(spacing: 10) {
+                        Image(systemName: "cpu").font(.system(size: 24)).foregroundStyle(NB.tertiary)
+                        Text("No model catalog").font(.nbTitle(18)).foregroundStyle(NB.text)
+                        Text("This gateway did not return model.options for the session. The profile default stays in use.")
+                            .font(.nbBody(11)).foregroundStyle(NB.tertiary).multilineTextAlignment(.center)
+                            .frame(maxWidth: 300)
+                        Button("Refresh") { Task { await store.loadModels() } }
+                            .font(.nbBody(12, weight: .medium)).foregroundStyle(NB.ion)
+                    }
+                } else {
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 16) {
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("Model").font(.nbDisplay(28)).foregroundStyle(NB.text)
+                                Text("The next turn runs on this provider and model. The session revision is fenced.")
+                                    .font(.nbBody(11)).foregroundStyle(NB.secondary)
+                                Menu {
+                                    Button("Profile default") { Task { await store.setReasoning(nil) } }
+                                    ForEach(["minimal", "low", "medium", "high", "xhigh", "max", "ultra"], id: \.self) { effort in
+                                        Button(effort.capitalized) { Task { await store.setReasoning(effort) } }
+                                    }
+                                } label: {
+                                    Label("Reasoning: \(store.chatReasoning ?? "profile default")", systemImage: "brain")
+                                        .font(.nbBody(12, weight: .medium)).foregroundStyle(NB.ion).padding(.vertical, 10)
+                                }
+                                .disabled(store.isDemo || store.isTurnActive)
+                            }
+                            ForEach(grouped, id: \.0) { group in
+                                VStack(alignment: .leading, spacing: 7) {
+                                    Text(group.0.uppercased()).font(.nbLabel(9)).tracking(1.4).foregroundStyle(NB.tertiary)
+                                    ForEach(group.1) { choice in
+                                        Button {
+                                            Task { await store.switchModel(choice); dismiss() }
+                                        } label: {
+                                            HStack(spacing: 9) {
+                                                VStack(alignment: .leading, spacing: 2) {
+                                                    Text(choice.label).font(.nbBody(12.5, weight: .medium)).foregroundStyle(NB.text)
+                                                    Text(choice.model).font(.nbMono(8)).foregroundStyle(NB.tertiary).lineLimit(1)
+                                                }
+                                                Spacer()
+                                                if choice.current {
+                                                    Image(systemName: "checkmark.circle.fill").foregroundStyle(NB.ion)
+                                                }
+                                            }
+                                            .padding(11)
+                                            .background(RoundedRectangle(cornerRadius: 12).fill(choice.current ? NB.ion.opacity(0.10) : NB.fillSoft))
+                                            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(choice.current ? NB.ion.opacity(0.35) : NB.line, lineWidth: 1))
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
+                            }
+                        }
+                        .padding(18)
+                    }
+                }
+            }
+            .navigationTitle("Models")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() }.foregroundStyle(NB.ion) }
+            }
+        }
+        .task { await store.loadModels() }
+    }
+}
+
+struct ChatsView: View {
+    @EnvironmentObject private var store: AppStore
+    @Environment(\.dismiss) private var dismiss
+    let bot: BotProfile
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                NBMeshBackground(intensity: 0.4)
+                ScrollView {
+                    LazyVStack(spacing: 8) {
+                        if store.sessions.isEmpty {
+                            VStack(spacing: 8) {
+                                Text("No stored chats").font(.nbTitle(18)).foregroundStyle(NB.text)
+                                Text("Start a conversation and it will appear here. The gateway keeps the history.")
+                                    .font(.nbBody(11)).foregroundStyle(NB.tertiary).multilineTextAlignment(.center)
+                            }
+                            .padding(.top, 60)
+                        }
+                        ForEach(store.sessions) { row in
+                            Button {
+                                Task {
+                                    await store.resumeSession(row, for: bot)
+                                    dismiss()
+                                }
+                            } label: {
+                                HStack(spacing: 10) {
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text(row.title).font(.nbBody(13, weight: .medium)).foregroundStyle(NB.text).lineLimit(1)
+                                        HStack(spacing: 6) {
+                                            Text(row.startedAt?.formatted(.dateTime.month().day().hour().minute()) ?? "—")
+                                            Text("· \(row.messageCount) messages")
+                                            if row.running { Text("· running").foregroundStyle(NB.mint) }
+                                        }
+                                        .font(.nbMono(8)).foregroundStyle(NB.tertiary)
+                                    }
+                                    Spacer()
+                                    Image(systemName: "chevron.right").font(.system(size: 9)).foregroundStyle(NB.tertiary)
+                                }
+                                .padding(12)
+                                .background(RoundedRectangle(cornerRadius: 13).fill(NB.fillSoft))
+                                .overlay(RoundedRectangle(cornerRadius: 13).strokeBorder(NB.line, lineWidth: 1))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(18)
+                }
+            }
+            .navigationTitle("Chats")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() }.foregroundStyle(NB.ion) }
+            }
+        }
+        .task { await store.loadSessions(for: bot) }
     }
 }

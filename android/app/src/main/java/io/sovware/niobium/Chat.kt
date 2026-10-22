@@ -59,7 +59,13 @@ import androidx.compose.ui.unit.sp
 fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = {}) {
     val state = vm.state
     var draft by remember { mutableStateOf("") }
-    var showMascot by remember { mutableStateOf(false) }
+    var clarifyHidden by remember(state.clarify) { mutableStateOf(false) }
+    var showCompanions by remember { mutableStateOf(false) }
+    var showMentions by remember { mutableStateOf(false) }
+    var showCast by remember { mutableStateOf(false) }
+    var showModels by remember { mutableStateOf(false) }
+    var showChats by remember { mutableStateOf(false) }
+    var showUsage by remember { mutableStateOf(false) }
     var showRoutines by remember { mutableStateOf(false) }
     var attachment by remember { mutableStateOf<Pair<String, String>?>(null) }
     val context = LocalContext.current
@@ -84,9 +90,14 @@ fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = 
     }
 
     Column(Modifier.fillMaxSize().background(Nb.Void).statusBarsPadding().imePadding()) {
-        ChatHeader(bot, state, onOpenTools = onOpenTools, onOpenMascot = { showMascot = true },
-            onOpenRoutines = { showRoutines = true }) { vm.closeBot() }
+        ChatHeader(bot, state, onOpenTools = onOpenTools, onOpenMascot = { showCast = true },
+            onOpenRoutines = { showRoutines = true }, onOpenModels = { showModels = true },
+            onOpenChats = { showChats = true }, onOpenUsage = { showUsage = true },
+            onOpenCompanions = { showCompanions = true }, onMention = { showMentions = true }) { vm.closeBot() }
         Box(Modifier.fillMaxWidth().height(1.dp).background(Nb.Line))
+        if (state.clarify != null) androidx.compose.material3.TextButton(onClick = { clarifyHidden = false }, modifier = Modifier.fillMaxWidth()) {
+            Text("Your Pixel is waiting for an answer", color = Nb.Ion, fontSize = 12.sp)
+        }
         Box(Modifier.weight(1f)) {
             if (state.messages.isEmpty() && state.loadingChat) {
                 Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
@@ -155,21 +166,46 @@ fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = 
         )
     }
 
-    state.clarify?.let { request ->
-        ClarifyDialog(request) { answers -> vm.resolveClarify(answers) }
+    state.clarify?.takeUnless { clarifyHidden }?.let { request ->
+        ClarifyDialog(request, onSubmit = { answers -> vm.resolveClarify(answers); clarifyHidden = true },
+            onCancel = { vm.cancelClarify(); clarifyHidden = true })
+    }
+    if (showCompanions) CompanionsSheet(vm, bot) { showCompanions = false }
+    if (showMentions) {
+        androidx.compose.material3.AlertDialog(onDismissRequest = { showMentions = false }, containerColor = Nb.Ink,
+            title = { Text("Mention a Pixel", color = Nb.Text) },
+            text = { androidx.compose.foundation.lazy.LazyColumn {
+                items(state.bots.filter { it.name != bot.name }, key = { it.name }) { teammate ->
+                    Text(teammate.title + "  @" + teammate.name, color = Nb.Secondary, fontSize = 13.sp,
+                        modifier = Modifier.fillMaxWidth().clickable {
+                            draft += (if (draft.isBlank()) "" else " ") + "@" + teammate.name + " "; showMentions = false
+                        }.padding(12.dp))
+                }
+            } }, confirmButton = { androidx.compose.material3.TextButton(onClick = { showMentions = false }) { Text("Done") } })
+    }
+    if (showUsage) {
+        UsageSheet(vm) { showUsage = false }
+    }
+    if (showChats) {
+        ChatsSheet(vm, bot) { showChats = false }
+    }
+    if (showModels) {
+        ModelSheet(vm, bot) { showModels = false }
     }
     if (showRoutines) {
         RoutinesSheet(vm, bot) { showRoutines = false }
     }
-    if (showMascot) {
-        MascotStudioSheet(profile = bot.name, title = bot.title,
-            initialAccent = bot.accentHex ?: "#A78BFA", onDismiss = { showMascot = false })
+    if (showCast) {
+        CastStudioSheet(vm, profile = bot.name, title = bot.title) { showCast = false }
     }
 }
 
 @Composable
 private fun ChatHeader(bot: BotProfile, state: NbState, onOpenTools: () -> Unit,
-                       onOpenMascot: () -> Unit, onOpenRoutines: () -> Unit, onBack: () -> Unit) {
+                       onOpenMascot: () -> Unit, onOpenRoutines: () -> Unit,
+                       onOpenModels: () -> Unit, onOpenChats: () -> Unit, onOpenUsage: () -> Unit,
+                       onOpenCompanions: () -> Unit, onMention: () -> Unit,
+                       onBack: () -> Unit) {
     var menuOpen by remember { mutableStateOf(false) }
     val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
     Row(Modifier.fillMaxWidth().background(Nb.Ink.copy(alpha = 0.92f)).padding(horizontal = 14.dp, vertical = 10.dp),
@@ -190,7 +226,8 @@ private fun ChatHeader(bot: BotProfile, state: NbState, onOpenTools: () -> Unit,
                 Box(Modifier.size(4.5.dp).clip(CircleShape).background(if (state.turnActive) Nb.Mint else Nb.Tertiary))
                 Spacer(Modifier.width(5.dp))
                 Text(if (state.turnActive) "Working" else (bot.model.ifBlank { "Ready" }), color = Nb.Tertiary,
-                    style = NbMono, fontSize = 8.5.sp, maxLines = 1)
+                    style = NbMono, fontSize = 8.5.sp, maxLines = 1,
+                    modifier = Modifier.clickable { onOpenModels() })
             }
         }
         Box {
@@ -201,9 +238,21 @@ private fun ChatHeader(bot: BotProfile, state: NbState, onOpenTools: () -> Unit,
                 onDismissRequest = { menuOpen = false },
                 containerColor = Nb.Raised
             ) {
+                DropdownMenuItem(text = { Text("Companion tasks", color = Nb.Text, fontSize = 13.sp) },
+                    onClick = { menuOpen = false; onOpenCompanions() })
+                DropdownMenuItem(text = { Text("Mention a Pixel", color = Nb.Text, fontSize = 13.sp) },
+                    onClick = { menuOpen = false; onMention() })
                 DropdownMenuItem(
                     text = { Text("Toolbox", color = Nb.Text, fontSize = 13.sp) },
                     onClick = { menuOpen = false; onOpenTools() }
+                )
+                DropdownMenuItem(
+                    text = { Text("Usage", color = Nb.Text, fontSize = 13.sp) },
+                    onClick = { menuOpen = false; onOpenUsage() }
+                )
+                DropdownMenuItem(
+                    text = { Text("All chats", color = Nb.Text, fontSize = 13.sp) },
+                    onClick = { menuOpen = false; onOpenChats() }
                 )
                 DropdownMenuItem(
                     text = { Text("Routines", color = Nb.Text, fontSize = 13.sp) },
@@ -417,7 +466,10 @@ fun Composer(
 fun GroupChatScreen(vm: NiobiumViewModel, room: GroupRoom) {
     val state = vm.state
     var draft by remember { mutableStateOf("") }
-    var showMascot by remember { mutableStateOf(false) }
+    var showCast by remember { mutableStateOf(false) }
+    var showModels by remember { mutableStateOf(false) }
+    var showChats by remember { mutableStateOf(false) }
+    var showUsage by remember { mutableStateOf(false) }
     var showRoutines by remember { mutableStateOf(false) }
     var attachment by remember { mutableStateOf<Pair<String, String>?>(null) }
     val context = LocalContext.current
@@ -524,11 +576,11 @@ private fun GroupEventRow(event: RoomEvent, room: GroupRoom) {
 }
 
 @Composable
-private fun ClarifyDialog(request: ClarifyRequest, onSubmit: (Map<String, String>) -> Unit) {
+private fun ClarifyDialog(request: ClarifyRequest, onSubmit: (Map<String, String>) -> Unit, onCancel: () -> Unit) {
     val answers = remember { mutableStateMapOf<String, String>() }
     val complete = request.questions.all { answers[it.id]?.isNotBlank() == true }
     AlertDialog(
-        onDismissRequest = { onSubmit(emptyMap()) },
+        onDismissRequest = onCancel,
         title = { Text("A quick question", color = Nb.Text, fontWeight = FontWeight.SemiBold) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
@@ -575,7 +627,7 @@ private fun ClarifyDialog(request: ClarifyRequest, onSubmit: (Map<String, String
                 }.padding(10.dp))
         },
         dismissButton = {
-            Text("Cancel", color = Nb.Secondary, modifier = Modifier.clickable { onSubmit(emptyMap()) }.padding(10.dp))
+            Text("Cancel", color = Nb.Secondary, modifier = Modifier.clickable(onClick = onCancel).padding(10.dp))
         },
         containerColor = Nb.Raised
     )

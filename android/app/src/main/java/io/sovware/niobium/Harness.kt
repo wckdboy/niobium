@@ -44,8 +44,9 @@ import androidx.compose.ui.viewinterop.AndroidView
 @Composable
 fun RemoteHarnessScreen(onClose: () -> Unit) {
     val context = LocalContext.current
-    val prefs = context.getSharedPreferences("niobium", android.content.Context.MODE_PRIVATE)
-    var url by remember { mutableStateOf(prefs.getString("niobium.harnessURL", "") ?: "") }
+    val prefs = remember { SecurePrefs(context.applicationContext) }
+    var url by remember { mutableStateOf(runCatching { prefs.loadHarnessUrl() }.getOrDefault("")) }
+    var reloadID by remember { mutableStateOf(0) }
     var active by remember { mutableStateOf(url.takeIf { it.isNotBlank() }) }
     var error by remember { mutableStateOf<String?>(null) }
 
@@ -57,7 +58,7 @@ fun RemoteHarnessScreen(onClose: () -> Unit) {
             Spacer(Modifier.width(8.dp))
             Column(Modifier.weight(1f)) {
                 Text("DeepSeek Harness", color = Nb.Text, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
-                Text(if (active == null) "remote · computer or VPS" else "remote · live",
+                Text(if (active == null) "remote · computer or VPS" else "remote · harness",
                     color = Nb.Tertiary, style = NbMono, fontSize = 8.5.sp)
             }
             if (active != null) {
@@ -88,12 +89,11 @@ fun RemoteHarnessScreen(onClose: () -> Unit) {
                         var raw = url.trim()
                         if (!raw.contains("://")) raw = "http://$raw"
                         val parsed = runCatching { Uri.parse(raw) }.getOrNull()
-                        if (parsed == null || parsed.host.isNullOrBlank() || parsed.scheme !in listOf("http", "https")) {
+                        if (parsed == null || parsed.host.isNullOrBlank() || parsed.scheme !in listOf("http", "https") || parsed.userInfo != null) {
                             error = "Enter a full http:// or https:// URL."
                         } else {
                             url = raw
-                            prefs.edit().putString("niobium.harnessURL", raw).apply()
-                            active = raw
+                            runCatching { prefs.saveHarnessUrl(raw) }.onSuccess { active = raw }.onFailure { error = "Could not save the harness address securely." }
                         }
                     }.padding(vertical = 14.dp), contentAlignment = Alignment.Center) {
                     Text("Open harness", color = Nb.OnIon, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
@@ -104,18 +104,35 @@ fun RemoteHarnessScreen(onClose: () -> Unit) {
                     color = Nb.Tertiary, fontSize = 10.5.sp, lineHeight = 16.sp)
             }
         } else {
-            AndroidView(
+            error?.let { message ->
+                Row(Modifier.fillMaxWidth().background(Nb.Surface).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(message, color = Nb.Rose, fontSize = 11.sp, modifier = Modifier.weight(1f))
+                    Text("Retry", color = Nb.Ion, fontSize = 12.sp, modifier = Modifier.clickable { error = null; reloadID++ }.padding(8.dp))
+                }
+            }
+            androidx.compose.runtime.key(active, reloadID) { AndroidView(
                 modifier = Modifier.fillMaxSize().navigationBarsPadding(),
                 factory = { ctx ->
                     WebView(ctx).apply {
                         settings.javaScriptEnabled = true
                         settings.domStorageEnabled = true
-                        webViewClient = WebViewClient()
+                        settings.allowFileAccess = false
+                        settings.allowContentAccess = false
+                        webViewClient = object : WebViewClient() {
+                            override fun onPageFinished(view: WebView?, url: String?) { error = null }
+                            override fun onReceivedError(view: WebView?, request: android.webkit.WebResourceRequest?, failure: android.webkit.WebResourceError?) {
+                                if (request?.isForMainFrame == true) error = "Could not load harness: " + failure?.description
+                            }
+                            override fun onReceivedHttpError(view: WebView?, request: android.webkit.WebResourceRequest?, response: android.webkit.WebResourceResponse?) {
+                                if (request?.isForMainFrame == true) error = "Harness returned HTTP " + response?.statusCode
+                            }
+                        }
                         loadUrl(active!!)
                     }
                 },
-                update = { }
-            )
+                update = { },
+                onRelease = { web -> web.stopLoading(); web.loadUrl("about:blank"); web.removeAllViews(); web.destroy() }
+            ) }
         }
     }
 }

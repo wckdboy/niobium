@@ -10,8 +10,11 @@ struct ChatView: View {
     @State private var attachment: UIImage?
     @State private var showTools = false
     @State private var showRoutines = false
-    @State private var showMascot = false
+    @State private var showCast = false
+    @State private var showModels = false
+    @State private var showChats = false
     @State private var showInfo = false
+    @State private var showCompanions = false
     @State private var showClarify = false
     @State private var appeared = false
     @FocusState private var inputFocused: Bool
@@ -25,6 +28,10 @@ struct ChatView: View {
             VStack(spacing: 0) {
                 header
                 Divider().overlay(NB.line)
+                if store.clarifyRequest != nil {
+                    Button("Your Pixel is waiting for an answer") { showClarify = true }
+                        .font(.nbBody(12)).foregroundStyle(NB.ion).padding(10)
+                }
                 messageScroll
                 composer
             }
@@ -39,16 +46,19 @@ struct ChatView: View {
             withAnimation(.easeOut(duration: 0.45)) { appeared = true }
         }
         .onDisappear { speech.stop() }
+        .sheet(item: Binding(get: { store.credentialRequests.first }, set: { _ in })) { request in CredentialPromptView(request: request).environmentObject(store).id(request.id) }
+        .sheet(isPresented: $showCompanions) { CompanionsView(bot: bot).environmentObject(store) }
         .sheet(isPresented: $showTools) {
             ChatToolsSheet(bot: bot).environmentObject(store)
         }
         .sheet(isPresented: $showRoutines) {
             RoutinesView(bot: bot).environmentObject(store)
         }
-        .sheet(isPresented: $showMascot) {
-            MascotStudioView(profile: bot.name, title: bot.title,
-                             initialAccent: bot.accentHex ?? "#A78BFA", onSave: { _ in })
+        .sheet(isPresented: $showCast) {
+            CastStudioView(profile: bot.name, title: bot.title)
         }
+        .sheet(isPresented: $showModels) { ModelPickerView(bot: bot).environmentObject(store) }
+        .sheet(isPresented: $showChats) { ChatsView(bot: bot).environmentObject(store) }
         .sheet(isPresented: $showInfo) {
             BotInfoSheet(bot: bot).environmentObject(store)
         }
@@ -58,12 +68,12 @@ struct ChatView: View {
                     store.resolveClarify(answers)
                     showClarify = false
                 } onCancel: {
-                    store.resolveClarify([:])
+                    store.cancelClarify()
                     showClarify = false
                 }
             }
         }
-        .onChange(of: store.clarifyRequest) { _, new in
+        .onChange(of: store.clarifyRequest, initial: true) { _, new in
             if new != nil { showClarify = true }
         }
         .onChange(of: photoItem) { _, item in
@@ -103,19 +113,32 @@ struct ChatView: View {
                     Text(bot.title).font(.nbTitle(16)).foregroundStyle(NB.text)
                     if store.isDemo { NBPill(text: "demo", tint: NB.violet) }
                 }
-                HStack(spacing: 5) {
-                    Circle().fill(store.isTurnActive ? NB.mint : NB.tertiary).frame(width: 4.5, height: 4.5)
-                    Text(store.isTurnActive ? "Working" : (bot.model.isEmpty ? "Ready" : bot.model))
-                        .font(.nbMono(8.5))
-                        .foregroundStyle(NB.tertiary)
-                        .lineLimit(1)
+                Button { showModels = true } label: {
+                    HStack(spacing: 5) {
+                        Circle().fill(store.isTurnActive ? NB.mint : NB.tertiary).frame(width: 4.5, height: 4.5)
+                        Text(store.isTurnActive ? "Working" : (bot.model.isEmpty ? "Ready" : bot.model))
+                            .font(.nbMono(8.5))
+                            .foregroundStyle(NB.tertiary)
+                            .lineLimit(1)
+                        if !store.modelChoices.isEmpty {
+                            Image(systemName: "chevron.down").font(.system(size: 7)).foregroundStyle(NB.tertiary)
+                        }
+                    }
                 }
+                .buttonStyle(.plain)
             }
             Spacer()
             Menu {
+                Button { showCompanions = true } label: { Label("Companion tasks", systemImage: "pawprint") }
+                Menu("Mention a Pixel") {
+                    ForEach(store.bots.filter { $0.name != bot.name }) { teammate in
+                        Button(teammate.title) { draft += (draft.isEmpty ? "" : " ") + "@" + teammate.name + " " }
+                    }
+                }
                 Button { showTools = true } label: { Label("Tools & capabilities", systemImage: "hammer") }
                 Button { showRoutines = true } label: { Label("Routines", systemImage: "clock.arrow.circlepath") }
-                Button { showMascot = true } label: { Label("Mascot studio", systemImage: "paintpalette") }
+                Button { showChats = true } label: { Label("All chats", systemImage: "bubble.left.and.bubble.right") }
+                Button { showCast = true } label: { Label("Cast studio", systemImage: "person.crop.artframe") }
                 Button { showInfo = true } label: { Label("Pixel details", systemImage: "info.circle") }
                 Divider()
                 Button {

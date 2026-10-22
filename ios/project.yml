@@ -1,6 +1,6 @@
 name: Niobium
 options:
-  bundleIdPrefix: io.sovware
+  bundleIdPrefix: ai.wckd
   deploymentTarget:
     iOS: "18.0"
   xcodeVersion: "27.0"
@@ -9,7 +9,7 @@ settings:
   base:
     SWIFT_VERSION: "6.0"
     IPHONEOS_DEPLOYMENT_TARGET: "18.0"
-    DEVELOPMENT_TEAM: ""
+    DEVELOPMENT_TEAM: "XKA8CGC2AB"
     CODE_SIGN_STYLE: Automatic
     ENABLE_USER_SCRIPT_SANDBOXING: NO
     SWIFT_STRICT_CONCURRENCY: minimal
@@ -25,12 +25,13 @@ targets:
         excludes:
           - Info.plist
           - Niobium.entitlements
+          - "root.tar.gz*"
     settings:
       base:
         INFOPLIST_FILE: Resources/Info.plist
-        PRODUCT_BUNDLE_IDENTIFIER: io.sovware.niobium
-        MARKETING_VERSION: "1.1"
-        CURRENT_PROJECT_VERSION: "1"
+        PRODUCT_BUNDLE_IDENTIFIER: ai.wckd.niobium
+        MARKETING_VERSION: "2.0"
+        CURRENT_PROJECT_VERSION: "4"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         TARGETED_DEVICE_FAMILY: "1,2"
@@ -38,4 +39,26 @@ targets:
         GENERATE_INFOPLIST_FILE: NO
         SUPPORTS_MACCATALYST: NO
     scheme:
-      testTargets: []
+      testTargets:
+        - NiobiumTests
+        - NiobiumUITests
+  NiobiumTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [NativeTests]
+    dependencies:
+      - target: Niobium
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ai.wckd.niobium.tests
+        GENERATE_INFOPLIST_FILE: YES
+  NiobiumUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [UITests]
+    dependencies:
+      - target: Niobium
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ai.wckd.niobium.uitests
+        GENERATE_INFOPLIST_FILE: YES

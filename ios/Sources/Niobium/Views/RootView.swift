@@ -5,6 +5,13 @@ struct RootView: View {
     @AppStorage("niobium.appearance") private var appearance = NBAppearance.system.rawValue
     @State private var splash = !ProcessInfo.processInfo.arguments.contains("--no-splash")
 
+    private var forcedScheme: ColorScheme? {
+        let args = ProcessInfo.processInfo.arguments
+        if args.contains("--light") { return .light }
+        if args.contains("--dark") { return .dark }
+        return NBAppearance(rawValue: appearance)?.colorScheme
+    }
+
     var body: some View {
         ZStack {
             Group {
@@ -41,7 +48,7 @@ struct RootView: View {
             .animation(.spring(response: 0.45, dampingFraction: 0.86), value: store.errorBanner)
             .zIndex(30)
         }
-        .preferredColorScheme(NBAppearance(rawValue: appearance)?.colorScheme)
+        .preferredColorScheme(forcedScheme)
         .fullScreenCover(item: $store.activeBot, onDismiss: { store.closeBot() }) { bot in
             ChatView(bot: bot)
                 .environmentObject(store)
@@ -93,19 +100,21 @@ struct SplashView: View {
 }
 
 enum AppTab: String, CaseIterable {
-    case pixels, rooms, activity, settings
+    case home, pixels, local, activity, settings
     var title: String {
         switch self {
+        case .home: return "Home"
         case .pixels: return "Pixels"
-        case .rooms: return "Rooms"
+        case .local: return "Local"
         case .activity: return "Activity"
         case .settings: return "Settings"
         }
     }
     var icon: String {
         switch self {
+        case .home: return "house"
         case .pixels: return "square.grid.2x2"
-        case .rooms: return "person.2"
+        case .local: return "shippingbox"
         case .activity: return "bolt.horizontal"
         case .settings: return "slider.horizontal.3"
         }
@@ -124,9 +133,9 @@ struct MainShell: View {
 
     static var initialTab: AppTab {
         let args = ProcessInfo.processInfo.arguments
-        guard let index = args.firstIndex(of: "--tab"), index + 1 < args.count else { return .pixels }
+        guard let index = args.firstIndex(of: "--tab"), index + 1 < args.count else { return .home }
         let raw = args[index + 1].lowercased()
-        return AppTab(rawValue: raw == "bots" ? "pixels" : (raw == "pulse" ? "activity" : raw)) ?? .pixels
+        return AppTab(rawValue: raw == "bots" ? "pixels" : (raw == "pulse" ? "activity" : (raw == "rooms" ? "local" : raw))) ?? .home
     }
 
     var body: some View {
@@ -134,10 +143,12 @@ struct MainShell: View {
             NBMeshBackground(intensity: 0.7)
             Group {
                 switch tab {
+                case .home:
+                    HomeView(onShowPixels: { tab = .pixels })
                 case .pixels:
                     BotsView(newBot: $newBot)
-                case .rooms:
-                    RoomsView(newGroup: $newGroup)
+                case .local:
+                    LocalView()
                 case .activity:
                     PulseView()
                 case .settings:
@@ -145,6 +156,10 @@ struct MainShell: View {
                 }
             }
             .transition(.opacity)
+        }
+        .task {
+            let args = ProcessInfo.processInfo.arguments
+            if store.isDemo && (args.contains("--workshop") || args.contains("--pixel-review")) { newBot = true }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             TabBar(selection: $tab)

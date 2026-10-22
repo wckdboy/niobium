@@ -90,6 +90,7 @@
 		7D87FDEDE17C497549D01AC3 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 7060793D8ED44F336BDCBD18 /* Settings.bundle */; };
 		7DC15B7A5C508F8F6CAAECB5 /* PasteboardDevice.m in Sources */ = {isa = PBXBuildFile; fileRef = B9CFF7DBCCE1D6D971538BDF /* PasteboardDevice.m */; };
 		80B8C255FD22BC06AB160F4B /* AboutViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 787F0BB85357F8D1FA09B0D7 /* AboutViewController.m */; };
+		81B5360DC3FA28E5E5E529C1 /* bot-build.md in Resources */ = {isa = PBXBuildFile; fileRef = F7AE1C4EA13A5057F13BE88C /* bot-build.md */; };
 		827D3480D80ADD5EA9FDF576 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4C7CC475C3006D52FB611F4 /* ChatView.swift */; };
 		88F69954156EBA59901FCB0C /* is.png in Resources */ = {isa = PBXBuildFile; fileRef = 57CE7784D5743825ABCB2C94 /* is.png */; };
 		8B34DC7BACC886A415EEF0DA /* uninspired.png in Resources */ = {isa = PBXBuildFile; fileRef = 065C62C46EDACDEB9F9E0F4C /* uninspired.png */; };
@@ -101,6 +102,7 @@
 		94C525E45A37027088335E84 /* Theme.m in Sources */ = {isa = PBXBuildFile; fileRef = E0E9610E1C3223CB49D8CBB9 /* Theme.m */; };
 		991A42CE43F0CDD74A58D69D /* metal.png in Resources */ = {isa = PBXBuildFile; fileRef = FC2835A1206ACA50B2947A55 /* metal.png */; };
 		99A7A9F3FD4C1576C130EF74 /* reworked.png in Resources */ = {isa = PBXBuildFile; fileRef = F75B3671E2554DB101D259D0 /* reworked.png */; };
+		99D2BE82438C355A211540B5 /* AIBuildView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72B2BC2661C3D00A0B085372 /* AIBuildView.swift */; };
 		9D01812504FF71825901B8F9 /* ProgressReportViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BAB3B4A7E54D6758DBC09ABF /* ProgressReportViewController.m */; };
 		A0467FDEF69660E961972503 /* DSHBootCoordinator.m in Sources */ = {isa = PBXBuildFile; fileRef = A8A8C0389E3A3093B2E423F0 /* DSHBootCoordinator.m */; };
 		A0D4B1653064A987CCABE7AD /* DSHRootViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = F4B9CC7494EF1C602E3A9C86 /* DSHRootViewController.m */; };
@@ -120,6 +122,7 @@
 		C038C657F805F73E321323C5 /* libarchive.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4204103A7A70DD9F10B9ED3B /* libarchive.a */; };
 		C06C98CEB6F9214E135E6431 /* libiconv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 9E99D52E023CE82372BA364E /* libiconv.tbd */; };
 		C0EBB414CF84FB46EED34509 /* ChatSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C77DF738985C714A91C640 /* ChatSheets.swift */; };
+		C0ECA2B9B8876E122BCE91F3 /* PixelSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31D54E22F25D672BD7D866C2 /* PixelSpec.swift */; };
 		C188FE316B4523886CBAD1F4 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0F8C8E77A4A458943799EC80 /* Assets.xcassets */; };
 		C18E86154BB9701AD7B3669E /* pydann2.png in Resources */ = {isa = PBXBuildFile; fileRef = 7671BA805057B62B8DDD58DA /* pydann2.png */; };
 		C232F2DEF34799B628C61FE1 /* DSHNotificationCapability.m in Sources */ = {isa = PBXBuildFile; fileRef = 6DF076983A7D87599B169598 /* DSHNotificationCapability.m */; };
@@ -142,9 +145,17 @@
 		EE2B71B374B60BD3C806A177 /* DSHRootUpgrader.m in Sources */ = {isa = PBXBuildFile; fileRef = 6720118872C26F24ED9DFA0C /* DSHRootUpgrader.m */; };
 		EEBA06F6B7F1955A5DA98868 /* libbz2.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 101F611FF08589CB919A4A33 /* libbz2.tbd */; };
 		F187931439F89286B2541017 /* Icons.plist in Resources */ = {isa = PBXBuildFile; fileRef = 7912A28BFE711D74011DFB61 /* Icons.plist */; };
+		F712C580872086965296F647 /* Cast.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA651D3EDDDBCA7CCE2B35D8 /* Cast.swift */; };
 		F71788A740038BF9F0EB0683 /* DSHReadinessProbe.m in Sources */ = {isa = PBXBuildFile; fileRef = 4D122EA427606B472B2D803D /* DSHReadinessProbe.m */; };
 		F9A524098AB48F5A6CD7EE6F /* AccessibilityFixes.m in Sources */ = {isa = PBXBuildFile; fileRef = 583960BB0EA5EC7971F02FC9 /* AccessibilityFixes.m */; };
+		FDAC27D265A46C9698170F49 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB4BFE49991F8AEC9814C14F /* HomeView.swift */; };
 		FF4DEC7ADC10A17565765A88 /* DSHCallConfirmation.m in Sources */ = {isa = PBXBuildFile; fileRef = D2708D078035D35F4A9F2A05 /* DSHCallConfirmation.m */; };
+		240F35172B641C8B9AE69915 /* CharacterEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A4BB0050B45DDFCD78DC34 /* CharacterEngine.swift */; };
+		15D2976B5F96302BED94CDC6 /* CompanionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 363822455C249409C15716BA /* CompanionsView.swift */; };
+		799D5BF6D3A39ABF39DF1E8C /* PixelComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94CEBD9F7A488B67C354DA0C /* PixelComponents.swift */; };
+		E8D7EFBF21F40F2844F8C887 /* character_engine.json in Resources */ = {isa = PBXBuildFile; fileRef = F920BEF6D528F16A8B3FF112 /* character_engine.json */; };
+		90281C4CA8783BD21FA8EAC0 /* PixelBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 810777E429813CCC40983D88 /* PixelBuilder.swift */; };
+		01796E727B21BB47E990EB43 /* CredentialPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01DA6F698DD9E71F6F14BA96 /* CredentialPromptView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXBuildRule section */
@@ -215,6 +226,7 @@
 		2EEA03C4EDB9183C334D6C63 /* GroupsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = GroupsView.swift; path = Views/GroupsView.swift; sourceTree = "<group>"; };
 		2F00B6A7FB00746CD5CC2533 /* DSHLogViewController.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = DSHLogViewController.m; sourceTree = "<group>"; };
 		2F5E527EC0DDDC7F41B5ADC6 /* FakeFFmpeg.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = FakeFFmpeg.m; sourceTree = "<group>"; };
+		31D54E22F25D672BD7D866C2 /* PixelSpec.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PixelSpec.swift; sourceTree = "<group>"; };
 		31E395CE6CD527B3A30F8834 /* RemoteHarnessView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RemoteHarnessView.swift; sourceTree = "<group>"; };
 		32682FD3B793305C9EFB52CC /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; path = README.md; sourceTree = "<group>"; };
 		32AD1B1CCC9BABD7A5687BAF /* BarButton.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = BarButton.m; sourceTree = "<group>"; };
@@ -269,6 +281,7 @@
 		70C81542F71402613B631191 /* AppStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppStore.swift; sourceTree = "<group>"; };
 		71EED34785BF668996A911AE /* DSHReadinessProbe.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = DSHReadinessProbe.h; sourceTree = "<group>"; };
 		72A4113F4BE288620EB2FEC6 /* UserPreferences.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = UserPreferences.m; sourceTree = "<group>"; };
+		72B2BC2661C3D00A0B085372 /* AIBuildView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Views/AIBuildView.swift; sourceTree = "<group>"; };
 		745C86A52EBF97591D1A4DF2 /* DSH.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DSH.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7605EC933EB3C5F10B6FB57B /* ToolsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ToolsView.swift; path = Views/ToolsView.swift; sourceTree = "<group>"; };
 		7671BA805057B62B8DDD58DA /* pydann2.png */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = image.png; path = pydann2.png; sourceTree = "<group>"; };
@@ -325,6 +338,7 @@
 		A91C903747CA2C9A5E0704F3 /* emu-test.sh */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.script.sh; path = "emu-test.sh"; sourceTree = "<group>"; };
 		A9A9F78FAB05B9F5033F6F2D /* TerminalView.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = TerminalView.m; sourceTree = "<group>"; };
 		AA60EFFFE91A83B81E842F24 /* fakefs.c */ = {isa = PBXFileReference; includeInIndex = 1; path = fakefs.c; sourceTree = "<group>"; };
+		AA651D3EDDDBCA7CCE2B35D8 /* Cast.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Cast.swift; sourceTree = "<group>"; };
 		AAA06D8C5B925DB9B93E37A4 /* DSHFilesCapability.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = DSHFilesCapability.m; sourceTree = "<group>"; };
 		AAD4F8F63F3C0B68EF701F3C /* index.js */ = {isa = PBXFileReference; includeInIndex = 1; path = index.js; sourceTree = "<group>"; };
 		AD50938B24CA39E4112F4053 /* DSHBootCoordinator.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = DSHBootCoordinator.h; sourceTree = "<group>"; };
@@ -370,6 +384,7 @@
 		D8F691BDFF6F04EBE2A21850 /* DSHStartupMetrics.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = DSHStartupMetrics.h; sourceTree = "<group>"; };
 		D9483B2FCEC61A237466FBD1 /* DSHMockLLMServer.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = DSHMockLLMServer.h; sourceTree = "<group>"; };
 		DA3F4B1BB31E6A45E822C435 /* rootfs-test.sh */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.script.sh; path = "rootfs-test.sh"; sourceTree = "<group>"; };
+		DB4BFE49991F8AEC9814C14F /* HomeView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Views/HomeView.swift; sourceTree = "<group>"; };
 		E0E9610E1C3223CB49D8CBB9 /* Theme.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = Theme.m; sourceTree = "<group>"; };
 		E1785CED9232155FB0436B33 /* fetch-polyfill-test.mjs */ = {isa = PBXFileReference; includeInIndex = 1; path = "fetch-polyfill-test.mjs"; sourceTree = "<group>"; };
 		E298419A2A3AC9C6708D32C7 /* Roots.storyboard */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = file.storyboard; path = Roots.storyboard; sourceTree = "<group>"; };
@@ -393,11 +408,18 @@
 		F4C7CC475C3006D52FB611F4 /* ChatView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ChatView.swift; path = Views/ChatView.swift; sourceTree = "<group>"; };
 		F5AC543A20950B1E7F0B71F2 /* ThemeViewController.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = ThemeViewController.m; sourceTree = "<group>"; };
 		F75B3671E2554DB101D259D0 /* reworked.png */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = image.png; path = reworked.png; sourceTree = "<group>"; };
+		F7AE1C4EA13A5057F13BE88C /* bot-build.md */ = {isa = PBXFileReference; includeInIndex = 1; name = "bot-build.md"; path = "Resources/bot-build.md"; sourceTree = "<group>"; };
 		F925B768D5BD6E22A1199BB9 /* DSHAppDelegate.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; name = DSHAppDelegate.m; path = DSHAppDelegate.m; sourceTree = "<group>"; };
 		FA804DFBA467D9A4F208564D /* ishcolontildehash.png */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = image.png; path = ishcolontildehash.png; sourceTree = "<group>"; };
 		FB710BE5B55795FBBF48038F /* DSHMain.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = DSHMain.m; sourceTree = "<group>"; };
 		FC2835A1206ACA50B2947A55 /* metal.png */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = image.png; path = metal.png; sourceTree = "<group>"; };
 		FE308E124BAEEEACC9FB33FF /* DSHShortcutsCapability.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = DSHShortcutsCapability.h; sourceTree = "<group>"; };
+		F2A4BB0050B45DDFCD78DC34 /* CharacterEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CharacterEngine.swift"; sourceTree = "<group>"; };
+		363822455C249409C15716BA /* CompanionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/CompanionsView.swift"; sourceTree = "<group>"; };
+		94CEBD9F7A488B67C354DA0C /* PixelComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/PixelComponents.swift"; sourceTree = "<group>"; };
+		F920BEF6D528F16A8B3FF112 /* character_engine.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Resources/character_engine.json; sourceTree = "<group>"; };
+		810777E429813CCC40983D88 /* PixelBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelBuilder.swift; sourceTree = "<group>"; };
+		01DA6F698DD9E71F6F14BA96 /* CredentialPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/CredentialPromptView.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -662,6 +684,8 @@
 				C5FFE48CC14DCE651E11ECA7 /* Info-DSH.plist */,
 				1AE8587AB2F10E0AE26457E1 /* Niobium.entitlements */,
 				046412635863985A61DE3490 /* Assets.xcassets */,
+				F920BEF6D528F16A8B3FF112 /* character_engine.json */,
+				F7AE1C4EA13A5057F13BE88C /* bot-build.md */,
 			);
 			sourceTree = "<group>";
 		};
@@ -745,6 +769,15 @@
 				F925B768D5BD6E22A1199BB9 /* DSHAppDelegate.m */,
 				B1E824540BC634ED4D59619B /* Mascot.swift */,
 				31E395CE6CD527B3A30F8834 /* RemoteHarnessView.swift */,
+				AA651D3EDDDBCA7CCE2B35D8 /* Cast.swift */,
+				F2A4BB0050B45DDFCD78DC34 /* CharacterEngine.swift */,
+				363822455C249409C15716BA /* CompanionsView.swift */,
+				94CEBD9F7A488B67C354DA0C /* PixelComponents.swift */,
+				810777E429813CCC40983D88 /* PixelBuilder.swift */,
+				01DA6F698DD9E71F6F14BA96 /* CredentialPromptView.swift */,
+				31D54E22F25D672BD7D866C2 /* PixelSpec.swift */,
+				DB4BFE49991F8AEC9814C14F /* HomeView.swift */,
+				72B2BC2661C3D00A0B085372 /* AIBuildView.swift */,
 			);
 			name = "Niobium Sources";
 			path = Sources/Niobium;
@@ -1050,6 +1083,8 @@
 				512975574BF08DBCAA06DE9A /* DSHLaunchScreen.storyboard in Resources */,
 				5AB3E8B4723ACA5413D492F4 /* PrivacyInfo.xcprivacy in Resources */,
 				C7D4ECAFC3A2118A50EF0601 /* Assets.xcassets in Resources */,
+				E8D7EFBF21F40F2844F8C887 /* character_engine.json in Resources */,
+				81B5360DC3FA28E5E5E529C1 /* bot-build.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1238,6 +1273,15 @@
 				6D87B8799AC41F4F19D3F7FC /* DSHAppDelegate.m in Sources */,
 				4B3962C7CB61579C4E09648E /* Mascot.swift in Sources */,
 				077221BDEF95DD7EB26AFF54 /* RemoteHarnessView.swift in Sources */,
+				F712C580872086965296F647 /* Cast.swift in Sources */,
+				240F35172B641C8B9AE69915 /* CharacterEngine.swift in Sources */,
+				15D2976B5F96302BED94CDC6 /* CompanionsView.swift in Sources */,
+				799D5BF6D3A39ABF39DF1E8C /* PixelComponents.swift in Sources */,
+				90281C4CA8783BD21FA8EAC0 /* PixelBuilder.swift in Sources */,
+				01796E727B21BB47E990EB43 /* CredentialPromptView.swift in Sources */,
+				C0ECA2B9B8876E122BCE91F3 /* PixelSpec.swift in Sources */,
+				FDAC27D265A46C9698170F49 /* HomeView.swift in Sources */,
+				99D2BE82438C355A211540B5 /* AIBuildView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1265,7 +1309,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Resources/Niobium.entitlements;
-				CURRENT_PROJECT_VERSION = 1;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = XKA8CGC2AB;
+				CURRENT_PROJECT_VERSION = 4;
 				DSH_ROOTFS_TARBALL = "$(SRCROOT)/Resources/root.tar.gz";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -1274,7 +1320,7 @@
 				);
 				INFOPLIST_FILE = "Resources/Info-DSH.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 2.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-framework",
@@ -1302,7 +1348,7 @@
 					"-framework",
 					SystemConfiguration,
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = io.sovware.niobium;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.wckd.niobium;
 				PRODUCT_MODULE_NAME = Niobium;
 				PRODUCT_NAME = Niobium;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) NIOBIUM_LOCAL_DSH";
@@ -1317,7 +1363,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Resources/Niobium.entitlements;
-				CURRENT_PROJECT_VERSION = 1;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = XKA8CGC2AB;
+				CURRENT_PROJECT_VERSION = 4;
 				DSH_ROOTFS_TARBALL = "$(SRCROOT)/Resources/root.tar.gz";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -1326,7 +1374,7 @@
 				);
 				INFOPLIST_FILE = "Resources/Info-DSH.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 2.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-framework",
@@ -1354,7 +1402,7 @@
 					"-framework",
 					SystemConfiguration,
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = io.sovware.niobium;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.wckd.niobium;
 				PRODUCT_MODULE_NAME = Niobium;
 				PRODUCT_NAME = Niobium;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) NIOBIUM_LOCAL_DSH";
