@@ -53,7 +53,7 @@ fun ChatsSheet(vm: NiobiumViewModel, bot: BotProfile, onDismiss: () -> Unit) {
                     ) {
                         Column(Modifier.weight(1f)) {
                             Text(row.title, color = Nb.Text, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1)
-                            Text("${row.messageCount} messages · ${row.model.ifBlank { "model" }}",
+                            Text((row.messageCount?.let { it.toString() + " messages · " } ?: "") + row.model.ifBlank { "model" } + ((row.lastActiveAt ?: row.startedAt)?.let { " · " + formatRelative(it) } ?: ""),
                                 color = Nb.Tertiary, style = NbMono, fontSize = 8.sp, maxLines = 1)
                         }
                         Text("›", color = Nb.Tertiary, fontSize = 14.sp)

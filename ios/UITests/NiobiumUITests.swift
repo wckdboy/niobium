@@ -29,4 +29,23 @@ final class NiobiumUITests: XCTestCase {
         screenshot.lifetime = .keepAlways
         add(screenshot)
     }
+    @MainActor
+    func testEnginesKeepTheStandardNavigationAndHideAdvancedDsh() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--demo", "--light", "--no-splash", "--tab", "local"]
+        app.launch()
+        XCTAssertTrue(app.staticTexts["A home for every Pixel."].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts["On device"].exists)
+        XCTAssertTrue(app.staticTexts["Hermes"].exists)
+        XCTAssertTrue(app.buttons["Home"].exists)
+        XCTAssertTrue(app.buttons["Pixels"].exists)
+        XCTAssertFalse(app.webViews.firstMatch.exists)
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Native Engines"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+        app.buttons["Home"].tap()
+        XCTAssertTrue(app.staticTexts["Your Pixels"].waitForExistence(timeout: 5))
+    }
+
 }

@@ -89,7 +89,7 @@ struct SettingsView: View {
         }
 #if NIOBIUM_LOCAL_DSH
         .sheet(isPresented: $showDSH) {
-            DSHLocalScreen()
+            LocalView().environmentObject(store)
         }
 #endif
         .sheet(isPresented: $showRemoteHarness) {
@@ -233,7 +233,7 @@ struct SettingsView: View {
 #if NIOBIUM_LOCAL_DSH
     private var localHarnessSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            NBSectionHeader(title: "On device")
+            NBSectionHeader(title: "Agent provider")
             Button { showDSH = true } label: {
                 HStack(spacing: 12) {
                     ZStack {
@@ -247,10 +247,10 @@ struct SettingsView: View {
                     .frame(width: 38, height: 38)
                     VStack(alignment: .leading, spacing: 3) {
                         HStack(spacing: 6) {
-                            Text("DeepSeek Harness").font(.nbBody(13, weight: .semibold)).foregroundStyle(NB.text)
+                            Text("Engines").font(.nbBody(13, weight: .semibold)).foregroundStyle(NB.text)
                             NBPill(text: "beta", tint: NB.amber)
                         }
-                        Text("The full harness in Alpine, running on this device")
+                        Text("On device or on your Hermes host")
                             .font(.nbBody(11)).foregroundStyle(NB.tertiary)
                     }
                     Spacer()
@@ -262,7 +262,7 @@ struct SettingsView: View {
             }
             .buttonStyle(.plain)
 
-            Text("Experimental. Boots an Alpine Linux guest through the embedded iSH-ARM64 emulator, then serves the real DSH web UI on loopback. First launch can take a minute.")
+            Text("Choose where your Pixels run. Local DSH uses the same native dashboard and chats; advanced controls are tucked inside Engines.")
                 .font(.nbBody(10.5))
                 .foregroundStyle(NB.tertiary)
                 .lineSpacing(2)
@@ -322,7 +322,7 @@ struct SettingsView: View {
                 }
                 VStack(alignment: .leading, spacing: 5) {
                     Text("Your gateway. No middleman.").font(.nbBody(13, weight: .semibold)).foregroundStyle(NB.text)
-                    Text("Messages stream directly from this device to the Hermes instance you entered. Niobium has no account, no backend, no analytics and no telemetry.")
+                    Text("Messages go directly to your selected engine and model provider. Niobium has no account, no backend, no analytics and no telemetry.")
                         .font(.nbBody(11.5)).foregroundStyle(NB.secondary).lineSpacing(2)
                 }
             }
@@ -340,7 +340,7 @@ struct SettingsView: View {
                 AtomicMark(size: 54)
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Niobium").font(.nbTitle(18)).foregroundStyle(NB.text)
-                    Text("The pocket command deck for Hermes Agent.")
+                    Text("Your Pixels. On your terms.")
                         .font(.nbBody(11.5)).foregroundStyle(NB.secondary)
                     Text("v\(appVersion) · Nb 41")
                         .font(.nbMono(8.5)).foregroundStyle(NB.tertiary)

@@ -6,9 +6,6 @@ struct OnboardingView: View {
     @State private var token = ""
     @State private var showToken = false
     @State private var appeared = false
-    #if NIOBIUM_LOCAL_DSH
-    @State private var showLocal = false
-    #endif
     @FocusState private var focused: Field?
     enum Field { case url, token }
 
@@ -46,7 +43,7 @@ struct OnboardingView: View {
                             .font(.nbBody(17, weight: .semibold)).foregroundStyle(NB.text)
                         Text("Run local Pixels with Alpine Linux + DSH and your provider API keys.")
                             .font(.nbBody(12)).foregroundStyle(NB.secondary)
-                        Button { showLocal = true } label: {
+                        Button { store.useLocal() } label: {
                             Label("Run Pixels locally", systemImage: "terminal")
                                 .frame(maxWidth: .infinity)
                         }.buttonStyle(NBPrimaryButtonStyle())
@@ -172,9 +169,6 @@ struct OnboardingView: View {
         .onAppear {
             withAnimation(.easeOut(duration: 0.6)) { appeared = true }
         }
-        #if NIOBIUM_LOCAL_DSH
-        .sheet(isPresented: $showLocal) { DSHLocalScreen() }
-        #endif
     }
 
     private func field<Content: View>(_ label: String, icon: String, @ViewBuilder content: () -> Content) -> some View {

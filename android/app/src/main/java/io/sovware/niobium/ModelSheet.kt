@@ -43,9 +43,9 @@ fun ModelSheet(vm: NiobiumViewModel, bot: BotProfile, onDismiss: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(10.dp)) {
             item {
                 Text("Model", color = Nb.Text, style = NbDisplay, fontSize = 30.sp)
-                Text("The next turn runs on this provider and model. The session revision is fenced.",
+                Text("Changes apply to the next turn.",
                     color = Nb.Secondary, fontSize = 11.sp, lineHeight = 16.sp)
-                Box {
+                if (vm.state.engine == AgentEngine.HERMES) Box {
                     Text("Reasoning: " + (vm.state.sessionReasoning ?: "profile default") + " ▾", color = Nb.Ion, fontSize = 12.sp,
                         modifier = Modifier.clickable(enabled = !vm.state.demo && !vm.state.turnActive) { showReasoning = true }.padding(vertical = 14.dp))
                     DropdownMenu(expanded = showReasoning, onDismissRequest = { showReasoning = false }) {

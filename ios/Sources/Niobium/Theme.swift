@@ -183,11 +183,11 @@ struct NBPrimaryButtonStyle: ButtonStyle {
             .padding(.horizontal, compact ? 16 : 22)
             .frame(height: compact ? 38 : 52)
             .background(
-                Capsule(style: .continuous)
+                PixelButtonShape()
                     .fill(LinearGradient(colors: [tint, NB.ionDeep],
                                          startPoint: .topLeading, endPoint: .bottomTrailing))
-                    .overlay(Capsule().strokeBorder(NB.onIon.opacity(0.22), lineWidth: 1))
-                    .shadow(color: tint.opacity(configuration.isPressed ? 0.1 : 0.32), radius: 22, y: 8)
+                    .overlay(PixelButtonShape().stroke(NB.onIon.opacity(0.22), lineWidth: 1))
+                    .shadow(color: tint.opacity(configuration.isPressed ? 0.1 : 0.32), radius: 8, y: 3)
             )
             .opacity(configuration.isPressed ? 0.82 : 1)
             .scaleEffect(configuration.isPressed ? 0.975 : 1)
@@ -203,8 +203,8 @@ struct NBQuietButtonStyle: ButtonStyle {
             .foregroundStyle(NB.text)
             .padding(.horizontal, compact ? 14 : 20)
             .frame(height: compact ? 38 : 50)
-            .background(Capsule().fill(configuration.isPressed ? NB.fillStrong : NB.fill))
-            .overlay(Capsule().strokeBorder(NB.line, lineWidth: 1))
+            .background(PixelButtonShape().fill(configuration.isPressed ? NB.fillStrong : NB.fill))
+            .overlay(PixelButtonShape().stroke(NB.line, lineWidth: 1))
             .opacity(configuration.isPressed ? 0.75 : 1)
     }
 }

@@ -44,13 +44,14 @@ fun UsageSheet(vm: NiobiumViewModel, onDismiss: () -> Unit) {
                             drawCircle(Nb.Line, style = Stroke(6.dp.toPx()))
                             drawArc(Nb.Ion, -90f, 360f * usage.contextFraction, false, style = Stroke(6.dp.toPx()))
                         }
-                        Text("${(usage.contextFraction * 100).toInt()}%", color = Nb.Text, style = NbMono, fontSize = 10.sp)
+                        Text(if (usage.contextLength == null) "—" else "${(usage.contextFraction * 100).toInt()}%", color = Nb.Text, style = NbMono, fontSize = 10.sp)
                     }
                     Spacer(Modifier.padding(horizontal = 8.dp))
                     Column {
                         Text("Context", color = Nb.Text, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                         Text("${usage.contextTokens} / ${usage.contextLength ?: "—"} tokens", color = Nb.Tertiary, style = NbMono, fontSize = 8.sp)
-                        Text("${usage.apiCalls} calls · ${usage.compressionCount} compressions", color = Nb.Tertiary, style = NbMono, fontSize = 8.sp)
+                        Text(usage.apiCalls.toString() + if (vm.state.engine == AgentEngine.HERMES) " calls · " + usage.compressionCount + " compressions" else " model steps",
+                            color = Nb.Tertiary, style = NbMono, fontSize = 8.sp)
                     }
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {

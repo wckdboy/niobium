@@ -18,10 +18,10 @@
   {
     "slug": "local",
     "key": "local",
-    "title": "Local and remote DSH \u2014 Niobium",
-    "heading": "your harness, your keys",
+    "title": "Engines \u2014 Niobium",
+    "heading": "your pixels, your engine",
     "label": "niobium / harness",
-    "description": "Run DeepSeek Harness in an on-device Alpine guest on iOS or ARM64 Android, or connect to DSH on a computer or VPS."
+    "description": "The standard native Niobium app, powered by Hermes or on-device DSH. Local presets, native chats and provider keys; advanced controls when needed."
   },
   {
     "slug": "build",

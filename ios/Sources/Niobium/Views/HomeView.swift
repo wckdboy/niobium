@@ -4,11 +4,7 @@ struct HomeView: View {
     var onShowPixels: () -> Void = {}
     @EnvironmentObject private var store: AppStore
     @State private var showNew = false
-    @State private var showRemote = false
     @State private var showInstance = false
-#if NIOBIUM_LOCAL_DSH
-    @State private var showLocal = false
-#endif
     @ObservedObject private var cast = CastStore.shared
 
     private var host: String {
@@ -23,7 +19,6 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: 18) {
                     instanceCard
                     pixelsSection
-                    localCard
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 30)
@@ -32,26 +27,8 @@ struct HomeView: View {
         .scrollIndicators(.hidden)
         .frame(maxWidth: .infinity)
         .background(NB.void)
-        .sheet(isPresented: $showInstance) {
-            NavigationStack {
-                Form {
-                    Section("Gateway") {
-                        LabeledContent("Host", value: host)
-                        LabeledContent("Connection", value: store.connectionState.label)
-                        LabeledContent("Transport", value: "WebSocket JSON-RPC")
-                        LabeledContent("Access", value: "Enforced by your Hermes host")
-                        if let ms = store.gatewayLatencyMs { LabeledContent("Last round trip", value: "\(ms) ms") }
-                    }
-                    Section { Button("Refresh gateway") { Task { await store.refreshAll() } } }
-                }.navigationTitle("Hermes instance")
-                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { showInstance = false } } }
-            }
-        }
+        .sheet(isPresented: $showInstance) { LocalView().environmentObject(store) }
         .sheet(isPresented: $showNew) { NewBotView().environmentObject(store) }
-        .sheet(isPresented: $showRemote) { RemoteHarnessView() }
-#if NIOBIUM_LOCAL_DSH
-        .sheet(isPresented: $showLocal) { DSHLocalScreen() }
-#endif
     }
 
     private var hero: some View {
@@ -105,23 +82,23 @@ struct HomeView: View {
                 }
                 .frame(width: 40, height: 40)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Hermes Instance").font(.nbTitle(17)).foregroundStyle(NB.text)
-                    Text(host).font(.nbMono(9)).foregroundStyle(NB.secondary).lineLimit(1)
-                    Text(store.isDemo ? "Demo workspace" : "Your computer or VPS").font(.nbMono(8.5)).foregroundStyle(NB.tertiary)
+                    Text(store.engine == .dsh ? "On-device engine" : "Hermes instance").font(.nbTitle(17)).foregroundStyle(NB.text)
+                    Text(store.engine == .dsh ? "On this device" : host).font(.nbMono(9)).foregroundStyle(NB.secondary).lineLimit(1)
+                    Text(store.isDemo ? "Demo workspace" : store.engine == .dsh ? "DSH · private Linux workspace" : "Your computer or VPS").font(.nbMono(8.5)).foregroundStyle(NB.tertiary)
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 3) {
                     HStack(spacing: 5) {
                         Circle().fill(store.connectionState.color).frame(width: 6, height: 6)
-                        Text(store.connectionState.label).font(.nbBody(10.5, weight: .medium)).foregroundStyle(NB.mint)
+                        Text(store.connectionState.label).font(.nbBody(10.5, weight: .medium)).foregroundStyle(store.connectionState.color)
                     }
-                    Text(store.isDemo ? "ready" : "live").font(.nbMono(9)).foregroundStyle(NB.tertiary)
+                    Text(store.isDemo ? "preview" : store.engine == .dsh ? "local" : "gateway").font(.nbMono(9)).foregroundStyle(NB.tertiary)
                 }
             }
             Divider().overlay(NB.line)
             HStack(spacing: 0) {
-                stat("\(store.toolsets.count)", "Toolsets", "hammer")
-                stat(store.isDemo ? "Demo" : "Host", "Policy", "shield")
+                stat(store.engine == .dsh ? "DSH" : "\(store.toolsets.count)", store.engine == .dsh ? "Engine" : "Toolsets", "hammer")
+                stat(store.isDemo ? "Demo" : store.engine == .dsh ? "Local" : "Host", "Policy", "shield")
                 stat(store.gatewayLatencyMs.map { "\($0) ms" } ?? "—", "Latency", "waveform.path.ecg")
                 stat("\(store.bots.filter(\.isLive).count)/\(store.bots.count)", "Working", "cpu")
             }
@@ -156,12 +133,13 @@ struct HomeView: View {
                         .font(.nbBody(11, weight: .semibold))
                         .foregroundStyle(NB.onIon)
                         .padding(.horizontal, 12).padding(.vertical, 8)
-                        .background(Capsule().fill(LinearGradient(colors: [NB.ion, NB.ionDeep], startPoint: .leading, endPoint: .trailing)))
+                        .background(PixelButtonShape().fill(LinearGradient(colors: [NB.ion, NB.ionDeep], startPoint: .leading, endPoint: .trailing)))
                 }
                 .buttonStyle(.plain)
+                .disabled(!store.connectionState.isConnected && !store.isDemo)
             }
             if store.bots.isEmpty {
-                Text("Give your first Pixel a purpose. Create one here or refresh your gateway roster.")
+                Text(store.engine == .dsh && !store.connectionState.isConnected ? store.localStatus : "Give your first Pixel a purpose. Create one here or refresh your roster.")
                     .font(.nbBody(13)).foregroundStyle(NB.secondary).padding(16).pixelPanel()
             }
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 155), spacing: 10)], spacing: 10) {
@@ -182,7 +160,7 @@ struct HomeView: View {
     }
 
     private func homePixel(_ bot: BotProfile) -> some View {
-        let member = cast.member(for: bot.name, title: bot.title)
+        let member = cast.member(for: bot.castKey, title: bot.title)
         return Button { store.openBot(bot) } label: {
             HStack(alignment: .center, spacing: 8) {
                 CastPortrait(member: member, size: 64, showCompanion: true, showGlow: false)
@@ -203,127 +181,129 @@ struct HomeView: View {
         .accessibilityLabel("\(bot.title), \(bot.subtitle), \(bot.isLive ? "working" : "ready")")
     }
 
-    private var localCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Local DSH").font(.nbTitle(19)).foregroundStyle(NB.text)
-                    Text({
-#if NIOBIUM_LOCAL_DSH
-                        "Alpine Linux on your device. Your provider keys."
-#else
-                        "Your harness on a computer or VPS."
-#endif
-                    }()).font(.nbBody(10.5)).foregroundStyle(NB.tertiary)
-                }
-                Spacer()
-                Button {
-#if NIOBIUM_LOCAL_DSH
-                    showLocal = true
-#else
-                    showRemote = true
-#endif
-                } label: {
-                    Label("Open DSH", systemImage: "terminal")
-                        .font(.nbBody(11, weight: .semibold)).foregroundStyle(NB.onIon)
-                        .padding(.horizontal, 12).padding(.vertical, 8)
-                        .background(Capsule().fill(NB.ion.opacity(0.9)))
-                }
-                .buttonStyle(.plain)
-            }
-            HStack(spacing: 10) {
-                Image(systemName: "shippingbox").font(.system(size: 15)).foregroundStyle(NB.ion)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("Harness runtime").font(.nbBody(12, weight: .semibold)).foregroundStyle(NB.text)
-#if NIOBIUM_LOCAL_DSH
-                    Text("Alpine + iSH · boots on demand").font(.nbMono(8)).foregroundStyle(NB.tertiary)
-#else
-                    Text("Remote · computer or VPS").font(.nbMono(8)).foregroundStyle(NB.tertiary)
-#endif
-                }
-                Spacer()
-                HStack(spacing: 4) {
-                    Text("Open to check").font(.nbMono(8)).foregroundStyle(NB.tertiary)
-                }
-            }
-            .padding(10)
-            .background(RoundedRectangle(cornerRadius: 12).fill(NB.fillSoft))
-            Text("DSH uses its own sessions and settings. Local and remote runtimes are available on both platforms.")
-                .font(.nbBody(9)).foregroundStyle(NB.tertiary).lineSpacing(1)
-        }
-        .padding(15)
-        .pixelPanel(radius: 20, accented: true)
-    }
 
-    private func localStat(_ label: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(label).font(.nbBody(8.5)).foregroundStyle(NB.tertiary)
-            Text(value).font(.nbMono(8.5)).foregroundStyle(NB.text).lineLimit(1)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
 }
 
 struct LocalView: View {
     @EnvironmentObject private var store: AppStore
+    @State private var advanced = false
     @State private var showRemote = false
+    @State private var provider = "DeepSeek"
+    @State private var apiKey = ""
+    @State private var saving = false
 #if NIOBIUM_LOCAL_DSH
     @State private var showLocal = false
 #endif
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                NBScreenHeader(eyebrow: "Harness · computer · VPS", title: "Local")
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("DeepSeek Harness")
-                        .font(.nbTitle(22)).foregroundStyle(NB.text)
-                    Text("Run a full harness next to your Pixels. The iOS full build embeds Alpine + iSH; both platforms can open a DSH web UI on a computer or VPS.")
-                        .font(.nbBody(12)).foregroundStyle(NB.secondary).lineSpacing(2)
-                    Button {
+            VStack(alignment: .leading, spacing: 16) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("Engines").font(.nbTitle(30)).foregroundStyle(NB.text)
+                        Text("A home for every Pixel.").font(.nbBody(13)).foregroundStyle(NB.secondary)
+                    }
+                    Spacer()
+                    PixelIcon(.terminal, size: 26)
+                }.padding(.vertical, 12)
+                Text("Choose an engine. Your dashboard, Pixels and chats work the same way.")
+                    .font(.nbBody(13)).foregroundStyle(NB.secondary).lineSpacing(4)
+                engineCard("On device", subtitle: "DSH · private Linux workspace", icon: .pixels, selected: store.engine == .dsh) {
+                    Text("Run your Pixels here with your own model API key. The engine works behind Niobium while you use the app.")
+                        .font(.nbBody(12)).foregroundStyle(NB.secondary).lineSpacing(4)
 #if NIOBIUM_LOCAL_DSH
-                        showLocal = true
-#else
-                        showRemote = true
-#endif
-                    } label: { Text("Open DSH").frame(maxWidth: .infinity) }
-                        .buttonStyle(NBPrimaryButtonStyle())
-                    Button { showRemote = true } label: { Text("Connect to remote DSH").frame(maxWidth: .infinity) }
-                        .buttonStyle(NBQuietButtonStyle())
-                }
-                .padding(18)
-                .background(RoundedRectangle(cornerRadius: 22).fill(NB.surface.opacity(0.75)))
-                .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(NB.line, lineWidth: 1))
-                .padding(.horizontal, 16)
-
-                VStack(alignment: .leading, spacing: 8) {
-                    NBSectionHeader(title: "Your Pixels")
-                    if store.bots.isEmpty {
-                        Text("No Pixels attached yet.").font(.nbBody(11)).foregroundStyle(NB.tertiary)
-                    } else {
-                        ForEach(store.bots.prefix(3)) { bot in
-                            HStack(spacing: 10) {
-                                CastPortrait(member: CastStore.shared.member(for: bot.name, title: bot.title), size: 38, showCompanion: false, showGlow: false)
-                                VStack(alignment: .leading, spacing: 1) {
-                                    Text(bot.title).font(.nbBody(12, weight: .medium)).foregroundStyle(NB.text)
-                                    Text("Hermes pixel · \(bot.model.isEmpty ? "inherited model" : bot.model)").font(.nbMono(8)).foregroundStyle(NB.tertiary)
-                                }
-                                Spacer()
-                                Text(bot.isLive ? "Running" : "Available").font(.nbMono(8)).foregroundStyle(bot.isLive ? NB.mint : NB.tertiary)
-                            }
-                            .padding(10)
-                            .background(RoundedRectangle(cornerRadius: 12).fill(NB.fillSoft))
+                    if store.engine == .dsh {
+                        HStack(spacing: 8) {
+                            if store.isConnecting { ProgressView().tint(NB.ion) }
+                            Text(store.connectionState.isConnected ? "Ready · chats and tasks run in Niobium" : store.localStatus)
+                                .font(.nbBody(12)).foregroundStyle(store.connectionState.isConnected ? NB.mint : NB.secondary)
                         }
                     }
+                    if store.engine != .dsh || (!store.connectionState.isConnected && !store.isConnecting) {
+                        Button { store.useLocal() } label: { PixelActionLabel("Use on-device DSH", icon: .play) }
+                            .buttonStyle(NBPrimaryButtonStyle())
+                    }
+#else
+                    Text("Available in the full iOS build.").font(.nbBody(11)).foregroundStyle(NB.tertiary)
+#endif
                 }
-                .padding(.horizontal, 16)
+                engineCard("Hermes", subtitle: "Your computer or VPS", icon: .link, selected: store.engine == .hermes) {
+                    Text("Connect to your existing agents, tools and group rooms. Your local engine can stay running alongside Hermes.")
+                        .font(.nbBody(12)).foregroundStyle(NB.secondary).lineSpacing(4)
+                    if store.engine != .hermes {
+                        Button { Task { await store.useHermes() } } label: { PixelActionLabel("Use Hermes", icon: .link) }
+                            .buttonStyle(NBQuietButtonStyle())
+                    }
+                }
+                if store.engine == .dsh && store.connectionState.isConnected {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Model provider").font(.nbTitle(15)).foregroundStyle(NB.text)
+                        Picker("Provider", selection: $provider) {
+                            ForEach(["DeepSeek", "OpenAI", "Anthropic"], id: \.self) { Text($0) }
+                        }.pickerStyle(.segmented).onChange(of: provider) { _, _ in apiKey = "" }
+                        SecureField(provider + " API key", text: $apiKey)
+                            .textInputAutocapitalization(.never).autocorrectionDisabled()
+                            .padding(12).background(NB.fillSoft).clipShape(RoundedRectangle(cornerRadius: 10))
+                        Button {
+                            saving = true
+                            let ref = provider == "OpenAI" ? "OPENAI_API_KEY" : provider == "Anthropic" ? "ANTHROPIC_API_KEY" : "DEEPSEEK_API_KEY"
+                            Task {
+                                defer { saving = false }
+                                do { try await store.saveLocalCredential(ref: ref, value: apiKey); apiKey = "" }
+                                catch { store.showError(error.localizedDescription) }
+                            }
+                        } label: { PixelActionLabel(saving ? "Saving…" : "Save API key", icon: .shield) }
+                            .buttonStyle(NBQuietButtonStyle()).disabled(saving || apiKey.isEmpty)
+                        Text("Keys stay in DSH app storage. Choose a model from the model picker in your Pixel’s chat.")
+                            .font(.nbBody(11)).foregroundStyle(NB.tertiary).lineSpacing(3)
+                    }.padding(18).pixelPanel()
+                }
+                DisclosureGroup(isExpanded: $advanced) {
+                    VStack(alignment: .leading, spacing: 12) {
+#if NIOBIUM_LOCAL_DSH
+                        if store.localReady {
+                            Button { showLocal = true } label: { PixelActionLabel("Advanced DSH workspace", icon: .terminal) }
+                                .buttonStyle(NBQuietButtonStyle())
+                        }
+                        if store.localReady || store.isConnecting && store.engine == .dsh {
+                            Button { store.stopLocal() } label: { PixelActionLabel("Stop local engine", icon: .stop) }
+                                .buttonStyle(NBQuietButtonStyle()).foregroundStyle(NB.rose)
+                        }
+#endif
+                        Button { showRemote = true } label: { PixelActionLabel("Remote DSH workspace", icon: .link) }
+                            .buttonStyle(NBQuietButtonStyle())
+                        Text("Local Pixels share a Linux workspace. Tool choices limit their available tools; workspace scopes are operating instructions. iOS may suspend local tasks when Niobium is in the background. Hermes provides group rooms and scheduled jobs.")
+                            .font(.nbBody(11)).foregroundStyle(NB.tertiary).lineSpacing(3)
+                    }.padding(.top, 12)
+                } label: {
+                    HStack(spacing: 10) {
+                        PixelIcon(.settings, size: 18, tint: NB.tertiary)
+                        Text("Advanced controls").font(.nbBody(13)).foregroundStyle(NB.secondary)
+                    }
+                }.tint(NB.ion).padding(.vertical, 10)
             }
-            .padding(.bottom, 30)
+            .padding(.horizontal, 20).padding(.bottom, 30)
         }
         .background(NB.void)
         .sheet(isPresented: $showRemote) { RemoteHarnessView() }
 #if NIOBIUM_LOCAL_DSH
         .sheet(isPresented: $showLocal) { DSHLocalScreen() }
 #endif
+    }
+
+    private func engineCard<Content: View>(_ title: String, subtitle: String, icon: PixelGlyph,
+                                          selected: Bool, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                PixelIcon(icon)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title).font(.nbTitle(17)).foregroundStyle(NB.text)
+                    Text(subtitle).font(.nbBody(11)).foregroundStyle(NB.tertiary)
+                }
+                Spacer()
+                if selected { Text("Selected").font(.nbBody(10, weight: .semibold)).foregroundStyle(NB.ion) }
+            }
+            content()
+        }.padding(18).pixelPanel(accented: selected)
     }
 }

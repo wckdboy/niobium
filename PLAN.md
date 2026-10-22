@@ -85,8 +85,8 @@ Prioritize these domains without replacing backend behaviour with simulations:
    design that respects mobile execution limits.
 8. **Android local runtime:** the ARM64 PRoot/Alpine beta now passes cold boot,
    DSH HTTP/WebSocket, service Stop and image-swap preservation tests. Next prove
-   provider turns, host bridges, physical/16 KB devices, battery and encrypted
-   provider storage. Integrate the native Pixel workshop with real DSH presets.
+   real-account provider turns, host bridges, physical/16 KB devices, battery and
+   encrypted provider storage. Native preset creation and fixture model turns pass.
 
 ## Release gates
 
@@ -167,3 +167,24 @@ Final beta.2 artifacts: Android 2.0 (5) and full iOS 2.0 (6). The iOS package
 uploaded successfully to App Store Connect for processing; tester availability
 still requires verification there. Android installation budgets include measured
 4 KB file allocation rather than compressed/unpacked byte counts alone.
+
+## Current cycle: 2.0.0-beta.3 — native DSH provider and coherent UI
+
+- One native Home, Pixels, workshop and chat surface for Hermes and local DSH.
+- Engines chooses the provider and retains saved Hermes settings. DSH stays
+  behind the app; raw web, terminal and Stop are explicit advanced controls.
+- Shared pinned-API adapter creates real DSH presets from reviewed PixelSpecs,
+  restores native chats/requests, streams model replies, switches models and
+  maps companion controls. Unsupported Hermes rooms/routines are hidden locally.
+- Android real-runtime test passes native creation, a controlled model turn,
+  streaming and history restoration. Required hard-link emulation is enabled.
+- Native provider keys, scoped appearance identities, pixel navigation/icons
+  and cleaner provider-aware copy are implemented on both platforms.
+- Next: physical iOS/Android and 16 KB acceptance, real-account model turns and
+  delegation, encrypted provider vault, then Hermes member activity and replay.
+- Review fixes cover atomic preset metadata, multi-select answers, partial-turn
+  recovery, snapshot/stream handoff, older history pages and all saved chat rows,
+  full-log usage projections and failed-image cleanup.
+- Validation: 24 iOS unit + 3 UI tests; 24 Android JVM + 5 app-domain runtime
+  tests; 18 shared adapter + 13 watcher tests, plus build/package/site checks.
+- See docs/DSH-PROVIDER.md and screenshots/README.md for boundaries and evidence.

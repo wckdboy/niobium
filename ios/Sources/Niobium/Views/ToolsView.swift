@@ -20,6 +20,11 @@ struct ToolsView: View {
     private var totalTools: Int { store.toolsets.reduce(0) { $0 + $1.tools.count } }
 
     var body: some View {
+        if store.engine == .dsh { LocalToolsView(onClose: onClose) }
+        else { hermesTools }
+    }
+
+    private var hermesTools: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 HStack {

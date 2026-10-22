@@ -83,7 +83,7 @@ struct SplashView: View {
                         .font(.system(size: 19, weight: .bold))
                         .tracking(8)
                         .foregroundStyle(NB.text)
-                    Text("Nb · 41 · HERMES")
+                    Text("YOUR PIXELS, EVERYWHERE")
                         .font(.nbMono(8.5))
                         .tracking(2.4)
                         .foregroundStyle(NB.tertiary)
@@ -105,7 +105,7 @@ enum AppTab: String, CaseIterable {
         switch self {
         case .home: return "Home"
         case .pixels: return "Pixels"
-        case .local: return "Local"
+        case .local: return "Engines"
         case .activity: return "Activity"
         case .settings: return "Settings"
         }
@@ -127,9 +127,6 @@ struct MainShell: View {
     @State private var newBot = false
     @State private var newGroup = false
     @State private var showToolbox = ProcessInfo.processInfo.arguments.contains("--toolbox")
-#if NIOBIUM_LOCAL_DSH
-    @State private var showDSH = ProcessInfo.processInfo.arguments.contains("--dsh")
-#endif
 
     static var initialTab: AppTab {
         let args = ProcessInfo.processInfo.arguments
@@ -174,11 +171,6 @@ struct MainShell: View {
             ToolsView(onClose: { showToolbox = false })
                 .environmentObject(store)
         }
-#if NIOBIUM_LOCAL_DSH
-        .sheet(isPresented: $showDSH) {
-            DSHLocalScreen()
-        }
-#endif
     }
 }
 
@@ -203,9 +195,8 @@ struct TabBar: View {
                                             .strokeBorder(NB.ion.opacity(0.22), lineWidth: 1)
                                     )
                             }
-                            Image(systemName: tab.icon)
-                                .font(.system(size: 16, weight: selection == tab ? .semibold : .regular))
-                                .foregroundStyle(selection == tab ? NB.ion : NB.tertiary)
+                            PixelIcon(tab == .home ? .home : tab == .pixels ? .pixels : tab == .local ? .terminal : tab == .activity ? .activity : .settings,
+                                      size: 22, tint: selection == tab ? NB.ion : NB.tertiary)
                         }
                         .frame(height: 30)
                         Text(tab.title)

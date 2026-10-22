@@ -5,14 +5,14 @@ struct CompanionTask: Identifiable, Equatable {
     var goal: String
     var status: String
     var lastTool: String
-    var toolCount: Int
+    var toolCount: Int?
     var canSteer: Bool
     var failed: Bool
     static func parse(_ json: JSONObject) -> CompanionTask? {
         guard let id = json.string("subagent_id") else { return nil }
         return .init(id: id, goal: json.string("goal") ?? "Delegated task",
                      status: json.string("status") ?? "working", lastTool: json.string("last_tool") ?? "",
-                     toolCount: json.int("tool_count") ?? 0, canSteer: json.bool("accepting_steer") ?? false, failed: false)
+                     toolCount: json.int("tool_count"), canSteer: json.bool("accepting_steer") ?? false, failed: false)
     }
 }
 
@@ -33,7 +33,7 @@ struct CompanionsView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    let member = CastStore.shared.member(for: bot.name, title: bot.title)
+                    let member = CastStore.shared.member(for: bot.castKey, title: bot.title)
                     HStack(spacing: 14) {
                         Image("Comp_\(member.companion)").resizable().interpolation(.none).frame(width: 60, height: 60)
                         VStack(alignment: .leading, spacing: 4) {
@@ -41,7 +41,7 @@ struct CompanionsView: View {
                             Text("Small creatures. Proper teamwork.").font(.nbBody(12)).foregroundStyle(NB.secondary)
                         }
                     }
-                    Text("Your Pixel delegates bounded tasks through Hermes. Follow the real work here, send a correction, or stop a helper.")
+                    Text("Your Pixel delegates bounded tasks through the selected engine. Follow the real work here, send a correction, or stop a helper.")
                         .font(.nbBody(12)).foregroundStyle(NB.secondary)
                     TextField("A task to split with companions…", text: $task, axis: .vertical)
                         .lineLimit(2...5).font(.nbBody(14)).padding(12)
@@ -50,7 +50,7 @@ struct CompanionsView: View {
                         let text = task.trimmingCharacters(in: .whitespacesAndNewlines)
                         guard !text.isEmpty else { return }
                         dismiss()
-                        Task { await store.send("Work on this task: \(text)\nIf it benefits from delegation, use delegate_task to give your companions bounded subtasks with concrete outputs and the same or narrower permissions. Integrate and verify their results. If delegation is unavailable or unnecessary, explain briefly and do the work yourself.") }
+                        Task { await store.send("Work on this task: \(text)\nIf it benefits from delegation, use the available delegation tools to give your companions bounded subtasks with concrete outputs and the same or narrower permissions. Integrate and verify their results. If delegation is unavailable or unnecessary, explain briefly and do the work yourself.") }
                     } label: { Label("Ask your Pixel", systemImage: "sparkles").frame(maxWidth: .infinity) }
                         .buttonStyle(NBPrimaryButtonStyle()).disabled(task.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || store.isLoadingChat)
                     NBSectionHeader(title: "Companion work", detail: "\(store.companionTasks.count) tasks")
@@ -69,7 +69,7 @@ struct CompanionsView: View {
                                 Image("Comp_\(member.companion)").resizable().interpolation(.none).frame(width: 38, height: 38)
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(child.goal).font(.nbBody(13, weight: .semibold)).foregroundStyle(NB.text).lineLimit(3)
-                                    Text("\(child.status) · \(child.toolCount) tools\(child.lastTool.isEmpty ? "" : " · \(child.lastTool)")")
+                                    Text(child.status + (child.toolCount.map { " · \($0) tools" } ?? "") + (child.lastTool.isEmpty ? "" : " · \(child.lastTool)"))
                                         .font(.nbMono(9)).foregroundStyle(child.failed ? NB.rose : NB.secondary)
                                 }
                                 Spacer()

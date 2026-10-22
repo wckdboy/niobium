@@ -63,7 +63,7 @@ struct BotAvatar: View {
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
-            CastPortrait(member: cast.member(for: bot.name, title: bot.title),
+            CastPortrait(member: cast.member(for: bot.castKey, title: bot.title),
                          size: size, showCompanion: size >= 48, showGlow: false)
             if showStatus {
                 RoundedRectangle(cornerRadius: size * 0.05, style: .continuous)

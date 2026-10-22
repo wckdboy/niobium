@@ -74,8 +74,10 @@ struct BotProfile: Identifiable, Equatable {
     var accentHex: String?
     var hasAvatar: Bool
     var enabledToolsets: [String] = []
+    var origin: String = "hermes"
 
-    var id: String { name }
+    var castKey: String { origin == "dsh" ? "dsh:" + name : name }
+    var id: String { castKey }
     var accent: Color { NB.color(for: accentHex) }
     var initials: String {
         let parts = title.split(separator: " ").prefix(2)
@@ -125,7 +127,9 @@ struct BotProfile: Identifiable, Equatable {
             isDefault: json.bool("is_default") ?? false,
             hidden: meta.bool("hidden") ?? false,
             accentHex: meta.string("color"),
-            hasAvatar: json.bool("has_avatar") ?? false
+            hasAvatar: json.bool("has_avatar") ?? false,
+            enabledToolsets: json.array("enabled_toolsets") as? [String] ?? [],
+            origin: json.string("origin") == "dsh" ? "dsh" : "hermes"
         )
     }
 }
@@ -438,10 +442,11 @@ struct ModelChoice: Identifiable, Equatable {
 struct SessionRow: Identifiable, Equatable {
     var sessionID: String
     var title: String
-    var messageCount: Int
+    var messageCount: Int?
     var model: String
     var startedAt: Date?
     var running: Bool
+    var lastActiveAt: Date? = nil
     var id: String { sessionID }
 
     static func parse(_ json: JSONObject) -> SessionRow? {
@@ -449,10 +454,11 @@ struct SessionRow: Identifiable, Equatable {
         guard let id, !id.isEmpty else { return nil }
         return SessionRow(sessionID: id,
                           title: json.string("title") ?? "Untitled",
-                          messageCount: json.int("message_count") ?? 0,
+                          messageCount: json.int("message_count"),
                           model: json.string("model") ?? "",
                           startedAt: epochDate(json.double("started_at")),
-                          running: json.bool("running") ?? false)
+                          running: json.bool("running") ?? false,
+                          lastActiveAt: epochDate(json.double("updated_at")))
     }
 }
 

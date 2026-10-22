@@ -15,7 +15,7 @@ android {
         applicationId = "io.sovware.niobium"
         minSdk = 28
         targetSdk = 37
-        versionCode = 5
+        versionCode = 6
         versionName = "2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk { abiFilters += "arm64-v8a" }
@@ -74,7 +74,7 @@ val prepareLocalRuntime = tasks.register<Exec>("prepareLocalRuntime") {
     workingDir = rootProject.projectDir.parentFile
     commandLine("python3", "tools/prepare-android-runtime.py")
     inputs.files("../../config/android-runtime.json", "../../tools/prepare-android-runtime.py",
-        "../runtime/supervisor.c", "../runtime/niobium-local.cjs")
+        "../runtime/supervisor.c", "../runtime/niobium-local.cjs", "../../runtime/niobium-agent.cjs")
     outputs.dir(layout.buildDirectory.dir("generated/runtime"))
 }
 tasks.named("preBuild").configure { dependsOn(prepareLocalRuntime) }

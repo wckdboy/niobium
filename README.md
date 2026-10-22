@@ -4,26 +4,26 @@
 
 **Your pixels, everywhere. By [WCKD.ai](https://wckd.ai).**
 
-A native iPhone, iPad and Android command deck for the Hermes agent on your
-computer or VPS. Pixels are persistent Hermes profiles with their own voice,
-memory, model, tools and creature companions.
+A native iPhone, iPad and Android home for Pixels: your agents on a Hermes host
+or in the on-device DSH engine, with their own personas, tools and companions.
 
-**New release: [2.0.0-beta.2](https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.2).** Full Hermes parity is the target;
+**New release: [2.0.0-beta.3](https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.3).** Full Hermes parity is the target;
 it is not finished. The current scope is in [PLAN.md](PLAN.md), the implementation
 audit is in [docs/HERMES-PARITY.md](docs/HERMES-PARITY.md), and the work is tracked
 in [Plane](https://app.plane.so/wckd/projects/2fbcf987-20de-43dc-80ac-0a6bab7ec03a/issues/).
 
-<img src="screenshots/ios-home-audit.png" width="280" alt="Niobium v2 on iPhone"> <img src="screenshots/android-home-audit.png" width="252" alt="Niobium v2 on Android">
+<img src="screenshots/ios-dsh-home.png" width="280" alt="Niobium v2 on iPhone"> <img src="screenshots/android-dsh-home.png" width="252" alt="Niobium v2 on Android">
 
 ## The app
 
-Five tabs: **Home · Pixels · Local · Activity · Settings**.
+Five tabs: **Home · Pixels · Engines · Activity · Settings**.
 
 - **Home:** lavender pixel landscape, gateway status and measured round trip,
-  compact roster, and an honest local/remote harness entry.
+  compact roster and one coherent native experience across providers.
 - **Pixels:** persistent Bot Chats, rooms, @mentions and the Pixel workshop.
-- **Local:** Alpine + DSH on device through iSH on iOS and PRoot on ARM64 Android;
-  local setup is available without connecting Hermes. Remote DSH remains available.
+- **Engines:** select Hermes or on-device DSH. Local Pixels use the same native
+  roster, workshop and chats. DSH runs behind the app; its web workspace lives
+  under Advanced controls. Saved Hermes settings are retained when switching.
 - **Activity:** messages, tools, approvals and background results.
 - **Settings:** gateway, appearance, skills, MCP inventory and runtime controls.
 
@@ -52,6 +52,10 @@ isolation are configured on the Hermes host.
 Appearance edits are saved to Hermes with metadata revision checks and restored
 when the roster refreshes. An incomplete setup is reported without silently
 creating a second profile.
+
+Local creation writes reviewed DSH presets and keeps credentials in DSH app storage.
+Group rooms and routines require Hermes. See [the native provider](docs/DSH-PROVIDER.md)
+for the method mapping, execution limits and acceptance evidence.
 
 ## Characters and companions
 
@@ -104,11 +108,11 @@ node site/build.mjs
 node site/check.mjs
 ~~~
 
-The beta passed 20 iOS unit tests, 2 native UI tests, 23 Android JVM tests,
-4 Android runtime instrumentation tests,
-13 upstream-watcher tests, 5 asset checks and 38 pure Swift PixelSpec assertions.
+The beta passed 24 iOS unit tests, 3 native UI tests, 24 Android JVM tests,
+5 Android runtime instrumentation tests,
+18 DSH-adapter tests, 13 upstream-watcher tests, 5 asset checks and 38 pure Swift PixelSpec assertions.
 Android debug/release builds and lint, both iOS variants and the signed full
-iOS archive/export/upload passed. Native Home and Pixel-review captures are in
+iOS archive/export passed. Native Home and Pixel-review captures are in
 [screenshots](screenshots/README.md). These checks do not establish end-to-end
 parity with a live, provider-backed Hermes install.
 
@@ -117,17 +121,19 @@ parity with a live, provider-backed Hermes install.
 Native connector authorization, memory editing, project/workspace management,
 complete file/PDF support, durable replay/outbox handling and several room/busy
 controls remain incomplete. Android local DSH is a beta; provider-backed and
-physical/16 KB device acceptance remain. Mobile gateway push delivery is not
-provided. The native Hermes workshop is not yet a DSH preset editor.
+physical/16 KB device acceptance remain. The native workshop creates real DSH
+presets and the loopback model integration test passes. Real-account provider
+acceptance and actual delegation remain. Mobile gateway push delivery is not provided.
 
 ## Site and licenses
 
 [niobium.sh](https://niobium.sh) uses the shared WCKD web design and is deployed
 with Cloudflare Workers Static Assets from this repository. The
-[2.0 beta release](https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.2)
+[2.0 beta release](https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.3)
 includes the signed Android APK, iOS distribution IPA, checksums and complete
-release notes. iOS 2.0 (6), ai.wckd.niobium, was uploaded for TestFlight and
-accepted for Apple processing. TestFlight manages installation; the App Store
+release notes. The full iOS 2.0 (7) package targets TestFlight under
+ai.wckd.niobium; the release notes track processing and availability. TestFlight
+manages installation; the App Store
 IPA is not a universally sideloadable download. The last stable release is
 [1.1](https://github.com/wckdboy/niobium/releases/tag/v1.1.0).
 

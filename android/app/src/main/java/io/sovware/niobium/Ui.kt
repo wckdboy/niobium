@@ -97,7 +97,7 @@ fun BotRow(bot: BotProfile, onClick: () -> Unit) {
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        BotAvatar(bot.title, bot.accent, 50.dp, bot.isLive, profileName = bot.name)
+        BotAvatar(bot.title, bot.accent, 50.dp, bot.isLive, profileName = bot.castKey)
         Spacer(Modifier.width(13.dp))
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {

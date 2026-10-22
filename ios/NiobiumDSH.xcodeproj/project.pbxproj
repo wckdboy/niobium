@@ -976,6 +976,7 @@
 				61C0EDDEE1E584D60BAF22CB /* Generate APK Repositories File */,
 				EA97AFCB1F26EDC8B7E3CC3E /* Compile hterm JavaScript */,
 				AC353226018381737797D180 /* Resources */,
+				A17000000000000000000007 /* Install Niobium provider */,
 			);
 			buildRules = (
 				AE20CB4FC6F56205FCAB580F /* PBXBuildRule */,
@@ -1172,6 +1173,19 @@
 			shellPath = /bin/sh;
 			shellScript = "cd \"$SRCROOT/ish-arm64/deps/libapps\" && ./hterm/bin/mkdist\n";
 		};
+
+        A17000000000000000000007 /* Install Niobium provider */ = {
+            isa = PBXShellScriptBuildPhase;
+            alwaysOutOfDate = 1;
+            buildActionMask = 2147483647;
+            files = ();
+            inputPaths = ();
+            outputPaths = ();
+            name = "Install Niobium provider";
+            runOnlyForDeploymentPostprocessing = 0;
+            shellPath = /bin/sh;
+            shellScript = "python3 \"$PROJECT_DIR/../tools/prepare-ios-provider.py\"\n";
+        };
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -1311,7 +1325,7 @@
 				CODE_SIGN_ENTITLEMENTS = Resources/Niobium.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = XKA8CGC2AB;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DSH_ROOTFS_TARBALL = "$(SRCROOT)/Resources/root.tar.gz";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -1365,7 +1379,7 @@
 				CODE_SIGN_ENTITLEMENTS = Resources/Niobium.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = XKA8CGC2AB;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DSH_ROOTFS_TARBALL = "$(SRCROOT)/Resources/root.tar.gz";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",

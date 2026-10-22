@@ -17,8 +17,15 @@ import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
+import io.sovware.niobium.runtime.LocalRuntime
+import io.sovware.niobium.runtime.LocalRuntimeState
+import io.sovware.niobium.runtime.RuntimePhase
+
+enum class AgentEngine { HERMES, DSH }
 
 data class NbState(
+    val engine: AgentEngine = AgentEngine.HERMES,
+    val engineStatus: String = "",
     val needsConnection: Boolean = true,
     val connection: Connection? = null,
     val connecting: Boolean = false,
@@ -54,6 +61,9 @@ data class NbState(
     val clarify: ClarifyRequest? = null,
     val credentialRequests: List<CredentialRequest> = emptyList(),
     val loadingChat: Boolean = false,
+    val historyHasMore: Boolean = false,
+    val historyBeforeSeq: Int? = null,
+    val loadingHistory: Boolean = false,
     val refreshing: Boolean = false,
     val error: String? = null,
     val toast: String? = null,
@@ -75,9 +85,33 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
     private var connectionEpoch = 0
     private var chatEpoch = 0
     private var groupEpoch = 0
+    private val providerPrefs = app.getSharedPreferences("niobium", android.content.Context.MODE_PRIVATE)
+    private var localToken: String? = null
 
     var state by mutableStateOf(NbState())
         private set
+
+    init {
+        viewModelScope.launch {
+            LocalRuntime.state.collect { runtime ->
+                if (state.engine != AgentEngine.DSH || state.demo) return@collect
+                state = state.copy(engineStatus = when (runtime.phase) {
+                    RuntimePhase.INSTALLING -> "Preparing Linux · " + runtime.progress + "%"
+                    RuntimePhase.STARTING -> "Starting your Pixels…"
+                    RuntimePhase.RUNNING -> "Running"
+                    RuntimePhase.STOPPING -> "Stopping local tasks…"
+                    RuntimePhase.ERROR -> runtime.message ?: "Local engine stopped."
+                    RuntimePhase.OFF -> "Start the local engine under Engines."
+                })
+                if (runtime.phase == RuntimePhase.RUNNING && runtime.cookie != localToken && !state.connecting) connectLocal(runtime)
+                else if (runtime.phase in listOf(RuntimePhase.OFF, RuntimePhase.ERROR, RuntimePhase.STOPPING)) {
+                    localToken = null
+                    if (state.connected) disconnect()
+                    if (runtime.phase == RuntimePhase.ERROR) showError(runtime.message ?: "Local engine stopped.")
+                }
+            }
+        }
+    }
 
     fun bootstrap(demoRequested: Boolean = false, botName: String? = null) {
         if (bootstrapped) return
@@ -86,6 +120,7 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
         val saved = prefs.loadConnection()
         when {
             demoRequested -> enterDemo(botName)
+            providerPrefs.getString("agent-provider", null) == "dsh" || providerPrefs.getBoolean("local-mode", false) -> useLocal()
             saved != null && saved.isDemo -> enterDemo(botName)
             saved != null -> {
                 state = state.copy(needsConnection = false, connection = saved)
@@ -95,7 +130,7 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun connect(rawUrl: String, token: String, name: String, remember: Boolean = true) {
+    fun connect(rawUrl: String, token: String, name: String, remember: Boolean = true, local: Boolean = false, cookie: String? = null) {
         if (state.connecting) return
         viewModelScope.launch {
             val normalized = normalizeUrl(rawUrl)
@@ -108,9 +143,14 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
                 return@launch
             }
             val epoch = ++connectionEpoch
+            gateway?.disconnect(silent = true)
+            chatEpoch++; groupEpoch++; groupPoll?.cancel(); demoTurn?.cancel()
+            state = NbState(engine = if (local) AgentEngine.DSH else AgentEngine.HERMES,
+                needsConnection = false, connection = state.connection)
             state = state.copy(connecting = true, credentialRequests = emptyList(), approvals = emptyList(), clarify = null, error = null)
             try {
-                val status = withContext(Dispatchers.IO) { GatewayClient.probe(normalized, token) }
+                val status = withContext(Dispatchers.IO) { GatewayClient.probe(normalized, token, cookie) }
+                if (epoch != connectionEpoch) return@launch
                 val ready = CompletableDeferred<Unit>()
                 readySignal = ready
                 val client = GatewayClient(object : GatewayClient.Listener {
@@ -138,8 +178,9 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
                     }
                 })
                 gateway = client
-                client.connect(normalized, token)
+                client.connect(normalized, token, cookie)
                 withTimeout(16_000) { ready.await() }
+                if (epoch != connectionEpoch) { client.disconnect(silent = true); return@launch }
                 runCatching {
                     declinesNotShown = client.request("client.capabilities", JSONObject().put("server_requests", true), 5_000).optBoolean("declines_not_shown")
                 }
@@ -151,9 +192,11 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
                 }
                 val probeStart = android.os.SystemClock.elapsedRealtime()
                 val caps = runCatching { client.request("gateway.capabilities", JSONObject(), 6_000) }.getOrNull()
+                if (epoch != connectionEpoch || gateway !== client) return@launch
                 val latency = if (caps != null) (android.os.SystemClock.elapsedRealtime() - probeStart).toInt().coerceAtLeast(1) else null
                 val saved = Connection(name.ifBlank { "My Hermes" }, normalized, token)
-                if (remember) prefs.saveConnection(saved)
+                if (remember && !local) prefs.saveConnection(saved)
+                providerPrefs.edit().putString("agent-provider", if (local) "dsh" else "hermes").remove("local-mode").apply()
                 state = state.copy(
                     needsConnection = false, connection = saved, connecting = false, connected = true,
                     demo = false, gatewayLatencyMs = latency, gatewayVersion = status.s("release_date") ?: status.s("version") ?: "Hermes",
@@ -166,6 +209,8 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
                 launchBotName = null
                 showToast("Connected to ${saved.name}")
             } catch (e: Exception) {
+                if (epoch != connectionEpoch) return@launch
+                if (local) localToken = null
                 gateway?.disconnect(silent = true)
                 gateway = null
                 state = state.copy(connecting = false, connected = false,
@@ -175,21 +220,65 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun reconnect() {
-        state.connection?.let { connect(it.url, it.token, it.name, remember = false) }
+        if (state.engine == AgentEngine.DSH) useLocal()
+        else state.connection?.let { connect(it.url, it.token, it.name, remember = false) }
+    }
+
+    fun useLocal() {
+        if (state.engine != AgentEngine.DSH || state.demo || state.needsConnection) {
+            disconnect()
+            state = NbState(engine = AgentEngine.DSH, needsConnection = false, engineStatus = "Preparing your local engine…")
+        }
+        providerPrefs.edit().putString("agent-provider", "dsh").remove("local-mode").apply()
+        val runtime = LocalRuntime.state.value
+        if (runtime.phase == RuntimePhase.RUNNING && !state.connected && !state.connecting) connectLocal(runtime)
+        else if (runtime.phase in listOf(RuntimePhase.OFF, RuntimePhase.ERROR)) LocalRuntime.start(getApplication())
+    }
+
+    private fun connectLocal(runtime: LocalRuntimeState) {
+        val origin = runtime.origin ?: return
+        val key = runtime.cookie ?: return
+        localToken = key
+        connect(origin + "/niobium", key, "On device · DSH", remember = false, local = true, cookie = key)
+    }
+
+    fun useHermes() {
+        val saved = prefs.loadConnection()?.takeUnless { it.isDemo }
+        disconnect()
+        providerPrefs.edit().putString("agent-provider", "hermes").remove("local-mode").apply()
+        state = NbState(needsConnection = saved == null, connection = saved)
+        saved?.let { connect(it.url, it.token, it.name, remember = false) }
+    }
+
+    fun saveLocalCredential(ref: String, key: String, onSaved: () -> Unit) {
+        val client = gateway ?: return
+        if (state.engine != AgentEngine.DSH) return
+        viewModelScope.launch {
+            try {
+                client.request("local.credential", JSONObject().put("ref", ref).put("value", key), 20_000)
+                if (gateway === client) { onSaved(); showToast("Provider key saved on this device") }
+            } catch (e: Exception) { showError(e.message ?: "Could not save provider key.") }
+        }
     }
 
     fun disconnect(forget: Boolean = false) {
+        connectionEpoch++; chatEpoch++; groupEpoch++
+        groupPoll?.cancel(); demoTurn?.cancel()
         gateway?.disconnect(silent = true)
         gateway = null
         state = state.copy(connected = false, activeBot = null, activeGroup = null,
-            bots = emptyList(), groups = emptyList(), toolsets = emptyList(), messages = emptyList())
+            bots = emptyList(), groups = emptyList(), toolsets = emptyList(), messages = emptyList(),
+            connecting = false, sessionId = null, modelChoices = emptyList(), approvals = emptyList(), clarify = null,
+            credentialRequests = emptyList(), turnActive = false, activities = emptyList(), routines = emptyList(), companionTasks = emptyList())
         if (forget) {
-            prefs.clear()
+            if (state.engine == AgentEngine.HERMES) prefs.clear()
+            providerPrefs.edit().remove("agent-provider").remove("local-mode").apply()
             state = NbState(needsConnection = true)
         }
     }
 
     fun enterDemo(botName: String? = null) {
+        connectionEpoch++; chatEpoch++; groupEpoch++
         gateway?.disconnect(silent = true)
         gateway = null
         state = NbState(
@@ -199,7 +288,7 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
             bots = DemoData.bots, groups = DemoData.groups, toolsets = DemoData.toolsets,
             routines = DemoData.routines, activities = DemoData.activity, lastSync = System.currentTimeMillis()
         )
-        prefs.saveConnection(Connection("Nb Studio", "demo://niobium", "", isDemo = true))
+        providerPrefs.edit().putString("agent-provider", "hermes").remove("local-mode").apply()
         botName?.let { n -> state.bots.firstOrNull { it.name == n }?.let { openBot(it) } }
     }
 
@@ -211,10 +300,7 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun leaveDemoToConnect() {
-        gateway?.disconnect(silent = true)
-        gateway = null
-        prefs.clear()
-        state = NbState(needsConnection = true)
+        useHermes()
     }
 
     suspend fun refreshAll() {
@@ -230,20 +316,28 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch { refreshAll() }
     }
 
+    override fun onCleared() {
+        gateway?.disconnect(silent = true)
+        gateway = null
+        super.onCleared()
+    }
+
     suspend fun refreshRoster() {
         val client = gateway ?: return
         try {
             val result = client.request("profiles.list", JSONObject().put("include_sessions", true))
+            if (gateway !== client) return
             for (row in result.objects("profiles")) {
                 val name = row.s("name") ?: continue
                 val meta = row.o("ui_meta")?.o("niobium") ?: continue
-                CastStore.restore(getApplication(), name, meta)
+                CastStore.restore(getApplication(), if (state.engine == AgentEngine.DSH) "dsh:" + name else name, meta)
             }
             val parsed = result.objects("profiles").mapNotNull(BotProfile::parse).filter { !it.hidden }
                 .sortedWith(compareByDescending<BotProfile> { it.isLive }
                     .thenByDescending { it.activityAt ?: 0L })
             state = state.copy(bots = parsed, lastSync = System.currentTimeMillis())
         } catch (e: Exception) {
+            if (gateway !== client) return
             state = state.copy(error = "Could not load bots. ${e.message}")
         }
     }
@@ -252,6 +346,7 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
         val client = gateway ?: return
         try {
             val caps = client.request("groups.capabilities")
+            if (gateway !== client) return
             state = state.copy(groupsHaveDriver = caps.optBoolean("driver"))
             val canList = caps.a("methods")?.let { arr ->
                 (0 until arr.length()).any { arr.optString(it) == "groups.list" }
@@ -261,8 +356,10 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
                 return
             }
             val result = client.request("groups.list", JSONObject().put("limit", 100).put("offset", 0))
+            if (gateway !== client) return
             state = state.copy(groups = result.objects("rooms").mapNotNull(GroupRoom::parse).filter { !it.disbanded })
         } catch (_: Exception) {
+            if (gateway !== client) return
             state = state.copy(groups = emptyList())
         }
     }
@@ -291,7 +388,8 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
         state.credentialRequests.forEach { gateway?.respond(it.rpcId, JSONObject().put("value", "")) }
         state = state.copy(activeBot = bot, messages = emptyList(), sessionId = null, companionTasks = emptyList(), companionError = null,
             sessionRevision = 0, sessionGeneration = null, sessionReasoning = null, modelChoices = emptyList(), usage = null, credentialRequests = emptyList(),
-            loadingChat = true, approvals = emptyList(), clarify = null, turnActive = false, turnStatus = "")
+            loadingChat = true, historyHasMore = false, historyBeforeSeq = null, loadingHistory = false,
+            approvals = emptyList(), clarify = null, turnActive = false, turnStatus = "")
         viewModelScope.launch {
             if (state.demo) {
                 delay(260)
@@ -321,6 +419,7 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
             if (chatEpoch != epoch || gateway !== client) return
             restoreChat(result)
             recoverPrompts(result)
+            if (state.engine == AgentEngine.DSH) client.request("local.attach", JSONObject().put("session_id", state.sessionId))
             loadToolsets()
             loadModels()
         } catch (e: Exception) {
@@ -351,6 +450,26 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
             messages = restored + if (streaming || partial.isNotEmpty()) listOf(
                 ChatMessage("inflight", "assistant", partial, streaming = streaming)) else emptyList(),
             loadingChat = false, turnActive = snapshot.optBoolean("running", streaming), turnStatus = "")
+        state = state.copy(historyHasMore = snapshot.optBoolean("history_has_more"), historyBeforeSeq = snapshot.i("history_before_seq"), loadingHistory = false)
+    }
+
+    fun loadOlderMessages() {
+        val client = gateway ?: return
+        val session = state.sessionId ?: return
+        val before = state.historyBeforeSeq ?: return
+        if (!state.historyHasMore || state.loadingHistory) return
+        state = state.copy(loadingHistory = true)
+        viewModelScope.launch {
+            try {
+                val result = client.request("session.history", JSONObject().put("session_id", session).put("before_seq", before))
+                if (gateway !== client || state.sessionId != session) return@launch
+                val older = parseTranscript(result.objects("messages"))
+                state = state.copy(messages = (older + state.messages).distinctBy { it.id }, historyHasMore = result.optBoolean("has_more"),
+                    historyBeforeSeq = result.i("before_seq"), loadingHistory = false)
+            } catch (e: Exception) {
+                if (gateway === client && state.sessionId == session) state = state.copy(loadingHistory = false, error = e.message ?: "Could not load older messages.")
+            }
+        }
     }
 
     fun send(text: String, imageBase64: String? = null, mime: String = "image/jpeg") {
@@ -484,6 +603,8 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
                 if (chatEpoch != epoch || state.activeBot?.name != bot.name || gateway !== client) return@runCatching
                 restoreChat(result, row.sessionId)
                 recoverPrompts(result)
+                if (state.engine == AgentEngine.DSH) client.request("local.attach", JSONObject().put("session_id", state.sessionId))
+                if (gateway !== client || state.sessionId != row.sessionId) return@runCatching
                 loadModels(); loadToolsets()
             }.onFailure {
                 if (it is kotlinx.coroutines.CancellationException) throw it
@@ -628,6 +749,12 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
                     clarify = state.clarify?.takeUnless { it.rpcId.toString() == id },
                     credentialRequests = state.credentialRequests.filterNot { it.rpcId.toString() == id })
             }
+            "message.segment" -> {
+                ensureStreaming()
+                val id = streamingId
+                state = state.copy(messages = state.messages.map { if (it.id == id) it.copy(text = it.text.ifEmpty { payload.s("text") ?: "" }, streaming = false) else it })
+                streamingId = null
+            }
             "message.complete" -> completeTurn(payload)
             "tool.start" -> startTool(payload)
             "tool.complete" -> completeTool(payload)
@@ -674,7 +801,7 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
         }
         state.activeBot?.let { bot ->
             addActivity(ActivityItem(UUID.randomUUID().toString(), "message", "Reply from ${bot.title}",
-                text.take(120), botName = bot.name))
+                (payload.s("summary") ?: text).take(120), botName = bot.name))
         }
     }
 
@@ -731,7 +858,7 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
                     .put("ui_meta", JSONObject().put("niobium", meta))
                     .put("ui_meta_expected_revisions", JSONObject().put("niobium", revision)))
                 check(gateway === client && result.optBoolean("ok")) { "This Pixel changed elsewhere. Refresh before saving again." }
-                CastStore.put(context, profile, member); showToast("Character saved to Hermes"); onResult(true)
+                CastStore.put(context, if (state.engine == AgentEngine.DSH) "dsh:" + profile else profile, member); showToast("Character saved"); onResult(true)
             } catch (e: kotlinx.coroutines.CancellationException) { throw e }
             catch (e: Exception) { showError("Could not save the character. " + e.message); onResult(false) }
         }
@@ -771,6 +898,19 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
         state = state.copy(approvals = if (legacy == null) prompts else listOf(legacy),
             clarify = questions.takeIf { it.isNotEmpty() }?.let { ClarifyRequest("", session, it,
                 clarify.associate { j -> j.getString("prompt_id") to j.getInt("execution_generation") }) })
+        if (state.engine == AgentEngine.DSH) snapshot.objects("local_requests").forEach { request ->
+            val payload = request.o("payload") ?: return@forEach
+            val type = if (payload.s("type") == "approval/requested") "approval" else "clarify"
+            val converted = if (type == "approval") JSONObject().put("session_id", state.sessionId)
+                .put("request_id", request.s("rpcId")).put("command", payload.s("toolName"))
+                .put("description", payload.s("reason")).put("tool_name", payload.s("toolName"))
+                .put("choices", JSONArray(listOf("once", "deny")))
+            else JSONObject().put("session_id", state.sessionId).put("questions", JSONArray(payload.objects("questions").map { q ->
+                JSONObject().put("qid", q.s("id")).put("question", q.s("question"))
+                    .put("choices", JSONArray(q.objects("options").mapNotNull { it.s("label") })).put("multi_select", q.b("multiSelect") ?: false)
+            }))
+            handleServerRequest(request.s("rpcId") ?: return@forEach, type, converted)
+        }
     }
 
     private fun handleServerRequest(id: Any, method: String, params: JSONObject) {
@@ -783,7 +923,7 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
             "approval" -> {
                 val choices = params.a("choices")?.let { arr -> (0 until arr.length()).map { arr.optString(it) } }
                     ?: listOf("once", "deny")
-                state = state.copy(approvals = state.approvals + Approval(id,
+                state = state.copy(approvals = state.approvals.filterNot { it.rpcId.toString() == id.toString() } + Approval(id,
                     params.s("request_id") ?: "", sessionId, params.s("command") ?: "",
                     params.s("description") ?: "", params.s("tool_name") ?: "terminal", choices))
                 state.activeBot?.let {
@@ -866,11 +1006,12 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun resolveClarify(answers: Map<String, String>) {
+    fun resolveClarify(answers: Map<String, String>, selections: Map<String, List<String>> = emptyMap()) {
         val req = state.clarify ?: return
         val client = gateway ?: return
         if (state.sessionId != req.sessionId) return
-        if (req.questions.any { answers[it.id].isNullOrBlank() }) {
+        val flattened = answers + selections.mapValues { it.value.joinToString(", ") }
+        if (req.questions.any { flattened[it.id].isNullOrBlank() }) {
             showError("Answer every question before sending. You can dismiss it and leave the task waiting.")
             return
         }
@@ -882,7 +1023,7 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
                         val generation = req.promptGenerations[question.id] ?: continue
                         if (state.clarify?.promptGenerations?.get(question.id) != generation) return@launch
                         client.request("clarify.respond", JSONObject().put("session_id", req.sessionId)
-                            .put("execution_generation", generation).put("prompt_id", question.id).put("answer", answers.getValue(question.id)))
+                            .put("execution_generation", generation).put("prompt_id", question.id).put("answer", flattened.getValue(question.id)))
                         if (gateway !== client || state.sessionId != req.sessionId ||
                             state.clarify?.promptGenerations?.get(question.id) != generation) return@launch
                         state = state.copy(clarify = state.clarify?.copy(questions = state.clarify!!.questions.filterNot { it.id == question.id },
@@ -895,7 +1036,8 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
             return
         }
         val obj = JSONObject()
-        answers.forEach { (k, v) -> obj.put(k, v) }
+        flattened.forEach { (k, v) -> obj.put(k, v) }
+        if (state.engine == AgentEngine.DSH) selections.forEach { (k, v) -> obj.put(k, JSONArray(v)) }
         client.respond(req.rpcId, JSONObject().put("answers", obj).put("outcome", "submitted"))
         state = state.copy(clarify = null)
     }
@@ -1050,8 +1192,14 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
             val client = gateway ?: run { onError("Connect a gateway first."); return@launch }
             var created = false
             try {
-                PixelProvisioner.provision(draft, member.accentHex, client::request) { created = true }
-                CastStore.put(context, slug, member)
+                if (state.engine == AgentEngine.DSH) {
+                    val result = client.request("pixel.create", JSONObject().put("spec", spec.toJson())
+                        .put("enabled_toolsets", JSONArray(draft.enabledToolsets)).put("briefing", spec.soul + spec.policyBriefing)
+                        .put("accent", member.accentHex).put("builder", if (draft.usedModel) "model" else "template"), 120_000)
+                    check(result.optBoolean("ok")) { "The local engine did not confirm creation." }
+                    created = true
+                } else PixelProvisioner.provision(draft, member.accentHex, client::request) { created = true }
+                CastStore.put(context, if (state.engine == AgentEngine.DSH) "dsh:" + slug else slug, member)
                 refreshRoster()
                 val bot = state.bots.firstOrNull { it.name == slug } ?: error("The roster has not refreshed. Refresh before trying again.")
                 openBot(bot); onCreated(bot)

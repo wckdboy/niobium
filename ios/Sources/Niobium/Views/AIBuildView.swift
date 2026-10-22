@@ -103,7 +103,7 @@ struct AIBuildView: View {
                 Picker("Files", selection: Binding(get: { draft?.spec.permissions.filesystem ?? "workspace" }, set: { draft?.spec.permissions.filesystem = $0 })) {
                     Text("None").tag("none"); Text("Workspace").tag("workspace"); Text("Unrestricted").tag("unrestricted")
                 }
-                Text("Host approvals stay manual. Tool selection is applied to Hermes; network and workspace isolation are configured on the host. The Pixel inherits the default profile’s model credentials.")
+                Text("Tool choices are applied to the selected engine. Workspace scopes are operating instructions; the engine owns sandbox enforcement. Your Pixel uses the model credentials configured for that engine.")
                     .font(.nbBody(10)).foregroundStyle(NB.tertiary)
                 Text("Tools: \(current.enabledToolsets.isEmpty ? "none" : current.enabledToolsets.joined(separator: ", "))")
                     .font(.nbMono(11)).foregroundStyle(NB.secondary)

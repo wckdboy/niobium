@@ -4,6 +4,13 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class PixelSpecTest {
+    @Test fun identicalPixelNamesHaveSeparateProviderAndAppearanceIdentity() {
+        val remote = BotProfile.parse(org.json.JSONObject().put("name", "scout"))!!
+        val local = BotProfile.parse(org.json.JSONObject().put("name", "scout").put("origin", "dsh"))!!
+        assertEquals(remote.name, local.name)
+        assertNotEquals(remote.id, local.id)
+        assertNotEquals(remote.castKey, local.castKey)
+    }
     @Test fun roomMembersUseQualifiedIDsWhenProfilesRepeat() {
         val room = GroupRoom.parse(org.json.JSONObject("""{"room_id":"room","name":"Cross-gateway","members":[
             {"member_id":"a:scout","profile":"scout","display_name":"Scout A"},

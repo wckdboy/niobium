@@ -82,11 +82,16 @@ fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = 
         if (!spoken.isNullOrBlank()) draft = if (draft.isBlank()) spoken else "$draft $spoken"
     }
     val listState = rememberLazyListState()
+    var previousTail by remember { mutableStateOf<String?>(null) }
+    var previousCount by remember { mutableStateOf(0) }
 
     LaunchedEffect(state.messages.size, state.messages.lastOrNull()?.text?.length) {
-        if (state.messages.isNotEmpty()) {
-            listState.animateScrollToItem(state.messages.size - 1)
+        val tail = state.messages.lastOrNull()?.id
+        val prepended = previousCount > 0 && state.messages.size > previousCount && previousTail == tail
+        if (state.messages.isNotEmpty() && !prepended) {
+            listState.animateScrollToItem(state.messages.size - 1 + if (state.historyHasMore) 1 else 0)
         }
+        previousTail = tail; previousCount = state.messages.size
     }
 
     Column(Modifier.fillMaxSize().background(Nb.Void).statusBarsPadding().imePadding()) {
@@ -112,6 +117,11 @@ fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = 
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(15.dp)
                 ) {
+                    if (state.historyHasMore) item {
+                        androidx.compose.material3.TextButton(onClick = vm::loadOlderMessages, enabled = !state.loadingHistory) {
+                            Text(if (state.loadingHistory) "Loading earlier messages…" else "Load earlier messages", color = Nb.Ion, fontSize = 12.sp)
+                        }
+                    }
                     if (state.messages.isEmpty() && !state.loadingChat) {
                         item { ChatPreamble(bot, state) }
                         item { StarterPrompts(bot) { vm.send(it) } }
@@ -167,7 +177,7 @@ fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = 
     }
 
     state.clarify?.takeUnless { clarifyHidden }?.let { request ->
-        ClarifyDialog(request, onSubmit = { answers -> vm.resolveClarify(answers); clarifyHidden = true },
+        ClarifyDialog(request, onSubmit = { answers, selected -> vm.resolveClarify(answers, selected); clarifyHidden = true },
             onCancel = { vm.cancelClarify(); clarifyHidden = true })
     }
     if (showCompanions) CompanionsSheet(vm, bot) { showCompanions = false }
@@ -212,7 +222,7 @@ private fun ChatHeader(bot: BotProfile, state: NbState, onOpenTools: () -> Unit,
         verticalAlignment = Alignment.CenterVertically) {
         NbIconButton("‹", onBack, size = 34)
         Spacer(Modifier.width(11.dp))
-        BotAvatar(bot.title, bot.accent, 36.dp, bot.isLive, showStatus = false, profileName = bot.name)
+        BotAvatar(bot.title, bot.accent, 36.dp, bot.isLive, showStatus = false, profileName = bot.castKey)
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -240,7 +250,7 @@ private fun ChatHeader(bot: BotProfile, state: NbState, onOpenTools: () -> Unit,
             ) {
                 DropdownMenuItem(text = { Text("Companion tasks", color = Nb.Text, fontSize = 13.sp) },
                     onClick = { menuOpen = false; onOpenCompanions() })
-                DropdownMenuItem(text = { Text("Mention a Pixel", color = Nb.Text, fontSize = 13.sp) },
+                if (state.engine == AgentEngine.HERMES) DropdownMenuItem(text = { Text("Mention a Pixel", color = Nb.Text, fontSize = 13.sp) },
                     onClick = { menuOpen = false; onMention() })
                 DropdownMenuItem(
                     text = { Text("Toolbox", color = Nb.Text, fontSize = 13.sp) },
@@ -254,7 +264,7 @@ private fun ChatHeader(bot: BotProfile, state: NbState, onOpenTools: () -> Unit,
                     text = { Text("All chats", color = Nb.Text, fontSize = 13.sp) },
                     onClick = { menuOpen = false; onOpenChats() }
                 )
-                DropdownMenuItem(
+                if (state.engine == AgentEngine.HERMES) DropdownMenuItem(
                     text = { Text("Routines", color = Nb.Text, fontSize = 13.sp) },
                     onClick = { menuOpen = false; onOpenRoutines() }
                 )
@@ -277,7 +287,7 @@ private fun ChatHeader(bot: BotProfile, state: NbState, onOpenTools: () -> Unit,
 @Composable
 private fun ChatPreamble(bot: BotProfile, state: NbState) {
     Column(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        BotAvatar(bot.title, bot.accent, 60.dp, false, showStatus = false, profileName = bot.name)
+        BotAvatar(bot.title, bot.accent, 60.dp, false, showStatus = false, profileName = bot.castKey)
         Spacer(Modifier.height(10.dp))
         Text(bot.title, color = Nb.Text, style = NbTitle, fontSize = 20.sp)
         Spacer(Modifier.height(4.dp))
@@ -576,9 +586,10 @@ private fun GroupEventRow(event: RoomEvent, room: GroupRoom) {
 }
 
 @Composable
-private fun ClarifyDialog(request: ClarifyRequest, onSubmit: (Map<String, String>) -> Unit, onCancel: () -> Unit) {
+private fun ClarifyDialog(request: ClarifyRequest, onSubmit: (Map<String, String>, Map<String, List<String>>) -> Unit, onCancel: () -> Unit) {
     val answers = remember { mutableStateMapOf<String, String>() }
-    val complete = request.questions.all { answers[it.id]?.isNotBlank() == true }
+    val selected = remember { mutableStateMapOf<String, Set<String>>() }
+    val complete = request.questions.all { if (it.multiSelect && it.choices.isNotEmpty()) !selected[it.id].isNullOrEmpty() else answers[it.id]?.isNotBlank() == true }
     AlertDialog(
         onDismissRequest = onCancel,
         title = { Text("A quick question", color = Nb.Text, fontWeight = FontWeight.SemiBold) },
@@ -604,15 +615,20 @@ private fun ClarifyDialog(request: ClarifyRequest, onSubmit: (Map<String, String
                         )
                     } else {
                         question.choices.forEach { choice ->
+                            val chosen = if (question.multiSelect) choice in selected[question.id].orEmpty() else answers[question.id] == choice
                             Row(
                                 Modifier.fillMaxWidth().padding(bottom = 5.dp).clip(RoundedCornerShape(10.dp))
-                                    .background(if (answers[question.id] == choice) Nb.Ion.copy(alpha = 0.12f) else Nb.Surface)
-                                    .clickable { answers[question.id] = choice }.padding(11.dp),
+                                    .background(if (chosen) Nb.Ion.copy(alpha = 0.12f) else Nb.Surface)
+                                    .clickable {
+                                        if (question.multiSelect) {
+                                            val values = selected[question.id].orEmpty()
+                                            selected[question.id] = if (choice in values) values - choice else values + choice
+                                        } else answers[question.id] = choice
+                                    }.padding(11.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(choice, color = Nb.Text, fontSize = 13.sp, modifier = Modifier.weight(1f))
-                                Text(if (answers[question.id] == choice) "●" else "○",
-                                    color = if (answers[question.id] == choice) Nb.Ion else Nb.Tertiary)
+                                Text(if (chosen) "●" else "○", color = if (chosen) Nb.Ion else Nb.Tertiary)
                             }
                         }
                     }
@@ -623,7 +639,7 @@ private fun ClarifyDialog(request: ClarifyRequest, onSubmit: (Map<String, String
         confirmButton = {
             Text("Send", color = if (complete) Nb.Ion else Nb.Tertiary,
                 modifier = Modifier.clickable(enabled = complete) {
-                    onSubmit(answers.toMap())
+                    onSubmit(answers.toMap(), selected.mapValues { (id, values) -> request.questions.first { it.id == id }.choices.filter { it in values } })
                 }.padding(10.dp))
         },
         dismissButton = {

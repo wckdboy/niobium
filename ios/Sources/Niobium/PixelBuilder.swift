@@ -28,6 +28,11 @@ final class PixelBuilder {
         let missing = spec.skills.filter { !skills.contains($0) }
         if !missing.isEmpty { notes.append("Unavailable skills excluded: \(missing.joined(separator: ", ")).") }
         spec.skills = spec.skills.filter { skills.contains($0) }
+        if catalog.string("provider") == "DSH" {
+            if !spec.connectors.isEmpty { notes.append("Local connections need separate DSH setup. This Pixel starts without connector access.") }
+            spec.connectors = []
+            notes.append("Local reasoning follows the selected model’s DSH settings. Skills share the local workspace.")
+        }
         return .init(spec: spec, usedModel: usedModel, availableToolsets: tools, availableSkills: skills, notes: notes)
     }
 }

@@ -199,7 +199,7 @@ struct BotInfoSheet: View {
                     Text("Context").font(.nbBody(11, weight: .medium)).foregroundStyle(NB.text)
                     Text("\(usage.contextTokens.formatted()) / \(usage.contextLength?.formatted() ?? "—") tokens")
                         .font(.nbMono(8)).foregroundStyle(NB.tertiary)
-                    Text("\(usage.apiCalls) calls · \(usage.compressionCount) compressions")
+                    Text("\(usage.apiCalls)" + (store.engine == .hermes ? " calls · \(usage.compressionCount) compressions" : " model steps"))
                         .font(.nbMono(8)).foregroundStyle(NB.tertiary)
                 }
                 Spacer()
@@ -468,9 +468,9 @@ struct ModelPickerView: View {
                         LazyVStack(alignment: .leading, spacing: 16) {
                             VStack(alignment: .leading, spacing: 3) {
                                 Text("Model").font(.nbDisplay(28)).foregroundStyle(NB.text)
-                                Text("The next turn runs on this provider and model. The session revision is fenced.")
+                                Text("Changes apply to the next turn.")
                                     .font(.nbBody(11)).foregroundStyle(NB.secondary)
-                                Menu {
+                                if store.engine == .hermes { Menu {
                                     Button("Profile default") { Task { await store.setReasoning(nil) } }
                                     ForEach(["minimal", "low", "medium", "high", "xhigh", "max", "ultra"], id: \.self) { effort in
                                         Button(effort.capitalized) { Task { await store.setReasoning(effort) } }
@@ -479,7 +479,7 @@ struct ModelPickerView: View {
                                     Label("Reasoning: \(store.chatReasoning ?? "profile default")", systemImage: "brain")
                                         .font(.nbBody(12, weight: .medium)).foregroundStyle(NB.ion).padding(.vertical, 10)
                                 }
-                                .disabled(store.isDemo || store.isTurnActive)
+                                .disabled(store.isDemo || store.isTurnActive) }
                             }
                             ForEach(grouped, id: \.0) { group in
                                 VStack(alignment: .leading, spacing: 7) {
@@ -551,8 +551,8 @@ struct ChatsView: View {
                                     VStack(alignment: .leading, spacing: 3) {
                                         Text(row.title).font(.nbBody(13, weight: .medium)).foregroundStyle(NB.text).lineLimit(1)
                                         HStack(spacing: 6) {
-                                            Text(row.startedAt?.formatted(.dateTime.month().day().hour().minute()) ?? "—")
-                                            Text("· \(row.messageCount) messages")
+                                            Text((row.lastActiveAt ?? row.startedAt)?.formatted(.dateTime.month().day().hour().minute()) ?? "—")
+                                            if let count = row.messageCount { Text("· \(count) messages") }
                                             if row.running { Text("· running").foregroundStyle(NB.mint) }
                                         }
                                         .font(.nbMono(8)).foregroundStyle(NB.tertiary)

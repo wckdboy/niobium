@@ -2,8 +2,13 @@ import Foundation
 import SwiftUI
 import UIKit
 
+enum AgentEngine: String { case hermes, dsh }
+
 @MainActor
 final class AppStore: ObservableObject {
+    @Published var engine: AgentEngine = .hermes
+    @Published var localStatus = "Stopped"
+    @Published var localReady = false
     @Published var connection: GatewayConnection?
     @Published var connectionState: GatewayState = .disconnected
     @Published var isDemo = false
@@ -48,6 +53,9 @@ final class AppStore: ObservableObject {
     @Published var errorBanner: String?
     @Published var isRefreshing = false
     @Published var isLoadingChat = false
+    @Published var historyHasMore = false
+    @Published var historyBeforeSeq: Int?
+    @Published var isLoadingHistory = false
     @Published var lastSyncedAt: Date?
 
     private var api: (any HermesRPC)?
@@ -58,8 +66,30 @@ final class AppStore: ObservableObject {
     private var pendingDemoToolID: String?
     private var chatEpoch = 0
     private var groupEpoch = 0
+    private var connectionEpoch = 0
+    private var localBootTask: Task<Void, Never>?
+    private var localProviderToken = UUID().uuidString + UUID().uuidString
+#if NIOBIUM_LOCAL_DSH
+    private var localObserver: NSObjectProtocol?
+#endif
 
     init(api: (any HermesRPC)? = nil) {
+#if NIOBIUM_LOCAL_DSH
+        localObserver = NotificationCenter.default.addObserver(forName: .init("DSHHarnessStateDidChangeNotification"), object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor in
+                guard let self else { return }
+                let harness = DSHHarness.shared()
+                self.localReady = harness.state == .ready
+                switch harness.state {
+                case .ready: self.localStatus = "Running"
+                case .failed: self.localStatus = harness.lastError ?? "Local engine stopped."
+                case .starting, .restarting: self.localStatus = "Starting your Pixels…"
+                default: self.localStatus = "Stopped"
+                }
+                if harness.state == .ready && self.engine == .dsh && !self.isConnecting && !self.connectionState.isConnected { self.useLocal() }
+            }
+        }
+#endif
         if let api {
             self.api = api
             wire(api)
@@ -70,6 +100,10 @@ final class AppStore: ObservableObject {
         if env["NIOBIUM_DEMO"] == "1" || ProcessInfo.processInfo.arguments.contains("--demo") {
             enterDemo()
             presentLaunchBotIfRequested()
+            return
+        }
+        if ProcessInfo.processInfo.arguments.contains("--dsh") || UserDefaults.standard.string(forKey: "niobium.agent-provider") == "dsh" {
+            useLocal()
             return
         }
         if let saved = ConnectionPrefs.load() {
@@ -88,7 +122,7 @@ final class AppStore: ObservableObject {
 
     // MARK: - Connection
 
-    func connect(url rawURL: String, token: String, name: String) async {
+    func connect(url rawURL: String, token: String, name: String, local: Bool = false) async {
         guard !isConnecting else { return }
         guard let normalized = ConnectionPrefs.normalizedURL(rawURL) else {
             connectError = "Enter a full gateway address, like http://192.168.1.20:9119"
@@ -98,6 +132,14 @@ final class AppStore: ObservableObject {
             connectError = "A gateway access token is required. Use the session token from `hermes serve`."
             return
         }
+        connectionEpoch += 1
+        let epoch = connectionEpoch
+        api?.disconnect(notify: false)
+        api = nil
+        activeBot = nil; activeGroup = nil; messages = []; bots = []; groups = []; toolsets = []; activity = []; routines = []
+        chatEpoch += 1; groupEpoch += 1; groupPollTask?.cancel(); demoTurnTask?.cancel()
+        engine = local ? .dsh : .hermes
+        needsConnection = false
         credentialRequests = []
         approvals = []
         clarifyRequest = nil
@@ -106,14 +148,19 @@ final class AppStore: ObservableObject {
         connectionState = .connecting
         do {
             let status = try await HermesRPCClient.probe(baseURL: normalized, token: token)
+            guard epoch == connectionEpoch else { return }
             let version = status.string("release_date") ?? status.string("version") ?? "Hermes"
             let client = HermesRPCClient()
             wire(client)
             try await client.connect(baseURL: normalized, token: token)
+            guard epoch == connectionEpoch else { client.disconnect(notify: false); return }
             api = client
             let saved = GatewayConnection(id: UUID(), name: name.isEmpty ? "My Hermes" : name,
                                           baseURL: normalized, savedAt: Date(), isDemo: false)
-            guard ConnectionPrefs.save(saved, token: token) else { client.disconnect(notify: false); throw RPCError.transport("Could not store the gateway token securely.") }
+            if !local {
+                guard ConnectionPrefs.save(saved, token: token) else { client.disconnect(notify: false); throw RPCError.transport("Could not store the gateway token securely.") }
+            }
+            UserDefaults.standard.set(local ? "dsh" : "hermes", forKey: "niobium.agent-provider")
             connection = saved
             isDemo = false
             needsConnection = false
@@ -123,6 +170,7 @@ final class AppStore: ObservableObject {
             toastMessage("Connected to \(saved.name)")
             presentLaunchBotIfRequested()
         } catch {
+            guard epoch == connectionEpoch else { return }
             api?.disconnect(notify: false)
             api = nil
             connectionState = .failed(error.localizedDescription)
@@ -132,12 +180,26 @@ final class AppStore: ObservableObject {
     }
 
     func reconnect() async {
+        if engine == .dsh { useLocal(); return }
         guard let connection, !connection.isDemo else { return }
         let token = ConnectionPrefs.token(for: connection)
         await connect(url: connection.baseURL, token: token, name: connection.name)
     }
 
+    func resumeConnection() async {
+        guard !isDemo, !needsConnection, !isConnecting, !connectionState.isConnected else { return }
+#if NIOBIUM_LOCAL_DSH
+        // Foregrounding must not undo an explicit Stop from Engines.
+        if engine == .dsh && DSHHarness.shared().state == .stopped { return }
+#endif
+        await reconnect()
+    }
+
     func disconnect(forget: Bool = false) {
+        connectionEpoch += 1; chatEpoch += 1; groupEpoch += 1
+        localBootTask?.cancel(); localBootTask = nil
+        groupPollTask?.cancel(); demoTurnTask?.cancel()
+        isConnecting = false
         api?.disconnect(notify: false)
         api = nil
         connectionState = .disconnected
@@ -147,13 +209,73 @@ final class AppStore: ObservableObject {
         bots = []
         groups = []
         toolsets = []
+        chatSessionID = nil; modelChoices = []; approvals = []; clarifyRequest = nil; credentialRequests = []
+        isTurnActive = false; companionTasks = []; sessions = []; usage = nil; skills = [:]; mcpServers = []
         routines = []
         activity = []
         if forget {
-            ConnectionPrefs.forget()
+            if engine == .hermes { ConnectionPrefs.forget() }
+            UserDefaults.standard.removeObject(forKey: "niobium.agent-provider")
             connection = nil
             needsConnection = true
         }
+    }
+
+    func useLocal() {
+#if NIOBIUM_LOCAL_DSH
+        if engine == .dsh && (isConnecting || connectionState.isConnected) { return }
+        disconnect()
+        engine = .dsh; isDemo = false; needsConnection = false
+        isConnecting = true; connectionState = .connecting
+        UserDefaults.standard.set("dsh", forKey: "niobium.agent-provider")
+        let epoch = connectionEpoch
+        let token = localProviderToken
+        localBootTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let url = try await LocalDSHProvider.start(token: token) { [weak self] message, ready in
+                    self?.localStatus = message; self?.localReady = ready
+                }
+                try Task.checkCancellation()
+                guard self.connectionEpoch == epoch, self.engine == .dsh else { return }
+                self.isConnecting = false
+                await self.connect(url: url.appendingPathComponent("niobium").absoluteString, token: token, name: "On device · DSH", local: true)
+            } catch is CancellationError { }
+            catch {
+                guard self.connectionEpoch == epoch else { return }
+                self.isConnecting = false; self.localReady = false
+                self.localStatus = error.localizedDescription
+                self.connectionState = .failed(error.localizedDescription)
+                self.showError(error.localizedDescription)
+            }
+        }
+#else
+        showError("The on-device engine is included in the full iOS build.")
+#endif
+    }
+
+    func useHermes() async {
+        let saved = ConnectionPrefs.load().flatMap { $0.isDemo ? nil : $0 }
+        disconnect()
+        engine = .hermes; isDemo = false
+        UserDefaults.standard.set("hermes", forKey: "niobium.agent-provider")
+        connection = saved
+        needsConnection = saved == nil
+        if let saved { await connect(url: saved.baseURL, token: ConnectionPrefs.token(for: saved), name: saved.name) }
+    }
+
+    func stopLocal() {
+#if NIOBIUM_LOCAL_DSH
+        if engine == .dsh { disconnect() }
+        DSHHarness.shared().stop()
+        localReady = false; localStatus = "Stopped"
+#endif
+    }
+
+    func saveLocalCredential(ref: String, value: String) async throws {
+        guard engine == .dsh, let api else { throw RPCError.notConnected }
+        _ = try await api.request("local.credential", params: ["ref": ref, "value": value], timeout: 20)
+        toastMessage("Provider key saved on this device")
     }
 
     private func presentLaunchBotIfRequested() {
@@ -184,6 +306,8 @@ final class AppStore: ObservableObject {
     }
 
     func enterDemo() {
+        connectionEpoch += 1; localBootTask?.cancel(); engine = .hermes
+        UserDefaults.standard.set("hermes", forKey: "niobium.agent-provider")
         api?.disconnect(notify: false)
         api = nil
         isDemo = true
@@ -259,9 +383,10 @@ final class AppStore: ObservableObject {
         guard !isDemo, let api else { return }
         do {
             let result = try await api.request("profiles.list", params: ["include_sessions": true]) as? JSONObject
+            guard self.api === api else { return }
             for row in result?.objects("profiles") ?? [] {
                 guard let name = row.string("name"), let meta = row.dict("ui_meta")?.dict("niobium") else { continue }
-                CastStore.shared.restore(profile: name, metadata: meta)
+                CastStore.shared.restore(profile: engine == .dsh ? "dsh:" + name : name, metadata: meta)
             }
             let parsed = result?.objects("profiles").compactMap(BotProfile.parse) ?? []
             bots = parsed.filter { !$0.hidden }.sorted { a, b in
@@ -270,6 +395,7 @@ final class AppStore: ObservableObject {
             }
             lastSyncedAt = Date()
         } catch {
+            guard self.api === api else { return }
             showError("Could not load bots. \(error.localizedDescription)")
         }
     }
@@ -278,15 +404,18 @@ final class AppStore: ObservableObject {
         guard !isDemo, let api else { return }
         do {
             let capabilities = try await api.request("groups.capabilities", params: [:]) as? JSONObject
+            guard self.api === api else { return }
             groupsHaveDriver = capabilities?.bool("driver") ?? false
             guard capabilities?.array("methods")?.contains(where: { ($0 as? String) == "groups.list" }) == true else {
                 groups = []
                 return
             }
             let result = try await api.request("groups.list", params: ["limit": 100, "offset": 0]) as? JSONObject
+            guard self.api === api else { return }
             groups = (result?.objects("rooms").compactMap(GroupRoom.parse) ?? []).filter { !$0.disbanded }
         } catch {
             // Group chats are an optional capability; a gateway may not host rooms.
+            guard self.api === api else { return }
             groups = []
         }
     }
@@ -308,6 +437,7 @@ final class AppStore: ObservableObject {
     // MARK: - Direct bot chat
 
     func openBot(_ bot: BotProfile) {
+        historyHasMore = false; historyBeforeSeq = nil; isLoadingHistory = false
         chatEpoch += 1
         let epoch = chatEpoch
         demoTurnTask?.cancel()
@@ -384,9 +514,11 @@ final class AppStore: ObservableObject {
             guard let result else { throw RPCError.malformed }
             guard chatEpoch == epoch, self.api === api else { return }
             restoreChat(result)
+            recoverPrompts(result)
+            if engine == .dsh { _ = try await api.request("local.attach", params: ["session_id": chatSessionID ?? ""]) }
+            guard chatEpoch == epoch, self.api === api else { return }
             await loadModels()
             guard chatEpoch == epoch, self.api === api else { return }
-            recoverPrompts(result)
             await loadToolsets()
         } catch {
             guard chatEpoch == epoch, self.api === api else { return }
@@ -406,11 +538,31 @@ final class AppStore: ObservableObject {
         streamingReasoning = ""
         streamingMessageID = nil
         messages = parseTranscript(result.objects("messages"))
+        historyHasMore = result.bool("history_has_more") ?? false
+        historyBeforeSeq = result.int("history_before_seq")
+        isLoadingHistory = false
         let partial = inflight?.string("assistant") ?? ""
         if streaming || !partial.isEmpty {
             messages.append(ChatMessage(id: "inflight", role: .assistant, text: partial,
                                         timestamp: Date(), toolStatus: .completed, isStreaming: streaming))
             if streaming { streamingMessageID = "inflight" }
+        }
+    }
+
+    func loadOlderMessages() async {
+        guard let api, let session = chatSessionID, let before = historyBeforeSeq, historyHasMore, !isLoadingHistory else { return }
+        isLoadingHistory = true
+        do {
+            let result = try await api.request("session.history", params: ["session_id": session, "before_seq": before]) as? JSONObject
+            guard self.api === api, chatSessionID == session else { return }
+            var seen = Set<String>()
+            messages = (parseTranscript(result?.objects("messages") ?? []) + messages).filter { seen.insert($0.id).inserted }
+            historyHasMore = result?.bool("has_more") ?? false
+            historyBeforeSeq = result?.int("before_seq")
+            isLoadingHistory = false
+        } catch {
+            guard self.api === api, chatSessionID == session else { return }
+            isLoadingHistory = false; showError(error.localizedDescription)
         }
     }
 
@@ -526,6 +678,7 @@ final class AppStore: ObservableObject {
             guard chatEpoch == epoch, activeBot?.name == bot.name, self.api === api else { return }
             restoreChat(result, fallbackSessionID: row.sessionID)
             recoverPrompts(result)
+            if engine == .dsh { _ = try await api.request("local.attach", params: ["session_id": chatSessionID ?? ""]) }
             await loadModels()
             guard chatEpoch == epoch, self.api === api else { return }
             toastMessage("Opened \(row.title)")
@@ -649,6 +802,14 @@ final class AppStore: ObservableObject {
         case "reasoning.available":
             streamingReasoning = payload.string("text") ?? streamingReasoning
             updateStreamingReasoning(streamingReasoning)
+        case "message.segment":
+            ensureStreamingMessage()
+            if let id = streamingMessageID, let index = messages.firstIndex(where: { $0.id == id }) {
+                if messages[index].text.isEmpty { messages[index].text = payload.string("text") ?? "" }
+                messages[index].isStreaming = false
+            }
+            streamingMessageID = nil
+            streamingReasoning = ""
         case "message.complete":
             completeTurn(payload)
         case "tool.start":
@@ -724,7 +885,7 @@ final class AppStore: ObservableObject {
         streamingMessageID = nil
         streamingReasoning = ""
         if let bot = activeBot {
-            addActivity(.message, title: "Reply from \(bot.title)", detail: String(finalText.prefix(120)), bot: bot.name)
+            addActivity(.message, title: "Reply from \(bot.title)", detail: String((payload.string("summary") ?? finalText).prefix(120)), bot: bot.name)
         }
     }
 
@@ -833,8 +994,8 @@ final class AppStore: ObservableObject {
             let result = try await api.request("profiles.configure", params: ["name": profile,
                 "ui_meta": ["niobium": metadata], "ui_meta_expected_revisions": ["niobium": revision]]) as? JSONObject
             guard self.api === api, result?.bool("ok") == true else { throw RPCError.transport("This Pixel changed elsewhere. Refresh before saving again.") }
-            CastStore.shared.select(member, for: profile)
-            toastMessage("Character saved to Hermes")
+            CastStore.shared.select(member, for: engine == .dsh ? "dsh:" + profile : profile)
+            toastMessage("Character saved")
             return true
         } catch { showError("Could not save the character. \(error.localizedDescription)"); return false }
     }
@@ -880,6 +1041,22 @@ final class AppStore: ObservableObject {
         }, uniquingKeysWith: { _, new in new })
         clarifyRequest = questions.isEmpty ? nil : ClarifyRequest(rpcID: .string(""), sessionID: session,
                                                                  questions: questions, promptGenerations: generations)
+        if engine == .dsh {
+            for request in snapshot.objects("local_requests") {
+                guard let payload = request.dict("payload"), let id = request.string("rpcId") else { continue }
+                if payload.string("type") == "approval/requested" {
+                    handleServerRequest(id: .string(id), method: "approval", params: ["session_id": session,
+                        "request_id": id, "command": payload.string("toolName") ?? "Tool",
+                        "description": payload.string("reason") ?? "DSH requests permission to run this tool.",
+                        "tool_name": payload.string("toolName") ?? "tool", "choices": ["once", "deny"]])
+                } else if payload.string("type") == "question/requested" {
+                    let questions: [JSONObject] = payload.objects("questions").map { q in ["qid": q.string("id") ?? "",
+                        "question": q.string("question") ?? "", "choices": q.objects("options").compactMap { $0.string("label") },
+                        "multi_select": q.bool("multiSelect") ?? false] }
+                    handleServerRequest(id: .string(id), method: "clarify", params: ["session_id": session, "questions": questions])
+                }
+            }
+        }
     }
 
     private func parseApproval(_ params: JSONObject, sessionID: String, rpcID: JSONValueID) -> ApprovalRequest {
@@ -938,15 +1115,18 @@ final class AppStore: ObservableObject {
         }
     }
 
-    func resolveClarify(_ answers: [String: String]) {
+    func resolveClarify(_ answers: [String: String], selections: [String: [String]] = [:]) {
         guard let request = clarifyRequest else { return }
         guard let api, chatSessionID == request.sessionID else { return }
-        guard request.questions.allSatisfy({ !(answers[$0.id] ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
+        let flattened = answers.merging(selections.mapValues { $0.joined(separator: ", ") }, uniquingKeysWith: { _, new in new })
+        guard request.questions.allSatisfy({ !(flattened[$0.id] ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
             showError("Answer every question before sending. You can dismiss it and leave the task waiting.")
             return
         }
         if request.promptGenerations.isEmpty {
-            api.respond(id: request.rpcID, result: ["answers": answers, "outcome": "submitted"])
+            var wire: JSONObject = flattened
+            if engine == .dsh { for (id, values) in selections { wire[id] = values } }
+            api.respond(id: request.rpcID, result: ["answers": wire, "outcome": "submitted"])
             clarifyRequest = nil
             return
         }
@@ -957,7 +1137,7 @@ final class AppStore: ObservableObject {
                           let generation = request.promptGenerations[question.id],
                           clarifyRequest?.promptGenerations[question.id] == generation else { return }
                     _ = try await api.request("clarify.respond", params: ["session_id": request.sessionID,
-                        "execution_generation": generation, "prompt_id": question.id, "answer": answers[question.id]!])
+                        "execution_generation": generation, "prompt_id": question.id, "answer": flattened[question.id]!])
                     guard self.api === api, chatSessionID == request.sessionID,
                           clarifyRequest?.promptGenerations[question.id] == generation else { return }
                     clarifyRequest?.questions.removeAll { $0.id == question.id }
@@ -1125,6 +1305,18 @@ final class AppStore: ObservableObject {
             return bot
         }
         guard let api else { throw RPCError.notConnected }
+        if engine == .dsh {
+            let data = try JSONEncoder().encode(spec)
+            let object = try JSONSerialization.jsonObject(with: data) as? JSONObject ?? [:]
+            let result = try await api.request("pixel.create", params: ["spec": object,
+                "enabled_toolsets": draft.enabledToolsets, "briefing": spec.soul + spec.policyBriefing,
+                "accent": member.accentHex, "builder": draft.usedModel ? "model" : "template"], timeout: 120) as? JSONObject
+            guard result?.bool("ok") == true else { throw RPCError.transport("The local engine did not confirm creation.") }
+            CastStore.shared.select(member, for: "dsh:" + slug)
+            await refreshRoster()
+            guard let bot = bots.first(where: { $0.name == slug }) else { throw RPCError.transport("Created the Pixel. Refresh the roster before trying again.") }
+            return bot
+        }
         // Clone installed skill files, then pin the reviewed tools, skills and MCP access.
         let created = try await api.request("profiles.create", params: [
             "name": slug, "description": spec.role, "soul": spec.soul + spec.policyBriefing,

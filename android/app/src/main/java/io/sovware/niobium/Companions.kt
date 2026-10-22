@@ -19,12 +19,12 @@ import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 data class CompanionTask(val id: String, val goal: String, val status: String, val lastTool: String,
-                         val toolCount: Int, val canSteer: Boolean, val failed: Boolean = false) {
+                         val toolCount: Int?, val canSteer: Boolean, val failed: Boolean = false) {
     companion object {
         fun parse(j: JSONObject): CompanionTask? {
             val id = j.s("subagent_id") ?: return null
             return CompanionTask(id, j.s("goal") ?: "Delegated task", j.s("status") ?: "working",
-                j.s("last_tool") ?: "", j.optInt("tool_count"), j.optBoolean("accepting_steer"))
+                j.s("last_tool") ?: "", j.i("tool_count"), j.optBoolean("accepting_steer"))
         }
     }
 }
@@ -33,7 +33,7 @@ data class CompanionTask(val id: String, val goal: String, val status: String, v
 fun CompanionsSheet(vm: NiobiumViewModel, bot: BotProfile, onDismiss: () -> Unit) {
     val state = vm.state
     val context = androidx.compose.ui.platform.LocalContext.current
-    val member = CastStore.get(context, bot.name)
+    val member = CastStore.get(context, bot.castKey)
     var task by remember { mutableStateOf("") }
     var selected by remember { mutableStateOf<CompanionTask?>(null) }
     var transcript by remember { mutableStateOf("") }
@@ -58,14 +58,14 @@ fun CompanionsSheet(vm: NiobiumViewModel, bot: BotProfile, onDismiss: () -> Unit
                     TextButton(onClick = onDismiss) { Text("Done", color = Nb.Ion) }
                 }
             }
-            item { Text("Your Pixel delegates bounded tasks through Hermes. Follow the real work, send a correction, or stop a helper.",
+            item { Text("Your Pixel delegates bounded tasks through the selected engine. Follow the real work, send a correction, or stop a helper.",
                 color = Nb.Secondary, fontSize = 12.sp, lineHeight = 18.sp) }
             item {
                 OutlinedTextField(task, { task = it }, label = { Text("A task to split with companions…") },
                     minLines = 2, maxLines = 5, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(8.dp))
                 Button(onClick = {
-                    vm.send("Work on this task: " + task.trim() + "\nIf it benefits from delegation, use delegate_task to give your companions bounded subtasks with concrete outputs and the same or narrower permissions. Integrate and verify their results. If delegation is unavailable or unnecessary, explain briefly and do the work yourself.")
+                    vm.send("Work on this task: " + task.trim() + "\nIf it benefits from delegation, use the available delegation tools to give your companions bounded subtasks with concrete outputs and the same or narrower permissions. Integrate and verify their results. If delegation is unavailable or unnecessary, explain briefly and do the work yourself.")
                     onDismiss()
                 }, enabled = task.isNotBlank() && !state.loadingChat, modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = Nb.Ion, contentColor = Nb.OnIon)) { Text("Ask your Pixel") }
@@ -99,7 +99,7 @@ fun CompanionsSheet(vm: NiobiumViewModel, bot: BotProfile, onDismiss: () -> Unit
                     Image(painterResource(companionDrawable(member.companion)), null, modifier = Modifier.size(38.dp))
                     Column(Modifier.weight(1f)) {
                         Text(child.goal, color = Nb.Text, fontSize = 13.sp, maxLines = 3)
-                        Text(child.status + " · " + child.toolCount + " tools", color = if (child.failed) Nb.Rose else Nb.Secondary, style = NbMono, fontSize = 9.sp)
+                        Text(child.status + (child.toolCount?.let { " · " + it + " tools" } ?: ""), color = if (child.failed) Nb.Rose else Nb.Secondary, style = NbMono, fontSize = 9.sp)
                     }
                     Text("›", color = Nb.Tertiary)
                 }
