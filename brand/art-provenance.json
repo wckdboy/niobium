@@ -24,8 +24,32 @@
       "prompt_file": "brand/pixel-cast-v3-prompt.txt",
       "sha256": "8d58b95e6b572cacd603e6fb43b1013df4adb5a2d4191119f677fdb34846800d",
       "source_reference": "brand/pixel-cast-atlas.png"
+    },
+    {
+      "file": "brand/pixel-cast-atlas-v4.png",
+      "sha256": "d9b4e8662da8489596f38cf2d0773da965f084cce2d9ad3c5b206d8afe2f2eaa",
+      "tool": "image_gen.imagegen",
+      "date": "2026-10-22",
+      "transparent": true,
+      "prompt_file": "brand/pixel-cast-v4-prompt.txt"
+    },
+    {
+      "file": "brand/pixel-cast-runtime-v4.png",
+      "sha256": "40c9bff1665c929c8b66c3fd139f9961a0c295f864fc3e58bf088072727e3fb9",
+      "tool": "tools/bake-character-art.swift",
+      "source_reference": "brand/pixel-cast-atlas-v4.png",
+      "size": [
+        192,
+        96
+      ],
+      "cell_size": [
+        48,
+        48
+      ],
+      "max_colors_per_cell": 32,
+      "alpha": "0 or 255"
     }
   ],
-  "runtime_note": "The original atlases are retained at generated resolution. Native clients use the v3 atlas, crop, cache and render portraits at 48x48; custom layer recipes also render at 48x48. These generated atlases are pixel-styled source art, not a claim of hand-placed 48x48 originals.",
+  "runtime_note": "Original generated atlases are retained at source resolution. The v4 pixel-styled source has no embedded companions. tools/bake-character-art.swift bakes a canonical 192×96 atlas: eight exact 48×48 cells, at most 32 opaque colors per cell, hard alpha and a transparent border. Both native clients crop those same pixels without resizing. Custom recipes compose code-native 48×48 layers; companions are independent code-native 16×16 sprites. Generated source art is not a claim of hand-placed 48×48 originals.",
   "reference": "docs/reference-dashboard.png is the user-supplied design reference, not generated product output."
 }

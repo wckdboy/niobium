@@ -1,0 +1,98 @@
+[
+  {
+    "archetype": "orion",
+    "seed": "atelier-001",
+    "recipe": {
+      "body": "man",
+      "palette": "orion",
+      "skin": "porcelain",
+      "hair_tone": "gold",
+      "hair": "high_ponytail",
+      "face": "stern",
+      "outfit": "astral",
+      "accessory": "veil",
+      "detail": "stubble"
+    },
+    "rgba_sha256": "ae3d037f8d9d2ad5756936b363eaf22297293747897ea45d1945b3f433843b9a"
+  },
+  {
+    "archetype": "nova",
+    "seed": "atelier-001",
+    "recipe": {
+      "body": "man",
+      "palette": "vesper",
+      "skin": "ebony",
+      "hair_tone": "moss",
+      "hair": "high_ponytail",
+      "face": "soft",
+      "outfit": "techwear",
+      "accessory": "veil",
+      "detail": "cyber_eye"
+    },
+    "rgba_sha256": "156e59eadb0ad730db922c5726b6533287534e43b37684c224ac65e5573fd1c5"
+  },
+  {
+    "archetype": "forge",
+    "seed": "ship-it",
+    "recipe": {
+      "body": "man",
+      "palette": "vesper",
+      "skin": "sand",
+      "hair_tone": "gold",
+      "hair": "white_pilot",
+      "face": "calm",
+      "outfit": "pilot",
+      "accessory": "antenna",
+      "detail": "freckles"
+    },
+    "rgba_sha256": "8328a68005de2cc9e01f1d6c2eba6c91e1e1263b8aa52431a44a89e7c37b7fd8"
+  },
+  {
+    "archetype": "nyx",
+    "seed": "æøå-星",
+    "recipe": {
+      "body": "man",
+      "palette": "sage",
+      "skin": "ebony",
+      "hair_tone": "gold",
+      "hair": "headwrap",
+      "face": "calm",
+      "outfit": "cyber",
+      "accessory": "halo",
+      "detail": "freckles"
+    },
+    "rgba_sha256": "ffa87764d624445c6a1891292a0f6c99486f59ac0574cfd78e373f62a39cc91f"
+  },
+  {
+    "archetype": "vesper",
+    "seed": "the-wicked-edit",
+    "recipe": {
+      "body": "man",
+      "palette": "astra",
+      "skin": "ebony",
+      "hair_tone": "ice",
+      "hair": "violet_bob",
+      "face": "sharp",
+      "outfit": "astral",
+      "accessory": "circlet",
+      "detail": "freckles"
+    },
+    "rgba_sha256": "c2bcaa73f31924cf026921af8ba33a3f420e22a08c7d7300c723e57662ca100d"
+  },
+  {
+    "archetype": "rook",
+    "seed": "a-map-and-a-detour",
+    "recipe": {
+      "body": "man",
+      "palette": "sage",
+      "skin": "umber",
+      "hair_tone": "rose",
+      "hair": "locs",
+      "face": "calm",
+      "outfit": "corsair",
+      "accessory": "ear_cuff",
+      "detail": "cyber_eye"
+    },
+    "rgba_sha256": "825cf311a981f71701a906afe724ff06e3f0d14cfd8eb7e147acc24f6f09412c"
+  }
+]

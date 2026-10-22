@@ -62,14 +62,31 @@ for the method mapping, execution limits and acceptance evidence.
 Eight original adult fantasy/cyborg characters, with a playful, mischievous
 edge. Human characters are 18+; styling is mature and non-explicit.
 
-The app caches **48×48** portraits and displays them with nearest-neighbour
-interpolation. New character recipes combine body, palette, hair, face, outfit
-and accessory layers; their rendering remains experimental and needs more
-visual polish than the authored cast. Named creature companions represent bounded delegation;
-they do not simulate task completion.
+The authored cast is baked once into eight exact **48×48** cells, with at most
+32 opaque colors per cell and hard alpha. Both native apps use the same small
+atlas and scale portraits on the physical pixel grid without smoothing.
+Twelve independent **16×16** companions can accompany any portrait.
+
+Pixel studio and the creation review share a nine-trait editor. Pin favorites,
+remix the remaining traits locally, or restore the authored cast. Garment colors,
+skin tone and hair color are independent. Legacy six-field recipes still load.
+Custom layered portraits remain experimental and need more art polish than the
+authored cast. Visual edits preserve the briefing and access.
+
+The offline generator has eight role-specific working methods, voices and
+creature temperaments; it handles word boundaries and honors explicit build
+cues. Connected model generation uses the expanded bot-build skill and remains
+labelled separately. Named creatures represent real bounded delegation; they
+do not simulate task completion.
+
+Rebuild/check the catalogs with
+`python3 tools/character_engine48.py [--check]` and
+`python3 tools/sync-pixel-personas.py [--check]`.
+The generated art source and exact prompt are versioned; the macOS Swift baking
+tool produces the canonical native atlas.
 
 [Art and prompts](brand/art-provenance.json) ·
-[Design reference](docs/reference-dashboard.png)
+[Design reference](docs/reference-dashboard.png) ·\n[Dashboard](docs/evidence/pixel-atelier-dashboard.png) ·\n[Editor](docs/evidence/pixel-atelier-editor.png) ·\n[Companions](docs/evidence/pixel-atelier-companions.png)
 
 ## Build and check
 

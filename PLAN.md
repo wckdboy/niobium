@@ -243,3 +243,25 @@ docs/evidence/ios-build7-device-smoke.json.
   turns and actual delegation, then encrypted provider storage and Hermes replay.
   After device acceptance, remove the temporary acceptance app/test runner;
   preserve the production app and its workspace.
+
+## Pixel atelier cycle — 22 October 2026
+
+In progress on feat/pixel-atelier, targeting beta.5 (Android code 8 / iOS build 9):
+
+- New adult cast art without embedded creatures, baked to one canonical 192×96
+  atlas. Native clients use identical exact 48×48 cells and physical-pixel scaling.
+- More detailed procedural layers; independent skin/hair colors, new hair, outfits,
+  expressions, accessories and face details. Legacy six-field recipes stay valid.
+- Shared editor in creation review and Pixel studio: nine traits, pinned local
+  remixes, original-look restoration, and twelve independent 16×16 companions.
+- Eight offline persona voices and working methods, explicit character cues,
+  corrected word-based role matching, and an updated bot-build skill.
+- Portable seed/RGBA fixtures, native renderer checks, pin/legacy/type tests,
+  native editor interactions and reproducible art/catalog checks.\n- Full build 9 DSH simulator model/history acceptance passed in 93.789 seconds.\n  Android’s five runtime, two renderer and new editor interaction tests passed.
+
+Next: lift custom layered portraits to the authored cast's quality; improve persona
+naming/voice variety within each offline role; add undoable appearance history;
+complete real-account delegation and physical-device acceptance. The iPhone is
+still unavailable, so current physical acceptance and temporary QA-app cleanup
+remain pending. Keep provider-key vault work, Android 16 KB devices and the
+reviewed Harness2 evaluation on the following runtime cycle.

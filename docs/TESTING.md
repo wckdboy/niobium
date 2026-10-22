@@ -14,7 +14,9 @@ The Node watcher tests cover contract/feature detection, new releases, truncated
 comparisons, pagination, idempotent issue updates and invalid repository paths.
 The Plane test opens a loopback-only server and checks dry-run behaviour,
 credentials, stable UUID updates and workflow preservation. Asset checks cover
-the opaque white icon, art provenance, shared skill/recipe copies and CSV fields.
+the opaque white icon, art provenance, shared skill/recipe copies and CSV fields. New character checks verify all twelve
+16×16 companion sprites, hard-alpha 48×48 cast cells, color budgets, and generated
+catalog/fixture drift without third-party image packages.
 
 Android, with Node available on PATH and JDK 17:
 
@@ -24,7 +26,7 @@ cd android
 ./gradlew :app:assembleRelease
 ```
 
-Twenty-five Android JVM tests include real OkHttp HTTP/WebSocket exchanges with a local
+Twenty-nine Android JVM tests include real OkHttp HTTP/WebSocket exchanges with a local
 Node fixture: reverse-proxy paths, token encoding/header authentication,
 out-of-order replies, server errors, timeout/cancellation recovery, typed
 server-request IDs, approval replies and disconnecting an in-flight request.
@@ -43,11 +45,11 @@ xcodebuild -project Niobium.xcodeproj -scheme Niobium \
   CODE_SIGNING_ALLOWED=NO test
 ```
 
-Twenty-eight unit tests cover URL/auth handling, JSON-RPC IDs, cancellation,
+Thirty-three unit tests cover URL/auth handling, JSON-RPC IDs, cancellation,
 PixelSpec validation, reversed chat-selection responses, resumed streaming,
 recovered clarification dismissal, provisioning access and failed appearance saves.
 Attachment regressions cover duplicate opens, obsolete lookups and rejected handoffs.
-Three UI tests launch only the labelled demo, verify the dashboard and
+Four UI tests launch only the labelled demo, verify the dashboard and
 review flow plus coherent native Engines navigation, and retain screenshots in the xcresult. Native tests live in
 NativeTests; the lowercase tests symlink belongs to the DSH submodule.
 
@@ -60,7 +62,7 @@ native DSH smoke test against the development-signed full app from an archive:
 
 ```sh
 python3 tools/check-ios-device.py --device YOUR_IPHONE_UDID \
-  --app dist/Niobium-2.0-8-final.xcarchive/Products/Applications/Niobium.app
+  --app dist/Niobium-2.0-9.xcarchive/Products/Applications/Niobium.app
 ```
 
 The helper builds the UI test runner and points its `UITargetAppPath` at the
@@ -91,7 +93,7 @@ turn. It holds the final SSE chunk until Niobium has spent eight seconds on the
 Home screen, then checks completion and history after a full app/guest restart.
 It uses a unique reply marker on each run, so old history cannot satisfy the
 stream/history assertions. It uses no real provider account. Sanitized simulator
-evidence is in [ios-build8-simulator-model.json](evidence/ios-build8-simulator-model.json). The production smoke also waits eight seconds
+evidence is in [ios-build9-simulator-model.json](evidence/ios-build9-simulator-model.json). The production smoke also waits eight seconds
 on the Home screen, checks engine readiness again after returning, and verifies
 that a temporary unsent draft can be submitted before clearing it.
 
@@ -116,7 +118,12 @@ Android runtime tests require an ARM64 Android device/emulator:
     ./gradlew :app:connectedDebugAndroidTest
     python3 ../tools/check-android-runtime.py app/build/outputs/apk/debug/app-debug.apk
 
-Five app-domain tests verify Linux/Node/DSH, private authenticated HTTP/WebSocket access,
+An Android Compose workshop test pins hair, closes and reopens the appearance
+section, remixes, and verifies the retained style and mimic selection. Espresso
+is pinned to 3.7.0: Compose’s old transitive version reflects an InputManager
+method removed on Android 16. The stable fix uses getSystemService
+([Android Test release notes](https://developer.android.com/jetpack/androidx/releases/test#espresso-3.7.0)). Two additional on-device renderer checks verify shared RGBA pixels and that changing
+companions preserves each authored portrait. Five app-domain runtime tests verify Linux/Node/DSH, private authenticated HTTP/WebSocket access,
 real session creation and bot-build discovery, service Start/Stop, CSS viewport layout,
 workspace preservation through image replacement, and a full native preset/chat/history
 round trip through real DSH and a controlled model server. Eighteen shared adapter

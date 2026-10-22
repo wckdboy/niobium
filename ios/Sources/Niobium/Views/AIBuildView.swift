@@ -9,6 +9,8 @@ struct AIBuildView: View {
     @State private var error: String?
     @State private var working = false
     @State private var showSoul = false
+    @State private var showAppearance = false
+    @State private var appearancePins: Set<String> = ["body", "skin"]
     @State private var designTask: Task<Void, Never>?
 
     private let ideas = [
@@ -96,6 +98,16 @@ struct AIBuildView: View {
                 .padding(12).background(RoundedRectangle(cornerRadius: 10).fill(NB.surface))
             Text("\(spec.companion.name) · \(spec.companion.kind)").font(.nbTitle(15)).foregroundStyle(NB.text)
             Text(spec.companion.trait).font(.nbBody(12)).foregroundStyle(NB.secondary)
+            DisclosureGroup("Appearance & companion", isExpanded: $showAppearance) {
+                VStack(alignment: .leading, spacing: 18) {
+                    CharacterCustomizer(recipe: Binding(get: { draft?.spec.character.recipe ?? spec.character.recipe },
+                                                        set: { draft?.spec.character.recipe = $0 }),
+                                        archetype: spec.character.archetype, pinned: $appearancePins, enabled: !working)
+                    NBSectionHeader(title: "Companion")
+                    FamiliarPicker(kind: Binding(get: { draft?.spec.companion.kind ?? spec.companion.kind },
+                                                 set: { draft?.spec.companion.kind = $0; draft?.spec.companion.trait = PixelSpec.companionTrait($0) }), enabled: !working)
+                }.padding(.top, 12)
+            }.font(.nbBody(13)).foregroundStyle(NB.text)
             VStack(alignment: .leading, spacing: 12) {
                 NBSectionHeader(title: "Access", detail: "reviewed before creation")
                 Toggle("Network tools", isOn: Binding(get: { draft?.spec.permissions.network ?? false }, set: { draft?.spec.permissions.network = $0 }))
@@ -126,10 +138,11 @@ struct AIBuildView: View {
                 }
             }.buttonStyle(NBPrimaryButtonStyle()).disabled(working || spec.validationError != nil)
             if let validation = spec.validationError { Text(validation).font(.nbBody(11)).foregroundStyle(NB.rose) }
-        }
+        }.disabled(working)
     }
     private func design() {
         working = true; error = nil
+        appearancePins = ["body", "skin"]; showAppearance = false
         designTask = Task {
             do {
                 let result = try await store.draftPixel(prompt: prompt)

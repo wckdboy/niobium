@@ -24,7 +24,7 @@ extension View {
 }
 
 enum PixelGlyph: String {
-    case home, pixels, terminal, activity, settings, play, stop, back, link, spark, shield
+    case home, pixels, terminal, activity, settings, play, stop, back, link, spark, shield, pin
     var rectangles: [[Int]] {
         switch self {
         case .home: return [[7,1,2,2],[5,3,6,2],[3,5,10,2],[1,7,14,2],[3,9,4,6],[9,9,4,6],[7,9,2,2]]
@@ -37,6 +37,7 @@ enum PixelGlyph: String {
         case .back: return [[7,2,2,2],[5,4,2,2],[3,6,2,4],[5,10,2,2],[7,12,2,2],[5,7,10,2]]
         case .link: return [[2,2,7,2],[2,4,2,5],[4,7,3,2],[7,7,2,2],[9,7,3,2],[12,7,2,5],[7,12,7,2],[7,4,2,3]]
         case .spark: return [[7,1,2,4],[5,5,6,2],[1,7,14,2],[5,9,6,2],[7,11,2,4]]
+        case .pin: return [[4,1,8,2],[5,3,6,4],[3,7,10,2],[7,9,2,6]]
         case .shield: return [[6,1,4,2],[2,3,12,2],[2,5,2,5],[12,5,2,5],[4,10,2,2],[10,10,2,2],[6,12,4,2]]
         }
     }

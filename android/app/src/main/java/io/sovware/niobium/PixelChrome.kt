@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.floor
 
-enum class PixelGlyph { HOME, PIXELS, TERMINAL, ACTIVITY, SETTINGS, PLAY, STOP, BACK, LINK, SPARK, SHIELD }
+enum class PixelGlyph { HOME, PIXELS, TERMINAL, ACTIVITY, SETTINGS, PLAY, STOP, BACK, LINK, SPARK, SHIELD, PIN }
 
 @Composable
 fun PixelIcon(glyph: PixelGlyph, tint: Color = Nb.Ion, size: Dp = 24.dp, description: String? = null) {
@@ -46,6 +46,7 @@ fun PixelIcon(glyph: PixelGlyph, tint: Color = Nb.Ion, size: Dp = 24.dp, descrip
             intArrayOf(7,7,2,2),intArrayOf(9,7,3,2),intArrayOf(12,7,2,5),intArrayOf(7,12,7,2),intArrayOf(7,4,2,3))
         PixelGlyph.SPARK -> listOf(intArrayOf(7,1,2,4),intArrayOf(5,5,6,2),intArrayOf(1,7,14,2),
             intArrayOf(5,9,6,2),intArrayOf(7,11,2,4))
+        PixelGlyph.PIN -> listOf(intArrayOf(4,1,8,2),intArrayOf(5,3,6,4),intArrayOf(3,7,10,2),intArrayOf(7,9,2,6))
         PixelGlyph.SHIELD -> listOf(intArrayOf(6,1,4,2),intArrayOf(2,3,12,2),intArrayOf(2,5,2,5),
             intArrayOf(12,5,2,5),intArrayOf(4,10,2,2),intArrayOf(10,10,2,2),intArrayOf(6,12,4,2))
     }

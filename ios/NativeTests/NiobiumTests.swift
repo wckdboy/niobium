@@ -1,8 +1,86 @@
 import XCTest
+import CryptoKit
 @testable import Niobium
 
 @MainActor
 final class NiobiumTests: XCTestCase {
+    func testPortableSeedsMatchAllRecipeFieldsAndRenderedPixels() throws {
+        let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "character-recipes", withExtension: "json"))
+        struct Fixture: Decodable {
+            let archetype: String
+            let seed: String
+            let recipe: CharacterRecipe
+            let rgba_sha256: String
+        }
+        let fixtures = try JSONDecoder().decode([Fixture].self, from: Data(contentsOf: url))
+        for fixture in fixtures {
+            let recipe = CharacterRecipe.generated(archetype: fixture.archetype, seed: fixture.seed)
+            XCTAssertEqual(recipe, fixture.recipe, fixture.seed)
+            let cg = try XCTUnwrap(CharacterEngine.shared.image(for: recipe)?.cgImage)
+            XCTAssertEqual(cg.width, 48); XCTAssertEqual(cg.height, 48)
+            let bytes = try XCTUnwrap(cg.dataProvider?.data) as Data
+            XCTAssertEqual(SHA256.hash(data: bytes).map { String(format: "%02x", $0) }.joined(), fixture.rgba_sha256)
+        }
+    }
+    func testLegacyRecipesDecodeAndRejectInvalidOptionalTypes() throws {
+        let legacy = #"{"body":"woman","palette":"nyx","hair":"cat_black","face":"fierce","outfit":"rogue","accessory":"cat_ears"}"#
+        let recipe = try JSONDecoder().decode(CharacterRecipe.self, from: Data(legacy.utf8))
+        XCTAssertEqual(recipe, CharacterRecipe.cast["nyx"])
+        for bad in [#"{"skin":true}"#, #"{"hair_tone":null}"#, #"{"detail":7}"#] {
+            var object = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(legacy.utf8)) as? [String: Any])
+            object.merge(try XCTUnwrap(JSONSerialization.jsonObject(with: Data(bad.utf8)) as? [String: Any])) { _, new in new }
+            XCTAssertThrowsError(try JSONDecoder().decode(CharacterRecipe.self, from: JSONSerialization.data(withJSONObject: object)))
+        }
+        var invalid = recipe; invalid.skin = "anything"
+        XCTAssertFalse(invalid.isValid)
+    }
+    func testPinsPreserveTraitsAndInheritedColors() {
+        let original = CharacterRecipe.cast["nyx"]!
+        let all = Set(CharacterRecipe.fieldNames)
+        XCTAssertEqual(original.remixed(archetype: "nyx", seed: "new", locked: all), original)
+        for field in CharacterRecipe.fieldNames {
+            for seed in ["first", "second", "æøå-星"] {
+                let next = original.remixed(archetype: "nyx", seed: seed, locked: [field])
+                XCTAssertEqual(next.value(for: field), original.value(for: field))
+                XCTAssertTrue(next.isValid)
+                if ["skin", "hair_tone"].contains(field) { XCTAssertEqual(next.palette, original.palette) }
+            }
+        }
+    }
+    func testCompanionChoiceDoesNotReplaceAuthoredPortrait() throws {
+        var member = CastMember.all[0]
+        let original = try XCTUnwrap(CharacterEngine.shared.authoredImage(member))
+        member = CastMember(id: member.id, name: member.name, portrait: member.portrait, companion: "mimic",
+                            companionName: "Bite", accentHex: member.accentHex, recipe: member.recipe)
+        XCTAssertTrue(CharacterEngine.shared.usesAuthored(member))
+        XCTAssertTrue(original === CharacterEngine.shared.authoredImage(member))
+        member.recipe?.detail = "scar"
+        XCTAssertFalse(CharacterEngine.shared.usesAuthored(member))
+    }
+    func testDistinctRoleTemplatesAndExplicitCharacterIntent() {
+        let cases = [("research biology", "orion"), ("creative art", "nova"), ("release engineer who watches a build", "forge"),
+                     ("organize memory notes", "sage"), ("audit security logs", "nyx"), ("camera vision", "astra"),
+                     ("write a newsletter", "vesper"), ("plan a travel route", "rook")]
+        var voices = Set<String>()
+        for (prompt, expected) in cases {
+            let spec = PixelSpec.fallback(for: prompt, seed: "atelier")
+            XCTAssertEqual(spec.character.archetype, expected, prompt)
+            XCTAssertNil(spec.validationError)
+            XCTAssertTrue((28...40).contains(spec.character.age))
+            XCTAssertFalse(spec.permissions.shell)
+            XCTAssertTrue(spec.connectors.isEmpty)
+            voices.insert(spec.soul)
+        }
+        XCTAssertEqual(voices.count, 8)
+        XCTAssertEqual(PixelSpec.fallback(for: "security witch", seed: "same").character.recipe.body, "woman")
+        XCTAssertEqual(PixelSpec.fallback(for: "male creative director", seed: "same").character.recipe.body, "man")
+        XCTAssertEqual(PixelSpec.fallback(for: "research with an axolotl", seed: "same").companion.kind, "axolotl")
+        let first = PixelSpec.fallback(for: "research", seed: "one")
+        let second = PixelSpec.fallback(for: "research", seed: "two")
+        XCTAssertNotEqual(first.name, second.name)
+        XCTAssertNotEqual(first.character.recipe, second.character.recipe)
+    }
+
     func testGatewayNormalizationPreservesReverseProxyPathAndRemovesCredentialsFromQuery() {
         XCTAssertEqual(ConnectionPrefs.normalizedURL(" example.org/hermes///?token=discard#fragment "), "http://example.org/hermes")
         XCTAssertEqual(ConnectionPrefs.normalizedURL("https://[::1]:9119/"), "https://[::1]:9119")

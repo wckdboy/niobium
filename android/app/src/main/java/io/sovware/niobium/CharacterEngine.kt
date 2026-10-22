@@ -11,21 +11,16 @@ import org.json.JSONObject
 object CharacterEngine {
     private var atlas: JSONObject? = null
     private var authored: Map<String, ImageBitmap>? = null
-    fun usesAuthored(member: CastMember) = member.recipe == CharacterRecipe.cast[member.id] &&
-        Cast.all.firstOrNull { it.id == member.id }?.companion == member.companion
+    fun usesAuthored(member: CastMember) = member.recipe == CharacterRecipe.cast[member.id]
     @Synchronized
     fun authoredImage(context: Context, member: CastMember): ImageBitmap? {
         if (!usesAuthored(member)) return null
         if (authored == null) {
             val options = android.graphics.BitmapFactory.Options().apply { inScaled = false }
             val sheet = android.graphics.BitmapFactory.decodeResource(context.resources, R.drawable.pixel_cast_atlas, options) ?: return null
+            if (sheet.width != 192 || sheet.height != 96) { sheet.recycle(); return null }
             authored = Cast.all.mapIndexed { index, item ->
-                val x = index % 4 * sheet.width / 4; val y = index / 4 * sheet.height / 2
-                val inset = kotlin.math.ceil(minOf(sheet.width / 4, sheet.height / 2) * 0.06).toInt()
-                val crop = Bitmap.createBitmap(sheet, x + inset, y + inset, sheet.width / 4 - inset * 2, sheet.height / 2 - inset * 2)
-                val sprite = Bitmap.createScaledBitmap(crop, 48, 48, true).asImageBitmap()
-                crop.recycle()
-                item.id to sprite
+                item.id to Bitmap.createBitmap(sheet, index % 4 * 48, index / 4 * 48, 48, 48).asImageBitmap()
             }.toMap()
             sheet.recycle()
         }
@@ -41,7 +36,8 @@ object CharacterEngine {
         }.getOrNull()?.also { atlas = it } ?: return null
         if (data.optInt("size") != 48) return null
         val palette = mutableMapOf<Char, Int>()
-        for (colors in listOf(data.optJSONObject("fixed"), data.optJSONObject("palettes")?.optJSONObject(recipe.palette))) {
+        for (colors in listOf(data.optJSONObject("fixed"), data.optJSONObject("palettes")?.optJSONObject(recipe.palette),
+            data.optJSONObject("skin_tones")?.optJSONObject(recipe.skin), data.optJSONObject("hair_tones")?.optJSONObject(recipe.hairTone))) {
             colors?.keys()?.forEach { key ->
                 runCatching { Color.parseColor(colors.getString(key)) }.getOrNull()?.let { palette[key[0]] = it }
             }
@@ -50,7 +46,7 @@ object CharacterEngine {
         val layers = listOf(hair?.optJSONArray("back"),
             data.optJSONObject("bodies")?.optJSONArray(recipe.body),
             data.optJSONObject("outfits")?.optJSONArray(recipe.outfit),
-            data.optJSONObject("faces")?.optJSONArray(recipe.face), hair?.optJSONArray("front"),
+            data.optJSONObject("faces")?.optJSONArray(recipe.face), data.optJSONObject("details")?.optJSONArray(recipe.detail), hair?.optJSONArray("front"),
             data.optJSONObject("accessories")?.optJSONArray(recipe.accessory))
         val pixels = IntArray(48 * 48)
         for (layer in layers.filterNotNull()) {

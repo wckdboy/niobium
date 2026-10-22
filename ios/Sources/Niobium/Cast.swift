@@ -138,17 +138,13 @@ struct CastPortrait: View {
                 .strokeBorder(LinearGradient(colors: [NB.lineStrong, NB.fillSoft],
                                              startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 1)
             CharacterSprite(member: member)
-                .padding(size * 0.04)
                 .shadow(color: showGlow ? member.accent.opacity(0.28) : .clear, radius: size * 0.10, y: size * 0.04)
-            if showCompanion && !CharacterEngine.shared.usesAuthored(member) {
-                Image("Comp_\(member.companion)")
-                    .resizable()
-                    .interpolation(.none)
-                    .frame(width: size * 0.34, height: size * 0.34)
-                    .padding(size * 0.035)
+            if showCompanion {
+                FamiliarSprite(kind: member.companion, size: size * 0.26)
+                    .frame(width: size * 0.30, height: size * 0.30)
                     .background(Circle().fill(NB.ink.opacity(0.92)))
                     .overlay(Circle().strokeBorder(member.accent.opacity(0.55), lineWidth: 1))
-                    .offset(x: size * 0.04, y: size * 0.02)
+                    .padding(size * 0.02)
             }
         }
         .frame(width: size, height: size)
@@ -174,130 +170,175 @@ struct CastName: View {
     }
 }
 
+extension CharacterRecipe {
+    static func label(for field: String) -> String {
+        ["body": "Build", "palette": "Colors", "skin": "Skin tone", "hair_tone": "Hair color",
+         "hair": "Hair style", "face": "Expression", "outfit": "Outfit", "accessory": "Accessory", "detail": "Detail"][field] ?? field.capitalized
+    }
+    static func label(_ value: String, field: String) -> String {
+        if value == "auto" { return "Palette default" }
+        if field == "body" { return value == "man" ? "Masculine" : "Feminine" }
+        if field == "hair" {
+            return ["silver_swept": "Side sweep", "violet_bob": "Bob", "cat_black": "Long layers",
+                    "white_pilot": "Spiked crop", "silver_bob": "Soft bob"][value]
+                ?? value.replacingOccurrences(of: "_", with: " ").capitalized
+        }
+        return value.replacingOccurrences(of: "_", with: " ").capitalized
+    }
+}
+
+struct CharacterCustomizer: View {
+    @Binding var recipe: CharacterRecipe
+    let archetype: String
+    @Binding var pinned: Set<String>
+    var enabled = true
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Button {
+                recipe = recipe.remixed(archetype: archetype, seed: UUID().uuidString, locked: pinned)
+                Haptics.tap()
+            } label: { PixelActionLabel("Remix look", icon: .spark) }
+                .buttonStyle(NBQuietButtonStyle())
+                .disabled(!enabled || pinned.count == CharacterRecipe.fieldNames.count)
+                .accessibilityIdentifier("character.remix")
+            Text("Pin your favorites, then remix the rest. Pinning a palette-default color also keeps its palette.")
+                .font(.nbBody(11)).foregroundStyle(NB.tertiary)
+            ForEach(CharacterRecipe.fieldNames, id: \.self) { field in
+                HStack(spacing: 8) {
+                    Menu {
+                        ForEach(CharacterRecipe.options(for: field), id: \.self) { option in
+                            Button { recipe.set(option, for: field) } label: {
+                                if option == recipe.value(for: field) {
+                                    Label(CharacterRecipe.label(option, field: field), systemImage: "checkmark")
+                                } else { Text(CharacterRecipe.label(option, field: field)) }
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 12) {
+                            Text(CharacterRecipe.label(for: field)).font(.nbBody(12)).foregroundStyle(NB.secondary)
+                            Spacer(minLength: 4)
+                            Text(CharacterRecipe.label(recipe.value(for: field), field: field))
+                                .font(.nbBody(12)).foregroundStyle(NB.text).lineLimit(1)
+                            PixelIcon(.back, size: 12, tint: NB.tertiary).rotationEffect(.degrees(-90))
+                        }.padding(.horizontal, 12).frame(minHeight: 46)
+                            .background(RoundedRectangle(cornerRadius: 10).fill(NB.fillSoft))
+                    }.accessibilityIdentifier("character." + field)
+                    Button {
+                        if pinned.contains(field) { pinned.remove(field) } else { pinned.insert(field) }
+                    } label: {
+                        PixelIcon(.pin, size: 20, tint: pinned.contains(field) ? NB.ion : NB.tertiary)
+                            .frame(width: 46, height: 46)
+                            .background(RoundedRectangle(cornerRadius: 10).fill(pinned.contains(field) ? NB.ion.opacity(0.12) : NB.fillSoft))
+                    }.buttonStyle(.plain)
+                        .accessibilityLabel((pinned.contains(field) ? "Unpin " : "Pin ") + CharacterRecipe.label(for: field).lowercased())
+                        .accessibilityValue(pinned.contains(field) ? "Pinned" : "Unpinned")
+                        .accessibilityIdentifier("character.pin." + field)
+                }
+            }
+            Button {
+                recipe = CharacterRecipe.cast[archetype] ?? CharacterRecipe.cast["orion"]!
+                Haptics.tap()
+            } label: { Text("Restore original cast look").font(.nbBody(12)).foregroundStyle(NB.secondary).frame(minHeight: 44) }
+                .buttonStyle(.plain).accessibilityIdentifier("character.restore")
+        }.disabled(!enabled)
+    }
+}
+
+struct FamiliarPicker: View {
+    @Binding var kind: String
+    var enabled = true
+    var body: some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 8) {
+            ForEach(PixelSpec.companions, id: \.self) { option in
+                Button {
+                    kind = option; Haptics.tap()
+                } label: {
+                    VStack(spacing: 6) {
+                        FamiliarSprite(kind: option, size: 32)
+                        Text(option.capitalized).font(.nbBody(10)).foregroundStyle(kind == option ? NB.text : NB.secondary)
+                    }.frame(maxWidth: .infinity).padding(.vertical, 10)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(kind == option ? NB.ion.opacity(0.12) : NB.fillSoft))
+                        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(kind == option ? NB.ion.opacity(0.5) : NB.line, lineWidth: 1))
+                }.buttonStyle(.plain).disabled(!enabled)
+                    .accessibilityLabel(option.capitalized + " companion")
+                    .accessibilityAddTraits(kind == option ? .isSelected : [])
+                    .accessibilityIdentifier("familiar." + option)
+            }
+        }
+    }
+}
+
 struct CastStudioView: View {
     @EnvironmentObject private var app: AppStore
-    @State private var saving = false
     @Environment(\.dismiss) private var dismiss
+    @State private var saving = false
     let profile: String
     let title: String
     @State private var selected: CastMember
-    @ObservedObject private var store = CastStore.shared
+    @State private var pinned: Set<String> = ["body", "skin"]
 
     init(profile: String, title: String, castKey: String? = nil) {
-        self.profile = profile
-        self.title = title
+        self.profile = profile; self.title = title
         _selected = State(initialValue: CastStore.shared.member(for: castKey ?? profile, title: title))
     }
-
-    private func layerOptions(_ field: String) -> [String] {
-        switch field {
-        case "palette": return CharacterRecipe.cast.keys.sorted()
-        case "hair": return Array(Set(CharacterRecipe.cast.values.map(\.hair))).sorted()
-        case "outfit": return Array(Set(CharacterRecipe.cast.values.map(\.outfit))).sorted()
-        default: return ["none", "visor", "goggles", "antlers", "cat_ears", "circlet", "veil", "headwrap"]
-        }
+    private var recipe: Binding<CharacterRecipe> {
+        Binding(get: { selected.recipe ?? CharacterRecipe.cast[selected.id]! }, set: { selected.recipe = $0 })
+    }
+    private var companion: Binding<String> {
+        Binding(get: { selected.companion }, set: { kind in
+            selected = CastMember(id: selected.id, name: selected.name, portrait: selected.portrait,
+                                  companion: kind, companionName: selected.companionName,
+                                  accentHex: selected.accentHex, recipe: selected.recipe)
+        })
     }
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    HStack {
-                        Spacer()
-                        VStack(spacing: 8) {
-                            CastPortrait(member: selected, size: 150)
-                            Text(title).font(.nbTitle(20)).foregroundStyle(NB.text)
-                            Text("\(selected.companionName) · companion").font(.nbMono(9)).foregroundStyle(NB.tertiary)
-                        }
-                        Spacer()
-                    }
-                    NBSectionHeader(title: "The cast", detail: "48 × 48")
+                VStack(alignment: .leading, spacing: 22) {
+                    VStack(spacing: 10) {
+                        CastPortrait(member: selected, size: 160)
+                        Text(title).font(.nbTitle(22)).foregroundStyle(NB.text)
+                        Text(selected.companionName + " · " + selected.companion.capitalized)
+                            .font(.nbBody(11)).foregroundStyle(NB.secondary)
+                    }.frame(maxWidth: .infinity)
+                    NBSectionHeader(title: "Make it yours", detail: "48 × 48")
+                    CharacterCustomizer(recipe: recipe, archetype: selected.id, pinned: $pinned, enabled: !saving)
+                    NBSectionHeader(title: "Companion", detail: "small creature, big ideas")
+                    FamiliarPicker(kind: companion, enabled: !saving)
+                    NBSectionHeader(title: "The cast", detail: "eight starting points")
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                         ForEach(CastMember.all) { member in
                             Button {
-                                selected = member
+                                // Choosing a look preserves the existing companion's identity.
+                                selected = CastMember(id: member.id, name: member.name, portrait: member.portrait,
+                                                      companion: selected.companion, companionName: selected.companionName,
+                                                      accentHex: member.accentHex, recipe: member.recipe)
                                 Haptics.tap()
                             } label: {
                                 HStack(spacing: 10) {
                                     CastPortrait(member: member, size: 54, showCompanion: false, showGlow: false)
-                                    CastName(member: member, bot: BotProfile(name: profile, title: member.name, role: "", provider: "", model: "", skillCount: 0, canonicalSessionID: nil, canonicalResolvedID: nil, lastSessionID: nil, preview: "", activityAt: nil, workerActive: false, isDefault: false, hidden: false, accentHex: member.accentHex, hasAvatar: false))
+                                    Text(member.name).font(.nbTitle(13)).foregroundStyle(NB.text)
                                     Spacer(minLength: 0)
-                                }
-                                .padding(8)
-                                .background(RoundedRectangle(cornerRadius: 14).fill(selected.id == member.id ? NB.ion.opacity(0.10) : NB.fillSoft))
-                                .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(selected.id == member.id ? NB.ion.opacity(0.4) : NB.line, lineWidth: 1))
-                            }
-                            .buttonStyle(.plain)
+                                }.padding(8)
+                                    .background(RoundedRectangle(cornerRadius: 14).fill(selected.id == member.id ? NB.ion.opacity(0.1) : NB.fillSoft))
+                                    .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(selected.id == member.id ? NB.ion.opacity(0.4) : NB.line, lineWidth: 1))
+                            }.buttonStyle(.plain).disabled(saving)
                         }
                     }
-                    VStack(alignment: .leading, spacing: 10) {
-                        NBSectionHeader(title: "Make it yours", detail: "48 × 48 layers")
-                        ForEach(["palette", "hair", "outfit", "accessory"], id: \.self) { field in
-                            Menu {
-                                ForEach(layerOptions(field), id: \.self) { option in
-                                    Button(option.replacingOccurrences(of: "_", with: " ").capitalized) {
-                                        var recipe = selected.recipe ?? CharacterRecipe.cast[selected.id]!
-                                        switch field {
-                                        case "palette": recipe.palette = option
-                                        case "hair": recipe.hair = option
-                                        case "outfit": recipe.outfit = option
-                                        default: recipe.accessory = option
-                                        }
-                                        selected.recipe = recipe
-                                    }
-                                }
-                            } label: {
-                                HStack {
-                                    Text(field.capitalized)
-                                    Spacer()
-                                    Image(systemName: "chevron.up.chevron.down")
-                                }.font(.nbBody(13)).foregroundStyle(NB.secondary).padding(12)
-                                    .background(RoundedRectangle(cornerRadius: 10).fill(NB.fillSoft))
-                            }
-                        }
+                }.padding(20)
+            }.background(NBMeshBackground(intensity: 0.5))
+                .navigationTitle("Pixel studio").navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(saving ? "Saving…" : "Done") {
+                            saving = true
+                            let appearance = selected
+                            Task { if await app.saveAppearance(appearance, profile: profile) { dismiss() }; saving = false }
+                        }.foregroundStyle(NB.ion).disabled(saving)
                     }
-
-                    VStack(alignment: .leading, spacing: 9) {
-                        NBSectionHeader(title: "Companion")
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 9) {
-                            ForEach(Array(Set(CastMember.all.map(\.companion))).sorted(), id: \.self) { kind in
-                                Button {
-                                    selected = CastMember(id: selected.id, name: selected.name, portrait: selected.portrait, companion: kind,
-                                                          companionName: CastMember.all.first(where: { $0.companion == kind })?.companionName ?? selected.companionName,
-                                                          accentHex: selected.accentHex, recipe: selected.recipe)
-                                } label: {
-                                    VStack(spacing: 4) {
-                                        Image("Comp_\(kind)").resizable().interpolation(.none).frame(width: 34, height: 34)
-                                        Text(kind).font(.nbMono(7.5)).foregroundStyle(NB.tertiary)
-                                    }
-                                    .frame(maxWidth: .infinity).padding(7)
-                                    .background(RoundedRectangle(cornerRadius: 10).fill(selected.companion == kind ? NB.ion.opacity(0.10) : NB.fillSoft))
-                                    .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(selected.companion == kind ? NB.ion.opacity(0.35) : NB.line, lineWidth: 1))
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                    }
-
-                    Button {
-                        selected = CastMember.all.filter { $0.id != selected.id }.randomElement() ?? selected
-                    } label: { Label("Surprise me", systemImage: "dice").frame(maxWidth: .infinity) }
-                        .buttonStyle(NBQuietButtonStyle())
                 }
-                .padding(20)
-            }
-            .background(NBMeshBackground(intensity: 0.5))
-            .navigationTitle("Cast")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(saving ? "Saving…" : "Done") {
-                        saving = true
-                        Task { if await app.saveAppearance(selected, profile: profile) { dismiss() }; saving = false }
-                    }.foregroundStyle(NB.ion).disabled(saving)
-                }
-            }
-        }
-        .presentationDetents([.large])
+        }.presentationDetents([.large]).interactiveDismissDisabled(saving)
     }
 }
