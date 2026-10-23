@@ -1,10 +1,24 @@
-import test from 'node:test';
+import test, {afterEach} from 'node:test';
+import {mkdtempSync} from 'node:fs';
 import assert from 'node:assert/strict';
 import {mkdtemp, readFile, writeFile, access, rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {createRequire} from 'node:module';
-const {createProvider, composition, transcript, streamFrames} = createRequire(import.meta.url)('../runtime/niobium-agent.cjs');
+const {createProvider: makeProvider, composition, transcript, streamFrames} = createRequire(import.meta.url)('../runtime/niobium-agent.cjs');
+const fixtures = [];
+function createProvider(options) {
+  const home = options.home || mkdtempSync(path.join(tmpdir(), 'niobium-provider-fixture-'));
+  const provider = makeProvider({...options, home});
+  fixtures.push({provider, home, owned: !options.home});
+  return provider;
+}
+afterEach(async () => {
+  for (const {provider, home, owned} of fixtures.splice(0)) {
+    await provider.messaging.close();
+    if (owned) await rm(home, {recursive:true,force:true});
+  }
+});
 
 test('local tool grants produce only trusted plugin rows and honor denied access', () => {
   const spec = {permissions: {network: false, shell: false, filesystem: 'none'}};
