@@ -90,8 +90,10 @@ class LocalProvidersIntegrationTest {
             if (key != null) params.put("key", key)
             if (row.custom) params.put("context_window", 8192).put("max_tokens", 1024)
             val saved = CompletableDeferred<Unit>()
-            withContext(Dispatchers.Main) { agent.configureProvider(params) { saved.complete(Unit) } }
+            // Both callbacks run in one UI event; the queued refresh must not supersede Save.
+            withContext(Dispatchers.Main) { agent.refreshProviders(); agent.configureProvider(params) { saved.complete(Unit) } }
             withTimeout(25_000) { while (!saved.isCompleted) { agent.state.value.providerError?.let { error(it) }; delay(25) } }
+            withTimeout(5_000) { agent.state.first { !it.providerSaving && !it.providerLoading } }
             assertEquals(id, agent.state.value.localProviders!!.defaultProvider)
             assertEquals(model, agent.state.value.localProviders!!.defaultModel)
         }

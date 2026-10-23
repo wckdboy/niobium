@@ -73,9 +73,10 @@ class DesktopAgent(val local: Boolean, private val scope: CoroutineScope, privat
                 declinesNotShown = caps.optBoolean("declines_not_shown", false)
                 mutable.value = mutable.value.copy(connected = true, connecting = false,
                     providerSetupSupported = local && runtime.optBoolean("local_provider_setup"))
+                val providerLoadEpoch = if (mutable.value.providerSetupSupported) beginProviderLoad() else null
                 loadRoster(client, epoch)
                 loadGroups(client, epoch)
-                if (mutable.value.providerSetupSupported) loadProviders(client, epoch)
+                if (providerLoadEpoch != null) loadProviders(client, epoch, providerLoadEpoch)
             } catch (e: CancellationException) { throw e }
             catch (e: Exception) { if (owns(client, epoch)) { client.disconnect(true); mutable.value = mutable.value.copy(connected = false, connecting = false, error = e.message) } }
         }
@@ -332,12 +333,16 @@ class DesktopAgent(val local: Boolean, private val scope: CoroutineScope, privat
     fun refreshProviders() {
         val client = gateway ?: return; val connection = connectionEpoch
         if (!local || !mutable.value.connected || !mutable.value.providerSetupSupported || mutable.value.providerSaving) return
-        scope.launch { loadProviders(client, connection) }
+        val epoch = beginProviderLoad()
+        scope.launch { loadProviders(client, connection, epoch) }
     }
-    private suspend fun loadProviders(client: GatewayClient, connection: Int) {
-        if (!owns(client, connection)) return
+    private fun beginProviderLoad(): Int {
         val epoch = ++providerEpoch
         mutable.value = mutable.value.copy(providerLoading = true, providerError = null)
+        return epoch
+    }
+    private suspend fun loadProviders(client: GatewayClient, connection: Int, epoch: Int) {
+        if (!owns(client, connection) || epoch != providerEpoch) return
         try {
             val catalog = LocalProviders.parse(client.request("local.providers", timeoutMs = 12_000))
             if (owns(client, connection) && epoch == providerEpoch) mutable.value = mutable.value.copy(localProviders = catalog)

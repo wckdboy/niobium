@@ -148,3 +148,20 @@ test('a failed dormant catalog does not block other providers or legacy key acti
   assert.equal(result.providers.find(p=>p.id==='deepseek-official').credential_ready,true);
   assert.equal(f.keys.DEEPSEEK_API_KEY,'fixture-deepseek');
 });
+test('compatible profiles using another wire protocol remain managed by advanced settings',async()=>{
+  for(const api of ['openai-responses','anthropic-messages']) {
+    const f=await fixture();const profile={api,baseURL:'http://127.0.0.1:9000/v1',models:[{id:'custom-model',contextWindow:8192,maxTokens:1024}]};
+    f.sections['llm-pi-ai'].providers['niobium-compatible']=structuredClone(profile);
+    const state=await f.provider.request('local.providers');assert.equal(state.providers.find(p=>p.id==='niobium-compatible').advanced,true);
+    await assert.rejects(f.provider.request('local.provider.configure',{provider:'niobium-compatible',model:'replacement',context_window:8192,max_tokens:1024}),/advanced DSH settings/);
+    assert.deepEqual(f.sections['llm-pi-ai'].providers['niobium-compatible'],profile);
+    assert.equal(f.calls.filter(c=>c.method==='settings.mutate'||c.method==='credentials.set').length,0);
+  }
+});
+test('editing a compatible endpoint preserves its existing display name',async()=>{
+  const f=await fixture();const params={provider:'niobium-compatible',base_url:'http://127.0.0.1:9000/v1',model:'fixture',context_window:8192,max_tokens:1024};
+  await f.provider.request('local.provider.configure',params);
+  f.sections['llm-pi-ai'].providers['niobium-compatible'].displayName='My local lab';
+  await f.provider.request('local.provider.configure',{...params,model:'changed-model',expected_revision:1});
+  assert.equal(f.sections['llm-pi-ai'].providers['niobium-compatible'].displayName,'My local lab');
+});

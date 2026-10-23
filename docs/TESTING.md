@@ -384,7 +384,7 @@ hashes, device receipts, review, merge and website deployment evidence.
 ## Native provider setup (2.1.1 candidate)
 
 The current suite has 33 shared-core, 22 desktop, seven Android-specific JVM,
-83 Node and 15 Python tests. The provider integration runs real pinned DSH against
+85 Node and 15 Python tests. The provider integration runs real pinned DSH against
 loopback DeepSeek chat, OpenAI Responses, Anthropic Messages and compatible chat
 streams. It checks exact credential routing, explicit defaults, preserved original
 conversations, key-free settings, owner-only credential files and cold restart.
@@ -392,7 +392,9 @@ conversations, key-free settings, owner-only credential files and cold restart.
 Provider editor tests cover masked input, deliberate model selection, keeping an
 existing default and a key-optional compatible endpoint with model limits. Adapter
 checks cover dormant catalogs, preservation of other configuration, stale edits,
-read-only credentials, invalid endpoints, no-auth key isolation and partial failures.
+read-only credentials, invalid endpoints, no-auth key isolation, custom wire protocol
+and display-name preservation, and partial failures. The real DSH fixture queues
+Refresh and Save in one UI event and verifies completion without a stuck editor.
 The Android app-domain check saves all three vendor keys through the legacy API
 and verifies active catalogs, unchanged defaults and credential privacy.
 

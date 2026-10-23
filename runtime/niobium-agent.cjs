@@ -51,7 +51,7 @@ function providerSetup(rpc) {
       }
       let baseURL = '', advanced = false;
       if (profile.baseURL) { try { baseURL = endpoint(profile.baseURL); } catch { advanced = true; } }
-      if (definition.custom && (profile.models?.length > 1 ||
+      if (definition.custom && ((profile.api && profile.api !== 'openai-completions') || profile.models?.length > 1 ||
           Object.keys(profile.models?.[0] || {}).some(k => !['id', 'contextWindow', 'maxTokens'].includes(k)))) advanced = true;
       if (typeof ref !== 'string' || !/^[A-Za-z_][A-Za-z0-9_]{0,127}$/.test(ref)) advanced = true;
       return {definition, section, profile, ref, supported, active, models, baseURL, advanced, noAuth};
@@ -96,8 +96,8 @@ function providerSetup(rpc) {
       const context = p.context_window, output = p.max_tokens;
       if (!Number.isInteger(context) || context < 512 || context > 2000000 || !Number.isInteger(output) || output < 1 || output > context) throw new Error('Choose valid context and output limits.');
       ops.push({op: 'set', path: [...definition.path, 'api'], value: 'openai-completions'},
-        {op: 'set', path: [...definition.path, 'displayName'], value: 'Compatible endpoint'},
         {op: 'set', path: [...definition.path, 'models'], value: [{id: model, contextWindow: context, maxTokens: output}]});
+      if (row.profile.displayName === undefined) ops.push({op: 'set', path: [...definition.path, 'displayName'], value: 'Compatible endpoint'});
     } else if (p.make_default && !row.models.some(m => m.id === model)) throw new Error('Choose a model from this provider’s catalog.');
     let changed;
     try { changed = await rpc('settings.mutate', {ns: definition.ns, ops, expectedRevision: row.section.revision}); }
