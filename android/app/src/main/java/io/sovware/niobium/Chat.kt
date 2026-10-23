@@ -499,11 +499,26 @@ fun GroupChatScreen(vm: NiobiumViewModel, room: GroupRoom) {
     var clarifyHidden by remember(state.clarify?.rpcId) { mutableStateOf(false) }
     var draft by remember { mutableStateOf("") }
     var actionsOpen by remember { mutableStateOf(false) }
+    var confirmClear by remember(room.roomId) { mutableStateOf(false) }
     var sending by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     LaunchedEffect(state.roomEvents.size) {
         if (state.roomEvents.isNotEmpty()) listState.animateScrollToItem(state.roomEvents.size + 1)
     }
+    if (confirmClear) AlertDialog(
+        onDismissRequest = { confirmClear = false },
+        title = { Text("Clear room?", color = Nb.Text) },
+        text = { Text("This deletes the room and its messages. It can’t be undone.", color = Nb.Secondary) },
+        confirmButton = {
+            Text("Clear room", color = Nb.Rose, modifier = Modifier.testTag("room.clear.confirm")
+                .clickable(role = Role.Button) { confirmClear = false; vm.clearLocalRoom(room) }.padding(14.dp))
+        },
+        dismissButton = {
+            Text("Cancel", color = Nb.Secondary, modifier = Modifier.testTag("room.clear.cancel")
+                .clickable(role = Role.Button) { confirmClear = false }.padding(14.dp))
+        },
+        containerColor = Nb.Raised
+    )
 
     Column(Modifier.fillMaxSize().background(Nb.Void).statusBarsPadding().imePadding()) {
         Row(Modifier.fillMaxWidth().background(Nb.Ink.copy(alpha = 0.92f)).padding(horizontal = 14.dp, vertical = 10.dp),
@@ -521,7 +536,7 @@ fun GroupChatScreen(vm: NiobiumViewModel, room: GroupRoom) {
                 DropdownMenu(actionsOpen,{ actionsOpen = false }) {
                     DropdownMenuItem(text = { Text("Refresh") }, onClick = { actionsOpen = false;vm.refreshGroup() })
                     DropdownMenuItem(text = { Text("Stop replies") }, onClick = { actionsOpen = false;vm.stopRoom() })
-                    DropdownMenuItem(text = { Text("Clear room",color = Nb.Rose) }, onClick = { actionsOpen = false;vm.clearLocalRoom(room) })
+                    DropdownMenuItem(text = { Text("Clear room",color = Nb.Rose) }, onClick = { actionsOpen = false;confirmClear = true })
                 }
             } else Box(Modifier.size(44.dp).clickable { vm.refreshGroup() }.semantics { contentDescription = "Refresh room" }, contentAlignment = Alignment.Center) { PixelIcon(PixelGlyph.ACTIVITY, Nb.Secondary, 18.dp) }
         }

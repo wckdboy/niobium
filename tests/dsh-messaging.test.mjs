@@ -8,10 +8,10 @@ const require = createRequire(import.meta.url);
 const {createMessaging} = require('../runtime/niobium-messaging.cjs');
 const {streamFrames,messagingTool,composition} = require('../runtime/niobium-agent.cjs');
 async function until(predicate) { for (let i=0;i<400;i++) { if (await predicate()) return; await new Promise(r=>setTimeout(r,5)); } assert.fail('Fixture did not settle'); }
-async function fixture() {
+async function fixture(options = {}) {
   const home = await mkdtemp(path.join(tmpdir(),'niobium-rooms-'));
   const sessions = [], prompts = [], cancelled = [], histories = new Map(), pending = new Map();
-  let response = () => 'A real fixture reply.', accept = true, complete = true, grants = true;
+  let response = () => 'A real fixture reply.', accept = true, complete = true, grants = true, historyReads = 0;
   const presets = [{id:'standard',name:'Scout'},{id:'forge',name:'Forge',trust:'user'},{id:'constructor',name:'Constructor',trust:'user'}];
   const rpc = async (method,p) => {
     if (method === 'agentPreset.list') return {presets};
@@ -26,18 +26,19 @@ async function fixture() {
       if (!accept) throw new Error('Simulated receipt loss');
       return {accepted:true};
     }
-    if (method === 'session.history') return {events:histories.get(p.sessionId)||[],hasMore:false};
+    if (method === 'session.history') { historyReads++; return {events:histories.get(p.sessionId)||[],hasMore:false}; }
     if (method === 'workspace.archiveSession') { const index=sessions.findIndex(s=>s.sessionId===p.sessionId); if(index>=0)sessions.splice(index,1); return {}; }
     if (method === 'session.cancel') { cancelled.push(p.sessionId); return {}; }
     throw new Error('Unexpected fixture method '+method);
   };
-  const make=()=>createMessaging({rpc,home,workspace:'/safe/workspace',metadata:async()=>grants ? {default:{enabled_toolsets:['messaging']},forge:{enabled_toolsets:['messaging']}} : {},pending,respond:async()=>({ok:true}),frames:streamFrames,pollMs:2,turnTimeoutMs:3000});
+  const make=()=>createMessaging({rpc,home,workspace:'/safe/workspace',metadata:async()=>grants ? {default:{enabled_toolsets:['messaging']},forge:{enabled_toolsets:['messaging']}} : {},pending,respond:async()=>({ok:true}),frames:streamFrames,pollMs:2,turnTimeoutMs:3000,...options});
   let driver=make();
   const create=async(id='room-one')=>driver.request('groups.create',{room_id:id,name:'Workshop',members:[{profile:'default'},{profile:'forge'}]});
   const send=async(text='Discuss this',id='event-one')=>driver.request('groups.send',{room_id:'room-one',event_id:id,payload:{text}});
   const state=async()=>JSON.parse(await readFile(path.join(home,'niobium-conversations.json'),'utf8'));
   const idle=()=>until(async()=>Object.values((await state()).rooms).every(r=>r.deliveries.every(j=>['completed','failed','cancelled','uncertain'].includes(j.phase))));
   return {home,sessions,prompts,cancelled,histories,pending,rpc,create,send,state,idle,
+    get historyReads(){return historyReads;},
     get driver(){return driver;},set response(fn){response=fn;},set accept(v){accept=v;},set complete(v){complete=v;},set grants(v){grants=v;},
     async restart(){await driver.close();driver=make();},async close(){await driver.close();await rm(home,{recursive:true,force:true});}};
 }
@@ -83,6 +84,44 @@ test('accepted jobs recover by reading their existing session without paid repla
     {event:{seq:3,time:Date.now(),type:'turn/end',data:{reason:{kind:'completed'}}}});
   await f.driver.request('groups.list');await f.idle();assert.equal(f.prompts.length,1);
   assert((await f.driver.request('groups.log',{room_id:'room-one'})).events.some(e=>e.payload.text==='Recovered actual reply'));
+ }finally{await f.close();}
+});
+
+test('suspended local polling does not spend the accepted delivery budget',async()=>{
+ let clock=1000;const f=await fixture({now:()=>clock,turnTimeoutMs:100});try{
+  f.complete=false;await f.create();await f.send('@forge Work');
+  await until(()=>f.historyReads>0);
+  clock+=600000;const reads=f.historyReads;await until(()=>f.historyReads>reads+1);
+  assert.equal((await f.state()).rooms['room-one'].deliveries[0].phase,'accepted');
+  assert.equal(f.cancelled.length,0);assert.equal(f.prompts.length,1);
+  const rows=f.histories.get(f.prompts[0].sessionId);
+  rows.push({event:{seq:2,type:'assistant/message',data:{message:{content:[{type:'text',text:'Finished after suspension'}]}}}},
+    {event:{seq:3,type:'turn/end',data:{reason:{kind:'completed'}}}});
+  await f.idle();assert.equal((await f.state()).rooms['room-one'].deliveries[0].phase,'completed');
+ }finally{await f.close();}
+});
+
+test('active polling budget survives restart without renewing or replaying a turn',async()=>{
+ let clock=1000;const f=await fixture({now:()=>clock,turnTimeoutMs:100});try{
+  f.complete=false;await f.create();await f.send('@forge Work');await until(()=>f.historyReads>0);
+  clock+=60;let reads=f.historyReads;await until(()=>f.historyReads>reads+1);
+  await f.restart();assert.equal((await f.state()).rooms['room-one'].deliveries[0].remaining_ms,40);
+  clock+=600000;reads=f.historyReads;await f.driver.request('groups.list');await until(()=>f.historyReads>reads+1);
+  assert.equal(f.cancelled.length,0);
+  clock+=41;await f.idle();assert.equal(f.cancelled.length,1);assert.equal(f.prompts.length,1);
+  assert.equal((await f.state()).rooms['room-one'].deliveries[0].phase,'failed');
+ }finally{await f.close();}
+});
+
+test('waiting for the owning user question does not spend active execution time',async()=>{
+ let clock=1000;const f=await fixture({now:()=>clock,turnTimeoutMs:100});try{
+  f.complete=false;await f.create();await f.send('@forge Work');await until(()=>f.historyReads>0);
+  const sessionId=f.prompts[0].sessionId;
+  f.pending.set('user-question',{payload:{sessionId,type:'question/requested'}});
+  clock+=500;let reads=f.historyReads;await until(()=>f.historyReads>reads+1);
+  assert.equal(f.cancelled.length,0);
+  f.pending.clear();reads=f.historyReads;await until(()=>f.historyReads>reads+1);
+  clock+=101;await f.idle();assert.equal(f.cancelled.length,1);
  }finally{await f.close();}
 });
 

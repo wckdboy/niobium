@@ -7,6 +7,10 @@ import io.sovware.niobium.runtime.RuntimeCommand
 import io.sovware.niobium.runtime.LocalRuntimeProxy
 import org.junit.Assert.*
 import org.junit.Test
+import org.junit.Rule
+import androidx.activity.compose.setContent
+import androidx.compose.ui.test.*
+import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import org.junit.runner.RunWith
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.Executors
@@ -15,6 +19,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 
 @RunWith(AndroidJUnit4::class)
 class LocalRuntimeTest {
+    @get:Rule val compose = createEmptyComposeRule()
     private class GuestOutput(process: Process) {
         private val tail = StringBuilder()
         init {
@@ -376,7 +381,21 @@ class LocalRuntimeTest {
             val sessionMap = roomState.getJSONObject("sessions")
             val ownedSessions = sessionMap.keys().asSequence().map { sessionMap.getString(it) }.toSet()
             assertTrue(ownedSessions.isNotEmpty())
-            instrumentation.runOnMainSync { vm!!.clearLocalRoom(dm) }
+            val activity = instrumentation.startActivitySync(android.content.Intent(context, MainActivity::class.java)
+                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK).putExtra("demo", true)) as MainActivity
+            try {
+                instrumentation.runOnMainSync { activity.setContent { GroupChatScreen(vm!!,dm) } }
+                compose.onNodeWithTag("room.actions").performClick()
+                compose.onNodeWithText("Clear room").performClick()
+                compose.onNodeWithTag("room.clear.confirm").assertIsDisplayed()
+                assertTrue(org.json.JSONObject(conversations.readText()).getJSONObject("rooms").has(dm.roomId))
+                compose.onNodeWithTag("room.clear.cancel").performClick()
+                compose.onNodeWithTag("room.clear.confirm").assertDoesNotExist()
+                assertTrue(org.json.JSONObject(conversations.readText()).getJSONObject("rooms").has(dm.roomId))
+                compose.onNodeWithTag("room.actions").performClick()
+                compose.onNodeWithText("Clear room").performClick()
+                compose.onNodeWithTag("room.clear.confirm").performClick()
+            } finally { instrumentation.runOnMainSync { activity.finish() } }
             waitFor("Room is cleared from native navigation") { vm!!.state.groups.none { it.roomId == dm.roomId } }
             waitFor("Archived room sessions never become Scout's DM") {
                 vm!!.state.bots.firstOrNull { it.name == "default" }?.canonicalSessionId !in ownedSessions

@@ -265,3 +265,9 @@ its native answer, and verifies Scout continues. It then clears the room and
 checks DSH's archived session never becomes Scout's direct-message session.
 Receipt retention regressions cover hundreds of acknowledged sends, preserved
 unconfirmed IDs and synchronization after the unconfirmed window fills.
+
+Controlled-clock room tests cover a ten-minute suspension, saved active-time
+budgets across restart and questions waiting for the user. Accepted work resumes
+through history without submitting another prompt. The actual Android DSH DM
+test also opens Clear room, cancels it while checking durable history remains,
+then explicitly confirms and verifies archival.

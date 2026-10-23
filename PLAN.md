@@ -540,3 +540,9 @@ Uncertain native room-send IDs now survive workspace changes and cold launches.
 Only scoped digests and random receipt IDs are stored; message text and tokens
 are not retained in this receipt book. Android instrumented checks also verify
 the actual Keystore image key in an isolated namespace.
+
+Review follow-ups bound acknowledged/unconfirmed receipts, admit Android room
+questions, and preserve a checkpointed active-time budget across suspension and
+restart. Time awaiting a user answer does not spend the room execution budget.
+Both native clients confirm permanent room clearing; the real Android DSH test
+checks cancel preserves the room before confirming archival.

@@ -4,6 +4,7 @@ struct RoomsView: View {
     @EnvironmentObject private var store: AppStore
     @Binding var newGroup: Bool
     @State private var appeared = false
+    @State private var roomToClear: GroupRoom?
 
     var body: some View {
         ScrollView {
@@ -39,7 +40,7 @@ struct RoomsView: View {
                     LazyVStack(spacing: 7) {
                         ForEach(Array(store.groups.enumerated()), id: \.element.id) { index, room in
                             GroupRow(room: room) { store.openGroup(room) }
-                                .contextMenu { if store.engine == .dsh { Button("Clear room", role: .destructive) { Task { await store.clearLocalRoom(room) } } } }
+                                .contextMenu { if store.engine == .dsh { Button("Clear room", role: .destructive) { roomToClear = room } } }
                                 .opacity(appeared ? 1 : 0)
                                 .offset(y: appeared ? 0 : 8)
                                 .animation(.easeOut(duration: 0.34).delay(Double(index) * 0.04), value: appeared)
@@ -76,6 +77,15 @@ struct RoomsView: View {
             }
         }
         .scrollIndicators(.hidden)
+        .alert("Clear room?", isPresented: Binding(get: { roomToClear != nil }, set: { if !$0 { roomToClear = nil } }), presenting: roomToClear) { room in
+            Button("Cancel", role: .cancel) { roomToClear = nil }
+            Button("Clear room", role: .destructive) {
+                roomToClear = nil
+                Task { await store.clearLocalRoom(room) }
+            }.accessibilityIdentifier("room.clear.confirm")
+        } message: { _ in
+            Text("This deletes the room and its messages. It can’t be undone.")
+        }
         .refreshable { await store.loadGroups() }
         .onAppear {
             withAnimation(.easeOut(duration: 0.45)) { appeared = true }
