@@ -30,8 +30,11 @@ socket; only the authenticated Niobium API is exposed on loopback. Start and
 Stop are explicit. Closing the app stops owned local work; Hermes continues on
 its host. Tools use your account permissions, not a desktop OS sandbox.
 
-The first desktop preview provides native DeepSeek key setup for local chat;
-additional local provider setup is planned. Hermes uses its host’s providers.
+Native setup in the current source supports DeepSeek, OpenAI, Anthropic and an
+OpenAI-compatible endpoint. Adding a key activates its DSH route; an explicit
+model choice sets the default for new chats. Existing conversations retain their
+model. Compatible local servers may omit a key. Hermes uses its host’s providers.
+These controls are in the next preview; the published 2.1 beta.1 starts with DeepSeek.
 Remote gateways require HTTPS; HTTP is reserved for literal loopback addresses.
 Authenticated gateway requests do not follow redirects.
 Remote gateway tokens and the AI image key are session-only on desktop. DSH
@@ -54,7 +57,7 @@ Desktop CI runs native tests and packaging on both Linux and macOS; iOS CI is op
 
 CodeRabbit reviews new pull requests and incremental pushes using
 [repository guidance](.coderabbit.yaml). Automatic Greptile reviews are disabled.
-The 2.1 checks include 33 shared-core, 18 desktop and seven Android-specific JVM
+The published 2.1 beta.1 checks include 33 shared-core, 18 desktop and seven Android-specific JVM
 tests, 67 Node checks and 15 Python checks. Native installer checks run the
 packaged app and its private DSH API, and reject stale adapters.
 CodeRabbit [approved PR #11](https://github.com/wckdboy/niobium/pull/11); all active

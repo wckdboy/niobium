@@ -8,7 +8,7 @@ plugins {
     id("org.jetbrains.compose") version "1.12.2"
     id("org.jetbrains.kotlin.plugin.compose") version "2.4.21"
 }
-val niobiumDesktopVersion = "2.1.0"
+val niobiumDesktopVersion = "2.1.1"
 kotlin { jvmToolchain(17) }
 dependencies {
     implementation(project(":core"))
@@ -57,7 +57,11 @@ tasks.matching { it.name in setOf("prepareAppResources", "createDistributable", 
     dependsOn(prepareDesktopRuntime)
     inputs.files(desktopRuntimeInputs)
 }
-tasks.test { dependsOn(prepareDesktopRuntime); inputs.files(desktopRuntimeInputs) }
+tasks.test {
+    dependsOn(prepareDesktopRuntime); inputs.files(desktopRuntimeInputs)
+    // Integration fixtures must never inherit a real account credential.
+    listOf("DEEPSEEK_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "NIOBIUM_COMPATIBLE_API_KEY").forEach { environment(it, "") }
+}
 
 // Share authored familiar sprites with Android instead of maintaining copies.
 tasks.processResources {

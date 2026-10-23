@@ -14,6 +14,123 @@ const textOf = blocks => (blocks || []).filter(b => b.type === 'text').map(b => 
 const profileID = id => id === 'standard' ? 'default' : id;
 const presetID = id => !id || id === 'default' ? 'standard' : id;
 const slugOK = id => typeof id === 'string' && /^[a-z][a-z0-9-]{1,30}$/.test(id);
+const LOCAL_PROVIDERS = [
+  {id: 'deepseek-official', name: 'DeepSeek', ref: 'DEEPSEEK_API_KEY', ns: 'llm-deepseek', path: []},
+  {id: 'openai', name: 'OpenAI', ref: 'OPENAI_API_KEY', ns: 'llm-pi-ai', path: ['providers', 'openai']},
+  {id: 'anthropic', name: 'Anthropic', ref: 'ANTHROPIC_API_KEY', ns: 'llm-pi-ai', path: ['providers', 'anthropic']},
+  {id: 'niobium-compatible', name: 'Compatible endpoint', ref: 'NIOBIUM_COMPATIBLE_API_KEY', ns: 'llm-pi-ai', path: ['providers', 'niobium-compatible'], custom: true}
+];
+
+/** Value-free provider state and revision-checked edits through the pinned DSH seam. */
+function providerSetup(rpc) {
+  // pi-ai requires a credential even for unauthenticated compatible servers.
+  // Keep its nonsecret placeholder separate from every real provider key.
+  const noAuthRef = 'NIOBIUM_COMPATIBLE_NO_AUTH';
+  let edits = Promise.resolve();
+  const at = (value, parts) => parts.reduce((v, key) => v?.[key], value);
+  const endpoint = value => {
+    if (typeof value !== 'string' || value.length > 2048) throw new Error('Enter a valid provider endpoint.');
+    const url = new URL(value);
+    if ((url.protocol !== 'https:' && !(url.protocol === 'http:' && ['127.0.0.1', '[::1]'].includes(url.hostname))) ||
+        url.username || url.password || url.search || url.hash) throw new Error('Use HTTPS, or a literal loopback HTTP endpoint, without credentials or query parameters.');
+    return url.toString().replace(/\/$/, '');
+  };
+  async function inspect() {
+    const [directory, settings, catalog] = await Promise.all([rpc('llm.providers', {}), rpc('settings.describe', {}), rpc('llm.models', {})]);
+    const rows = await Promise.all(LOCAL_PROVIDERS.map(async definition => {
+      const section = settings.namespaces.find(n => n.ns === definition.ns);
+      const profile = at(section?.value, definition.path) || {};
+      const noAuth = definition.custom && profile.apiKeyEnv === noAuthRef;
+      const ref = noAuth ? definition.ref : profile.apiKeyEnv || definition.ref;
+      const supported = !!section && (definition.custom || directory.providers.some(p => p.provider === definition.id && p.settingsNs === definition.ns && JSON.stringify(p.settingsPath) === JSON.stringify(definition.path)));
+      const active = directory.providers.some(p => p.provider === definition.id && p.active);
+      let models = catalog.groups.find(g => g.id === definition.id)?.models || [];
+      if (supported && !active && !definition.custom) {
+        try { models = (await rpc('llm.discoverModels', {settingsNs: definition.ns, provider: definition.id})).models; }
+        catch { models = []; }
+      }
+      let baseURL = '', advanced = false;
+      if (profile.baseURL) { try { baseURL = endpoint(profile.baseURL); } catch { advanced = true; } }
+      if (definition.custom && ((profile.api && profile.api !== 'openai-completions') || profile.models?.length > 1 ||
+          Object.keys(profile.models?.[0] || {}).some(k => !['id', 'contextWindow', 'maxTokens'].includes(k)))) advanced = true;
+      if (typeof ref !== 'string' || !/^[A-Za-z_][A-Za-z0-9_]{0,127}$/.test(ref)) advanced = true;
+      return {definition, section, profile, ref, supported, active, models, baseURL, advanced, noAuth};
+    }));
+    const refs = [...new Set([...rows.filter(r => !r.advanced).map(r => r.ref), noAuthRef])];
+    const credentials = (await rpc('credentials.describe', {refs})).credentials;
+    const selected = settings.namespaces.find(n => n.ns === 'agent-default-model');
+    return {rows, settings, selected, value: {writable: settings.writable,
+      default: {provider: selected?.value?.provider || '', model: selected?.value?.model || '', revision: selected?.revision ?? -1},
+      providers: rows.map(r => ({id: r.definition.id, name: r.definition.name, supported: r.supported, active: r.active,
+        key_configured: !r.noAuth && !!credentials[r.ref]?.configured,
+        credential_ready: !!credentials[r.noAuth ? noAuthRef : r.ref]?.configured, key_writable: credentials[r.ref]?.writable === true,
+        requires_key: !r.definition.custom || (!!r.profile.apiKeyEnv && !r.noAuth), advanced: r.advanced, base_url: r.baseURL,
+        revision: r.section?.revision ?? -1, models: r.models.map(m => ({id: m.id, name: m.name || m.id})),
+        custom_model: r.definition.custom ? r.profile.models?.[0]?.id || '' : '',
+        context_window: r.profile.models?.[0]?.contextWindow || 32768, max_tokens: r.profile.models?.[0]?.maxTokens || 4096}))}};
+  }
+  async function configure(p) {
+    if (!p || typeof p !== 'object' || Array.isArray(p)) throw new Error('Choose valid provider settings.');
+    if (Object.keys(p).some(k => !['provider', 'key', 'base_url', 'model', 'context_window', 'max_tokens', 'make_default', 'expected_revision', 'expected_default_revision'].includes(k))) throw new Error('Unsupported provider setting.');
+    const definition = LOCAL_PROVIDERS.find(d => d.id === p.provider);
+    if (!definition) throw new Error('Choose a supported local provider.');
+    const state = await inspect(), row = state.rows.find(r => r.definition === definition);
+    if (!state.settings.writable || !row.supported || row.advanced) throw new Error('Edit this provider through advanced DSH settings.');
+    if (p.expected_revision !== undefined && p.expected_revision !== row.section.revision) throw new Error('Provider settings changed elsewhere. Refresh before saving.');
+    if (p.make_default !== undefined && typeof p.make_default !== 'boolean') throw new Error('Choose whether to use this model for new chats.');
+    if (p.make_default && (!state.selected || p.expected_default_revision !== state.selected.revision)) throw new Error('The default model changed elsewhere. Refresh before saving.');
+    const key = p.key === undefined ? '' : typeof p.key === 'string' ? p.key.trim() : null;
+    if (key === null || key.length > 4096 || /[\s\x00-\x1f\x7f]/.test(key)) throw new Error('Enter an API key without spaces or control characters.');
+    const keyInfo = state.value.providers.find(r => r.id === definition.id);
+    if (key && !keyInfo.key_writable) throw new Error('This key is supplied by a read-only credential source.');
+    if (!definition.custom && !key && !keyInfo.key_configured) throw new Error('Enter this provider’s API key.');
+    const noAuth = definition.custom && !key && (row.noAuth || (!row.profile.apiKeyEnv && !keyInfo.key_configured));
+    const ref = noAuth ? noAuthRef : row.ref;
+    const model = typeof p.model === 'string' ? p.model.trim() : p.model;
+    if (noAuth && !(await rpc('credentials.describe', {refs: [noAuthRef]})).credentials[noAuthRef]?.writable) throw new Error('Local credential storage is read-only for this endpoint.');
+    const ops = [{op: 'set', path: [...definition.path, 'apiKeyEnv'], value: ref}];
+    if (p.base_url !== undefined) ops.push(p.base_url === '' && !definition.custom ? {op: 'unset', path: [...definition.path, 'baseURL']} : {op: 'set', path: [...definition.path, 'baseURL'], value: endpoint(p.base_url)});
+    if (definition.custom) {
+      if (!p.base_url && !row.baseURL) throw new Error('Enter the compatible endpoint URL.');
+      if (typeof model !== 'string' || !model || model.length > 200 || /[\x00-\x1f\x7f]/.test(p.model)) throw new Error('Enter the model ID served by this endpoint.');
+      const context = p.context_window, output = p.max_tokens;
+      if (!Number.isInteger(context) || context < 512 || context > 2000000 || !Number.isInteger(output) || output < 1 || output > context) throw new Error('Choose valid context and output limits.');
+      ops.push({op: 'set', path: [...definition.path, 'api'], value: 'openai-completions'},
+        {op: 'set', path: [...definition.path, 'models'], value: [{id: model, contextWindow: context, maxTokens: output}]});
+      if (row.profile.displayName === undefined) ops.push({op: 'set', path: [...definition.path, 'displayName'], value: 'Compatible endpoint'});
+    } else if (p.make_default && !row.models.some(m => m.id === model)) throw new Error('Choose a model from this provider’s catalog.');
+    let changed;
+    try { changed = await rpc('settings.mutate', {ns: definition.ns, ops, expectedRevision: row.section.revision}); }
+    catch { throw new Error('Provider settings could not be saved. Refresh before trying again.'); }
+    if (key || noAuth) {
+      try { await rpc('credentials.set', {ref, value: noAuth ? 'niobium-no-auth' : key}); }
+      catch { throw new Error('Provider settings were saved, but the key could not be stored. Refresh before trying again.'); }
+    }
+    let current;
+    const deadline = Date.now() + 3000;
+    do {
+      current = await inspect();
+      const active = current.value.providers.find(r => r.id === definition.id);
+      if (active.active && active.models.length) break;
+      await new Promise(resolve => setTimeout(resolve, 50));
+    } while (Date.now() < deadline);
+    const saved = current.value.providers.find(r => r.id === definition.id);
+    if (saved.revision !== changed.revision || !saved.active || !saved.models.length || !saved.credential_ready) throw new Error('Provider setup could not be confirmed. Refresh to check its saved state.');
+    if (p.make_default) {
+      if (!saved.models.some(m => m.id === model)) throw new Error('Provider saved, but this model is not available. Choose its default again.');
+      let selected;
+      try { selected = await rpc('settings.mutate', {ns: 'agent-default-model', expectedRevision: p.expected_default_revision, ops: [
+        {op: 'set', path: ['provider'], value: definition.id}, {op: 'set', path: ['model'], value: model}, {op: 'unset', path: ['reasoningEffort']}
+      ]}); } catch { throw new Error('Provider saved, but its default model could not be changed. Refresh before trying again.'); }
+      current = await inspect();
+      if (current.value.default.revision !== selected.revision || current.value.default.provider !== definition.id || current.value.default.model !== model) throw new Error('Provider saved, but the default changed elsewhere. Refresh before trying again.');
+    }
+    return {ok: true, ...current.value};
+  }
+  return {list: async () => (await inspect()).value, configure: p => {
+    const operation = edits.then(() => configure(p)); edits = operation.catch(() => {}); return operation;
+  }};
+}
 function transcript(entries) {
   return entries.flatMap(({event: e}) => {
     const d = e.data || {};
@@ -60,6 +177,7 @@ function composition(spec, enabled, briefing, pluginPath = '/usr/local/lib/niobi
 }
 
 function createProvider({rpc, postResponse, home = '/root/.dsh', workspace = '/root/workspace', pluginPath}) {
+  const providers = providerSetup(rpc);
   const metadataPath = path.join(home, 'niobium-pixels.json');
   let edits = Promise.resolve();
   const pending = new Map();
@@ -148,7 +266,7 @@ function createProvider({rpc, postResponse, home = '/root/.dsh', workspace = '/r
     if (method.startsWith('groups.')) return messaging.request(method, p);
     switch (method) {
       case 'client.capabilities': return {server_requests: true, declines_not_shown: false};
-      case 'runtime.describe': return {provider: 'dsh', session_create: {sources: ['gui']}};
+      case 'runtime.describe': return {provider: 'dsh', local_provider_setup: true, session_create: {sources: ['gui']}};
       case 'gateway.capabilities': return {provider: 'dsh', groups: true, cron: false};
       case 'profiles.list': {
         const [catalog, sessions, meta, visibility] = await Promise.all([rpc('agentPreset.list', {}), rpc('session.list', {}), metadata(), sessionVisibility()]);
@@ -297,8 +415,10 @@ function createProvider({rpc, postResponse, home = '/root/.dsh', workspace = '/r
       }
       case 'local.credential': {
         if (!['DEEPSEEK_API_KEY', 'OPENAI_API_KEY', 'ANTHROPIC_API_KEY'].includes(p.ref) || typeof p.value !== 'string' || !p.value.trim()) throw new Error('Choose a provider and enter its API key.');
-        await rpc('credentials.set', {ref: p.ref, value: p.value.trim()}); return {ok: true};
+        return providers.configure({provider: LOCAL_PROVIDERS.find(d => d.ref === p.ref).id, key: p.value});
       }
+      case 'local.providers': return providers.list();
+      case 'local.provider.configure': return providers.configure(p);
       case 'local.models': return rpc('llm.models', {});
       case 'session.stats': {
         const h = await history(p.session_id);

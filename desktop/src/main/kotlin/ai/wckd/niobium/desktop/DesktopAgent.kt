@@ -17,7 +17,9 @@ data class DesktopState(
     val loading: Boolean = false, val working: Boolean = false, val sending: Boolean = false,
     val prompts: List<AgentPrompt> = emptyList(), val error: String? = null,
     val modelChoices: List<ModelChoice> = emptyList(), val model: String = "", val groupsSupported: Boolean = false,
-    val groupMethods: Set<String> = emptySet()
+    val groupMethods: Set<String> = emptySet(),
+    val providerSetupSupported: Boolean = false, val localProviders: LocalProviders? = null,
+    val providerLoading: Boolean = false, val providerSaving: Boolean = false, val providerError: String? = null
 )
 
 /** One store per engine. A switch never transfers sessions, requests or tokens. */
@@ -26,6 +28,7 @@ class DesktopAgent(val local: Boolean, private val scope: CoroutineScope, privat
     val state = mutable.asStateFlow()
     private var gateway: GatewayClient? = null
     private var connectionEpoch = 0
+    private var providerEpoch = 0
     private var chatEpoch = 0
     private var streamId: String? = null
     private var roomPoll: Job? = null
@@ -68,9 +71,12 @@ class DesktopAgent(val local: Boolean, private val scope: CoroutineScope, privat
                 if (!owns(client, epoch)) return@launch
                 source = selectedSource
                 declinesNotShown = caps.optBoolean("declines_not_shown", false)
-                mutable.value = mutable.value.copy(connected = true, connecting = false)
+                mutable.value = mutable.value.copy(connected = true, connecting = false,
+                    providerSetupSupported = local && runtime.optBoolean("local_provider_setup"))
+                val providerLoadEpoch = if (mutable.value.providerSetupSupported) beginProviderLoad() else null
                 loadRoster(client, epoch)
                 loadGroups(client, epoch)
+                if (providerLoadEpoch != null) loadProviders(client, epoch, providerLoadEpoch)
             } catch (e: CancellationException) { throw e }
             catch (e: Exception) { if (owns(client, epoch)) { client.disconnect(true); mutable.value = mutable.value.copy(connected = false, connecting = false, error = e.message) } }
         }
@@ -78,7 +84,7 @@ class DesktopAgent(val local: Boolean, private val scope: CoroutineScope, privat
     private fun owns(client: GatewayClient, epoch: Int) = gateway === client && connectionEpoch == epoch
     fun dismissError() { mutable.value = mutable.value.copy(error = null) }
     fun disconnect() {
-        ++connectionEpoch; ++chatEpoch
+        ++connectionEpoch; ++chatEpoch; ++providerEpoch
         roomPoll?.cancel(); roomPoll = null
         gateway?.disconnect(true); gateway = null
         streamId = null; groupSessionIDs = emptySet()
@@ -323,9 +329,47 @@ class DesktopAgent(val local: Boolean, private val scope: CoroutineScope, privat
         loadRoster(client, connection)
         mutable.value.bots.firstOrNull { it.name == spec.name }?.let(::open)
     }
-    fun saveCredential(ref: String, value: String, onSaved: () -> Unit) { if (!local) return; perform { client ->
-        client.request("local.credential", JSONObject().put("ref", ref).put("value", value), 20_000); if (gateway === client) onSaved()
-    } }
+    fun dismissProviderError() { mutable.value = mutable.value.copy(providerError = null) }
+    fun refreshProviders() {
+        val client = gateway ?: return; val connection = connectionEpoch
+        if (!local || !mutable.value.connected || !mutable.value.providerSetupSupported || mutable.value.providerSaving) return
+        val epoch = beginProviderLoad()
+        scope.launch { loadProviders(client, connection, epoch) }
+    }
+    private fun beginProviderLoad(): Int {
+        val epoch = ++providerEpoch
+        mutable.value = mutable.value.copy(providerLoading = true, providerError = null)
+        return epoch
+    }
+    private suspend fun loadProviders(client: GatewayClient, connection: Int, epoch: Int) {
+        if (!owns(client, connection) || epoch != providerEpoch) return
+        try {
+            val catalog = LocalProviders.parse(client.request("local.providers", timeoutMs = 12_000))
+            if (owns(client, connection) && epoch == providerEpoch) mutable.value = mutable.value.copy(localProviders = catalog)
+        } catch (e: CancellationException) { throw e }
+        catch (_: Exception) { if (owns(client, connection) && epoch == providerEpoch) mutable.value = mutable.value.copy(providerError = "Could not load providers. Refresh to try again.") }
+        finally { if (owns(client, connection) && epoch == providerEpoch) mutable.value = mutable.value.copy(providerLoading = false) }
+    }
+    fun configureProvider(params: JSONObject, onSaved: () -> Unit) {
+        val client = gateway ?: return; val connection = connectionEpoch
+        if (!local || !mutable.value.connected || !mutable.value.providerSetupSupported || mutable.value.providerSaving) return
+        val epoch = ++providerEpoch
+        mutable.value = mutable.value.copy(providerSaving = true, providerLoading = false, providerError = null)
+        scope.launch {
+            try {
+                val result = client.request("local.provider.configure", params, 20_000)
+                check(result.optBoolean("ok")) { "Provider setup was not confirmed. Refresh to check its state." }
+                val catalog = LocalProviders.parse(result)
+                if (owns(client, connection) && epoch == providerEpoch) {
+                    mutable.value = mutable.value.copy(localProviders = catalog)
+                    loadModels(client, chatEpoch)
+                    if (owns(client, connection) && epoch == providerEpoch) onSaved()
+                }
+            } catch (e: CancellationException) { throw e }
+            catch (e: Exception) { if (owns(client, connection) && epoch == providerEpoch) mutable.value = mutable.value.copy(providerError = e.message ?: "Could not confirm provider setup. Refresh to check its state.") }
+            finally { if (owns(client, connection) && epoch == providerEpoch) mutable.value = mutable.value.copy(providerSaving = false) }
+        }
+    }
     private fun perform(block: suspend (GatewayClient) -> Unit) {
         val client = gateway ?: return; val epoch = connectionEpoch
         scope.launch { if (!owns(client, epoch)) return@launch; try { block(client) } catch (e: CancellationException) { throw e } catch (e: Exception) { if (owns(client, epoch)) mutable.value = mutable.value.copy(error = e.message) } }

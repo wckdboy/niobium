@@ -140,7 +140,10 @@ fun LocalRuntimeScreen(vm: NiobiumViewModel? = null, onClose: (() -> Unit)? = nu
                             visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation())
                         PixelButton("Save API key", PixelGlyph.SHIELD, Modifier.fillMaxWidth(), secondary = true, enabled = apiKey.isNotBlank()) {
                             val ref = when (provider) { "OpenAI" -> "OPENAI_API_KEY"; "Anthropic" -> "ANTHROPIC_API_KEY"; else -> "DEEPSEEK_API_KEY" }
-                            vm?.saveLocalCredential(ref, apiKey) { apiKey = "" }
+                            val submittedProvider = provider; val submittedKey = apiKey
+                            vm?.saveLocalCredential(ref, submittedKey) {
+                                if (provider == submittedProvider && apiKey == submittedKey) apiKey = ""
+                            }
                         }
                         Text("Keys stay in DSH app storage. Choose a model from the model picker in your Pixel’s chat.",
                             color = Nb.Tertiary, fontSize = 11.sp, lineHeight = 17.sp)

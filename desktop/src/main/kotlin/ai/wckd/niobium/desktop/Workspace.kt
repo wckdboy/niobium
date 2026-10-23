@@ -165,7 +165,6 @@ import org.json.JSONObject
 @Composable private fun EnginesPanel(hermes: DesktopAgent, dsh: DesktopAgent, runtime: LocalEngine, onLocal: () -> Unit) {
     val remote by hermes.state.collectAsState(); val local by dsh.state.collectAsState(); val status by runtime.state.collectAsState()
     var address by remember { mutableStateOf("") }; var token by remember { mutableStateOf("") }
-    var key by remember { mutableStateOf("") }; var saved by remember { mutableStateOf(false) }
     var stopConfirm by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(28.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
@@ -191,11 +190,7 @@ import org.json.JSONObject
                 else PixelButton(if (status.phase == "Running") "Stop local DSH" else status.phase + "…", secondary = true, enabled = status.phase == "Running", icon = "stop") { stopConfirm = true }
                 if (local.connected) {
                     HorizontalDivider(color = Ink.Line)
-                    Eyebrow("Provider key")
-                    Text("Local chat starts with DeepSeek. Choose available models inside a Pixel chat.", color = Ink.Muted, fontSize = 11.sp)
-                    OutlinedTextField(key, { key = it; saved = false }, Modifier.fillMaxWidth(), label = { Text("DeepSeek API key") }, singleLine = true, visualTransformation = PasswordVisualTransformation())
-                    Text("Saved in DSH’s private local credential file (owner access only).", color = Ink.Muted, fontSize = 10.sp)
-                    PixelButton(if (saved) "Key saved" else "Save key", secondary = true, enabled = key.isNotBlank()) { dsh.saveCredential("DEEPSEEK_API_KEY", key) { key = ""; saved = true } }
+                    LocalProviderPanel(local, dsh)
                 }
             }
         }

@@ -603,3 +603,22 @@ Next acceptance work is tracked in Plane:
   Hermes contracts and reconnect replay.
 - NIO-29/NIO-33/NIO-36: physical Android/16 KB execution, cross-engine rooms and
   real-account model/image acceptance. Controlled fixtures do not establish these.
+
+## Native provider cycle — NIO-39
+
+Current branch: `codex/native-local-providers`. Native desktop setup activates
+DeepSeek, OpenAI, Anthropic and a compatible route through DSH's own settings and
+credential APIs. Models come from its installed catalog. Defaults require explicit
+selection; existing chats, other routes and custom settings remain intact.
+Compatible no-auth endpoints use an isolated nonsecret credential placeholder.
+The shared adapter also fixes legacy Android OpenAI/Anthropic key activation.
+
+Local acceptance: 33 shared-core tests, 22 desktop tests, seven Android JVM tests,
+85 Node checks and 15 Python checks. Real DSH streams all four provider protocols
+against controlled loopback fixtures, restores the original conversation after
+restart and keeps keys out of settings/responses. Android provider setup passes
+on the ARM64 Android 16 emulator. The streaming regression is repeated separately.
+
+Next gates: CodeRabbit review, native Linux/macOS package checks, signed Android
+upgrade/install validation and release publication. OS credential vaults and
+accessibility/soaks remain NIO-31/NIO-32. Real account acceptance remains open.

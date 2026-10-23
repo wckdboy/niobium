@@ -291,13 +291,12 @@ receipt returns, verifies a second cancellation after acceptance, and proves no
 prompt is replayed. Explicit Stop also cancels known sessions with uncertain
 receipts.
 
-## Linux/macOS desktop preview
+## 2.1 beta.1 desktop acceptance
 
 `python3 tools/prepare-desktop-runtime.py` verifies the pinned official Node archive,
 installs only the locked DSH graph, restores the audited native helper permission,
 and checks WebSocket, Koffi and real PTY execution before staging the bundle.
-`cd desktop && ./gradlew :core:test :test` runs 33 shared Kotlin checks and the
-current desktop suite. UI tests capture the actual Compose wardrobe. Linux runs
+`cd desktop && ./gradlew :core:test :test` ran 33 shared Kotlin checks and 18 desktop tests for that release. UI tests capture the actual Compose wardrobe. Linux runs
 these UI checks under Xvfb, then creates its own native `.deb`; macOS builds `.dmg`.
 
 Desktop acceptance uses an isolated temporary DSH home and a local model fixture:
@@ -349,7 +348,7 @@ restored before upload. macOS verifies the application image and mounted DMG.
 The AI-art controller also verifies that an unusable completed image becomes a
 terminal failure, retains its receipt and starts another billable design only on
 an explicit request. Wardrobe selection opens the chosen look in the workshop.
-The desktop suite has 18 tests, alongside 33 shared-core tests.
+That release has 18 desktop tests, alongside 33 shared-core tests.
 
 Installer tasks also track the runtime source inputs, and package verification
 compares adapters and the dependency lock against the repository. This catches
@@ -381,3 +380,27 @@ published from `b683440`, approved by CodeRabbit and merged in PR #11. All activ
 [release CI jobs](https://github.com/wckdboy/niobium/actions/runs/39961030217) pass.
 See [release validation](evidence/beta21-release-validation.json) for artifact
 hashes, device receipts, review, merge and website deployment evidence.
+
+## Native provider setup (2.1.1 candidate)
+
+The current suite has 33 shared-core, 22 desktop, seven Android-specific JVM,
+85 Node and 15 Python tests. The provider integration runs real pinned DSH against
+loopback DeepSeek chat, OpenAI Responses, Anthropic Messages and compatible chat
+streams. It checks exact credential routing, explicit defaults, preserved original
+conversations, key-free settings, owner-only credential files and cold restart.
+
+Provider editor tests cover masked input, deliberate model selection, keeping an
+existing default and a key-optional compatible endpoint with model limits. Adapter
+checks cover dormant catalogs, preservation of other configuration, stale edits,
+read-only credentials, invalid endpoints, no-auth key isolation, custom wire protocol
+and display-name preservation, and partial failures. The real DSH fixture queues
+Refresh and Save in one UI event and verifies completion without a stuck editor.
+The Android app-domain check saves all three vendor keys through the legacy API
+and verifies active catalogs, unchanged defaults and credential privacy.
+
+These fixtures use no real account and make no billable provider requests. Native
+Android streaming is repeated separately after the adapter update. Account/model
+entitlements, real provider acceptance and physical Android/16 KB execution remain
+open. The API fixtures follow the pinned SDK and the official streaming references:
+[OpenAI](https://developers.openai.com/api/reference/resources/responses/streaming-events)
+and [Anthropic](https://platform.claude.com/docs/en/build-with-claude/streaming).

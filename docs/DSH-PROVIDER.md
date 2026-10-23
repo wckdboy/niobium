@@ -67,6 +67,32 @@ capabilities and are hidden in local mode. Filesystem/network scopes in a
 persona are operating instructions. PRoot and a shared iSH guest do not isolate
 Pixels from one another.
 
+## Native desktop provider setup
+
+The next preview adds `local.providers` and `local.provider.configure` over the
+existing authenticated native transport. The desktop Engines screen offers
+DeepSeek, OpenAI, Anthropic and one OpenAI-compatible endpoint. Provider catalogs
+come from pinned DSH; they do not imply that an account can use every model.
+
+Writes use DSH's revision-checked `settings.mutate` and `credentials.set` seams.
+Only reviewed fields are changed; unrelated routes, headers and model overrides
+remain intact. Credentials are write-only to Niobium. Read-only sources are
+shown as managed, and failures never echo submitted keys. A provider is marked
+Configured only after its live route, catalog and credential state agree.
+
+The default-model checkbox is explicit. It changes the `agent-default-model`
+namespace for future chats and clears stale reasoning settings. Existing model
+selections and history are preserved across restart. Conflicts and partial
+failures require a refresh; saving never submits a model prompt.
+
+Compatible endpoints use HTTPS or literal loopback HTTP, an explicit model ID
+and reviewed context/output limits. The pinned pi-ai client requires a credential
+even for an unauthenticated server, so the adapter uses a separate nonsecret
+placeholder reference in that case. It never falls back to another provider's
+key. A later real key uses its own reference and leaves the placeholder unchanged.
+Legacy `local.credential` calls also activate the OpenAI/Anthropic routes, fixing
+the Android key-saving screen without changing its transport or engine ownership.
+
 ## Evidence and remaining checks
 
 The ARM64 Android app-domain test creates a real DSH preset through the native

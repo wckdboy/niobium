@@ -1,6 +1,6 @@
 {
   "name": "niobium-desktop-runtime",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "private": true,
   "description": "Private desktop DSH engine, pinned to the native Niobium adapter",
   "dependencies": {
