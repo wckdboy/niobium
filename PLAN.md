@@ -684,3 +684,24 @@ soaks, followed by remaining Hermes history/companion/parity work. Physical Andr
 16 KB and real provider accounts remain separate acceptance gates.
 
 Evidence: [release validation](docs/evidence/beta212-release-validation.json).
+
+## Desktop usability cycle — NIO-32
+
+Desktop candidate 2.1.3 adds shared stepped keyboard focus, explicit selected
+navigation/engine/appearance semantics, labeled toggle targets and native text
+size preferences. Engine setup responds to width and font size; workshop and
+welcome content scroll instead of clipping. Chat keeps the reader's position
+during streams and offers Latest messages to resume following, including tall
+replies after text remeasurement.
+
+Acceptance adds native keyboard/form/layout fixtures, 2,000-message history and
+three real DSH start/connect/stop cycles with 12 controlled streamed DM/room turns,
+history/appearance restoration, room receipt counts and owned-process cleanup.
+Resource samples record actual CPU/RSS without inventing performance budgets.
+Full-suite, native installer and CodeRabbit checks remain release gates.
+
+Keep NIO-32 In Progress for VoiceOver, physical Android/tablets, battery and
+multi-hour task/room/reconnect acceptance. Linux screen-reader integration is a
+documented framework limitation; semantic tests do not remove it. NIO-31 still
+owns live host prompts, the DSH vault bridge and caller authentication. Android
+remains the existing 2.1.1/code14 release; iOS release work stays parked.

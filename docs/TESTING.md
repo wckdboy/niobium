@@ -455,3 +455,37 @@ DMG passes local installed-launcher/runtime/helper checks. See
 [Linux native receipt](evidence/beta212-native-vault-linux.json).
 The Linux acceptance entry point always owns its private bus and accepts no CLI
 bypass. Android is not rebuilt in this desktop-only release.
+
+## Desktop usability candidate (2.1.3)
+
+Custom pixel actions share a visible stepped keyboard-focus outline. Navigation,
+engine, wardrobe and companion choices expose selection and roles. Permission,
+room-member and saved-credential checkboxes have one labeled keyboard target.
+Saved account actions identify the account without exposing its value.
+
+The native View → Text size menu offers 100%, 125% and 150%, retaining the choice
+in OS application preferences. Engine setup stacks when width or text scaling
+needs it; the workshop and welcome content can scroll rather than clip. Pixel art
+keeps its existing nearest-neighbor renderer and logical dimensions.
+
+Chat follows new content while the reader is at the bottom, including replies
+taller than the viewport. Reading older history pauses following; Latest messages
+restores it. Layout measurements trigger scrolling after text wraps, avoiding a
+scroll on every token. Native UI fixtures cover 2,000-message history, tall growing
+replies, preserved input focus/drafts, keyboard activation, labeled switches,
+150% text and HiDPI setup. Evidence screenshots are in `desktop/build/evidence`.
+
+`DesktopSoakTest` exercises the real bundled DSH against isolated fake HTTP/SSE:
+three start/connect/stop cycles, nine DM turns and three room turns, three stream
+parts per turn, cold history/appearance restoration and exact room event counts.
+Each stop must leave no observed owned process alive. Its JSON receipt records
+elapsed time and sampled aggregate RSS/CPU for live owned processes using `ps`.
+These are measured baselines, not memory/CPU budgets or multi-hour acceptance.
+No real provider account is used.
+
+Semantic-tree tests do not prove screen-reader interoperability. macOS VoiceOver
+acceptance remains open; the framework currently documents no Linux screen-reader
+bridge in its [desktop accessibility support](https://kotlinlang.org/docs/multiplatform/compose-desktop-accessibility.html).
+Physical Android/tablets, battery behavior, multi-hour tasks/rooms/reconnects and
+real-account acceptance remain open. Android stays 2.1.1/code14, and iOS release
+work stays parked.

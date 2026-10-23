@@ -4,11 +4,17 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
@@ -48,10 +54,41 @@ val PixelShape = object : Shape {
         surface = Ink.Panel, onSurface = Ink.Text, onBackground = Ink.Text, outline = Ink.Line, secondary = Ink.Muted), content = content)
 }
 
+@Composable fun DesktopTextScale(percent: Int, content: @Composable () -> Unit) {
+    val density = LocalDensity.current
+    CompositionLocalProvider(LocalDensity provides Density(density.density, density.fontScale * percent / 100f), content = content)
+}
+
+/** One keyboard target, semantic role and visible stepped focus ring per action. */
+@Composable fun Modifier.pixelAction(enabled: Boolean = true, selected: Boolean? = null,
+                                    role: Role = Role.Button, onClick: () -> Unit): Modifier {
+    val interaction = remember { MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
+    val action = if (selected == null) Modifier.clickable(interaction, LocalIndication.current, enabled, role = role, onClick = onClick)
+        else Modifier.selectable(selected, interaction, LocalIndication.current, enabled, role, onClick)
+    return this.then(action).border(2.dp, if (focused && enabled) Ink.Text else Color.Transparent, PixelShape)
+}
+
+@Composable fun Modifier.pixelToggle(checked: Boolean, enabled: Boolean = true, role: Role = Role.Checkbox,
+                                    onChange: (Boolean) -> Unit): Modifier {
+    val interaction = remember { MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
+    return this.toggleable(checked, interaction, LocalIndication.current, enabled, role, onChange)
+        .border(2.dp, if (focused && enabled) Ink.Text else Color.Transparent, PixelShape)
+}
+
+@Composable fun LabeledCheckbox(label: String, checked: Boolean, enabled: Boolean = true, onChange: (Boolean) -> Unit) {
+    Row(Modifier.fillMaxWidth().clip(PixelShape).pixelToggle(checked, enabled, onChange = onChange).heightIn(min = 44.dp).padding(horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Checkbox(checked, onCheckedChange = null, enabled = enabled)
+        Text(label, color = Ink.Muted, fontSize = 12.sp)
+    }
+}
+
 @Composable fun PixelButton(label: String, modifier: Modifier = Modifier, secondary: Boolean = false, enabled: Boolean = true, icon: String? = null, onClick: () -> Unit) {
     val color = if (secondary) Ink.Pale else Ink.Violet
     Row(modifier.heightIn(min = 40.dp).clip(PixelShape).background(if (enabled) color else Ink.Line)
-        .clickable(enabled = enabled, role = Role.Button, onClick = onClick).padding(horizontal = 15.dp, vertical = 10.dp),
+        .pixelAction(enabled = enabled, onClick = onClick).padding(horizontal = 15.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(9.dp), verticalAlignment = Alignment.CenterVertically) {
         icon?.let { Glyph(it, if (secondary) Ink.Violet else Color.White, 15.dp) }
         Text(label, color = if (!enabled) Ink.Muted else if (secondary) Ink.Violet else Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)

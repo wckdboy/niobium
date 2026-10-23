@@ -6,6 +6,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -33,8 +35,8 @@ import androidx.compose.ui.unit.sp
                     if (kind == CredentialKind.GATEWAY) Text(entry.address, color = Ink.Muted, fontSize = 10.sp)
                     if (!entry.confirmed) Text("Last save unconfirmed", color = Ink.Muted, fontSize = 10.sp)
                 }
-                TextButton(onClick = { credentials.use(entry.id, onUse) }, enabled = !state.busy) { Text("Use", fontSize = 11.sp) }
-                TextButton(onClick = { removing = entry }, enabled = !state.busy) { Text("Delete", color = Ink.Red, fontSize = 11.sp) }
+                TextButton(onClick = { credentials.use(entry.id, onUse) }, enabled = !state.busy, modifier = Modifier.semantics { contentDescription = "Use ${entry.name}" }) { Text("Use", fontSize = 11.sp) }
+                TextButton(onClick = { removing = entry }, enabled = !state.busy, modifier = Modifier.semantics { contentDescription = "Delete ${entry.name}" }) { Text("Delete", color = Ink.Red, fontSize = 11.sp) }
             }
         }
         state.message?.let { message ->
@@ -56,10 +58,7 @@ import androidx.compose.ui.unit.sp
     val editable = !storage.busy || storage.checking
     OutlinedTextField(address, { address = it }, Modifier.fillMaxWidth().testTag("hermes.address"), label = { Text("Gateway URL") }, placeholder = { Text("https://hermes.example.com") }, singleLine = true, shape = PixelShape, enabled = editable)
     OutlinedTextField(token, { token = it }, Modifier.fillMaxWidth().testTag("hermes.token"), label = { Text("Access token") }, singleLine = true, visualTransformation = PasswordVisualTransformation(), shape = PixelShape, enabled = editable)
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Checkbox(rememberKey, { rememberKey = it }, enabled = editable && storage.indexWritable)
-        Text("Save in ${credentials.vaultName}", color = Ink.Muted, fontSize = 11.sp)
-    }
+    LabeledCheckbox("Save in ${credentials.vaultName}", rememberKey, editable && storage.indexWritable) { rememberKey = it }
     if (rememberKey) OutlinedTextField(name, { name = it.take(64) }, Modifier.fillMaxWidth().testTag("hermes.saved-name"), label = { Text("Connection name") }, singleLine = true, shape = PixelShape, enabled = editable)
     if (rememberKey) Text("Local processes using your OS account can access saved keys.", color = Ink.Muted, fontSize = 10.sp)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -91,10 +90,7 @@ import androidx.compose.ui.unit.sp
         }
     } else {
         OutlinedTextField(key, { key = it }, Modifier.fillMaxWidth().testTag("images.key"), label = { Text("OpenAI image API key") }, singleLine = true, visualTransformation = PasswordVisualTransformation(), shape = PixelShape, enabled = editable)
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(rememberKey, { rememberKey = it }, enabled = editable && storage.indexWritable)
-            Text("Save in ${credentials.vaultName}", color = Ink.Muted, fontSize = 11.sp)
-        }
+        LabeledCheckbox("Save in ${credentials.vaultName}", rememberKey, editable && storage.indexWritable) { rememberKey = it }
         if (rememberKey) OutlinedTextField(name, { name = it.take(64) }, Modifier.fillMaxWidth(), label = { Text("Image account name") }, singleLine = true, shape = PixelShape, enabled = editable)
         if (rememberKey) Text("Local processes using your OS account can access saved keys.", color = Ink.Muted, fontSize = 10.sp)
         TextButton(onClick = {

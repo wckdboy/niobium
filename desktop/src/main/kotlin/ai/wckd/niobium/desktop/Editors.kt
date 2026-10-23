@@ -8,9 +8,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -21,7 +24,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable fun PixelCreator(agent: DesktopAgent, artist: DesktopArtist, credentials: DesktopCredentials, connected: Boolean, initialLook: PixelLook? = null, onClose: () -> Unit) {
+@Composable fun PixelCreator(agent: DesktopAgent, artist: DesktopArtist, credentials: DesktopCredentials, connected: Boolean, initialLook: PixelLook? = null, onCreated: (() -> Unit)? = null, onClose: () -> Unit) {
     var brief by remember { mutableStateOf("A clever creative partner with a mischievous edge") }
     var draft by remember(agent, initialLook) { mutableStateOf(PixelBuilder.preview(brief).let { base ->
         if (initialLook == null) base else base.copy(spec = base.spec.copy(character = base.spec.character.copy(
@@ -35,7 +38,9 @@ import org.json.JSONObject
     val spec = draft.spec
     val look = spec.character.look ?: PixelLook(spec.character.archetype)
     BasicAlertDialog(onDismissRequest = { if (!busy) onClose() }) {
-        Column(Modifier.width(760.dp).heightIn(max = 740.dp).clip(PixelShape).background(Ink.Paper).border(1.dp, Ink.Line, PixelShape).padding(26.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(Modifier.widthIn(max = 760.dp).fillMaxWidth().heightIn(max = 740.dp).clip(PixelShape).background(Ink.Paper).border(1.dp, Ink.Line, PixelShape)
+            .onPreviewKeyEvent { event -> if (event.type == KeyEventType.KeyDown && event.key == Key.Escape && !busy) { onClose(); true } else false }
+            .verticalScroll(rememberScrollState()).padding(26.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column(verticalArrangement = Arrangement.spacedBy(5.dp)) { Eyebrow("Pixel workshop"); Text("Make good company.", color = Ink.Text, fontSize = 24.sp, fontWeight = FontWeight.Bold) }
                 TextButton(onClick = onClose, enabled = !busy) { Text("Close") }
@@ -48,8 +53,8 @@ import org.json.JSONObject
                     Text(spec.personality.joinToString(" · "), color = Ink.Violet, fontSize = 11.sp)
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { listOf("Look", "Companion", "Persona", "Access").forEach { name -> FilterChip(selected = tab == name, onClick = { tab = name }, label = { Text(name) }, shape = PixelShape, enabled = !busy) } }
-            Box(Modifier.weight(1f, fill = false).heightIn(min = 180.dp, max = 320.dp)) {
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) { listOf("Look", "Companion", "Persona", "Access").forEach { name -> FilterChip(selected = tab == name, onClick = { tab = name }, label = { Text(name) }, shape = PixelShape, enabled = !busy) } }
+            Box(Modifier.heightIn(min = 180.dp)) {
                 when (tab) {
                     "Look" -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -57,17 +62,17 @@ import org.json.JSONObject
                             TextButton(onClick = { atelier = "pixel" }, enabled = !busy) { Text("Design with AI") }
                             if (look.customArt != null) TextButton(onClick = { draft = draft.copy(spec = spec.copy(character = spec.character.copy(look = look.copy(customArt = null)))) }, enabled = !busy) { Text("Use wardrobe look") }
                         }
-                        LazyVerticalGrid(GridCells.Fixed(8), verticalArrangement = Arrangement.spacedBy(7.dp), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                        LazyVerticalGrid(GridCells.Adaptive(68.dp * LocalDensity.current.fontScale), modifier = Modifier.height(280.dp), verticalArrangement = Arrangement.spacedBy(7.dp), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                             items(PixelWardrobe.entries, key = { it.id }) { entry ->
-                                Column(Modifier.clip(PixelShape).background(if (look.portrait == entry.id) Ink.Pale else Ink.Panel).border(1.dp, if (look.portrait == entry.id) Ink.Violet else Ink.Line, PixelShape).clickable(enabled = !busy) {
+                                Column(Modifier.clip(PixelShape).background(if (look.portrait == entry.id) Ink.Pale else Ink.Panel).border(1.dp, if (look.portrait == entry.id) Ink.Violet else Ink.Line, PixelShape).pixelAction(enabled = !busy, selected = look.portrait == entry.id, role = Role.RadioButton) {
                                     draft = draft.copy(spec = spec.copy(character = spec.character.copy(archetype = entry.archetype, recipe = spec.character.recipe.copy(body = entry.body), look = PixelLook(entry.id))))
                                 }.padding(vertical = 7.dp), horizontalAlignment = Alignment.CenterHorizontally) { Portrait(PixelLook(entry.id), 48); Text(entry.label, color = Ink.Muted, fontSize = 9.sp) }
                             }
                         }
                     }
                     "Companion" -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        LazyVerticalGrid(GridCells.Fixed(6), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            items(PixelBuilder.companions) { kind -> Column(Modifier.clip(PixelShape).background(if (spec.companion.kind == kind) Ink.Pale else Ink.Panel).clickable(enabled = !busy) {
+                        LazyVerticalGrid(GridCells.Adaptive(84.dp * LocalDensity.current.fontScale), modifier = Modifier.height(240.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(PixelBuilder.companions) { kind -> Column(Modifier.clip(PixelShape).background(if (spec.companion.kind == kind) Ink.Pale else Ink.Panel).pixelAction(enabled = !busy, selected = spec.companion.kind == kind, role = Role.RadioButton) {
                                 val index = PixelBuilder.companions.indexOf(kind)
                                 draft = draft.copy(spec = spec.copy(companion = PixelCompanion(kind, PixelBuilder.companionNames[index], PixelBuilder.companionTrait(kind))))
                             }.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) { Familiar(kind); Text(kind.replaceFirstChar { it.uppercase() }, color = Ink.Muted, fontSize = 10.sp) } }
@@ -75,7 +80,7 @@ import org.json.JSONObject
                         TextButton(onClick = { atelier = "companion" }, enabled = !busy) { Text("Design a creature with AI") }
                         Text("A little strange. A lot of help. Transparent sprites, ready for real delegation.", color = Ink.Muted, fontSize = 11.sp)
                     }
-                    "Persona" -> Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    "Persona" -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         OutlinedTextField(brief, { brief = it.take(4000) }, Modifier.fillMaxWidth(), label = { Text("What should this Pixel do?") }, minLines = 2, maxLines = 4, enabled = !busy)
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             PixelButton("Instant persona", secondary = true, enabled = brief.isNotBlank() && !busy) {
@@ -91,7 +96,7 @@ import org.json.JSONObject
                         Text("AI refinement uses the selected engine’s model and API usage.", color = Ink.Muted, fontSize = 10.sp)
                         Text(spec.soul, color = Ink.Text, fontSize = 12.sp, lineHeight = 19.sp)
                     }
-                    else -> Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    else -> Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text("Review what this Pixel may use.", color = Ink.Text, fontWeight = FontWeight.SemiBold)
                         AccessSwitch("Network", spec.permissions.network, !busy) { draft = draft.copy(spec = spec.copy(permissions = spec.permissions.copy(network = it))) }
                         AccessSwitch("Workspace files", spec.permissions.filesystem != "none", !busy) { draft = draft.copy(spec = spec.copy(permissions = spec.permissions.copy(filesystem = if (it) "workspace" else "none"))) }
@@ -109,7 +114,7 @@ import org.json.JSONObject
                 Text("Adult cast · ${spec.character.age}+", color = Ink.Muted, fontSize = 10.sp)
                 PixelButton(if (busy) "Working…" else "Create Pixel", icon = "add", enabled = connected && !busy && spec.validationError == null) {
                     busy = true; error = null
-                    scope.launch { try { agent.createPixel(draft); onClose() } catch (e: CancellationException) { throw e } catch (e: Exception) { error = e.message } finally { busy = false } }
+                    scope.launch { try { agent.createPixel(draft); if (onCreated != null) onCreated() else onClose() } catch (e: CancellationException) { throw e } catch (e: Exception) { error = e.message } finally { busy = false } }
                 }
             }
         }
@@ -122,7 +127,10 @@ import org.json.JSONObject
 }
 
 @Composable private fun AccessSwitch(label: String, checked: Boolean, enabled: Boolean = true, onChange: (Boolean) -> Unit) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) { Text(label, color = Ink.Text, fontSize = 12.sp); Switch(checked, onChange, enabled = enabled) }
+    Row(Modifier.fillMaxWidth().clip(PixelShape).pixelToggle(checked, enabled, Role.Switch, onChange).heightIn(min = 48.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(label, Modifier.weight(1f), color = Ink.Text, fontSize = 12.sp)
+        Switch(checked, onCheckedChange = null, enabled = enabled)
+    }
 }
 
 @Composable fun AtelierDialog(artist: DesktopArtist, credentials: DesktopCredentials, target: String, reference: ByteArray, onClose: () -> Unit, onApply: (PixelArt) -> Unit) {
@@ -163,7 +171,7 @@ import org.json.JSONObject
         Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             OutlinedTextField(name, { name = it.take(60) }, label = { Text("Room name") }, singleLine = true)
             Text("Choose two to six Pixels.", color = Ink.Muted, fontSize = 12.sp)
-            bots.forEach { bot -> Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(bot.name in members, { selected -> if (!selected || members.size < 6) members = if (selected) members + bot.name else members - bot.name }); Text(bot.title) } }
+            bots.forEach { bot -> LabeledCheckbox(bot.title, bot.name in members, bot.name in members || members.size < 6) { selected -> members = if (selected) members + bot.name else members - bot.name } }
         }
     }, confirmButton = { TextButton(onClick = { agent.createRoom(name, bots.filter { it.name in members }, onClose) }, enabled = name.isNotBlank() && members.size in 2..6) { Text("Create room") } }, dismissButton = { TextButton(onClick = onClose) { Text("Cancel") } }, shape = PixelShape)
 }
@@ -179,10 +187,7 @@ import org.json.JSONObject
             if (prompt.method == "clarify") questions.forEach { question ->
                 val id = question.getString("qid"); val options = question.strings("choices")
                 Text(question.s("question").orEmpty(), color = Ink.Text)
-                options.forEach { option -> Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(option in answers[id].orEmpty(), { checked -> val selected = answers[id].orEmpty(); answers = answers + (id to if (question.optBoolean("multi_select")) { if (checked) selected + option else selected - option } else if (checked) setOf(option) else emptySet()); custom = custom - id })
-                    Text(option, fontSize = 12.sp)
-                } }
+                options.forEach { option -> LabeledCheckbox(option, option in answers[id].orEmpty()) { checked -> val selected = answers[id].orEmpty(); answers = answers + (id to if (question.optBoolean("multi_select")) { if (checked) selected + option else selected - option } else if (checked) setOf(option) else emptySet()); custom = custom - id } }
                 OutlinedTextField(custom[id].orEmpty(), { custom = custom + (id to it); answers = answers - id }, label = { Text("Your answer") }, modifier = Modifier.fillMaxWidth())
             } else {
                 Text(prompt.params.s("description") ?: prompt.params.s("prompt") ?: prompt.params.s("hint") ?: "Your host is waiting for this value.", color = Ink.Muted, fontSize = 13.sp)
