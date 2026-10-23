@@ -311,8 +311,11 @@ private data class ReadingPosition(val index: Int, val offset: Int, val scrollin
         snapshotFlow { ReadingPosition(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset, listState.isScrollInProgress, listState.canScrollForward, ownedScroll) }.collect { position ->
             val before = previous
             val movedBack = before != null && (position.index < before.index || position.index == before.index && position.offset < before.offset)
-            if (!position.owned && (movedBack || position.scrolling && position.forward)) following = false
-            else if (!position.owned && !position.forward) following = true
+            if (!position.owned) when {
+                !position.forward && !position.scrolling -> following = true
+                movedBack || position.scrolling && position.forward -> following = false
+                !position.forward -> following = true
+            }
             previous = position
         }
     }

@@ -166,6 +166,15 @@ class DesktopUsabilityTest {
         atBottom()
     }
 
+    @Test fun wideningTheHistoryAtTheBottomKeepsFollowingEnabled() {
+        var width by mutableStateOf(360.dp)
+        val rows = listOf(ChatMessage("long", "assistant", List(100) { "A longer thought that wraps across the available conversation width." }.joinToString(" ")))
+        compose.setContent { DesktopTheme { ChatTimeline(rows, "Nova", false, false, Modifier.width(width).height(300.dp)) } }
+        compose.onNodeWithTag("chat.latest").assertDoesNotExist()
+        compose.runOnIdle { width = 720.dp }
+        compose.onNodeWithTag("chat.latest").assertDoesNotExist()
+    }
+
     @Test fun incomingRepliesDoNotTakeFocusOrReplaceAnUnsentDraft() {
         val bot = BotProfile.parse(JSONObject().put("name", "nova"))!!
         var state by mutableStateOf(DesktopState(connected = true, bot = bot, session = "chat", messages = listOf(ChatMessage("reply", "assistant", "Hello"))))
