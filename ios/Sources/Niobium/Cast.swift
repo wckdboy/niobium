@@ -9,6 +9,7 @@ struct CastMember: Identifiable, Equatable {
     let accentHex: String
     var recipe: CharacterRecipe? = nil
     var look: PixelLook? = nil
+    var companionArt: PixelArt? = nil
     var accent: Color { NB.color(for: accentHex) }
 
     static let all: [CastMember] = [
@@ -68,6 +69,8 @@ final class CastStore: ObservableObject {
         }
         if let raw = UserDefaults.standard.data(forKey: "niobium.look." + profile.lowercased()),
            let look = try? JSONDecoder().decode(PixelLook.self, from: raw), look.isValid { member.look = look }
+        if let raw = UserDefaults.standard.data(forKey: "niobium.companionArt." + profile.lowercased()),
+           let art = try? JSONDecoder().decode(PixelArt.self, from: raw), art.size == 16, art.isValid { member.companionArt = art }
         return member
     }
 
@@ -88,6 +91,9 @@ final class CastStore: ObservableObject {
         guard PixelSpec.companions.contains(companion), !name.isEmpty, name.count <= 24 else { return }
         member = CastMember(id: member.id, name: member.name, portrait: member.portrait, companion: companion,
                             companionName: name, accentHex: member.accentHex, recipe: member.recipe, look: member.look)
+        let artValue = appearance?.keys.contains("companion_art") == true ? appearance?.dict("companion_art") : spec?.dict("companion")?.dict("art")
+        if let raw = artValue, let data = try? JSONSerialization.data(withJSONObject: raw),
+           let art = try? JSONDecoder().decode(PixelArt.self, from: data), art.size == 16, art.isValid { member.companionArt = art }
         if self.member(for: profile) != member { select(member, for: profile) }
     }
 
@@ -106,6 +112,9 @@ final class CastStore: ObservableObject {
         if let look = member.look, let data = try? JSONEncoder().encode(look) {
             UserDefaults.standard.set(data, forKey: "niobium.look." + profile.lowercased())
         } else { UserDefaults.standard.removeObject(forKey: "niobium.look." + profile.lowercased()) }
+        if let art = member.companionArt, let data = try? JSONEncoder().encode(art) {
+            UserDefaults.standard.set(data, forKey: "niobium.companionArt." + profile.lowercased())
+        } else { UserDefaults.standard.removeObject(forKey: "niobium.companionArt." + profile.lowercased()) }
         var names = UserDefaults.standard.dictionary(forKey: "niobium.companionNames.v1") as? [String: String] ?? [:]
         names[profile.lowercased()] = member.companionName
         UserDefaults.standard.set(names, forKey: "niobium.companionNames.v1")
@@ -143,10 +152,8 @@ struct CastPortrait: View {
             PixelButtonShape().fill(member.accent.opacity(0.08))
             CharacterSprite(member: member, animate: size >= 96)
             if showCompanion {
-                FamiliarSprite(kind: member.companion, size: size * 0.26)
+                FamiliarSprite(kind: member.companion, size: size * 0.26, art: member.companionArt)
                     .frame(width: size * 0.30, height: size * 0.30)
-                    .background(PixelButtonShape(cut: 2).fill(NB.surface))
-                    .overlay(PixelButtonShape(cut: 2).stroke(NB.lineStrong, lineWidth: 1))
                     .padding(size * 0.02)
             }
         }
@@ -194,6 +201,7 @@ struct PixelLookEditor: View {
     @Binding var look: PixelLook
     @Binding var history: [PixelLook]
     var enabled = true
+    @State private var browsing = false
 
     private func choose(_ value: PixelLook) {
         guard value != look else { return }
@@ -202,39 +210,47 @@ struct PixelLookEditor: View {
         Haptics.tap()
     }
     var body: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 12) {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
-                ForEach(PixelLook.portraits, id: \.self) { id in
-                    let base = CastMember.all.first { $0.id == id }!
-                    Button {
-                        var next = look; next.portrait = id; choose(next)
-                    } label: {
-                        VStack(spacing: 4) {
-                            CastPortrait(member: .init(id: id, name: base.name, portrait: base.portrait,
-                                companion: base.companion, companionName: base.companionName,
-                                accentHex: base.accentHex, look: .init(portrait: id)), size: 54, showCompanion: false, showGlow: false)
-                            Text(base.name).font(.nbBody(10)).foregroundStyle(NB.text).lineLimit(1)
-                        }
-                        .frame(maxWidth: .infinity).padding(.vertical, 6)
-                        .background(PixelButtonShape().fill(look.portrait == id ? NB.ion.opacity(0.12) : NB.fillSoft))
-                        .overlay(PixelButtonShape().stroke(look.portrait == id ? NB.ion : .clear, lineWidth: 1))
-                    }.buttonStyle(.plain).accessibilityLabel(base.name + " look")
-                        .accessibilityAddTraits(look.portrait == id ? .isSelected : [])
-                        .accessibilityIdentifier("look." + id)
+                ForEach(Array(PixelWardrobe.entries.prefix(8)), id: \.id) { entry in
+                    WardrobeTile(entry: entry, selected: look.portrait == entry.id) {
+                        var next = look; next.portrait = entry.id; next.customArt = nil; choose(next)
+                    }
                 }
             }
-            HStack(spacing: 8) {
-                colorMenu("Outfit", options: ["auto"] + PixelLook.portraits, value: look.accent) { var next = look; next.accent = $0; choose(next) }
+            Button { browsing = true } label: {
+                HStack(spacing: 10) {
+                    PixelIcon(.pixels, size: 20)
+                    Text("Browse 32 looks").font(.nbBody(13, weight: .semibold))
+                    Spacer()
+                    Text(look.entry.label).font(.nbBody(12)).lineLimit(1)
+                }.foregroundStyle(NB.ion).padding(12).frame(minHeight: 48)
+                    .background(PixelButtonShape().fill(NB.ion.opacity(0.08)))
+            }.buttonStyle(.plain).accessibilityIdentifier("look.browse")
+            PixelArtistButton(target: "pixel", referenceImage: CharacterEngine.shared.image(for: look)) { art in
+                var next = look; next.customArt = art; next.accent = "auto"; choose(next)
             }
+            if look.customArt == nil { colorMenu("Outfit", options: ["auto"] + PixelLook.accents, value: look.accent) { var next = look; next.accent = $0; choose(next) } }
             HStack(spacing: 8) {
+                Button {
+                    let alternatives = PixelLook.portraits.filter { $0 != look.portrait }
+                    var random = CharacterRandom(UUID().uuidString)
+                    choose(.init(portrait: alternatives[random.index(alternatives.count)]))
+                } label: { PixelActionLabel("Surprise", icon: .spark) }
+                    .buttonStyle(NBQuietButtonStyle(compact: true)).accessibilityIdentifier("look.surprise")
                 Button { choose(look.remixed(seed: UUID().uuidString)) } label: { PixelActionLabel("Remix", icon: .spark) }
-                    .buttonStyle(NBQuietButtonStyle(compact: true)).accessibilityIdentifier("look.remix")
+                    .buttonStyle(NBQuietButtonStyle(compact: true)).disabled(look.customArt != nil).accessibilityIdentifier("look.remix")
                 Button {
                     if let previous = history.popLast() { look = previous; Haptics.tap() }
                 } label: { PixelActionLabel("Undo", icon: .back) }
                     .buttonStyle(NBQuietButtonStyle(compact: true)).disabled(history.isEmpty).accessibilityIdentifier("look.undo")
             }
         }.disabled(!enabled)
+        .sheet(isPresented: $browsing) {
+            WardrobePicker(selected: look.portrait) { id in
+                var next = look; next.portrait = id; next.customArt = nil; choose(next); browsing = false
+            }
+        }
     }
     private func colorMenu(_ title: String, options: [String], value: String, action: @escaping (String) -> Void) -> some View {
         Menu {
@@ -242,11 +258,76 @@ struct PixelLookEditor: View {
                 Button(option == "auto" ? "Original" : option.capitalized) { action(option) }
             }
         } label: {
-            VStack(spacing: 3) {
-                Text(title).font(.nbBody(11)).foregroundStyle(NB.secondary)
-                Text(value == "auto" ? "Original" : value.capitalized).font(.nbBody(11, weight: .semibold)).foregroundStyle(NB.text).lineLimit(1)
-            }.frame(maxWidth: .infinity, minHeight: 44).background(PixelButtonShape().fill(NB.fillSoft))
+            HStack {
+                Text(title).font(.nbBody(12)).foregroundStyle(NB.secondary)
+                Spacer()
+                Text(value == "auto" ? "Original" : value.capitalized).font(.nbBody(12, weight: .semibold)).foregroundStyle(NB.text)
+                PixelIcon(.pixels, size: 14)
+            }.padding(.horizontal, 12).frame(maxWidth: .infinity, minHeight: 44).background(PixelButtonShape().fill(NB.fillSoft))
         }.accessibilityLabel(title + " color").accessibilityValue(value).accessibilityIdentifier("look.color." + title.lowercased())
+    }
+}
+
+private struct WardrobeTile: View {
+    let entry: PixelLookEntry
+    let selected: Bool
+    var action: () -> Void
+    var body: some View {
+        let base = CastMember.all.first { $0.id == entry.archetype } ?? CastMember.all[0]
+        Button(action: action) {
+            VStack(spacing: 4) {
+                CastPortrait(member: .init(id: base.id, name: entry.label, portrait: base.portrait,
+                    companion: base.companion, companionName: base.companionName,
+                    accentHex: base.accentHex, look: .init(portrait: entry.id)), size: 58, showCompanion: false, showGlow: false)
+                Text(entry.label).font(.nbBody(10)).foregroundStyle(NB.text).lineLimit(1)
+            }.frame(maxWidth: .infinity).padding(.vertical, 7)
+                .background(PixelButtonShape().fill(selected ? NB.ion.opacity(0.12) : NB.fillSoft))
+                .overlay(PixelButtonShape().stroke(selected ? NB.ion : .clear, lineWidth: 1))
+        }.buttonStyle(.plain).accessibilityLabel(entry.label + " look")
+            .accessibilityAddTraits(selected ? .isSelected : [])
+            .accessibilityIdentifier("look." + entry.id)
+    }
+}
+
+private struct WardrobePicker: View {
+    let selected: String
+    var onChoose: (String) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var family = "All"
+    @State private var search = ""
+    private var entries: [PixelLookEntry] {
+        PixelWardrobe.entries.filter {
+            (family == "All" || $0.family == family) && (search.isEmpty || ([$0.label, $0.family] + $0.tags).joined(separator: " ").localizedCaseInsensitiveContains(search))
+        }
+    }
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 16) {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 6) {
+                            ForEach(["All", "Arcane", "Cyber", "Wild", "Dark"], id: \.self) { item in
+                                Button { family = item } label: {
+                                    Text(item).font(.nbBody(12, weight: .semibold))
+                                        .foregroundStyle(family == item ? NB.ion : NB.secondary)
+                                        .padding(.horizontal, 14).frame(minHeight: 44)
+                                        .background(PixelButtonShape().fill(family == item ? NB.ion.opacity(0.12) : NB.fillSoft))
+                                }.buttonStyle(.plain).accessibilityAddTraits(family == item ? .isSelected : [])
+                                    .accessibilityIdentifier("wardrobe.family." + item.lowercased())
+                            }
+                        }
+                    }
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
+                        ForEach(entries, id: \.id) { entry in
+                            WardrobeTile(entry: entry, selected: selected == entry.id) { onChoose(entry.id) }
+                        }
+                    }
+                    if entries.isEmpty { Text("No matching looks").font(.nbBody(14)).foregroundStyle(NB.secondary) }
+                }.padding(20)
+            }.background(NB.void).navigationTitle("Wardrobe").navigationBarTitleDisplayMode(.inline)
+                .searchable(text: $search, prompt: "Try vampire, cyborg, frost…")
+                .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } } }
+        }
     }
 }
 
@@ -378,6 +459,7 @@ struct CastStudioView: View {
                     }
                     NBSectionHeader(title: "Creature")
                     FamiliarPicker(kind: companion, enabled: !saving)
+                    CompanionArtEditor(kind: selected.companion, art: $selected.companionArt).disabled(saving)
                     NBSectionHeader(title: "The cast", detail: "eight starting points")
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                         ForEach(CastMember.all) { member in
@@ -385,7 +467,7 @@ struct CastStudioView: View {
                                 // Choosing a look preserves the existing companion's identity.
                                 selected = CastMember(id: member.id, name: member.name, portrait: member.portrait,
                                                       companion: selected.companion, companionName: selected.companionName,
-                                                      accentHex: member.accentHex, recipe: member.recipe)
+                                                      accentHex: member.accentHex, recipe: member.recipe, companionArt: selected.companionArt)
                                 Haptics.tap()
                             } label: {
                                 HStack(spacing: 10) {

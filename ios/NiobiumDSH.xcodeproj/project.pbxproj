@@ -156,6 +156,8 @@
 		E8D7EFBF21F40F2844F8C887 /* character_engine.json in Resources */ = {isa = PBXBuildFile; fileRef = F920BEF6D528F16A8B3FF112 /* character_engine.json */; };
 		90281C4CA8783BD21FA8EAC0 /* PixelBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 810777E429813CCC40983D88 /* PixelBuilder.swift */; };
 		01796E727B21BB47E990EB43 /* CredentialPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01DA6F698DD9E71F6F14BA96 /* CredentialPromptView.swift */; };
+		EA31C2F93B34CA773A0497A2 /* PixelArt.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDBCE5DFB2773D9743A1DE67 /* PixelArt.swift */; };
+		E15412370D9000D1C82D8024 /* PixelArtist.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7936D2FDA1CC99FFF185AF /* PixelArtist.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXBuildRule section */
@@ -420,6 +422,8 @@
 		F920BEF6D528F16A8B3FF112 /* character_engine.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Resources/character_engine.json; sourceTree = "<group>"; };
 		810777E429813CCC40983D88 /* PixelBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelBuilder.swift; sourceTree = "<group>"; };
 		01DA6F698DD9E71F6F14BA96 /* CredentialPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/CredentialPromptView.swift"; sourceTree = "<group>"; };
+		CDBCE5DFB2773D9743A1DE67 /* PixelArt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Niobium/PixelArt.swift; sourceTree = SOURCE_ROOT; };
+		DE7936D2FDA1CC99FFF185AF /* PixelArtist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/Niobium/PixelArtist.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -776,6 +780,8 @@
 				810777E429813CCC40983D88 /* PixelBuilder.swift */,
 				01DA6F698DD9E71F6F14BA96 /* CredentialPromptView.swift */,
 				31D54E22F25D672BD7D866C2 /* PixelSpec.swift */,
+				DE7936D2FDA1CC99FFF185AF /* PixelArtist.swift */,
+				CDBCE5DFB2773D9743A1DE67 /* PixelArt.swift */,
 				DB4BFE49991F8AEC9814C14F /* HomeView.swift */,
 				72B2BC2661C3D00A0B085372 /* AIBuildView.swift */,
 			);
@@ -1294,6 +1300,8 @@
 				90281C4CA8783BD21FA8EAC0 /* PixelBuilder.swift in Sources */,
 				01796E727B21BB47E990EB43 /* CredentialPromptView.swift in Sources */,
 				C0ECA2B9B8876E122BCE91F3 /* PixelSpec.swift in Sources */,
+				E15412370D9000D1C82D8024 /* PixelArtist.swift in Sources */,
+				EA31C2F93B34CA773A0497A2 /* PixelArt.swift in Sources */,
 				FDAC27D265A46C9698170F49 /* HomeView.swift in Sources */,
 				99D2BE82438C355A211540B5 /* AIBuildView.swift in Sources */,
 			);
@@ -1325,7 +1333,7 @@
 				CODE_SIGN_ENTITLEMENTS = Resources/Niobium.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = XKA8CGC2AB;
-				CURRENT_PROJECT_VERSION = 14;
+				CURRENT_PROJECT_VERSION = 15;
 				DSH_ROOTFS_TARBALL = "$(SRCROOT)/Resources/root.tar.gz";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -1380,7 +1388,7 @@
 				CODE_SIGN_ENTITLEMENTS = Resources/Niobium.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = XKA8CGC2AB;
-				CURRENT_PROJECT_VERSION = 14;
+				CURRENT_PROJECT_VERSION = 15;
 				DSH_ROOTFS_TARBALL = "$(SRCROOT)/Resources/root.tar.gz";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",

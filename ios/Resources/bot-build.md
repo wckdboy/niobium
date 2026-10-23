@@ -59,18 +59,21 @@ requests for separate account authorization.
 
 ## Appearance
 
-Choose an authored 48×48 portrait in `character.look`. These are eight curated
+Choose an authored 48×48 portrait in `character.look`. These are 32 curated
 adult silhouettes, not an image-generation service or unlimited new artwork.
-The native preview is immediate; AI refines this JSON persona only when asked.
+The native preview is immediate. When `list_pixels` is available, use its actual IDs and room memberships before sending `message_agent`; never guess contacts. This skill refines the JSON persona only when asked; optional visual design is a separate explicit image job.
+Choose among vampire, moon mage, paladin, cyborg, fae, hacker, infernal, witch,
+assassin, serpent druid, desert prince, frost knight, samurai, siren and sky pirate styles.
+A look name describes the art, not the Pixel’s identity, job or permissions.
 Keep the supplied compatibility `recipe` valid for older clients, but `look`
 controls the appearance in current clients. It is independent of the role seed.
 
 Look fields (exact identifiers):
-- portrait: orion, nova, forge, sage, nyx, astra, vesper, rook
+- portrait: orion, nova, forge, sage, nyx, astra, vesper, rook, lilith, kael, seraph, zero, thorn, echo, ember, luna, riven, sable, ivy, volt, iris, onyx, neve, sol, jade, azrael, lyra, cinder, mira, cass, talon, opal
 - accent: auto, orion, nova, forge, sage, nyx, astra, vesper, rook
 
-Orion, Forge and Rook have masculine adult silhouettes; Nova, Sage, Nyx, Astra
-and Vesper have feminine adult silhouettes. Honor an explicitly requested build.
+Masculine adult looks: Orion, Forge, Rook, Kael, Zero, Ember, Riven, Volt, Onyx, Azrael, Cinder, Talon.
+All other listed looks have feminine adult silhouettes. Honor an explicitly requested build.
 `auto` keeps the authored outfit colors. Other accents dye only masked fabric;
 face, hair, skin, mechanical parts and silhouette stay authored. Do not invent
 skin, hair, outfit layers or image URLs inside `look`. Choose a coherent base

@@ -499,3 +499,50 @@ The matching beta.6 site is deployed and verified at niobium.sh (Cloudflare
 version c664c648-949c-4ea9-82c6-a935f5ff424f). Plane NIO-3/10/24/29/32/36 and
 both exports record the verified checkpoint and the expanded next-cycle scope,
 with all existing workflow states preserved.
+
+
+## Wardrobe and connected workspaces — beta.7 candidate
+
+Implemented in the current branch:
+
+- 32 adult authored looks, automatic brief-based choice, family/search wardrobe,
+  eight outfit palettes, surprise/remix/undo and twelve transparent creatures.
+- Optional OpenAI image atelier on both platforms. Separate secure image key,
+  reference-based designs, saved background receipts, preview/accept, portable
+  indexed pixels, companion transparency validation and no automatic paid retry.
+- Independent Hermes/DSH stores and transports, with native engine selection and
+  separate sessions, requests and history. Hermes-only startup does not boot DSH.
+- Durable local rooms and DMs, real `list_pixels` / `message_agent` tools behind
+  reviewed messaging access, attributed replies and bounded discussion.
+- Native room questions/approvals, stop, receipt-preserving failed sends and
+  session archival when clearing rooms. Room sessions never replace a DM.
+- Cleaner pixel chat actions and actual character portraits in room messages.
+
+OpenMausBot's thread isolation and bounded discussion informed this design;
+its code and artwork were not copied. Research source:
+https://github.com/milind-soni/OpenMausBot at
+30b62aaf18adc22099c24a7181abf5e9ddead980.
+
+Acceptance so far: 50 iOS unit + six UI checks, an isolated full iOS build 15
+background/cold-launch DSH model test (104.984 seconds), shared catalog hashes,
+and real Android DSH messaging through the registered tool and native Rooms.
+The current iPhone is reachable over Wi-Fi but locked. Build 14's physical
+production acceptance remains the latest phone result. New signed artifacts,
+CI/review, release publication, website deployment and Plane updates follow.
+
+Next after this candidate: physical Android/16 KB and real-account provider
+acceptance; explicit cross-engine conversation bridging; recovered room work
+when a delivery receipt is lost; longer-running delegation and native connector
+consent. Expand wardrobe collections and image-provider choices after measuring
+real usage. Full Hermes parity remains tracked separately.
+
+Uncertain native room-send IDs now survive workspace changes and cold launches.
+Only scoped digests and random receipt IDs are stored; message text and tokens
+are not retained in this receipt book. Android instrumented checks also verify
+the actual Keystore image key in an isolated namespace.
+
+Review follow-ups bound acknowledged/unconfirmed receipts, admit Android room
+questions, and preserve a checkpointed active-time budget across suspension and
+restart. Time awaiting a user answer does not spend the room execution budget.
+Both native clients confirm permanent room clearing; the real Android DSH test
+checks cancel preserves the room before confirming archival.

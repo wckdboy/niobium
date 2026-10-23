@@ -12,9 +12,20 @@ object CharacterEngine {
     private var atlas: JSONObject? = null
     private var looks: JSONObject? = null
     private val lookCache = LruCache<PixelLook, ImageBitmap>(96)
+    private val artCache = LruCache<PixelArt, ImageBitmap>(64)
+    @Synchronized fun image(art: PixelArt): ImageBitmap? {
+        artCache.get(art)?.let { return it }
+        val indices = art.indices ?: return null
+        val colors = IntArray(indices.size) { index ->
+            val slot = indices[index].toInt() and 255
+            if (slot == 255) 0 else art.palette[slot] or (0xFF shl 24)
+        }
+        return Bitmap.createBitmap(colors, art.size, art.size, Bitmap.Config.ARGB_8888).asImageBitmap().also { artCache.put(art, it) }
+    }
     @Synchronized
     fun image(context: Context, look: PixelLook): ImageBitmap? {
         if (!look.valid) return null
+        look.customArt?.let { return image(it) }
         lookCache.get(look)?.let { return it }
         val data = looks ?: runCatching {
             context.applicationContext.assets.open("portrait_looks.json").bufferedReader().use { JSONObject(it.readText()) }

@@ -15,7 +15,8 @@
     "tools": [
       "web",
       "file",
-      "delegation"
+      "delegation",
+      "messaging"
     ],
     "traits": [
       "skeptical",
@@ -45,7 +46,8 @@
       "web",
       "image_gen",
       "vision",
-      "delegation"
+      "delegation",
+      "messaging"
     ],
     "traits": [
       "bold",
@@ -74,7 +76,8 @@
     ],
     "tools": [
       "file",
-      "delegation"
+      "delegation",
+      "messaging"
     ],
     "traits": [
       "direct",
@@ -101,7 +104,8 @@
     "tools": [
       "memory",
       "file",
-      "delegation"
+      "delegation",
+      "messaging"
     ],
     "traits": [
       "warm",
@@ -130,7 +134,8 @@
     "tools": [
       "web",
       "file",
-      "delegation"
+      "delegation",
+      "messaging"
     ],
     "traits": [
       "vigilant",
@@ -156,7 +161,8 @@
     ],
     "tools": [
       "vision",
-      "delegation"
+      "delegation",
+      "messaging"
     ],
     "traits": [
       "alert",
@@ -184,7 +190,8 @@
     ],
     "tools": [
       "file",
-      "delegation"
+      "delegation",
+      "messaging"
     ],
     "traits": [
       "eloquent",
@@ -212,7 +219,8 @@
     "tools": [
       "web",
       "file",
-      "delegation"
+      "delegation",
+      "messaging"
     ],
     "traits": [
       "resourceful",

@@ -41,7 +41,19 @@ final class CharacterEngine {
     private init() {
         cache.countLimit = 192
     }
+    func image(for art: PixelArt) -> UIImage? {
+        guard let raw = art.rgba else { return nil }
+        let colors = art.palette.map { String($0) }.joined(separator: ",")
+        let key = "custom|\(art.size)|\(colors)|\(art.pixels)" as NSString
+        if let cached = cache.object(forKey: key) { return cached }
+        guard let provider = CGDataProvider(data: raw as CFData),
+              let cg = CGImage(width: art.size, height: art.size, bitsPerComponent: 8, bitsPerPixel: 32, bytesPerRow: art.size * 4,
+                space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.last.rawValue),
+                provider: provider, decode: nil, shouldInterpolate: false, intent: .defaultIntent) else { return nil }
+        let image = UIImage(cgImage: cg); cache.setObject(image, forKey: key); return image
+    }
     func image(for look: PixelLook) -> UIImage? {
+        if look.isValid, let art = look.customArt { return image(for: art) }
         guard look.isValid, let data = looks, data.version == 1, data.size == 48,
               let art = data.looks[look.portrait], art.pixels.count == 2304,
               art.materials.count == 2304, art.shades.count == 2304 else { return nil }
@@ -159,10 +171,11 @@ struct CharacterSprite: View {
 struct FamiliarSprite: View {
     let kind: String
     var size: CGFloat = 32
+    var art: PixelArt? = nil
     @Environment(\.displayScale) private var displayScale
     var body: some View {
         let side = max(1, floor(size * displayScale / 16)) * 16 / displayScale
-        Image("Comp_\(kind)").resizable().interpolation(.none)
+        (art.flatMap { CharacterEngine.shared.image(for: $0) }.map { Image(uiImage: $0) } ?? Image("Comp_\(kind)")).resizable().interpolation(.none)
             .frame(width: side, height: side)
             .offset(x: floor((size-side)*displayScale/2)/displayScale,
                     y: floor((size-side)*displayScale/2)/displayScale)

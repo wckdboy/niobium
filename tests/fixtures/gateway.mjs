@@ -27,6 +27,15 @@ server.on('upgrade', (request, socket) => {
     if (!frame.method.startsWith('fixture.')) calls.push({ method: frame.method, params: frame.params });
     if (frame.method === failMethod) { reject('Fixture setup failure'); return; }
     switch (frame.method) {
+      case 'client.capabilities': result({declines_not_shown:false}); break;
+      case 'runtime.describe': result({session_create:{sources:['gui']}}); break;
+      case 'gateway.capabilities': result({}); break;
+      case 'groups.capabilities': result({driver:false,methods:['groups.list']}); break;
+      case 'groups.list': result({rooms:[]}); break;
+      case 'profiles.list': result({profiles:[{name:'remote-fixture',display_name:'Remote fixture',canonical_session:{id:'fixture-session'}}]}); break;
+      case 'tools.list': result({toolsets:[]}); break;
+      case 'model.options': result({providers:[]}); break;
+      case 'session.resume': result({session_id:'fixture-session',messages:[],revision:0}); break;
       case 'fixture.configure': failMethod = frame.params.fail_method || ''; result({ ok: true }); break;
       case 'fixture.state': result({ calls, profiles: Array.from(profiles.values()) }); break;
       case 'profiles.create':

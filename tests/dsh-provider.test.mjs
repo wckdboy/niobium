@@ -1,10 +1,24 @@
-import test from 'node:test';
+import test, {afterEach} from 'node:test';
+import {mkdtempSync} from 'node:fs';
 import assert from 'node:assert/strict';
 import {mkdtemp, readFile, writeFile, access, rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {createRequire} from 'node:module';
-const {createProvider, composition, transcript, streamFrames} = createRequire(import.meta.url)('../runtime/niobium-agent.cjs');
+const {createProvider: makeProvider, composition, transcript, streamFrames} = createRequire(import.meta.url)('../runtime/niobium-agent.cjs');
+const fixtures = [];
+function createProvider(options) {
+  const home = options.home || mkdtempSync(path.join(tmpdir(), 'niobium-provider-fixture-'));
+  const provider = makeProvider({...options, home});
+  fixtures.push({provider, home, owned: !options.home});
+  return provider;
+}
+afterEach(async () => {
+  for (const {provider, home, owned} of fixtures.splice(0)) {
+    await provider.messaging.close();
+    if (owned) await rm(home, {recursive:true,force:true});
+  }
+});
 
 test('local tool grants produce only trusted plugin rows and honor denied access', () => {
   const spec = {permissions: {network: false, shell: false, filesystem: 'none'}};
@@ -196,7 +210,34 @@ test('restored DSH transcript keeps user, assistant and tool rows without chunk 
 
 test('unsupported Hermes features produce explicit errors, never false success', async () => {
   const p = createProvider({rpc: async () => { throw new Error('Should not reach DSH'); }});
-  assert.deepEqual(await p.request('groups.capabilities'), {driver: false, methods: []});
+  assert.equal((await p.request('groups.capabilities')).driver, true);
+  assert((await p.request('groups.capabilities')).methods.includes('groups.send'));
   await assert.rejects(p.request('cron.manage', {action: 'add'}), /requires Hermes/);
   await assert.rejects(p.request('profiles.configure', {name: 'x', enabled_toolsets: ['terminal']}), /Edit local tool access/);
+});
+
+test('room work marks a Pixel busy without replacing its direct-message session', async () => {
+  const home = await mkdtemp(path.join(tmpdir(), 'niobium-room-roster-'));
+  const p = createProvider({home, rpc: async method => method === 'agentPreset.list' ? {presets: [{id:'standard'}]} : {items: [
+    {sessionId:'direct',agentPreset:'standard',updatedAt:1000,running:false},
+    {sessionId:'room-work',agentPreset:'standard',updatedAt:2000,running:true}
+  ]}});
+  p.messaging.ownSessionIDs = async () => new Set(['room-work']);
+  try {
+    const row = (await p.request('profiles.list')).profiles[0];
+    assert.equal(row.canonical_session.id,'direct');
+    assert.equal(row.worker_session.id,'room-work');
+  } finally { await p.messaging.close(); await rm(home,{recursive:true,force:true}); }
+});
+
+test('DSH archived workspace sessions never become a canonical or selectable DM', async () => {
+  const p = createProvider({rpc: async method => {
+    if (method === 'agentPreset.list') return {presets:[{id:'standard'}]};
+    if (method === 'workspace.list') return {archivedSessionIds:['archived-room']};
+    return {items:[{sessionId:'archived-room',agentPreset:'standard',updatedAt:2000,running:false},
+      {sessionId:'personal',agentPreset:'standard',updatedAt:1000,running:false}]};
+  }});
+  const rows = (await p.request('session.list',{profile:'default'})).sessions;
+  assert.deepEqual(rows.map(s=>s.id),['personal']);
+  assert.equal((await p.request('profiles.list')).profiles[0].canonical_session.id,'personal');
 });

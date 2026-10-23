@@ -1,5 +1,6 @@
 import Foundation
 import Security
+import CryptoKit
 
 enum ConnectionPrefs {
     private static let connectionKey = "niobium.connection.v1"
@@ -389,5 +390,42 @@ extension HermesRPCClient: URLSessionWebSocketDelegate {
             self.disconnect(notify: false, failure: RPCError.transport(message))
             self.onDisconnect?(message)
         }
+    }
+}
+
+/// Retains uncertain send IDs across rooms and cold launches, without saving text or tokens.
+@MainActor
+final class RoomReceiptBook {
+    static let shared = RoomReceiptBook()
+    private let defaults: UserDefaults
+    private let key = "niobium.room.receipts.v1"
+    init(defaults: UserDefaults = .standard) { self.defaults = defaults }
+    private func load() throws -> [String:String] {
+        guard defaults.object(forKey: key) != nil else { return [:] }
+        guard let rows = defaults.dictionary(forKey: key) as? [String:String],
+              rows.allSatisfy({ $0.key.count == 64 && UUID(uuidString: $0.value) != nil }) else {
+            throw RPCError.transport("Saved room receipts need repair. Check existing deliveries before sending again.")
+        }
+        return rows
+    }
+    func reserve(scope: String, room: String, text: String) throws -> String {
+        let raw = try JSONSerialization.data(withJSONObject: [scope, room, text])
+        let digest = SHA256.hash(data: raw).map { String(format: "%02x", $0) }.joined()
+        var rows = try load()
+        if let id = rows[digest] {
+            guard defaults.synchronize() else { throw RPCError.transport("Could not retain a delivery receipt. No message was sent.") }
+            return id
+        }
+        guard rows.count < 256 else { throw RPCError.transport("Check pending room deliveries before sending more messages.") }
+        let id = UUID().uuidString.lowercased(); rows[digest] = id
+        defaults.set(rows, forKey: key)
+        guard defaults.synchronize() else { throw RPCError.transport("Could not retain a delivery receipt. No message was sent.") }
+        return id
+    }
+    func acknowledge(_ ids: Set<String>) {
+        guard !ids.isEmpty, let stored = try? load() else { return }
+        let ids = Set(ids.map { $0.lowercased() })
+        let remaining = stored.filter { !ids.contains($0.value.lowercased()) }
+        if remaining.count != stored.count { defaults.set(remaining, forKey: key); defaults.synchronize() }
     }
 }

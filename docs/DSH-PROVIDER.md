@@ -62,7 +62,7 @@ they are not yet held in a separate native provider vault. Models are selected
 per chat from DSH's actual model catalog. Other provider configuration, terminal,
 logs and the stock web workspace are under **Advanced controls**.
 
-Hermes group rooms, direct agent mentions and scheduled jobs remain Hermes
+Scheduled jobs and cross-engine host bridges remain Hermes
 capabilities and are hidden in local mode. Filesystem/network scopes in a
 persona are operating instructions. PRoot and a shared iSH guest do not isolate
 Pixels from one another.
@@ -89,3 +89,36 @@ DSH APIs are grounded in the pinned image and
 [dsh-ios source](https://github.com/everettjf/dsh-ios/tree/bac298478545db7bb8762e82ba3db52f50ac6a5d).
 Android's restriction is recorded in the
 [AOSP app policy](https://android.googlesource.com/platform/system/sepolicy/+/f78629f7b4dc0e45f964b2cdb3b6f652955987c4/private/app_neverallows.te).
+
+
+## Beta.7 local conversations
+
+Both engines now retain their own native stores and transports. Selecting a
+workspace changes presentation; it does not disconnect its peer. Hermes-only
+startup leaves Linux stopped unless local mode was explicitly enabled.
+
+`niobium-messaging.cjs` provides local `groups.*` rooms with separate provider
+sessions and atomic outbox storage. Human sends have durable idempotency keys;
+accepted work recovers from its existing history, while uncertain submissions
+are never replayed. Replies carry the actual profile identity. Eight deliveries
+per human message and two per recipient bound discussion across rooms and DMs.
+
+Reviewed `messaging` access adds the trusted `list_pixels` and `message_agent`
+tools to a Niobium preset. Existing presets are not silently granted new tools;
+they can still participate in rooms and use routed @mentions. The directory
+returns actual local contacts and memberships. Cross-engine rooms are not
+bridged. Native approvals and questions retain their owning session IDs.
+Stopping a room cancels its pending replies. Clearing it archives its owned DSH
+sessions before removing ownership, so they cannot become accidental DMs.
+
+The Android integration fixture invokes the real registered tool and receives
+Scout's actual response through DSH. Full iOS build 15 also passed the isolated
+background/cold-launch model check. Real-account provider/delegation acceptance
+and physical Android/16 KB execution remain open. iOS may suspend local work.
+
+Receipt storage keeps the latest 64 client-confirmed sends and at most 128
+unconfirmed sends per room. Synchronizing the room confirms accepted IDs; it
+does not claim a model reply completed. Unconfirmed IDs are never pruned. A full
+unconfirmed window refuses new sends until synchronization. Confirmed IDs must
+not be reused after the retained window. Native clients persist uncertain IDs
+across rooms/restarts, using only scoped digests and random IDs.

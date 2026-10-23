@@ -45,6 +45,37 @@ final class NiobiumTests: XCTestCase {
             XCTAssertNotEqual(changed.accent, fixture.look.accent)
         }
     }
+    func testPortableCustomArtRoundTripsAndRejectsMalformedPixels() throws {
+        struct Fixture: Decodable { let art: PixelArt; let rgba_sha256: String }
+        let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "custom-art", withExtension: "json"))
+        let fixtures = try JSONDecoder().decode([Fixture].self, from: Data(contentsOf: url))
+        for f in fixtures {
+            XCTAssertTrue(f.art.isValid)
+            let image = try XCTUnwrap(CharacterEngine.shared.image(for: f.art))
+            let raw = try XCTUnwrap(image.cgImage?.dataProvider?.data as Data?)
+            XCTAssertEqual(SHA256.hash(data: raw).map { String(format: "%02x", $0) }.joined(), f.rgba_sha256)
+            XCTAssertEqual(try JSONDecoder().decode(PixelArt.self, from: JSONEncoder().encode(f.art)), f.art)
+            XCTAssertFalse(PixelArt(size: f.art.size, palette: [0x1000000], pixels: f.art.pixels).isValid)
+            XCTAssertFalse(PixelArt(size: f.art.size, palette: f.art.palette, pixels: "short").isValid)
+            XCTAssertFalse(PixelArt(size: f.art.size, palette: f.art.palette, pixels: Data(repeating: 0, count: f.art.size*f.art.size).base64EncodedString()).isValid)
+            if f.art.size == 48 {
+                let look = PixelLook(portrait: "lilith", customArt: f.art)
+                XCTAssertTrue(look.isValid)
+                XCTAssertTrue(CharacterEngine.shared.image(for: look) === image)
+            }
+        }
+    }
+    func testWardrobeVarietyFollowsBriefAndDoesNotExpandColorIDs() {
+        XCTAssertEqual(PixelLook.portraits.count, 32)
+        XCTAssertEqual(PixelLook.accents.count, 8)
+        XCTAssertEqual(PixelLook.masculine.count, 12)
+        XCTAssertFalse(PixelLook(portrait: "lilith", accent: "lilith").isValid)
+        XCTAssertEqual(PixelLook.generated(archetype: "nyx", body: "woman", seed: "same", prompt: "vampire crimson corset").portrait, "lilith")
+        XCTAssertEqual(PixelLook.generated(archetype: "forge", body: "man", seed: "same", prompt: "cyborg chrome harness").portrait, "zero")
+        let selected = Set((0..<100).map { PixelLook.generated(archetype: "orion", body: "man", seed: String($0)).portrait })
+        XCTAssertGreaterThan(selected.count, 2)
+        XCTAssertTrue(selected.allSatisfy { PixelLook.masculine.contains($0) })
+    }
     func testNewLooksRoundTripAndRejectUnknownValuesAndInvalidTypes() throws {
         let original = PixelLook(portrait: "nyx", accent: "astra")
         XCTAssertEqual(try JSONDecoder().decode(PixelLook.self, from: JSONEncoder().encode(original)), original)
@@ -186,11 +217,11 @@ final class NiobiumTests: XCTestCase {
     }
     func testPermissionsAndGatewayCatalogBothGateTools() {
         var spec = PixelSpec.fallback(for: "research")
-        spec.toolsets = ["web", "file", "terminal", "memory", "delegation", "unknown"]
+        spec.toolsets = ["web", "file", "terminal", "memory", "delegation", "messaging", "unknown"]
         spec.permissions = .init(approvalMode: "ask", network: false, filesystem: "none", shell: true)
-        XCTAssertEqual(spec.permittedToolsets, ["memory", "delegation"])
+        XCTAssertEqual(spec.permittedToolsets, ["memory", "delegation", "messaging"])
         spec.permissions.filesystem = "workspace"
-        XCTAssertEqual(spec.permittedToolsets, ["file", "terminal", "memory", "delegation"])
+        XCTAssertEqual(spec.permittedToolsets, ["file", "terminal", "memory", "delegation", "messaging"])
         let draft = PixelDraft(spec: spec, usedModel: false, availableToolsets: ["file", "memory"], availableSkills: [], notes: [])
         XCTAssertEqual(draft.enabledToolsets, ["file", "memory"])
     }

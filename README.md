@@ -61,22 +61,26 @@ for the method mapping, execution limits and acceptance evidence.
 
 ## Characters and companions
 
-Eight original adult fantasy/cyborg characters, with a playful, mischievous
-edge. Human characters are 18+; styling is mature and non-explicit.
+Thirty-two adult fantasy/cyborg looks, with mature, non-explicit outfits and a
+playful edge. Every human Pixel is 18+; default templates are 28–40.
 
-The authored cast is baked once into eight exact **48×48** cells, with at most
-32 opaque colors per cell and hard alpha. Both native apps use the same small
-atlas and scale portraits on the physical pixel grid without smoothing.
-Twelve independent **16×16** companions can accompany any portrait.
+Four art atlases provide exact **48×48** portraits with at most 32 colors per
+base cell and hard alpha. Both native clients use the same pixels, garment
+accents and cached renderers. Twelve transparent **16×16** creatures accompany
+any look. Automatic selection follows the brief; the wardrobe has style filters,
+search, surprise, color remix and undo. The first preview makes no model call.
 
-Pixel studio and the creation review share an authored-look picker with garment
-colors, local remix and undo. The finite library has eight adult silhouettes;
-it does not generate unlimited new illustrations. Faces, skin, hair and metal
-stay authored. Companion changes and visual edits preserve the briefing and
-access. Older layered recipes and their original controls remain available;
-only those legacy previews have a decorative, reduced-motion-aware blink.
+Optional **AI atelier** designs new Pixel outfits and companion art using the
+owner's OpenAI image key. Reference art and the brief go directly to OpenAI;
+provider usage and retention apply. Jobs save a provider receipt for resuming,
+and interrupted submissions are never silently posted again. Preview and accept
+a design before it changes the Pixel. Indexed results remain small and portable;
+opaque companion backgrounds are rejected. Appearance never grants agent access.
 
-<img src="brand/pixel-looks-v1-gallery.png" width="576" alt="Eight authored adult portraits and eight garment-color variants at their actual 48px resolution, enlarged five times">
+Older layered recipes remain readable with their original controls and optional
+reduced-motion-aware blink.
+
+<img src="brand/pixel-looks-v2-gallery.png" width="640" alt="32 adult 48px looks and 32 garment-accent examples, enlarged four times">
 
 The offline generator has eight role-specific working methods, voices and
 creature temperaments; it handles word boundaries and honors explicit build
@@ -94,7 +98,7 @@ tool produces the canonical native atlas.
 [Art and prompts](brand/art-provenance.json) ·
 [Design reference](docs/reference-dashboard.png) ·
 [Dashboard](docs/evidence/clean-pixels-ios-dashboard.png) ·
-[Editor](docs/evidence/clean-pixels-ios-workshop.png) ·
+[Editor](docs/evidence/beta7-ios-workshop.png) ·
 [Companions](docs/evidence/pixel-atelier-companions.png)
 
 ## Build and check
@@ -129,7 +133,7 @@ XcodeGen. See [ios/README.md](ios/README.md) for the submodule/rootfs prerequisi
 Pure Swift validation checks:
 
 ~~~sh
-swiftc ios/Sources/Niobium/PixelSpec.swift tools/check-pixel-spec.swift \
+swiftc ios/Sources/Niobium/PixelArt.swift ios/Sources/Niobium/PixelSpec.swift tools/check-pixel-spec.swift \
   -o /tmp/niobium-check-pixel-spec
 /tmp/niobium-check-pixel-spec
 ~~~
@@ -155,6 +159,21 @@ Android code 11 and full iOS build 14 packages verify. See the
 [release evidence](docs/evidence/dsh-startup-release-validation.json) and
 [phone traces](docs/evidence/ios-build14-iphone-startup.json). Real-account
 provider acceptance and full Hermes parity remain open.
+
+## Beta.7 candidate
+
+The next build adds the 32-look wardrobe and optional AI atelier. Hermes and
+DSH now own independent transports, conversations and approvals; changing the
+selected workspace does not disconnect its peer. Hermes-only mode does not boot
+Linux. Stop DSH explicitly to return to Hermes alone.
+
+Local rooms keep separate provider sessions and a durable, attributed outbox.
+Reviewed messaging access adds `list_pixels` and `message_agent` for real local
+DMs. Room @mentions schedule bounded replies; eight deliveries per user message
+and at most two per recipient stop loops. Unknown receipts are visible and never
+replayed. Room approvals/questions use the native UI; clearing archives the
+owned sessions. These rooms belong to their selected engine; cross-engine rooms
+are not bridged. iOS may suspend local work in the background.
 
 ## Current limits
 

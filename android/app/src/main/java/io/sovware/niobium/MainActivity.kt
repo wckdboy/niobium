@@ -16,6 +16,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.activity.viewModels
 
 class MainActivity : ComponentActivity() {
+    private val hub: NiobiumEngineHub by viewModels()
+    override fun onStart() { super.onStart(); PixelArtist.get(applicationContext).resume(); hub.resumeConnections() }
+    override fun onStop() { PixelArtist.get(applicationContext).pausePolling(); super.onStop() }
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(AndroidColor.TRANSPARENT),
@@ -25,23 +28,19 @@ class MainActivity : ComponentActivity() {
         android.webkit.WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
         Nb.appearance = getSharedPreferences("niobium", MODE_PRIVATE)
             .getString("niobium.appearance", "system") ?: "system"
-        val vm: NiobiumViewModel by viewModels()
         val demo = intent.getBooleanExtra("demo", false) || intent.getBooleanExtra("NIOBIUM_DEMO", false)
         val bot = intent.getStringExtra("bot")
         val tab = intent.getStringExtra("tab")
-        vm.bootstrap(demo, bot)
+        val gateway = intent.getStringExtra("gateway")
+        val token = intent.getStringExtra("token")
+        val explicit = if (!demo && !gateway.isNullOrBlank() && !token.isNullOrBlank()) Connection("Live test",gateway,token) else null
+        hub.bootstrap(demo, bot, explicit)
+        val vm = hub.active
         intent.getStringExtra("room")?.let { roomName ->
             vm.state.groups.firstOrNull { it.roomId == roomName || it.name == roomName }?.let(vm::openGroup)
         }
         if (demo && intent.getBooleanExtra("demoTool", false)) {
             vm.runDemoAction()
-        }
-        if (!demo) {
-            val gateway = intent.getStringExtra("gateway")
-            val token = intent.getStringExtra("token")
-            if (!gateway.isNullOrBlank() && !token.isNullOrBlank()) {
-                vm.connect(gateway, token, "Live test")
-            }
         }
         setContent {
             Nb.systemDark = isSystemInDarkTheme()
@@ -51,7 +50,7 @@ class MainActivity : ComponentActivity() {
                 controller.isAppearanceLightNavigationBars = Nb.light
             }
             NiobiumTheme {
-                NiobiumApp(vm, tab, intent.getBooleanExtra("tools", false))
+                NiobiumApp(hub.active, tab, intent.getBooleanExtra("tools", false))
             }
         }
     }

@@ -10,9 +10,8 @@ import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
-class SecurePrefs(private val context: Context) {
-    private val prefs = context.getSharedPreferences("niobium.prefs", Context.MODE_PRIVATE)
-    private val alias = "niobium.gateway.token"
+class SecurePrefs(private val context: Context, prefsName: String = "niobium.prefs", private val alias: String = "niobium.gateway.token") {
+    private val prefs = context.getSharedPreferences(prefsName, Context.MODE_PRIVATE)
 
     fun loadConnection(): Connection? {
         if (!prefs.getBoolean("has_connection", false)) return null
@@ -45,6 +44,8 @@ class SecurePrefs(private val context: Context) {
         return url
     }
     fun saveHarnessUrl(url: String) { prefs.edit().putString("harness_url", encrypt(url)).apply() }
+    fun loadImageKey(): String? = prefs.getString("image_key", null)?.let(::decrypt)
+    fun saveImageKey(value: String?) { prefs.edit().putString("image_key", value?.let(::encrypt)).commit().also { check(it) { "Key storage failed" } } }
     fun clear() {
         prefs.edit().remove("has_connection").remove("gateway_url").remove("gateway_name")
             .remove("demo").remove("gateway_token").apply()
@@ -79,4 +80,36 @@ class SecurePrefs(private val context: Context) {
         cipher.init(Cipher.DECRYPT_MODE, key(), GCMParameterSpec(128, iv))
         String(cipher.doFinal(body), Charsets.UTF_8)
     }.getOrNull()
+}
+
+/** Uncertain send IDs survive context changes and restarts; only digests are stored. */
+class RoomReceiptBook(context: Context, prefsName: String = "niobium.room.receipts") {
+    private val prefs = context.getSharedPreferences(prefsName, Context.MODE_PRIVATE)
+    private fun load(): org.json.JSONObject {
+        val raw = prefs.getString("receipts", null) ?: return org.json.JSONObject()
+        return runCatching { org.json.JSONObject(raw).also { rows ->
+            require(rows.keys().asSequence().all { key -> key.length == 64 && rows.get(key) is String && java.util.UUID.fromString(rows.getString(key)) != null })
+        } }.getOrElse { error("Saved room receipts need repair. Check existing deliveries before sending again.") }
+    }
+    fun reserve(scope: String, room: String, text: String): String = synchronized(lock) {
+        val raw = org.json.JSONArray(listOf(scope,room,text)).toString().toByteArray(Charsets.UTF_8)
+        val digest = java.security.MessageDigest.getInstance("SHA-256").digest(raw).joinToString("") { "%02x".format(it.toInt() and 255) }
+        val rows = load()
+        if (rows.has(digest)) {
+            check(prefs.edit().putString("receipts",rows.toString()).commit()) { "Could not retain a delivery receipt. No message was sent." }
+            return@synchronized rows.getString(digest)
+        }
+        check(rows.length() < 256) { "Check pending room deliveries before sending more messages." }
+        val id = java.util.UUID.randomUUID().toString(); rows.put(digest,id)
+        check(prefs.edit().putString("receipts",rows.toString()).commit()) { "Could not retain a delivery receipt. No message was sent." }
+        id
+    }
+    fun acknowledge(ids: Set<String>) = synchronized(lock) {
+        if (ids.isEmpty()) return@synchronized
+        val rows = runCatching { load() }.getOrNull() ?: return@synchronized
+        val matches = rows.keys().asSequence().filter { rows.getString(it).lowercase() in ids.map(String::lowercase) }.toList()
+        matches.forEach(rows::remove)
+        if (matches.isNotEmpty()) prefs.edit().putString("receipts",rows.toString()).commit()
+    }
+    companion object { private val lock = Any() }
 }

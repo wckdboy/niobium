@@ -15,7 +15,7 @@ android {
         applicationId = "io.sovware.niobium"
         minSdk = 28
         targetSdk = 37
-        versionCode = 11
+        versionCode = 12
         versionName = "2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk { abiFilters += "arm64-v8a" }
@@ -66,6 +66,7 @@ android {
         )
     }
     sourceSets["main"].assets.directories += layout.buildDirectory.dir("generated/runtime/assets").get().asFile.path
+    sourceSets["androidTest"].assets.directories += layout.buildDirectory.dir("generated/gateway-test-assets").get().asFile.path
     sourceSets["main"].jniLibs.directories += layout.buildDirectory.dir("generated/runtime/jniLibs").get().asFile.path
     androidResources.noCompress += "image"
 }
@@ -74,10 +75,14 @@ val prepareLocalRuntime = tasks.register<Exec>("prepareLocalRuntime") {
     workingDir = rootProject.projectDir.parentFile
     commandLine("python3", "tools/prepare-android-runtime.py")
     inputs.files("../../config/android-runtime.json", "../../tools/prepare-android-runtime.py",
-        "../runtime/supervisor.c", "../runtime/niobium-local.cjs", "../../runtime/niobium-agent.cjs")
+        "../runtime/supervisor.c", "../runtime/niobium-local.cjs", "../../runtime/niobium-agent.cjs", "../../runtime/niobium-messaging.cjs")
     outputs.dir(layout.buildDirectory.dir("generated/runtime"))
 }
-tasks.named("preBuild").configure { dependsOn(prepareLocalRuntime) }
+val prepareGatewayTestAsset = tasks.register<Copy>("prepareGatewayTestAsset") {
+    from(rootProject.file("../tests/fixtures/gateway.mjs"))
+    into(layout.buildDirectory.dir("generated/gateway-test-assets"))
+}
+tasks.named("preBuild").configure { dependsOn(prepareLocalRuntime, prepareGatewayTestAsset) }
 
 dependencies {
     androidTestImplementation("androidx.test:runner:1.7.0")

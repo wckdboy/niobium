@@ -35,6 +35,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -137,7 +140,8 @@ private fun NbTabBar(selected: NbTab, onSelect: (NbTab) -> Unit) {
             NbTab.entries.forEach { tab ->
                 val active = tab == selected
                 Column(
-                    Modifier.weight(1f).clickable { onSelect(tab) }.padding(vertical = 2.dp),
+                    Modifier.weight(1f).selectable(selected = active, role = Role.Tab) { onSelect(tab) }
+                        .testTag("nav.${tab.name.lowercase()}").padding(vertical = 2.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box(

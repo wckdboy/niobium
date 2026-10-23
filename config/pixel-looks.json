@@ -1,0 +1,512 @@
+{
+  "version": 1,
+  "logical_size": 48,
+  "accents": [
+    "orion",
+    "nova",
+    "forge",
+    "sage",
+    "nyx",
+    "astra",
+    "vesper",
+    "rook"
+  ],
+  "atlases": [
+    {
+      "source": "brand/pixel-cast-runtime-v6.png",
+      "ids": [
+        "orion",
+        "nova",
+        "forge",
+        "sage",
+        "nyx",
+        "astra",
+        "vesper",
+        "rook"
+      ]
+    },
+    {
+      "source": "brand/pixel-wardrobe-runtime-v1-a.png",
+      "ids": [
+        "lilith",
+        "kael",
+        "seraph",
+        "zero",
+        "thorn",
+        "echo",
+        "ember",
+        "luna"
+      ]
+    },
+    {
+      "source": "brand/pixel-wardrobe-runtime-v1-b.png",
+      "ids": [
+        "riven",
+        "sable",
+        "ivy",
+        "volt",
+        "iris",
+        "onyx",
+        "neve",
+        "sol"
+      ]
+    },
+    {
+      "source": "brand/pixel-wardrobe-runtime-v1-c.png",
+      "ids": [
+        "jade",
+        "azrael",
+        "lyra",
+        "cinder",
+        "mira",
+        "cass",
+        "talon",
+        "opal"
+      ]
+    }
+  ],
+  "looks": [
+    {
+      "id": "orion",
+      "label": "Orion",
+      "archetype": "orion",
+      "body": "man",
+      "family": "Arcane",
+      "tags": [
+        "mage",
+        "elf",
+        "research",
+        "moon",
+        "cloak"
+      ]
+    },
+    {
+      "id": "nova",
+      "label": "Nova",
+      "archetype": "nova",
+      "body": "woman",
+      "family": "Cyber",
+      "tags": [
+        "neon",
+        "hacker",
+        "creative",
+        "cyber"
+      ]
+    },
+    {
+      "id": "forge",
+      "label": "Forge",
+      "archetype": "forge",
+      "body": "man",
+      "family": "Cyber",
+      "tags": [
+        "engineer",
+        "armor",
+        "metal",
+        "cyborg"
+      ]
+    },
+    {
+      "id": "sage",
+      "label": "Sage",
+      "archetype": "sage",
+      "body": "woman",
+      "family": "Wild",
+      "tags": [
+        "druid",
+        "forest",
+        "nature",
+        "leaves"
+      ]
+    },
+    {
+      "id": "nyx",
+      "label": "Nyx",
+      "archetype": "nyx",
+      "body": "woman",
+      "family": "Dark",
+      "tags": [
+        "rogue",
+        "goth",
+        "vampire",
+        "leather"
+      ]
+    },
+    {
+      "id": "astra",
+      "label": "Astra",
+      "archetype": "astra",
+      "body": "woman",
+      "family": "Cyber",
+      "tags": [
+        "pilot",
+        "explorer",
+        "robotics",
+        "tech"
+      ]
+    },
+    {
+      "id": "vesper",
+      "label": "Vesper",
+      "archetype": "vesper",
+      "body": "woman",
+      "family": "Arcane",
+      "tags": [
+        "oracle",
+        "astral",
+        "priestess",
+        "gold"
+      ]
+    },
+    {
+      "id": "rook",
+      "label": "Rook",
+      "archetype": "rook",
+      "body": "man",
+      "family": "Wild",
+      "tags": [
+        "ranger",
+        "warrior",
+        "leather",
+        "forest"
+      ]
+    },
+    {
+      "id": "lilith",
+      "label": "Lilith",
+      "archetype": "nyx",
+      "body": "woman",
+      "family": "Dark",
+      "tags": [
+        "vampire",
+        "goth",
+        "crimson",
+        "corset",
+        "cloak"
+      ]
+    },
+    {
+      "id": "kael",
+      "label": "Kael",
+      "archetype": "orion",
+      "body": "man",
+      "family": "Arcane",
+      "tags": [
+        "elf",
+        "moon",
+        "mage",
+        "vest",
+        "tattoo"
+      ]
+    },
+    {
+      "id": "seraph",
+      "label": "Seraph",
+      "archetype": "vesper",
+      "body": "woman",
+      "family": "Arcane",
+      "tags": [
+        "paladin",
+        "sun",
+        "armor",
+        "gold",
+        "white"
+      ]
+    },
+    {
+      "id": "zero",
+      "label": "Zero",
+      "archetype": "forge",
+      "body": "man",
+      "family": "Cyber",
+      "tags": [
+        "cyborg",
+        "harness",
+        "tech",
+        "chrome",
+        "jacket"
+      ]
+    },
+    {
+      "id": "thorn",
+      "label": "Thorn",
+      "archetype": "sage",
+      "body": "woman",
+      "family": "Wild",
+      "tags": [
+        "fae",
+        "forest",
+        "druid",
+        "antlers",
+        "halter"
+      ]
+    },
+    {
+      "id": "echo",
+      "label": "Echo",
+      "archetype": "nova",
+      "body": "woman",
+      "family": "Cyber",
+      "tags": [
+        "hacker",
+        "neon",
+        "cyber",
+        "crop",
+        "pink"
+      ]
+    },
+    {
+      "id": "ember",
+      "label": "Ember",
+      "archetype": "rook",
+      "body": "man",
+      "family": "Dark",
+      "tags": [
+        "infernal",
+        "horns",
+        "warrior",
+        "leather",
+        "vest"
+      ]
+    },
+    {
+      "id": "luna",
+      "label": "Luna",
+      "archetype": "orion",
+      "body": "woman",
+      "family": "Arcane",
+      "tags": [
+        "witch",
+        "moon",
+        "astral",
+        "sorceress",
+        "halter"
+      ]
+    },
+    {
+      "id": "riven",
+      "label": "Riven",
+      "archetype": "rook",
+      "body": "man",
+      "family": "Dark",
+      "tags": [
+        "rogue",
+        "leather",
+        "coat",
+        "harness",
+        "stealth"
+      ]
+    },
+    {
+      "id": "sable",
+      "label": "Sable",
+      "archetype": "nyx",
+      "body": "woman",
+      "family": "Dark",
+      "tags": [
+        "assassin",
+        "night",
+        "corset",
+        "strappy",
+        "violet"
+      ]
+    },
+    {
+      "id": "ivy",
+      "label": "Ivy",
+      "archetype": "sage",
+      "body": "woman",
+      "family": "Wild",
+      "tags": [
+        "serpent",
+        "druid",
+        "emerald",
+        "scale",
+        "halter"
+      ]
+    },
+    {
+      "id": "volt",
+      "label": "Volt",
+      "archetype": "forge",
+      "body": "man",
+      "family": "Cyber",
+      "tags": [
+        "cyborg",
+        "brawler",
+        "neon",
+        "vest",
+        "lime"
+      ]
+    },
+    {
+      "id": "iris",
+      "label": "Iris",
+      "archetype": "nova",
+      "body": "woman",
+      "family": "Arcane",
+      "tags": [
+        "illusionist",
+        "mage",
+        "halter",
+        "magenta",
+        "gold"
+      ]
+    },
+    {
+      "id": "onyx",
+      "label": "Onyx",
+      "archetype": "vesper",
+      "body": "man",
+      "family": "Arcane",
+      "tags": [
+        "desert",
+        "prince",
+        "ivory",
+        "gold",
+        "harness"
+      ]
+    },
+    {
+      "id": "neve",
+      "label": "Neve",
+      "archetype": "astra",
+      "body": "woman",
+      "family": "Wild",
+      "tags": [
+        "frost",
+        "ice",
+        "knight",
+        "armor",
+        "white"
+      ]
+    },
+    {
+      "id": "sol",
+      "label": "Sol",
+      "archetype": "orion",
+      "body": "woman",
+      "family": "Arcane",
+      "tags": [
+        "sun",
+        "sorceress",
+        "gold",
+        "purple",
+        "corset"
+      ]
+    },
+    {
+      "id": "jade",
+      "label": "Jade",
+      "archetype": "sage",
+      "body": "woman",
+      "family": "Wild",
+      "tags": [
+        "samurai",
+        "jade",
+        "kimono",
+        "blade",
+        "wrap"
+      ]
+    },
+    {
+      "id": "azrael",
+      "label": "Azrael",
+      "archetype": "orion",
+      "body": "man",
+      "family": "Arcane",
+      "tags": [
+        "twilight",
+        "elf",
+        "violet",
+        "noble",
+        "coat"
+      ],
+      "dye_min_saturation": 0.35
+    },
+    {
+      "id": "lyra",
+      "label": "Lyra",
+      "archetype": "vesper",
+      "body": "woman",
+      "family": "Wild",
+      "tags": [
+        "siren",
+        "sea",
+        "pearl",
+        "plum",
+        "halter"
+      ]
+    },
+    {
+      "id": "cinder",
+      "label": "Cinder",
+      "archetype": "forge",
+      "body": "man",
+      "family": "Cyber",
+      "tags": [
+        "engineer",
+        "forge",
+        "metal",
+        "goggles",
+        "tattoo"
+      ]
+    },
+    {
+      "id": "mira",
+      "label": "Mira",
+      "archetype": "nova",
+      "body": "woman",
+      "family": "Cyber",
+      "tags": [
+        "android",
+        "dj",
+        "cyber",
+        "magenta",
+        "crop"
+      ]
+    },
+    {
+      "id": "cass",
+      "label": "Cass",
+      "archetype": "astra",
+      "body": "woman",
+      "family": "Wild",
+      "tags": [
+        "pirate",
+        "sky",
+        "teal",
+        "jacket",
+        "corset"
+      ]
+    },
+    {
+      "id": "talon",
+      "label": "Talon",
+      "archetype": "rook",
+      "body": "man",
+      "family": "Wild",
+      "tags": [
+        "ranger",
+        "warrior",
+        "feather",
+        "leather",
+        "forest"
+      ]
+    },
+    {
+      "id": "opal",
+      "label": "Opal",
+      "archetype": "nyx",
+      "body": "woman",
+      "family": "Dark",
+      "tags": [
+        "oracle",
+        "midnight",
+        "goth",
+        "lace",
+        "corset"
+      ]
+    }
+  ]
+}

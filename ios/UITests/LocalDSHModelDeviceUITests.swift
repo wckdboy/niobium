@@ -18,6 +18,12 @@ final class LocalDSHModelDeviceUITests: XCTestCase {
 
         let scout = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Scout,")).firstMatch
         XCTAssertTrue(scout.waitForExistence(timeout: 300))
+        app.buttons["Pixels"].tap()
+        let rooms = app.buttons["pixels.rooms"]
+        XCTAssertTrue(rooms.waitForExistence(timeout: 10)); rooms.tap()
+        XCTAssertTrue(app.staticTexts["Rooms"].waitForExistence(timeout: 10))
+        app.buttons["Done"].tap()
+        app.buttons["Home"].tap()
         scout.tap()
         let composer = app.textFields["chat.composer"]
         XCTAssertTrue(composer.waitForExistence(timeout: 90))

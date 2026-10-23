@@ -163,14 +163,12 @@ struct BotsView: View {
         HStack {
             Wordmark()
             Spacer()
-            if store.engine == .hermes { Button { showRooms = true } label: {
-                Image(systemName: "person.2")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(NB.secondary)
-                    .frame(width: 32, height: 32)
-                    .background(Circle().fill(NB.fillSoft))
+            Button { showRooms = true } label: {
+                PixelIcon(.pixels, size: 20, tint: NB.secondary)
+                    .frame(width: 44, height: 44)
+                    .background(PixelButtonShape().fill(NB.fillSoft))
             }
-            .buttonStyle(.plain) }
+            .buttonStyle(.plain).accessibilityLabel("Rooms").accessibilityIdentifier("pixels.rooms")
             HStack(spacing: 7) {
                 StatusDot(color: store.connectionState.color, pulse: store.isConnecting)
                 Text(store.connectionState.isConnected ? "online" : store.connectionState.label.lowercased())

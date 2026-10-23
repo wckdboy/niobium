@@ -25,6 +25,10 @@ with zipfile.ZipFile(sys.argv[1]) as archive, tempfile.TemporaryDirectory() as t
     if hashlib.sha256(image).hexdigest() != manifest["rootfs"]["sha256"]:
         raise ValueError("Packaged Linux image checksum mismatch")
     archive.getinfo("assets/niobium-local.cjs")
+    messaging = archive.read("assets/niobium-messaging.cjs")
+    expected_messaging = hashlib.sha256((prepare.ROOT / "runtime/niobium-messaging.cjs").read_bytes()).hexdigest()
+    if hashlib.sha256(messaging).hexdigest() != expected_messaging or manifest["messaging_sha256"] != expected_messaging:
+        raise ValueError("Packaged messaging module is stale or has a checksum mismatch")
     provider = archive.read("assets/niobium-agent.cjs")
     expected_provider = hashlib.sha256((prepare.ROOT / "runtime/niobium-agent.cjs").read_bytes()).hexdigest()
     if hashlib.sha256(provider).hexdigest() != expected_provider or manifest["provider_sha256"] != expected_provider:

@@ -7,6 +7,10 @@ import io.sovware.niobium.runtime.RuntimeCommand
 import io.sovware.niobium.runtime.LocalRuntimeProxy
 import org.junit.Assert.*
 import org.junit.Test
+import org.junit.Rule
+import androidx.activity.compose.setContent
+import androidx.compose.ui.test.*
+import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import org.junit.runner.RunWith
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.Executors
@@ -15,6 +19,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 
 @RunWith(AndroidJUnit4::class)
 class LocalRuntimeTest {
+    @get:Rule val compose = createEmptyComposeRule()
     private class GuestOutput(process: Process) {
         private val tail = StringBuilder()
         init {
@@ -149,25 +154,6 @@ class LocalRuntimeTest {
             if (node == null) return emptyList()
             return listOf(node) + (0 until node.childCount).flatMap { walk(node.getChild(it)) }
         }
-        fun click(text: String) {
-            repeat(60) {
-                val root = instrumentation.uiAutomation.rootInActiveWindow
-                for (node in walk(root).filter { it.isVisibleToUser && it.text?.toString() == text }) {
-                    var current: android.view.accessibility.AccessibilityNodeInfo? = node
-                    repeat(5) {
-                        if (current?.isClickable == true && current?.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK) == true) {
-                            instrumentation.waitForIdleSync()
-                            Thread.sleep(150)
-                            return
-                        }
-                        current = current?.parent
-                    }
-                }
-                walk(root).filter { it.isScrollable }.forEach { it.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_SCROLL_FORWARD) }
-                Thread.sleep(150)
-            }
-            fail("Missing native control: " + text + "; screen=" + walk(instrumentation.uiAutomation.rootInActiveWindow).mapNotNull { it.text }.joinToString(" | "))
-        }
         fun findWeb(view: android.view.View): android.webkit.WebView? {
             if (view is android.webkit.WebView) return view
             if (view is android.view.ViewGroup) for (index in 0 until view.childCount) findWeb(view.getChildAt(index))?.let { return it }
@@ -181,10 +167,11 @@ class LocalRuntimeTest {
             assertEquals(running.message, io.sovware.niobium.runtime.RuntimePhase.RUNNING, running.phase)
             val origin = running.origin!!
             instrumentation.runOnMainSync { assertNull("DSH replaced the native app with a WebView", findWeb(activity.window.decorView)) }
-            click("Home")
-            Thread.sleep(300)
-            assertTrue("Native dashboard was not shown", walk(instrumentation.uiAutomation.rootInActiveWindow).any { it.text?.toString() == "Your Pixels" })
-            click("Engines")
+            compose.onNodeWithTag("nav.home").performClick().assertIsSelected()
+            val dashboardDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10)
+            while (System.nanoTime() < dashboardDeadline && walk(instrumentation.uiAutomation.rootInActiveWindow).none { it.text?.toString() == "Your Pixels" }) Thread.sleep(100)
+            assertTrue("Native dashboard was not shown; screen=" + walk(instrumentation.uiAutomation.rootInActiveWindow).mapNotNull { it.text }.joinToString(" | "), walk(instrumentation.uiAutomation.rootInActiveWindow).any { it.text?.toString() == "Your Pixels" })
+            compose.onNodeWithTag("nav.local").performClick().assertIsSelected()
             // Connection completion inserts the provider card above this control.
             // Wait for that layout before finding/clicking its accessibility node.
             val readyDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30)
@@ -194,23 +181,29 @@ class LocalRuntimeTest {
             assertTrue("Local provider did not become ready", walk(instrumentation.uiAutomation.rootInActiveWindow).any {
                 it.text?.toString() == "Ready · chats and tasks run in Niobium"
             })
-            click("Advanced controls")
-            click("Advanced DSH workspace")
+            compose.onNodeWithText("Advanced controls").performScrollTo().performClick()
+            compose.onNodeWithText("Advanced DSH workspace").performScrollTo().performClick()
+            compose.onNodeWithText("Advanced DSH").assertIsDisplayed()
             var cssHeight = 0.0
+            var webState = "No WebView"
             val renderDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15)
             while (cssHeight < 300 && System.nanoTime() < renderDeadline) {
+                compose.waitForIdle()
                 val result = java.util.concurrent.CountDownLatch(1)
                 instrumentation.runOnMainSync {
                     val web = findWeb(activity.window.decorView)
                     if (web == null) result.countDown()
-                    else web.evaluateJavascript("(()=>{let e=document.createElement('div');e.style.height='100vh';document.body.append(e);let h=e.getBoundingClientRect().height;e.remove();return h})()") {
-                        cssHeight = it.toDoubleOrNull() ?: 0.0; result.countDown()
+                    else {
+                        webState = "${web.width}×${web.height}; ${web.url}"
+                        web.evaluateJavascript("(()=>{let e=document.createElement('div');e.style.height='100vh';document.body.append(e);let h=e.getBoundingClientRect().height;e.remove();return h})()") {
+                            cssHeight = it.toDoubleOrNull() ?: 0.0; result.countDown()
+                        }
                     }
                 }
                 result.await(2, TimeUnit.SECONDS)
                 if (cssHeight < 300) Thread.sleep(200)
             }
-            assertTrue("Advanced WebView CSS viewport collapsed", cssHeight > 300)
+            assertTrue("Advanced WebView CSS viewport collapsed: $cssHeight; $webState", cssHeight > 300)
             io.sovware.niobium.runtime.LocalRuntime.stop(context)
             val stopped = System.nanoTime() + TimeUnit.SECONDS.toNanos(20)
             while (System.nanoTime() < stopped && io.sovware.niobium.runtime.LocalRuntime.state.value.phase != io.sovware.niobium.runtime.RuntimePhase.OFF) Thread.sleep(100)
@@ -248,6 +241,54 @@ class LocalRuntimeTest {
             executor.shutdownNow()
         }
     }
+    @Test fun explicitGatewayLaunchOverridesSavedLocalWithoutLosingThePixel() = kotlinx.coroutines.runBlocking {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        val runtime = RuntimeInstaller(context).prepare()
+        val name = ".launch-fixture-" + java.util.UUID.randomUUID() + ".mjs"
+        val script = java.io.File(runtime.home,"workspace/$name")
+        script.writeText(instrumentation.context.assets.open("gateway.mjs").bufferedReader().use { it.readText() })
+        val process = RuntimeCommand.process(runtime,listOf("node","/root/workspace/$name")).start()
+        val reader = process.inputStream.bufferedReader()
+        val executor = Executors.newSingleThreadExecutor()
+        val preferences = context.getSharedPreferences("niobium",android.content.Context.MODE_PRIVATE)
+        val previousProvider = preferences.getString("agent-provider",null)
+        val hadEnabled = preferences.contains("dsh-enabled")
+        val wasEnabled = preferences.getBoolean("dsh-enabled",false)
+        val secure = SecurePrefs(context)
+        val previousConnection = secure.loadConnection()
+        val store = androidx.lifecycle.ViewModelStore()
+        try {
+            val line = executor.submit<String> { reader.readLine() }.get(45,TimeUnit.SECONDS)
+            assertTrue(line,line.startsWith("PORT "))
+            val origin = "http://127.0.0.1:${line.substringAfter("PORT ").toInt()}/proxy"
+            var hub: NiobiumEngineHub? = null
+            instrumentation.runOnMainSync {
+                preferences.edit().putString("agent-provider","dsh").putBoolean("dsh-enabled",false).commit()
+                hub = NiobiumEngineHub(context.applicationContext as android.app.Application)
+                store.put("explicit-launch",hub!!)
+                hub!!.bootstrap(bot = "remote-fixture",initialConnection = Connection("Launch fixture",origin,"fixture-token+&?"))
+                assertSame(hub!!.hermes,hub!!.active)
+            }
+            val deadline = System.nanoTime()+TimeUnit.SECONDS.toNanos(45)
+            while (System.nanoTime()<deadline && (hub!!.hermes.state.loadingChat || hub!!.hermes.state.sessionId==null) && hub!!.hermes.state.error==null) kotlinx.coroutines.delay(100)
+            assertEquals(hub!!.hermes.state.error,"remote-fixture",hub!!.hermes.state.activeBot?.name)
+            assertEquals("fixture-session",hub!!.hermes.state.sessionId)
+            assertEquals(AgentEngine.HERMES,hub!!.active.state.engine)
+            assertNull(hub!!.local.state.activeBot)
+            assertFalse(hub!!.local.state.connected)
+        } finally {
+            instrumentation.runOnMainSync { store.clear() }
+            if (previousConnection==null) secure.clear() else secure.saveConnection(previousConnection)
+            preferences.edit().putString("agent-provider",previousProvider).apply {
+                if (hadEnabled) putBoolean("dsh-enabled",wasEnabled) else remove("dsh-enabled")
+            }.commit()
+            process.outputStream.close();process.waitFor(20,TimeUnit.SECONDS)
+            if (process.isAlive) process.destroyForcibly()
+            reader.close();executor.shutdownNow();script.delete()
+        }
+    }
+
     @Test fun nativeDshProviderCreatesPixelsAndStreamsThroughRealDsh() = kotlinx.coroutines.runBlocking {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
@@ -256,6 +297,9 @@ class LocalRuntimeTest {
         val proxy = LocalRuntimeProxy(socket.path)
         val mock = java.net.ServerSocket(0, 8, java.net.InetAddress.getByName("127.0.0.1"))
         val received = java.util.concurrent.CountDownLatch(1)
+        val profile = "native-" + java.util.UUID.randomUUID().toString().take(6)
+        val note = "Native private note " + profile
+        val sawMessaging = java.util.concurrent.atomic.AtomicBoolean(false)
         val responder = Thread {
             runCatching {
                 while (!mock.isClosed) mock.accept().use { peer ->
@@ -270,14 +314,28 @@ class LocalRuntimeTest {
                     val first = header.lineSequence().first()
                     val size = header.lineSequence().firstOrNull { it.startsWith("Content-Length:", true) }
                         ?.substringAfter(":")?.trim()?.toInt() ?: 0
-                    input.readNBytes(size)
+                    val body = input.readNBytes(size).toString(Charsets.UTF_8)
+                    val payload = runCatching { org.json.JSONObject(body) }.getOrNull()
+                    val toolsInRequest = payload?.optJSONArray("tools")
+                    if (toolsInRequest != null && (0 until toolsInRequest.length()).any { toolsInRequest.optJSONObject(it)?.optJSONObject("function")?.optString("name") == "message_agent" }) sawMessaging.set(true)
+                    val messages = payload?.optJSONArray("messages")
+                    val hasToolReply = messages != null && (0 until messages.length()).any { messages.optJSONObject(it)?.optString("role") == "tool" }
+                    val wantsDm = body.contains("Send a private note to Scout") && !hasToolReply
+                    val wantsQuestion = body.contains("Niobium delivery [") && body.contains(note) && !hasToolReply
                     val reply = if (first.contains("/models")) """{"object":"list","data":[{"id":"deepseek-chat","object":"model"}]}"""
                     else {
                         received.countDown()
+                        val delta = if (wantsDm || wantsQuestion) org.json.JSONObject().put("tool_calls", org.json.JSONArray().put(org.json.JSONObject()
+                            .put("index",0).put("id","niobium-dm-call").put("type","function").put("function",org.json.JSONObject().put("name",if (wantsQuestion) "ask_user_question" else "message_agent")
+                                .put("arguments",if (wantsQuestion) org.json.JSONObject().put("questions",org.json.JSONArray().put(org.json.JSONObject()
+                                    .put("id","room-choice").put("question","Which accent should I use?")
+                                    .put("options",org.json.JSONArray().put(org.json.JSONObject().put("label","Violet")).put(org.json.JSONObject().put("label","Mint"))))).toString()
+                                    else org.json.JSONObject().put("recipient","default").put("text",note).toString()))))
+                            else org.json.JSONObject().put("content", "NATIVE-DSH-REPLY")
                         val chunk = org.json.JSONObject().put("id", "niobium-fixture").put("object", "chat.completion.chunk")
                             .put("created", 1700000000).put("model", "deepseek-chat")
                             .put("choices", org.json.JSONArray().put(org.json.JSONObject().put("index", 0)
-                                .put("delta", org.json.JSONObject().put("content", "NATIVE-DSH-REPLY")).put("finish_reason", "stop")))
+                                .put("delta", delta).put("finish_reason", if (wantsDm || wantsQuestion) "tool_calls" else "stop")))
                         "data: " + chunk.toString() + "\n\ndata: [DONE]\n\n"
                     }
                     val bytes = reply.toByteArray()
@@ -294,19 +352,24 @@ class LocalRuntimeTest {
             "DEEPSEEK_BASE_URL" to "http://127.0.0.1:" + mock.localPort,
             "NODE_OPTIONS" to "--require /usr/local/lib/niobium-local.cjs --require /usr/local/lib/niobium-agent.cjs")).start()
         Thread { process.inputStream.use { it.copyTo(java.io.OutputStream.nullOutputStream()) } }.apply { isDaemon = true; start() }
-        val profile = "native-" + java.util.UUID.randomUUID().toString().take(6)
+
         var vm: NiobiumViewModel? = null
         val vmStore = androidx.lifecycle.ViewModelStore()
         val preferences = context.getSharedPreferences("niobium", android.content.Context.MODE_PRIVATE)
         val previousProvider = preferences.getString("agent-provider", null)
+        val hadEnabled = preferences.contains("dsh-enabled")
+        val wasEnabled = preferences.getBoolean("dsh-enabled",false)
         try {
             val until = System.nanoTime() + TimeUnit.SECONDS.toNanos(90)
             while (System.nanoTime() < until && process.isAlive && !LocalRuntimeProxy.ready(socket.path)) Thread.sleep(200)
             assertTrue("DSH was not ready", process.isAlive && LocalRuntimeProxy.ready(socket.path))
             GatewayClient.probe(proxy.origin + "/niobium", proxy.key, proxy.key)
             instrumentation.runOnMainSync {
-                vm = NiobiumViewModel(context.applicationContext as android.app.Application)
-                vmStore.put("native-provider", vm!!)
+                preferences.edit().putString("agent-provider","dsh").putBoolean("dsh-enabled",false).commit()
+                val hub = NiobiumEngineHub(context.applicationContext as android.app.Application)
+                vmStore.put("native-provider",hub)
+                hub.bootstrap(bot = "default")
+                vm = hub.local
                 vm!!.connect(proxy.origin + "/niobium", proxy.key, "On device · DSH", false, true, proxy.key)
             }
             suspend fun waitFor(label: String, predicate: () -> Boolean) {
@@ -315,9 +378,11 @@ class LocalRuntimeTest {
                 assertTrue(label + ": " + vm?.state?.error + "; turn=" + vm?.state?.turnActive + "; modelRequests=" + (1 - received.count), predicate())
             }
             waitFor("Native roster connected") { vm!!.state.connected && vm!!.state.bots.isNotEmpty() }
+            waitFor("The launch target opens in the selected DSH workspace") { vm!!.state.activeBot?.name == "default" }
+            instrumentation.runOnMainSync { vm!!.closeBot() }
             assertFalse(vm!!.state.needsConnection)
             assertEquals(AgentEngine.DSH, vm!!.state.engine)
-            val tools = setOf("web", "file", "terminal", "todo", "skills", "delegation")
+            val tools = setOf("web", "file", "terminal", "todo", "skills", "delegation", "messaging")
             val original = PixelBuilder.fallback("Research")
             val fallback = original.copy(name = profile, toolsets = tools.toList(), permissions = original.permissions.copy(shell = true))
             val drafted = PixelDraft(fallback, false, tools, emptySet(), emptyList())
@@ -332,9 +397,62 @@ class LocalRuntimeTest {
             val bot = vm!!.state.activeBot!!
             instrumentation.runOnMainSync { vm!!.closeBot(); vm!!.openBot(bot); vm!!.openBot(bot) }
             waitFor("Native chat history restored") { !vm!!.state.loadingChat && vm!!.state.messages.any { it.text.contains("NATIVE-DSH-REPLY") } }
+            assertTrue("The actual DSH model request omitted the reviewed messaging tool", sawMessaging.get())
+            instrumentation.runOnMainSync { vm!!.send("Send a private note to Scout") }
+            val conversations = java.io.File(runtime.home,".dsh/niobium-conversations.json")
+            waitFor("Real message_agent delivered an attributed DM") {
+                runCatching {
+                    val rooms = org.json.JSONObject(conversations.readText()).getJSONObject("rooms")
+                    rooms.keys().asSequence().map { rooms.getJSONObject(it) }.any { room ->
+                        val events = room.getJSONArray("events")
+                        val rows = (0 until events.length()).map { events.getJSONObject(it) }
+                        rows.any { it.optJSONObject("payload")?.optString("text") == note }
+                    }
+                }.getOrDefault(false)
+            }
+            instrumentation.runOnMainSync { vm!!.closeBot(); vm!!.refreshAllAsync() }
+            waitFor("DM is visible in native rooms") { vm!!.state.groups.any { it.members.any { m -> m.profile == profile } } }
+            val dm = vm!!.state.groups.first { it.members.any { m -> m.profile == profile } }
+            instrumentation.runOnMainSync { vm!!.openGroup(dm) }
+            waitFor("Native room transcript contains the actual DM") { vm!!.state.roomEvents.any { it.text == note } }
+            waitFor("Android admits the room-owned question") { vm!!.state.clarify?.sessionId != null }
+            assertTrue(vm!!.state.clarify!!.sessionId in org.json.JSONObject(conversations.readText()).getJSONObject("rooms").getJSONObject(dm.roomId)
+                .getJSONObject("sessions").let { map -> map.keys().asSequence().map { map.getString(it) }.toSet() })
+            instrumentation.runOnMainSync { vm!!.resolveClarify(mapOf("room-choice" to "Violet")) }
+            waitFor("The actual DSH room continues after its native answer") { vm!!.state.roomEvents.any { it.actorId == "default" && it.text == "NATIVE-DSH-REPLY" } }
+            val roomState = org.json.JSONObject(conversations.readText()).getJSONObject("rooms").getJSONObject(dm.roomId)
+            val sessionMap = roomState.getJSONObject("sessions")
+            val ownedSessions = sessionMap.keys().asSequence().map { sessionMap.getString(it) }.toSet()
+            assertTrue(ownedSessions.isNotEmpty())
+            val activity = instrumentation.startActivitySync(android.content.Intent(context, MainActivity::class.java)
+                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK).putExtra("demo", true)) as MainActivity
+            try {
+                instrumentation.runOnMainSync { vm!!.closeGroup();activity.setContent { NiobiumTheme { NiobiumApp(vm!!,"pixels") } } }
+                compose.onNodeWithTag("pixels.rooms").performClick()
+                compose.onNodeWithText("Rooms").assertIsDisplayed()
+                compose.onNodeWithText(dm.name).performClick()
+                compose.waitUntil(5000) { compose.onAllNodesWithText(note).fetchSemanticsNodes().isNotEmpty() }
+                compose.onNodeWithTag("room.actions").performClick()
+                compose.onNodeWithText("Clear room").performClick()
+                compose.onNodeWithTag("room.clear.confirm").assertIsDisplayed()
+                assertTrue(org.json.JSONObject(conversations.readText()).getJSONObject("rooms").has(dm.roomId))
+                compose.onNodeWithTag("room.clear.cancel").performClick()
+                compose.onNodeWithTag("room.clear.confirm").assertDoesNotExist()
+                assertTrue(org.json.JSONObject(conversations.readText()).getJSONObject("rooms").has(dm.roomId))
+                compose.onNodeWithTag("room.actions").performClick()
+                compose.onNodeWithText("Clear room").performClick()
+                compose.onNodeWithTag("room.clear.confirm").performClick()
+            } finally { instrumentation.runOnMainSync { activity.finish() } }
+            waitFor("Room is cleared from native navigation") { vm!!.state.groups.none { it.roomId == dm.roomId } }
+            waitFor("Archived room sessions never become Scout's DM") {
+                vm!!.state.bots.firstOrNull { it.name == "default" }?.canonicalSessionId !in ownedSessions
+            }
+
         } finally {
             instrumentation.runOnMainSync { vm?.disconnect(); vmStore.clear() }
-            preferences.edit().putString("agent-provider", previousProvider).apply()
+            preferences.edit().putString("agent-provider", previousProvider).apply {
+                if (hadEnabled) putBoolean("dsh-enabled",wasEnabled) else remove("dsh-enabled")
+            }.commit()
             proxy.close(); process.outputStream.close(); process.waitFor(20, TimeUnit.SECONDS)
             mock.close(); responder.join(1000); socket.delete()
             java.io.File(runtime.home, ".dsh/.agent-presets/" + profile).deleteRecursively()

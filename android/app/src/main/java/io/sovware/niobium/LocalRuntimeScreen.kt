@@ -120,6 +120,8 @@ fun LocalRuntimeScreen(vm: NiobiumViewModel? = null, onClose: (() -> Unit)? = nu
                         }
                         if (state?.engine == AgentEngine.HERMES) NbPill("Selected", Nb.Mint)
                     }
+                    val remote = vm?.engineHub?.hermes?.state
+                    if (remote?.connected == true && !remote.demo) Text("Connected", color = Nb.Mint, fontSize = 12.sp)
                     Text("Connect to your existing agents, tools and group rooms. Your local engine can stay running alongside Hermes.",
                         color = Nb.Secondary, fontSize = 12.sp, lineHeight = 19.sp)
                     if (state?.engine != AgentEngine.HERMES) PixelButton("Use Hermes", PixelGlyph.LINK, Modifier.fillMaxWidth(), secondary = true) { vm?.useHermes() }
@@ -153,11 +155,11 @@ fun LocalRuntimeScreen(vm: NiobiumViewModel? = null, onClose: (() -> Unit)? = nu
                     if (runtime.phase == RuntimePhase.RUNNING) {
                         PixelButton("Advanced DSH workspace", PixelGlyph.TERMINAL, Modifier.fillMaxWidth(), secondary = true) { workspace = true }
                         PixelButton("Stop local engine", PixelGlyph.STOP, Modifier.fillMaxWidth(), secondary = true, destructive = true) {
-                            workspace = false; LocalRuntime.stop(context)
+                            workspace = false; if (vm != null) vm.stopLocal() else LocalRuntime.stop(context)
                         }
-                    } else if (runtime.busy) PixelButton("Cancel startup", PixelGlyph.STOP, Modifier.fillMaxWidth(), secondary = true) { LocalRuntime.stop(context) }
+                    } else if (runtime.busy) PixelButton("Cancel startup", PixelGlyph.STOP, Modifier.fillMaxWidth(), secondary = true) { if (vm != null) vm.stopLocal() else LocalRuntime.stop(context) }
                     PixelButton("Remote DSH workspace", PixelGlyph.LINK, Modifier.fillMaxWidth(), secondary = true) { remote = true }
-                    Text("First launch installs about 450 MB. Local Pixels share a Linux workspace; tool choices limit their available tools, while workspace scopes are operating instructions. Hermes provides group rooms and scheduled jobs.",
+                    Text("First launch installs about 450 MB. Local Pixels share a Linux workspace; tool choices limit their available tools, while workspace scopes are operating instructions. Local rooms run on this device. Scheduled jobs require Hermes.",
                         color = Nb.Tertiary, fontSize = 11.sp, lineHeight = 17.sp)
                 }
                 Spacer(Modifier.height(14.dp))

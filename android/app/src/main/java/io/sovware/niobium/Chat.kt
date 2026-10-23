@@ -48,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -55,6 +56,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.sp
 
@@ -421,12 +423,14 @@ fun Composer(
     onSend: () -> Unit,
     onStop: () -> Unit,
     accent: Color = Nb.Ion,
-    onAttach: () -> Unit = {},
-    onDictate: () -> Unit = {},
+    onAttach: (() -> Unit)? = null,
+    onDictate: (() -> Unit)? = null,
     hasAttachment: Boolean = false,
     onClearAttachment: () -> Unit = {},
-    ready: Boolean = true
+    ready: Boolean = true,
+    mentionables: List<GroupMember> = emptyList()
 ) {
+    var mentionsOpen by remember { mutableStateOf(false) }
     val canSend = ready && (value.isNotBlank() || hasAttachment)
     Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 12.dp).padding(bottom = 8.dp, top = 4.dp)) {
         if (hasAttachment) {
@@ -439,15 +443,23 @@ fun Composer(
             }
         }
         Row(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(Nb.Raised.copy(alpha = 0.96f))
-                .border(1.dp, Nb.Line, RoundedCornerShape(22.dp)).padding(horizontal = 10.dp, vertical = 8.dp),
+            Modifier.fillMaxWidth().clip(PixelButtonShape).background(Nb.Raised.copy(alpha = 0.96f))
+                .border(1.dp, Nb.Line, PixelButtonShape).padding(horizontal = 10.dp, vertical = 8.dp),
             verticalAlignment = Alignment.Bottom
         ) {
-            Box(Modifier.size(34.dp).clip(CircleShape).background(Nb.Fill)
-                .border(1.dp, Nb.Line, CircleShape).clickable { onAttach() }, contentAlignment = Alignment.Center) {
-                Text("+", color = Nb.Secondary, fontSize = 17.sp)
+            if (mentionables.isNotEmpty()) Box {
+                Box(Modifier.size(44.dp).clip(PixelButtonShape).background(Nb.FillSoft).clickable { mentionsOpen = true }
+                    .semantics { contentDescription = "Mention a Pixel" }, contentAlignment = Alignment.Center) { Text("@", color = Nb.Ion, style = NbMono, fontSize = 17.sp) }
+                DropdownMenu(mentionsOpen,{ mentionsOpen = false }) {
+                    mentionables.forEach { member -> DropdownMenuItem(text = { Text("@" + member.handle) }, onClick = {
+                        onValueChange(value + (if (value.isEmpty() || value.endsWith(" ")) "" else " ") + "@" + member.handle + " "); mentionsOpen = false
+                    }) }
+                }
+            } else if (onAttach != null) {
+                Box(Modifier.size(44.dp).clip(PixelButtonShape).background(Nb.FillSoft)
+                    .clickable { onAttach() }.semantics { contentDescription = "Attach a photo" }, contentAlignment = Alignment.Center) { Text("+", color = Nb.Secondary, fontSize = 20.sp) }
             }
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(6.dp))
             OutlinedTextField(
                 value = value, onValueChange = onValueChange,
                 placeholder = { Text(placeholder, color = Nb.Tertiary, fontSize = 15.sp) },
@@ -463,19 +475,19 @@ fun Composer(
                 )
             )
             Spacer(Modifier.width(4.dp))
-            Box(Modifier.size(33.dp).clip(CircleShape).clickable { onDictate() }, contentAlignment = Alignment.Center) {
-                Text("◉", color = Nb.Tertiary, fontSize = 14.sp)
-            }
+            if (onDictate != null) Box(Modifier.size(44.dp).clip(PixelButtonShape).clickable { onDictate() }
+                .semantics { contentDescription = "Dictate message" }, contentAlignment = Alignment.Center) { Text("◉", color = Nb.Secondary, fontSize = 16.sp) }
             Spacer(Modifier.width(4.dp))
             Box(
-                Modifier.size(33.dp).clip(CircleShape)
-                    .background(if (turnActive) Nb.Text else if (canSend) accent else Nb.Fill)
+                Modifier.size(44.dp).clip(PixelButtonShape)
+                    .background(if (turnActive) Nb.Text else if (canSend) Nb.Ion else Nb.Fill)
                     .semantics { contentDescription = if (turnActive) "Stop response" else "Send message" }
                     .clickable(enabled = turnActive || canSend, role = Role.Button) { if (turnActive) onStop() else onSend() },
                 contentAlignment = Alignment.Center
             ) {
-                if (turnActive) Box(Modifier.size(10.dp).clip(RoundedCornerShape(2.dp)).background(Nb.Void))
-                else Text("↑", color = if (canSend) Color(0xFF090C13) else Nb.Tertiary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Box(if (turnActive) Modifier else Modifier.rotate(-90f)) {
+                    PixelIcon(if (turnActive) PixelGlyph.STOP else PixelGlyph.PLAY, if (turnActive) Nb.Void else if (canSend) Nb.OnIon else Nb.Tertiary,18.dp)
+                }
             }
         }
     }
@@ -484,43 +496,49 @@ fun Composer(
 @Composable
 fun GroupChatScreen(vm: NiobiumViewModel, room: GroupRoom) {
     val state = vm.state
+    var clarifyHidden by remember(state.clarify?.rpcId) { mutableStateOf(false) }
     var draft by remember { mutableStateOf("") }
-    var showCast by remember { mutableStateOf(false) }
-    var showModels by remember { mutableStateOf(false) }
-    var showChats by remember { mutableStateOf(false) }
-    var showUsage by remember { mutableStateOf(false) }
-    var showRoutines by remember { mutableStateOf(false) }
-    var attachment by remember { mutableStateOf<Pair<String, String>?>(null) }
-    val context = LocalContext.current
-    val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        uri ?: return@rememberLauncherForActivityResult
-        runCatching {
-            val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return@runCatching
-            val mime = context.contentResolver.getType(uri) ?: "image/jpeg"
-            attachment = Base64.encodeToString(bytes, Base64.NO_WRAP) to mime
-        }
-    }
-    val dictation = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        val spoken = result.data?.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
-        if (!spoken.isNullOrBlank()) draft = if (draft.isBlank()) spoken else "$draft $spoken"
-    }
+    var actionsOpen by remember { mutableStateOf(false) }
+    var confirmClear by remember(room.roomId) { mutableStateOf(false) }
+    var sending by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     LaunchedEffect(state.roomEvents.size) {
         if (state.roomEvents.isNotEmpty()) listState.animateScrollToItem(state.roomEvents.size + 1)
     }
+    if (confirmClear) AlertDialog(
+        onDismissRequest = { confirmClear = false },
+        title = { Text("Clear room?", color = Nb.Text) },
+        text = { Text("This deletes the room and its messages. It can’t be undone.", color = Nb.Secondary) },
+        confirmButton = {
+            Text("Clear room", color = Nb.Rose, modifier = Modifier.testTag("room.clear.confirm")
+                .clickable(role = Role.Button) { confirmClear = false; vm.clearLocalRoom(room) }.padding(14.dp))
+        },
+        dismissButton = {
+            Text("Cancel", color = Nb.Secondary, modifier = Modifier.testTag("room.clear.cancel")
+                .clickable(role = Role.Button) { confirmClear = false }.padding(14.dp))
+        },
+        containerColor = Nb.Raised
+    )
 
     Column(Modifier.fillMaxSize().background(Nb.Void).statusBarsPadding().imePadding()) {
         Row(Modifier.fillMaxWidth().background(Nb.Ink.copy(alpha = 0.92f)).padding(horizontal = 14.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically) {
-            NbIconButton("‹", { vm.closeGroup() }, size = 34)
+            Box(Modifier.size(44.dp).clickable { vm.closeGroup() }.semantics { contentDescription = "Close room" }, contentAlignment = Alignment.Center) { PixelIcon(PixelGlyph.BACK, Nb.Secondary, 18.dp) }
             Spacer(Modifier.width(11.dp))
             GroupAvatar(room.members, 39)
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Text(room.name, color = Nb.Text, style = NbTitle, fontSize = 16.sp)
-                Text("${room.members.size} PIXELS · ROOM", color = Nb.Tertiary, style = NbMono, fontSize = 8.sp, letterSpacing = 0.8.sp)
+                Text("${room.members.size} Pixels", color = Nb.Tertiary, fontSize = 11.sp)
             }
-            NbIconButton("↻", { vm.refreshGroup() }, size = 34)
+            if (state.engine == AgentEngine.DSH) Box {
+                Box(Modifier.size(44.dp).clickable { actionsOpen = true }.semantics { contentDescription = "Room actions" }.testTag("room.actions"), contentAlignment = Alignment.Center) { PixelIcon(PixelGlyph.SETTINGS, Nb.Secondary, 18.dp) }
+                DropdownMenu(actionsOpen,{ actionsOpen = false }) {
+                    DropdownMenuItem(text = { Text("Refresh") }, onClick = { actionsOpen = false;vm.refreshGroup() })
+                    DropdownMenuItem(text = { Text("Stop replies") }, onClick = { actionsOpen = false;vm.stopRoom() })
+                    DropdownMenuItem(text = { Text("Clear room",color = Nb.Rose) }, onClick = { actionsOpen = false;confirmClear = true })
+                }
+            } else Box(Modifier.size(44.dp).clickable { vm.refreshGroup() }.semantics { contentDescription = "Refresh room" }, contentAlignment = Alignment.Center) { PixelIcon(PixelGlyph.ACTIVITY, Nb.Secondary, 18.dp) }
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(Nb.Line))
         LazyColumn(
@@ -539,7 +557,7 @@ fun GroupChatScreen(vm: NiobiumViewModel, room: GroupRoom) {
             }
             items(state.roomEvents, key = { it.id }) { event ->
                 when {
-                    event.isMessage -> GroupEventRow(event, room)
+                    event.isMessage -> GroupEventRow(event, room, state.engine)
                     event.isNotice -> Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.weight(1f).height(1.dp).background(Nb.Line))
                         Text(event.reason ?: event.kind.replace("_", " "), color = Nb.Tertiary, style = NbMono, fontSize = 8.sp,
@@ -548,16 +566,21 @@ fun GroupChatScreen(vm: NiobiumViewModel, room: GroupRoom) {
                     }
                 }
             }
+            items(state.approvals, key = { "approval:" + it.id }) { approval -> ApprovalCard(approval) { vm.resolveApproval(approval,it) } }
+            if (state.clarify != null) item { PixelButton("A Pixel is waiting for your answer", PixelGlyph.SPARK, secondary = true) { clarifyHidden = false } }
             item { Spacer(Modifier.height(4.dp)) }
         }
         Composer(draft, { draft = it }, "Message the room…", false,
-            ready = state.connected || state.demo,
-            onSend = { val t = draft; draft = ""; vm.sendGroup(t) }, onStop = {}, accent = Nb.Violet)
+            ready = (state.connected || state.demo) && !sending && draft.length <= 4000,
+            onSend = { val t = draft; sending = true; vm.sendGroup(t, onAccepted = { if (draft == t) draft = "" }, onSettled = { sending = false }) }, onStop = {}, accent = Nb.Violet, mentionables = room.members)
+    }
+    state.clarify?.takeUnless { clarifyHidden }?.let { request ->
+        ClarifyDialog(request, onSubmit = { answers, selected -> vm.resolveClarify(answers,selected); clarifyHidden = true }, onCancel = { vm.cancelClarify(); clarifyHidden = true })
     }
 }
 
 @Composable
-private fun GroupEventRow(event: RoomEvent, room: GroupRoom) {
+private fun GroupEventRow(event: RoomEvent, room: GroupRoom, engine: AgentEngine) {
     val isUser = event.actorKind == "user" || event.actorId == "user"
     val member = room.member(event.actorId)
     val accent = Nb.colorFor(event.actorId)
@@ -567,17 +590,17 @@ private fun GroupEventRow(event: RoomEvent, room: GroupRoom) {
                 Text("You · ${event.timestamp?.let { clockTime(it * 1000) } ?: ""}", color = Nb.Secondary, style = NbMono, fontSize = 8.sp)
                 Spacer(Modifier.height(4.dp))
                 Box(
-                    Modifier.clip(RoundedCornerShape(16.dp))
-                        .background(Brush.linearGradient(listOf(Color(0xFFAFC3FF), Nb.Ion)))
+                    Modifier.clip(PixelButtonShape).background(Nb.Ion)
                         .padding(horizontal = 13.dp, vertical = 10.dp)
                 ) {
-                    Markdown(event.text, Color(0xFF0A0D14), 14)
+                    Markdown(event.text, Nb.OnIon, 14)
                 }
             }
         }
     } else {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
-            PixelTile(accent = accent, size = 26.dp)
+            val context = LocalContext.current
+            CastPortrait(CastStore.get(context,(if (engine == AgentEngine.DSH) "dsh:" else "") + (member?.profile ?: event.actorId)), 32.dp, showCompanion = false)
             Spacer(Modifier.width(8.dp))
             Column(Modifier.widthIn(max = 330.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
