@@ -78,8 +78,8 @@ val PixelShape = object : Shape {
 }
 
 @Composable fun LabeledCheckbox(label: String, checked: Boolean, enabled: Boolean = true, onChange: (Boolean) -> Unit) {
-    Row(Modifier.fillMaxWidth().clip(PixelShape).pixelToggle(checked, enabled, onChange = onChange).heightIn(min = 44.dp),
-        verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().clip(PixelShape).pixelToggle(checked, enabled, onChange = onChange).heightIn(min = 44.dp).padding(horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Checkbox(checked, onCheckedChange = null, enabled = enabled)
         Text(label, color = Ink.Muted, fontSize = 12.sp)
     }
