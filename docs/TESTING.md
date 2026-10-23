@@ -456,7 +456,7 @@ DMG passes local installed-launcher/runtime/helper checks. See
 The Linux acceptance entry point always owns its private bus and accepts no CLI
 bypass. Android is not rebuilt in this desktop-only release.
 
-## Desktop usability candidate (2.1.3)
+## Desktop usability (2.1.3 beta.1)
 
 Custom pixel actions share a visible stepped keyboard-focus outline. Navigation,
 engine, wardrobe and companion choices expose selection and roles. Permission,
@@ -489,3 +489,11 @@ bridge in its [desktop accessibility support](https://kotlinlang.org/docs/multip
 Physical Android/tablets, battery behavior, multi-hour tasks/rooms/reconnects and
 real-account acceptance remain open. Android stays 2.1.1/code14, and iOS release
 work stays parked.
+
+[PR #14](https://github.com/wckdboy/niobium/pull/14) is merged after CodeRabbit
+approval. All active [release CI jobs](https://github.com/wckdboy/niobium/actions/runs/40023699121) pass: 55 desktop,
+33 shared-core, seven additional Android JVM, 85 Node and 15 Python checks.
+The final downloaded macOS DMG also passes locally. See
+[release validation](evidence/beta213-release-validation.json),
+[macOS DSH baseline](evidence/beta213-soak-macos.json) and
+[Linux DSH baseline](evidence/beta213-soak-linux.json).

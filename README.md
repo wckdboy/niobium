@@ -8,7 +8,7 @@ A pixel-art home for agents on Linux, macOS and Android: connect Hermes, run
 DSH locally, or keep both engines ready. Pixels have their own personas, tools
 and companions. The existing iOS client is retained; iOS release work is parked.
 
-**Desktop [2.1.2 beta.1](https://github.com/wckdboy/niobium/releases/tag/v2.1.2-beta.1) · Android [2.1.1/code14](https://github.com/wckdboy/niobium/releases/tag/v2.1.1-beta.1).** Full Hermes parity is the target;
+**Desktop [2.1.3 beta.1](https://github.com/wckdboy/niobium/releases/tag/v2.1.3-beta.1) · Android [2.1.1/code14](https://github.com/wckdboy/niobium/releases/tag/v2.1.1-beta.1).** Full Hermes parity is the target;
 it is not finished. The current scope is in [PLAN.md](PLAN.md), the implementation
 audit is in [docs/HERMES-PARITY.md](docs/HERMES-PARITY.md), and the work is tracked
 in [Plane](https://app.plane.so/wckd/projects/2fbcf987-20de-43dc-80ac-0a6bab7ec03a/issues/).
@@ -36,7 +36,7 @@ model choice sets the default for new chats. Existing conversations retain their
 model. Compatible local servers may omit a key. Hermes uses its host’s providers.
 Remote gateways require HTTPS; HTTP is reserved for literal loopback addresses.
 Authenticated gateway requests do not follow redirects.
-Desktop 2.1.2 adds opt-in macOS Keychain and Linux Secret Service
+Desktop offers opt-in macOS Keychain and Linux Secret Service
 storage for named gateway and image accounts. Session-only use remains available;
 saved credentials are loaded only when you choose Use. DSH provider keys still
 use its owner-only credential file. Android retains Keystore storage.
@@ -71,14 +71,22 @@ Desktop CI runs native tests and packaging on both Linux and macOS; iOS CI is op
 
 CodeRabbit reviews new pull requests and incremental pushes using
 [repository guidance](.coderabbit.yaml). Automatic Greptile reviews are disabled.
-The published desktop 2.1.2 beta.1 checks include 33 shared-core, 42 desktop,
-seven additional Android JVM, 85 Node and 15 Python checks. Native macOS/Linux
-vault acceptance uses isolated keychains/services, verifies account isolation,
-locked operations and deletion, and preserves data across helper/service restarts.
-Installer checks exercise the packaged launchers, private runtime and helper.
-CodeRabbit [approved PR #13](https://github.com/wckdboy/niobium/pull/13); all active
-[release CI jobs](https://github.com/wckdboy/niobium/actions/runs/40010407815) pass. Android remains 2.1.1/code14.
-See the [release evidence](docs/evidence/beta212-release-validation.json).
+The native View → Text size menu offers 100%, 125% and 150%, retaining your
+preference. Pixel controls show keyboard focus and selection, and layouts adapt
+to the available space. Chat keeps your place while you read older messages;
+Latest messages resumes following a stream.
+
+Desktop 2.1.3 beta.1 passes 55 desktop, 33 shared-core, seven additional Android
+JVM, 85 Node and 15 Python checks. Twelve native UI cases cover keyboard use,
+enlarged text, HiDPI/narrow setup, workshop focus and 2,000-message histories.
+Three real DSH restart cycles exercise 12 controlled streamed DM/room turns,
+cold history/appearance restoration, exact room event counts and owned-process
+cleanup. CPU/RSS samples are short baselines for the local host and its live
+descendants, excluding the UI JVM; they do not establish multi-hour performance.
+
+CodeRabbit [approved PR #14](https://github.com/wckdboy/niobium/pull/14); every active
+[release CI job](https://github.com/wckdboy/niobium/actions/runs/40023699121) and both native installer checks pass.
+Android remains 2.1.1/code14. See [release evidence](docs/evidence/beta213-release-validation.json).
 
 <img src="site/public/desktop-preview.png" width="760" alt="Niobium desktop wardrobe">
 

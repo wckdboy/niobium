@@ -12,7 +12,7 @@ Protocol audit: [HERMES-PARITY.md](docs/HERMES-PARITY.md).
 
 - Build and ship the Compose desktop preview alongside Android; retain iOS sources
   and make its CI/signing work opt-in while desktop and Android are the priority.
-  The 2.1.2 beta.1 desktop preview and Android 2.1.1/code14 are published.
+  The 2.1.3 beta.1 desktop preview and Android 2.1.1/code14 are published.
 - Share Kotlin protocol, persona/spec validation and art reduction across Android
   and desktop. Keep engine connection/session/prompt ownership separate.
 - Native desktop DSH: pinned private runtime, direct host process, authenticated
@@ -637,10 +637,10 @@ sources are retained and Apple release work stays parked.
 
 ## Next cycle
 
-1. **NIO-32 — accessibility and measured soaks.** Keyboard traversal, focus,
-   screen readers, text scaling, narrow/wide layouts and HiDPI pixel rendering.
-   Exercise large histories and long-running tasks/rooms/reconnects; measure
-   CPU/memory and verify owned-process cleanup.
+1. **NIO-32 — continue accessibility and measured soaks.** Keyboard, text-scale,
+   layout and short DSH-cycle fixtures are shipped. Verify macOS VoiceOver and
+   physical Android/tablets, then extend multi-hour task/room/reconnect runs,
+   native UI resource measurement and battery acceptance.
 2. **NIO-31 — finish credential acceptance.** Desktop OS storage is shipped. Verify
    live host prompts and reconnect races, then implement the DSH vault bridge
    against its pinned contract and authenticated-caller hardening.
@@ -685,23 +685,33 @@ soaks, followed by remaining Hermes history/companion/parity work. Physical Andr
 
 Evidence: [release validation](docs/evidence/beta212-release-validation.json).
 
-## Desktop usability cycle — NIO-32
+## Shipped: desktop 2.1.3 beta.1 — NIO-32 checkpoint
 
-Desktop candidate 2.1.3 adds shared stepped keyboard focus, explicit selected
-navigation/engine/appearance semantics, labeled toggle targets and native text
-size preferences. Engine setup responds to width and font size; workshop and
-welcome content scroll instead of clipping. Chat keeps the reader's position
-during streams and offers Latest messages to resume following, including tall
-replies after text remeasurement.
+[Release](https://github.com/wckdboy/niobium/releases/tag/v2.1.3-beta.1),
+[CodeRabbit-approved PR #14](https://github.com/wckdboy/niobium/pull/14) and
+[green release CI](https://github.com/wckdboy/niobium/actions/runs/40023699121). Pixel actions expose stepped keyboard
+focus, selected navigation/engine/appearance roles and labeled toggles. The native
+View menu saves 100%, 125% or 150% text. Setup/welcome/workshop content adapts to
+width and text size. Escape returns to the actual workshop opener; creation opens
+Pixels. Chat preserves older reading positions and input focus/drafts; Latest
+messages resumes following measured content, including tall wrapped replies.
 
-Acceptance adds native keyboard/form/layout fixtures, 2,000-message history and
-three real DSH start/connect/stop cycles with 12 controlled streamed DM/room turns,
-history/appearance restoration, room receipt counts and owned-process cleanup.
-Resource samples record actual CPU/RSS without inventing performance budgets.
-Full-suite, native installer and CodeRabbit checks remain release gates.
+55 desktop, 33 shared-core, seven additional Android JVM, 85 Node and 15 Python
+checks pass. Twelve native UI cases cover 2,000-message histories, keyboard use,
+large text, HiDPI/narrow setup and workshop focus. Both platforms pass three real
+DSH start/connect/stop cycles, nine DM and three room turns with controlled
+HTTP/SSE, cold history/appearance restoration, exact room event counts and zero
+remaining observed owned processes. CPU/RSS traces are short local-engine
+baselines, excluding the UI JVM and unsampled transient children. Native vault
+and installer checks pass; the downloaded final DMG also passes locally.
 
-Keep NIO-32 In Progress for VoiceOver, physical Android/tablets, battery and
-multi-hour task/room/reconnect acceptance. Linux screen-reader integration is a
-documented framework limitation; semantic tests do not remove it. NIO-31 still
-owns live host prompts, the DSH vault bridge and caller authentication. Android
-remains the existing 2.1.1/code14 release; iOS release work stays parked.
+Keep NIO-32 In Progress for macOS VoiceOver, physical Android/tablets, battery
+and multi-hour task/room/reconnect acceptance. Linux screen-reader integration
+remains a documented framework limitation. Next execution should add deeper
+history and companion controls while extending longer-running acceptance; NIO-31
+still owns live host prompts, the DSH vault bridge and caller authentication.
+Android remains signed 2.1.1/code14, macOS remains unsigned/unnotarized, and iOS
+release work stays parked. Full Hermes parity and real provider accounts remain
+open acceptance work.
+
+Evidence: [release validation](docs/evidence/beta213-release-validation.json).

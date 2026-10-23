@@ -1,0 +1,210 @@
+{
+  "stream_parts_per_turn": 3,
+  "cycles": [
+    {
+      "room_user_events": 1,
+      "dm_turns": 3,
+      "elapsed_ms": 4151,
+      "room_member_events": 1,
+      "cycle": 1,
+      "owned_processes_remaining": 0
+    },
+    {
+      "room_user_events": 2,
+      "dm_turns": 3,
+      "elapsed_ms": 3872,
+      "room_member_events": 2,
+      "cycle": 2,
+      "owned_processes_remaining": 0
+    },
+    {
+      "room_user_events": 3,
+      "dm_turns": 3,
+      "elapsed_ms": 4032,
+      "room_member_events": 3,
+      "cycle": 3,
+      "owned_processes_remaining": 0
+    }
+  ],
+  "process_samples": [
+    {
+      "rss_kib": 258976,
+      "elapsed_ms": 1189,
+      "process_count": 2,
+      "cycle": 1,
+      "cpu_ms": 1090
+    },
+    {
+      "rss_kib": 274864,
+      "elapsed_ms": 1752,
+      "process_count": 2,
+      "cycle": 1,
+      "cpu_ms": 1320
+    },
+    {
+      "rss_kib": 275760,
+      "elapsed_ms": 2275,
+      "process_count": 2,
+      "cycle": 1,
+      "cpu_ms": 1370
+    },
+    {
+      "rss_kib": 308384,
+      "elapsed_ms": 2781,
+      "process_count": 2,
+      "cycle": 1,
+      "cpu_ms": 1480
+    },
+    {
+      "rss_kib": 309520,
+      "elapsed_ms": 3367,
+      "process_count": 2,
+      "cycle": 1,
+      "cpu_ms": 1500
+    },
+    {
+      "rss_kib": 310288,
+      "elapsed_ms": 3952,
+      "process_count": 2,
+      "cycle": 1,
+      "cpu_ms": 1520
+    },
+    {
+      "rss_kib": 310304,
+      "elapsed_ms": 4473,
+      "process_count": 2,
+      "cycle": 1,
+      "cpu_ms": 1520
+    },
+    {
+      "rss_kib": 310352,
+      "elapsed_ms": 5051,
+      "process_count": 2,
+      "cycle": 1,
+      "cpu_ms": 1520
+    },
+    {
+      "rss_kib": 266912,
+      "elapsed_ms": 5996,
+      "process_count": 2,
+      "cycle": 2,
+      "cpu_ms": 860
+    },
+    {
+      "rss_kib": 275296,
+      "elapsed_ms": 6510,
+      "process_count": 2,
+      "cycle": 2,
+      "cpu_ms": 1020
+    },
+    {
+      "rss_kib": 309216,
+      "elapsed_ms": 7044,
+      "process_count": 2,
+      "cycle": 2,
+      "cpu_ms": 1160
+    },
+    {
+      "rss_kib": 318688,
+      "elapsed_ms": 7560,
+      "process_count": 2,
+      "cycle": 2,
+      "cpu_ms": 1210
+    },
+    {
+      "rss_kib": 319856,
+      "elapsed_ms": 8076,
+      "process_count": 2,
+      "cycle": 2,
+      "cpu_ms": 1220
+    },
+    {
+      "rss_kib": 320288,
+      "elapsed_ms": 8590,
+      "process_count": 2,
+      "cycle": 2,
+      "cpu_ms": 1220
+    },
+    {
+      "rss_kib": 320320,
+      "elapsed_ms": 9097,
+      "process_count": 2,
+      "cycle": 2,
+      "cpu_ms": 1220
+    },
+    {
+      "rss_kib": 320368,
+      "elapsed_ms": 9670,
+      "process_count": 2,
+      "cycle": 2,
+      "cpu_ms": 1220
+    },
+    {
+      "rss_kib": 265744,
+      "elapsed_ms": 10509,
+      "process_count": 2,
+      "cycle": 3,
+      "cpu_ms": 860
+    },
+    {
+      "rss_kib": 275536,
+      "elapsed_ms": 11069,
+      "process_count": 2,
+      "cycle": 3,
+      "cpu_ms": 1020
+    },
+    {
+      "rss_kib": 315248,
+      "elapsed_ms": 11643,
+      "process_count": 2,
+      "cycle": 3,
+      "cpu_ms": 1120
+    },
+    {
+      "rss_kib": 322784,
+      "elapsed_ms": 12210,
+      "process_count": 2,
+      "cycle": 3,
+      "cpu_ms": 1200
+    },
+    {
+      "rss_kib": 323488,
+      "elapsed_ms": 12726,
+      "process_count": 2,
+      "cycle": 3,
+      "cpu_ms": 1220
+    },
+    {
+      "rss_kib": 324784,
+      "elapsed_ms": 13241,
+      "process_count": 2,
+      "cycle": 3,
+      "cpu_ms": 1230
+    },
+    {
+      "rss_kib": 324832,
+      "elapsed_ms": 13770,
+      "process_count": 2,
+      "cycle": 3,
+      "cpu_ms": 1230
+    },
+    {
+      "rss_kib": 324864,
+      "elapsed_ms": 14278,
+      "process_count": 2,
+      "cycle": 3,
+      "cpu_ms": 1230
+    }
+  ],
+  "owned_processes_remaining": 0,
+  "platform": "Mac OS X",
+  "schema_version": 1,
+  "java": "17.0.21",
+  "cpu_source": "ps cumulative TIME for sampled live owned processes",
+  "process_scope": "Local host and its live descendants; excludes UI JVM and unsampled transient children",
+  "provider": "isolated fake HTTP/SSE; no external account",
+  "elapsed_ms": 14534,
+  "scope": "Three-cycle acceptance baseline; not a multi-hour, physical-device or real-account soak",
+  "arch": "aarch64",
+  "streamed_turns": 12
+}

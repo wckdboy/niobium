@@ -1,0 +1,843 @@
+{
+  "schema_version": 2,
+  "verified_at": "2026-10-23T21:23:58.312370+00:00",
+  "release_id": 422319535,
+  "release_url": "https://github.com/wckdboy/niobium/releases/tag/v2.1.3-beta.1",
+  "published_at": "2026-10-23T21:20:45Z",
+  "source_commit": "97527d199c1b3ca43f5a0257eabf533d4c715c5c",
+  "merge_commit": "df0ccfa37f7f0e4bce6086587f7460bad4e2c858",
+  "source_and_merge_git_tree": "216fc7afaf365eb16bac38c1fa4423f73ce2f60b",
+  "ci": {
+    "url": "https://github.com/wckdboy/niobium/actions/runs/40023699121",
+    "source_commit": "97527d199c1b3ca43f5a0257eabf533d4c715c5c",
+    "status": "success",
+    "jobs": [
+      {
+        "name": "desktop (ubuntu-24.04)",
+        "conclusion": "success",
+        "url": "https://github.com/wckdboy/niobium/actions/runs/40023699121/job/120654842855",
+        "startedAt": "2026-10-23T21:02:39Z",
+        "completedAt": "2026-10-23T21:08:24Z"
+      },
+      {
+        "name": "shared",
+        "conclusion": "success",
+        "url": "https://github.com/wckdboy/niobium/actions/runs/40023699121/job/120654843005",
+        "startedAt": "2026-10-23T21:02:39Z",
+        "completedAt": "2026-10-23T21:02:58Z"
+      },
+      {
+        "name": "android",
+        "conclusion": "success",
+        "url": "https://github.com/wckdboy/niobium/actions/runs/40023699121/job/120654843095",
+        "startedAt": "2026-10-23T21:02:40Z",
+        "completedAt": "2026-10-23T21:07:42Z"
+      },
+      {
+        "name": "desktop (macos-15)",
+        "conclusion": "success",
+        "url": "https://github.com/wckdboy/niobium/actions/runs/40023699121/job/120654843099",
+        "startedAt": "2026-10-23T21:02:40Z",
+        "completedAt": "2026-10-23T21:16:03Z"
+      },
+      {
+        "name": "ios",
+        "conclusion": "skipped",
+        "url": "https://github.com/wckdboy/niobium/actions/runs/40023699121/job/120654844492",
+        "startedAt": "2026-10-23T21:02:38Z",
+        "completedAt": "2026-10-23T21:02:37Z"
+      }
+    ]
+  },
+  "review": {
+    "provider": "CodeRabbit",
+    "pr": "https://github.com/wckdboy/niobium/pull/14",
+    "state": "APPROVED",
+    "review_id": 5634481133,
+    "source_commit": "97527d199c1b3ca43f5a0257eabf533d4c715c5c",
+    "author_override_used": false,
+    "greptile_automatic_reviews": false,
+    "fixed_regressions": [
+      {
+        "comment_id": 4364182010,
+        "fix_commit": "97527d199c1b3ca43f5a0257eabf533d4c715c5c",
+        "test": "wideningTheHistoryAtTheBottomKeepsFollowingEnabled",
+        "failed_before_fix": true,
+        "passed_after_fix": true
+      }
+    ],
+    "url": "https://github.com/wckdboy/niobium/pull/14#pullrequestreview-5634481133"
+  },
+  "checks": {
+    "shared_kotlin_core": 33,
+    "desktop_jvm_and_ui": 55,
+    "android_specific_jvm": 7,
+    "android_total_jvm": 40,
+    "node": 85,
+    "python": 15,
+    "native_vault_acceptance": {
+      "linux": {
+        "platform": "linux-secret-service",
+        "native_operations": 23,
+        "isolated_vault": true,
+        "restart_persistence": true,
+        "account_and_kind_isolation": true,
+        "locked_reads_writes_deletes_rejected": true,
+        "idempotent_delete": true,
+        "invalid_requests_rejected": true,
+        "private_bus_mandatory": true
+      },
+      "macos": {
+        "platform": "macos-keychain",
+        "native_operations": 27,
+        "isolated_vault": true,
+        "restart_persistence": true,
+        "account_and_kind_isolation": true,
+        "locked_reads_writes_deletes_rejected": true,
+        "idempotent_delete": true,
+        "invalid_requests_rejected": true,
+        "private_bus_mandatory": false
+      }
+    },
+    "native_dsh_three_cycle_baselines": {
+      "linux": {
+        "stream_parts_per_turn": 3,
+        "cycles": [
+          {
+            "room_user_events": 1,
+            "dm_turns": 3,
+            "elapsed_ms": 3861,
+            "room_member_events": 1,
+            "cycle": 1,
+            "owned_processes_remaining": 0
+          },
+          {
+            "room_user_events": 2,
+            "dm_turns": 3,
+            "elapsed_ms": 3741,
+            "room_member_events": 2,
+            "cycle": 2,
+            "owned_processes_remaining": 0
+          },
+          {
+            "room_user_events": 3,
+            "dm_turns": 3,
+            "elapsed_ms": 3763,
+            "room_member_events": 3,
+            "cycle": 3,
+            "owned_processes_remaining": 0
+          }
+        ],
+        "process_samples": [
+          {
+            "rss_kib": 269784,
+            "elapsed_ms": 1263,
+            "process_count": 2,
+            "cycle": 1,
+            "cpu_ms": 1000
+          },
+          {
+            "rss_kib": 292288,
+            "elapsed_ms": 1776,
+            "process_count": 2,
+            "cycle": 1,
+            "cpu_ms": 1000
+          },
+          {
+            "rss_kib": 312272,
+            "elapsed_ms": 2290,
+            "process_count": 2,
+            "cycle": 1,
+            "cpu_ms": 1000
+          },
+          {
+            "rss_kib": 314076,
+            "elapsed_ms": 2805,
+            "process_count": 2,
+            "cycle": 1,
+            "cpu_ms": 2000
+          },
+          {
+            "rss_kib": 314088,
+            "elapsed_ms": 3319,
+            "process_count": 2,
+            "cycle": 1,
+            "cpu_ms": 2000
+          },
+          {
+            "rss_kib": 314088,
+            "elapsed_ms": 3833,
+            "process_count": 2,
+            "cycle": 1,
+            "cpu_ms": 2000
+          },
+          {
+            "rss_kib": 314088,
+            "elapsed_ms": 4346,
+            "process_count": 2,
+            "cycle": 1,
+            "cpu_ms": 2000
+          },
+          {
+            "rss_kib": 314088,
+            "elapsed_ms": 4861,
+            "process_count": 2,
+            "cycle": 1,
+            "cpu_ms": 2000
+          },
+          {
+            "rss_kib": 276168,
+            "elapsed_ms": 6282,
+            "process_count": 2,
+            "cycle": 2,
+            "cpu_ms": 1000
+          },
+          {
+            "rss_kib": 291016,
+            "elapsed_ms": 6795,
+            "process_count": 2,
+            "cycle": 2,
+            "cpu_ms": 1000
+          },
+          {
+            "rss_kib": 302624,
+            "elapsed_ms": 7308,
+            "process_count": 2,
+            "cycle": 2,
+            "cpu_ms": 1000
+          },
+          {
+            "rss_kib": 312880,
+            "elapsed_ms": 7821,
+            "process_count": 2,
+            "cycle": 2,
+            "cpu_ms": 1000
+          },
+          {
+            "rss_kib": 314096,
+            "elapsed_ms": 8334,
+            "process_count": 2,
+            "cycle": 2,
+            "cpu_ms": 1000
+          },
+          {
+            "rss_kib": 314144,
+            "elapsed_ms": 8849,
+            "process_count": 2,
+            "cycle": 2,
+            "cpu_ms": 1000
+          },
+          {
+            "rss_kib": 314184,
+            "elapsed_ms": 9364,
+            "process_count": 2,
+            "cycle": 2,
+            "cpu_ms": 1000
+          },
+          {
+            "rss_kib": 314228,
+            "elapsed_ms": 9877,
+            "process_count": 2,
+            "cycle": 2,
+            "cpu_ms": 1000
+          },
+          {
+            "rss_kib": 270472,
+            "elapsed_ms": 11154,
+            "process_count": 2,
+            "cycle": 3,
+            "cpu_ms": 1000
+          },
+          {
+            "rss_kib": 281808,
+            "elapsed_ms": 11671,
+            "process_count": 2,
+            "cycle": 3,
+            "cpu_ms": 1000
+          },
+          {
+            "rss_kib": 298384,
+            "elapsed_ms": 12184,
+            "process_count": 2,
+            "cycle": 3,
+            "cpu_ms": 1000
+          },
+          {
+            "rss_kib": 308392,
+            "elapsed_ms": 12697,
+            "process_count": 2,
+            "cycle": 3,
+            "cpu_ms": 1000
+          },
+          {
+            "rss_kib": 310024,
+            "elapsed_ms": 13210,
+            "process_count": 2,
+            "cycle": 3,
+            "cpu_ms": 1000
+          },
+          {
+            "rss_kib": 310068,
+            "elapsed_ms": 13723,
+            "process_count": 2,
+            "cycle": 3,
+            "cpu_ms": 1000
+          },
+          {
+            "rss_kib": 310112,
+            "elapsed_ms": 14236,
+            "process_count": 2,
+            "cycle": 3,
+            "cpu_ms": 1000
+          },
+          {
+            "rss_kib": 310156,
+            "elapsed_ms": 14749,
+            "process_count": 2,
+            "cycle": 3,
+            "cpu_ms": 1000
+          }
+        ],
+        "owned_processes_remaining": 0,
+        "platform": "Linux",
+        "schema_version": 1,
+        "java": "17.0.21",
+        "cpu_source": "ps cumulative TIME for sampled live owned processes",
+        "process_scope": "Local host and its live descendants; excludes UI JVM and unsampled transient children",
+        "provider": "isolated fake HTTP/SSE; no external account",
+        "elapsed_ms": 14897,
+        "scope": "Three-cycle acceptance baseline; not a multi-hour, physical-device or real-account soak",
+        "arch": "amd64",
+        "streamed_turns": 12
+      },
+      "macos": {
+        "stream_parts_per_turn": 3,
+        "cycles": [
+          {
+            "room_user_events": 1,
+            "dm_turns": 3,
+            "elapsed_ms": 4151,
+            "room_member_events": 1,
+            "cycle": 1,
+            "owned_processes_remaining": 0
+          },
+          {
+            "room_user_events": 2,
+            "dm_turns": 3,
+            "elapsed_ms": 3872,
+            "room_member_events": 2,
+            "cycle": 2,
+            "owned_processes_remaining": 0
+          },
+          {
+            "room_user_events": 3,
+            "dm_turns": 3,
+            "elapsed_ms": 4032,
+            "room_member_events": 3,
+            "cycle": 3,
+            "owned_processes_remaining": 0
+          }
+        ],
+        "process_samples": [
+          {
+            "rss_kib": 258976,
+            "elapsed_ms": 1189,
+            "process_count": 2,
+            "cycle": 1,
+            "cpu_ms": 1090
+          },
+          {
+            "rss_kib": 274864,
+            "elapsed_ms": 1752,
+            "process_count": 2,
+            "cycle": 1,
+            "cpu_ms": 1320
+          },
+          {
+            "rss_kib": 275760,
+            "elapsed_ms": 2275,
+            "process_count": 2,
+            "cycle": 1,
+            "cpu_ms": 1370
+          },
+          {
+            "rss_kib": 308384,
+            "elapsed_ms": 2781,
+            "process_count": 2,
+            "cycle": 1,
+            "cpu_ms": 1480
+          },
+          {
+            "rss_kib": 309520,
+            "elapsed_ms": 3367,
+            "process_count": 2,
+            "cycle": 1,
+            "cpu_ms": 1500
+          },
+          {
+            "rss_kib": 310288,
+            "elapsed_ms": 3952,
+            "process_count": 2,
+            "cycle": 1,
+            "cpu_ms": 1520
+          },
+          {
+            "rss_kib": 310304,
+            "elapsed_ms": 4473,
+            "process_count": 2,
+            "cycle": 1,
+            "cpu_ms": 1520
+          },
+          {
+            "rss_kib": 310352,
+            "elapsed_ms": 5051,
+            "process_count": 2,
+            "cycle": 1,
+            "cpu_ms": 1520
+          },
+          {
+            "rss_kib": 266912,
+            "elapsed_ms": 5996,
+            "process_count": 2,
+            "cycle": 2,
+            "cpu_ms": 860
+          },
+          {
+            "rss_kib": 275296,
+            "elapsed_ms": 6510,
+            "process_count": 2,
+            "cycle": 2,
+            "cpu_ms": 1020
+          },
+          {
+            "rss_kib": 309216,
+            "elapsed_ms": 7044,
+            "process_count": 2,
+            "cycle": 2,
+            "cpu_ms": 1160
+          },
+          {
+            "rss_kib": 318688,
+            "elapsed_ms": 7560,
+            "process_count": 2,
+            "cycle": 2,
+            "cpu_ms": 1210
+          },
+          {
+            "rss_kib": 319856,
+            "elapsed_ms": 8076,
+            "process_count": 2,
+            "cycle": 2,
+            "cpu_ms": 1220
+          },
+          {
+            "rss_kib": 320288,
+            "elapsed_ms": 8590,
+            "process_count": 2,
+            "cycle": 2,
+            "cpu_ms": 1220
+          },
+          {
+            "rss_kib": 320320,
+            "elapsed_ms": 9097,
+            "process_count": 2,
+            "cycle": 2,
+            "cpu_ms": 1220
+          },
+          {
+            "rss_kib": 320368,
+            "elapsed_ms": 9670,
+            "process_count": 2,
+            "cycle": 2,
+            "cpu_ms": 1220
+          },
+          {
+            "rss_kib": 265744,
+            "elapsed_ms": 10509,
+            "process_count": 2,
+            "cycle": 3,
+            "cpu_ms": 860
+          },
+          {
+            "rss_kib": 275536,
+            "elapsed_ms": 11069,
+            "process_count": 2,
+            "cycle": 3,
+            "cpu_ms": 1020
+          },
+          {
+            "rss_kib": 315248,
+            "elapsed_ms": 11643,
+            "process_count": 2,
+            "cycle": 3,
+            "cpu_ms": 1120
+          },
+          {
+            "rss_kib": 322784,
+            "elapsed_ms": 12210,
+            "process_count": 2,
+            "cycle": 3,
+            "cpu_ms": 1200
+          },
+          {
+            "rss_kib": 323488,
+            "elapsed_ms": 12726,
+            "process_count": 2,
+            "cycle": 3,
+            "cpu_ms": 1220
+          },
+          {
+            "rss_kib": 324784,
+            "elapsed_ms": 13241,
+            "process_count": 2,
+            "cycle": 3,
+            "cpu_ms": 1230
+          },
+          {
+            "rss_kib": 324832,
+            "elapsed_ms": 13770,
+            "process_count": 2,
+            "cycle": 3,
+            "cpu_ms": 1230
+          },
+          {
+            "rss_kib": 324864,
+            "elapsed_ms": 14278,
+            "process_count": 2,
+            "cycle": 3,
+            "cpu_ms": 1230
+          }
+        ],
+        "owned_processes_remaining": 0,
+        "platform": "Mac OS X",
+        "schema_version": 1,
+        "java": "17.0.21",
+        "cpu_source": "ps cumulative TIME for sampled live owned processes",
+        "process_scope": "Local host and its live descendants; excludes UI JVM and unsampled transient children",
+        "provider": "isolated fake HTTP/SSE; no external account",
+        "elapsed_ms": 14534,
+        "scope": "Three-cycle acceptance baseline; not a multi-hour, physical-device or real-account soak",
+        "arch": "aarch64",
+        "streamed_turns": 12
+      }
+    },
+    "desktop_usability": {
+      "native_ui_tests": 12,
+      "history_rows": 2000,
+      "text_percentages": [
+        100,
+        125,
+        150
+      ],
+      "focus_and_keyboard": "pass",
+      "tall_reply_following_and_reading_position": "pass",
+      "narrow_and_hidpi_setup": "pass",
+      "workshop_escape_and_opener_focus": "pass"
+    },
+    "installed_launchers_and_native_installers": "pass on Linux x64 and macOS ARM64",
+    "final_macos_installer_checked_locally": true
+  },
+  "native_acceptance_receipts": [
+    {
+      "platform": "macos-keychain",
+      "path": "docs/evidence/beta213-native-vault-macos.json",
+      "sha256": "19d72de612ec86723b6dac7a8a49360d4cf1b80ac277b70597fac6b844c68315",
+      "source_commit": "97527d199c1b3ca43f5a0257eabf533d4c715c5c",
+      "native_operations": 27,
+      "isolated_vault": true,
+      "restart_persistence": true,
+      "account_and_kind_isolation": true,
+      "locked_reads_writes_deletes_rejected": true,
+      "idempotent_delete": true,
+      "invalid_requests_rejected": true,
+      "private_bus_mandatory": false
+    },
+    {
+      "platform": "linux-secret-service",
+      "path": "docs/evidence/beta213-native-vault-linux.json",
+      "sha256": "c53c01892e72cd72030024d197aac4c08a8873c9aafad3f1259ed31314413a82",
+      "source_commit": "97527d199c1b3ca43f5a0257eabf533d4c715c5c",
+      "native_operations": 23,
+      "isolated_vault": true,
+      "restart_persistence": true,
+      "account_and_kind_isolation": true,
+      "locked_reads_writes_deletes_rejected": true,
+      "idempotent_delete": true,
+      "invalid_requests_rejected": true,
+      "private_bus_mandatory": true
+    },
+    {
+      "kind": "dsh-three-cycle-baseline",
+      "path": "docs/evidence/beta213-soak-macos.json",
+      "sha256": "0d0e0a521994b2029442c3b4c5d7a0307fcd6832b23772bfcac8315421c33b68",
+      "source_commit": "97527d199c1b3ca43f5a0257eabf533d4c715c5c"
+    },
+    {
+      "kind": "dsh-three-cycle-baseline",
+      "path": "docs/evidence/beta213-soak-linux.json",
+      "sha256": "6e83d4527f5c076d3abcefb730c422d6cb0538fc29072b24b6b19b1589443c4c",
+      "source_commit": "97527d199c1b3ca43f5a0257eabf533d4c715c5c"
+    }
+  ],
+  "desktop": {
+    "version": "2.1.3",
+    "bundle_id": "ai.wckd.niobium.desktop",
+    "platforms": [
+      "linux-x64",
+      "darwin-arm64"
+    ],
+    "linux_tested": "Ubuntu 24.04 x64",
+    "linux_dependency": "libsecret-1-0 and a configured Secret Service for optional vault use",
+    "macos_minimum": "13.5",
+    "macos_distribution_signed": false,
+    "macos_notarized": false,
+    "macos_signature": "ad-hoc",
+    "jdk": "Temurin 17.0.21+9",
+    "node": "24.22.1",
+    "dsh": "0.1.0-rc.7",
+    "scope": "preview",
+    "accessibility_reference": "https://kotlinlang.org/docs/multiplatform/compose-desktop-accessibility.html",
+    "text_size": "Native View menu, 100/125/150%, saved in OS application preferences",
+    "chat_following": "Follows measured layout at bottom, preserves older reading position, Latest messages resumes following",
+    "vault_storage": "opt-in OS vault for named gateway and image accounts; session-only use remains available",
+    "vault_boundary": "OS-user-level storage at rest. Same-user processes/local tools can read saved values. The unsigned helper does not validate a signed parent; Linux Secret Service shares the user session.",
+    "dsh_provider_keys": "unchanged owner-only credential file; vault bridge remains open",
+    "saved_credentials_autoloaded": false,
+    "image_receipt_ownership": "Another/rotated key or legacy receipt requires explicit account confirmation and a successful matching status response; unknown submissions never replay their POST."
+  },
+  "android": {
+    "rebuilt_in_this_release": false,
+    "version": "2.1.1",
+    "version_code": 14,
+    "retained_release": "https://github.com/wckdboy/niobium/releases/tag/v2.1.1-beta.1",
+    "apk_url": "https://github.com/wckdboy/niobium/releases/download/v2.1.1-beta.1/Niobium-2.1.1-beta.1-android-arm64.apk",
+    "sha256": "8394fb5105825d7f8c8339b53d40a95c96a8fd77825bd3d341d398f9964398a2",
+    "physical_device_tested": false,
+    "physical_16kb_device_tested": false,
+    "retained_public_download": {
+      "public_http_status": 200,
+      "size": 90802742,
+      "url": "https://github.com/wckdboy/niobium/releases/download/v2.1.1-beta.1/Niobium-2.1.1-beta.1-android-arm64.apk",
+      "verified_at": "2026-10-23T21:23:57.871209+00:00"
+    }
+  },
+  "runtime_hashes": {
+    "desktop/native/vault.c": "962bc519372c93419408e8d63d1084210933704da137f7f9ba6c3dcea4c87514",
+    "runtime/niobium-agent.cjs": "211073f4eee26b1a3041716f70d4a005978cd6bdf0312b353c77b521546e3901",
+    "runtime/niobium-messaging.cjs": "f04695ffd40a03f33f207d5b6b0d63f45dacb504085fe9af20a05ac3234b5e2e",
+    "android/runtime/niobium-local.cjs": "dd7391760bcb9195c2e6855ebadd634c7143a692ac81cec40004a2a5cce91f80",
+    "desktop/runtime/desktop-host.cjs": "19501b2bc55591cbaf0daf71d0af93518d161fa153053cf99700982266f5d032",
+    "desktop/runtime/package-lock.json": "a046317fced24cbcd476129382172d6a3f07a8c25784ed3caaf925e78a151e38"
+  },
+  "public_assets": [
+    {
+      "name": "Niobium-2.1.3-beta.1-linux-amd64.deb",
+      "size": 197070714,
+      "sha256": "672be200768ce636e39c752d92b2f4c84c2893be3842de48c8d2f63423eb74d8",
+      "public_http_status": 200,
+      "url": "https://github.com/wckdboy/niobium/releases/download/v2.1.3-beta.1/Niobium-2.1.3-beta.1-linux-amd64.deb"
+    },
+    {
+      "name": "Niobium-2.1.3-beta.1-macos-arm64.dmg",
+      "size": 210036906,
+      "sha256": "24e2915f0497f362f3cf23936f9e8313f7a46ed6ec5b431be9bb9266a23d75e4",
+      "public_http_status": 200,
+      "url": "https://github.com/wckdboy/niobium/releases/download/v2.1.3-beta.1/Niobium-2.1.3-beta.1-macos-arm64.dmg"
+    },
+    {
+      "name": "OpenJDK17U-jdk-sources_17.0.21_9.tar.gz",
+      "size": 109791166,
+      "sha256": "89a455fa83b19e3a166bca47a465d51712441be607543dd465083ef2437a426d",
+      "public_http_status": 200,
+      "url": "https://github.com/wckdboy/niobium/releases/download/v2.1.3-beta.1/OpenJDK17U-jdk-sources_17.0.21_9.tar.gz"
+    },
+    {
+      "name": "release-metadata.json",
+      "size": 17773,
+      "sha256": "42ba29aad0408b004fcf7fd149940904ae67391b33b25423198aabbbcb8eb4e4",
+      "public_http_status": 200,
+      "url": "https://github.com/wckdboy/niobium/releases/download/v2.1.3-beta.1/release-metadata.json"
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "size": 400,
+      "sha256": "ef840809ed4c69d7f97b9f303311ca5952d76a7d4f6552f6e4dad7be20106301",
+      "public_http_status": 200,
+      "url": "https://github.com/wckdboy/niobium/releases/download/v2.1.3-beta.1/SHA256SUMS.txt"
+    }
+  ],
+  "public_metadata_and_checksums_exact": true,
+  "canonical_tag_commit": "97527d199c1b3ca43f5a0257eabf533d4c715c5c",
+  "website": {
+    "deployment_version": "17920223-92c2-4985-93aa-3853478bf933",
+    "verified_at": "2026-10-23T21:22:31.371971+00:00",
+    "public_files_verified": 20,
+    "files": [
+      {
+        "path": "bot-build.md",
+        "url": "https://niobium.sh/bot-build.md",
+        "status": 200,
+        "sha256": "aa0046f35bd5a99a5d53dc3f95d996d2008e912337532190984c2670a437d46f",
+        "size": 9184
+      },
+      {
+        "path": "build/index.html",
+        "url": "https://niobium.sh/build/",
+        "status": 200,
+        "sha256": "e5f2ee3dd24bd882ef2ab7d74d0202c75903f7d7316647c88901cb3b8dcb28cd",
+        "size": 5490
+      },
+      {
+        "path": "cast-strip.png",
+        "url": "https://niobium.sh/cast-strip.png",
+        "status": 200,
+        "sha256": "e76095833f0e1c8edc9cedf71866739c5de46f48b0eda057d5d6293e8167c165",
+        "size": 4248
+      },
+      {
+        "path": "desktop-preview.png",
+        "url": "https://niobium.sh/desktop-preview.png",
+        "status": 200,
+        "sha256": "23d4bfb79bf103dedcd56a0ba0dda3b0b52c4a7d5cebca77dfce488b1ac6fb45",
+        "size": 60511
+      },
+      {
+        "path": "favicon.svg",
+        "url": "https://niobium.sh/favicon.svg",
+        "status": 200,
+        "sha256": "be2ee73797c4ae40cefd46c0739b6c4f69ad3db6371abd957d07e3f10e19a1a2",
+        "size": 928
+      },
+      {
+        "path": "fonts/jetbrains-mono-latin.woff2",
+        "url": "https://niobium.sh/fonts/jetbrains-mono-latin.woff2",
+        "status": 200,
+        "sha256": "2c32b9b3ee358c119e210f6f5195f9bd34894d78a785ff2e95d60e718e400af4",
+        "size": 31340
+      },
+      {
+        "path": "index.html",
+        "url": "https://niobium.sh/",
+        "status": 200,
+        "sha256": "79c447c8f37825c4ca40d8c05da7d27200743fbbec327dd1d4fa44932ffb2021",
+        "size": 7402
+      },
+      {
+        "path": "legal/index.html",
+        "url": "https://niobium.sh/legal/",
+        "status": 200,
+        "sha256": "5a3df29c5e408681df905fbba76a9764eb4264c23c2907a57d72d2757c293123",
+        "size": 5993
+      },
+      {
+        "path": "local/index.html",
+        "url": "https://niobium.sh/local/",
+        "status": 200,
+        "sha256": "a4b5da391e44ab1e0303df4d913b919ede16a742e3db9df58b88d48c3381bdaf",
+        "size": 7209
+      },
+      {
+        "path": "og/icon.png",
+        "url": "https://niobium.sh/og/icon.png",
+        "status": 200,
+        "sha256": "74c70309fa9f5abeea610ebf613f93186db4d5fba7d7e21f75a2613c8756aacf",
+        "size": 7743
+      },
+      {
+        "path": "og/niobium.png",
+        "url": "https://niobium.sh/og/niobium.png",
+        "status": 200,
+        "sha256": "5f380e11d3f7a12d6c52c5f1393e856ce7854d30cfb9f5c58d6b0d392c834867",
+        "size": 13253
+      },
+      {
+        "path": "pixel-cast-atlas.png",
+        "url": "https://niobium.sh/pixel-cast-atlas.png",
+        "status": 200,
+        "sha256": "4c16507ca42f6332c601457691d63e43d858362b73c504242465f701eeadf93b",
+        "size": 28036
+      },
+      {
+        "path": "pixel-custom-atlas.png",
+        "url": "https://niobium.sh/pixel-custom-atlas.png",
+        "status": 200,
+        "sha256": "18c3a6a7b94d07092ea7b2c08cc59732075788bf8cdb707eb6182e985d4f362f",
+        "size": 48544
+      },
+      {
+        "path": "pixel-familiars.png",
+        "url": "https://niobium.sh/pixel-familiars.png",
+        "status": 200,
+        "sha256": "ef956c3bf74275c4b2a0f241cb802b263dbd0fbcd1f0090179f1b55e859badf1",
+        "size": 1198
+      },
+      {
+        "path": "pixel-wardrobe-v1.png",
+        "url": "https://niobium.sh/pixel-wardrobe-v1.png",
+        "status": 200,
+        "sha256": "91b0c71ba3d840047b8a99cc94cfb902333fed90d5426e7438d12ad3075fb7d0",
+        "size": 50958
+      },
+      {
+        "path": "releases/index.html",
+        "url": "https://niobium.sh/releases/",
+        "status": 200,
+        "sha256": "0a03c58edecfc2e64dad6792e30a361a653c30163a71efdf34da1216b51b5d6b",
+        "size": 8078
+      },
+      {
+        "path": "robots.txt",
+        "url": "https://niobium.sh/robots.txt",
+        "status": 200,
+        "sha256": "552d1e6069be74e21050173d4fa54ee1ba8520c95108b1f4d0255dcb61171763",
+        "size": 63
+      },
+      {
+        "path": "site.css",
+        "url": "https://niobium.sh/site.css",
+        "status": 200,
+        "sha256": "62c5d13d82a818b37f2c8b8f3c4c8346c757cf001a03d348f8c1038760ea6253",
+        "size": 16199
+      },
+      {
+        "path": "sitemap.xml",
+        "url": "https://niobium.sh/sitemap.xml",
+        "status": 200,
+        "sha256": "b1681b9159011e7ab8bb110505240ee4f083bdbacba5fbe022818a41ab9fcc9b",
+        "size": 396
+      },
+      {
+        "path": "system/index.html",
+        "url": "https://niobium.sh/system/",
+        "status": 200,
+        "sha256": "a6782ca1942ace34dac329962b0f2997ae71c5b9db2b91178cf8d4e9a334da64",
+        "size": 6069
+      }
+    ],
+    "www_home_bytes_match": true,
+    "custom_404_bytes_match": true
+  },
+  "plane": {
+    "project_id": "2fbcf987-20de-43dc-80ac-0a6bab7ec03a",
+    "usability_and_soaks": "NIO-32",
+    "state": "In Progress",
+    "exported_items": 39,
+    "next": [
+      "NIO-32: macOS VoiceOver, physical devices and multi-hour soaks",
+      "NIO-31: live host-prompt acceptance, DSH vault bridge and caller authentication",
+      "NIO-29: physical Android/16 KB acceptance",
+      "NIO-34/NIO-35: Hermes parity and reconnect replay"
+    ]
+  },
+  "ios": {
+    "release_work": "parked by user request",
+    "new_build_in_this_release": false
+  },
+  "limitations": [
+    "Vault storage does not isolate credentials from same-user processes or local agent tools. Signed-parent authentication is not implemented.",
+    "Live host credential-prompt acceptance, the DSH credential-vault bridge, full Hermes parity, macOS VoiceOver, physical-device accessibility and multi-hour soaks/reconnect replay remain open.",
+    "Real-account model/image acceptance and physical Android/16 KB execution remain open.",
+    "The framework documents no Linux screen-reader bridge; native semantics tests do not prove screen-reader interoperability.",
+    "Resource samples cover the local host and its live descendants, excluding the UI JVM and unsampled transient children. Three cycles are a bounded baseline, not multi-hour performance acceptance."
+  ]
+}
