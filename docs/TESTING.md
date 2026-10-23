@@ -366,5 +366,9 @@ addresses fail before credentials are sent, and neither status probes nor socket
 handshakes follow redirects. HTTPS is required outside literal loopback addresses.
 Startup timeouts now report a retryable failure after owned process cleanup; a
 regression retries without restarting the app. Concurrent Stop callers share the
-same cleanup promise. Current suites: 33 shared-core, 17 desktop, seven Android-
+same cleanup promise. Current suites: 33 shared-core, 18 desktop, seven Android-
 specific JVM tests, 67 Node and 15 Python checks.
+
+Gateway request deadlines report transport errors rather than masquerading as
+caller cancellation. External coroutine cancellation still propagates. A delayed
+WebSocket handshake also clears the desktop Connecting state with a retry action.

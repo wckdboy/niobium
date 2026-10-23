@@ -580,7 +580,7 @@ Linux x64 DEB, macOS ARM64 DMG and signed Android 2.1/code13 are the release
 targets. iOS release/signing work remains parked. Native CI and final publication
 are the remaining release gates.
 
-Validated locally: 33 shared-core tests, 17 desktop tests, seven additional
+Validated locally: 33 shared-core tests, 18 desktop tests, seven additional
 Android JVM tests, 67 Node checks, 15 Python checks and 64 exact wardrobe fixtures.
 The signed APK installs and cold-launches on the ARM64 Android 16 emulator.
 All 16 instrumented checks passed after extraction; the two affected DSH/transport

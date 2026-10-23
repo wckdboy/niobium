@@ -1,7 +1,7 @@
 package io.sovware.niobium
 
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
@@ -150,7 +150,8 @@ class GatewayClient(private val listener: Listener, private val webSocketFactory
             throw GatewayException("Could not send that request to the gateway.")
         }
         return try {
-            withTimeout(timeoutMs) { deferred.await() }
+            withTimeoutOrNull(timeoutMs) { deferred.await() }
+                ?: throw GatewayException("The gateway request timed out. Check its status before retrying.")
         } finally {
             pending.remove(id)
         }

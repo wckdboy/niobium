@@ -21,7 +21,7 @@ data class DesktopState(
 )
 
 /** One store per engine. A switch never transfers sessions, requests or tokens. */
-class DesktopAgent(val local: Boolean, private val scope: CoroutineScope, private val outbox: RoomOutbox = RoomOutbox()) {
+class DesktopAgent(val local: Boolean, private val scope: CoroutineScope, private val outbox: RoomOutbox = RoomOutbox(), private val handshakeTimeoutMillis: Long = 20_000) {
     private val mutable = MutableStateFlow(DesktopState())
     val state = mutable.asStateFlow()
     private var gateway: GatewayClient? = null
@@ -60,7 +60,8 @@ class DesktopAgent(val local: Boolean, private val scope: CoroutineScope, privat
                 GatewayClient.probe(mutable.value.address, token)
                 if (!owns(client, epoch)) return@launch
                 client.connect(mutable.value.address, token)
-                withTimeout(20_000) { ready.await() }
+                withTimeoutOrNull(handshakeTimeoutMillis) { ready.await() }
+                    ?: throw GatewayException("The gateway handshake timed out. Connect again to retry.")
                 val runtime = client.request("runtime.describe", timeoutMs = 12_000)
                 val selectedSource = runtime.o("session_create")?.strings("sources")?.firstOrNull { it in listOf("gui", "web") } ?: "gui"
                 val caps = client.request("client.capabilities", JSONObject().put("server_requests", true), 12_000)

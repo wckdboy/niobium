@@ -55,6 +55,8 @@ class GatewayClientTest {
     } }
     @Test fun timedOutAndCancelledRequestsDoNotPoisonTheNextCall() { runBlocking {
         try { client.request("wait", timeoutMs = 100); fail("Expected timeout") }
+        catch (error: GatewayException) { assertTrue(error.message!!.contains("timed out")) }
+        try { withTimeout(100) { client.request("wait", timeoutMs = 5000) }; fail("Expected caller cancellation") }
         catch (_: TimeoutCancellationException) {}
         val pending = launch { client.request("wait") }; delay(30); pending.cancelAndJoin()
         assertEquals("alive", client.request("echo", JSONObject().put("value", "alive")).getString("value"))

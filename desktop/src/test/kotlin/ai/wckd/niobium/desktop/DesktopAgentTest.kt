@@ -39,6 +39,26 @@ class DesktopAgentTest {
         assertEquals("fixture-session", chat.session)
         assertTrue(chat.messages.isEmpty())
     }
+    @Test fun aTimedOutHandshakeClearsTheConnectingState() = runBlocking {
+        val release = java.util.concurrent.CountDownLatch(1)
+        val server = com.sun.net.httpserver.HttpServer.create(java.net.InetSocketAddress("127.0.0.1", 0), 4)
+        server.createContext("/api/status") { exchange ->
+            val bytes = "{}".toByteArray(); exchange.sendResponseHeaders(200, bytes.size.toLong())
+            exchange.responseBody.use { it.write(bytes) }; exchange.close()
+        }
+        server.createContext("/api/ws") { exchange ->
+            release.await(5, TimeUnit.SECONDS); exchange.sendResponseHeaders(401, -1); exchange.close()
+        }
+        server.start()
+        val waiting = DesktopAgent(false, scope, handshakeTimeoutMillis = 200)
+        try {
+            withContext(Dispatchers.Main) { waiting.connect("http://127.0.0.1:${server.address.port}", "fixture-token") }
+            val stopped = withTimeout(5000) { waiting.state.first { it.error != null } }
+            assertFalse(stopped.connecting); assertFalse(stopped.connected)
+            assertTrue(stopped.error!!.contains("timed out"))
+        } finally { withContext(Dispatchers.Main) { waiting.disconnect() }; release.countDown(); server.stop(0) }
+    }
+
     @Test fun rejectedCredentialsNeverExposeAReadyRoster() = runBlocking {
         withContext(Dispatchers.Main) { agent.connect(base, "wrong") }
         val rejected = withTimeout(10_000) { agent.state.first { it.error != null } }

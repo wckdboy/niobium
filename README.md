@@ -54,7 +54,7 @@ Desktop CI runs native tests and packaging on both Linux and macOS; iOS CI is op
 
 CodeRabbit reviews new pull requests and incremental pushes using
 [repository guidance](.coderabbit.yaml). Automatic Greptile reviews are disabled.
-The 2.1 checks include 33 shared-core, 17 desktop and seven Android-specific JVM
+The 2.1 checks include 33 shared-core, 18 desktop and seven Android-specific JVM
 tests, 67 Node checks and 15 Python checks. Native installer checks run the
 packaged app and its private DSH API, and reject stale adapters.
 
@@ -240,11 +240,10 @@ acceptance and actual delegation remain. Mobile gateway push delivery is not pro
 
 [niobium.sh](https://niobium.sh) uses the shared WCKD web design and is deployed
 with Cloudflare Workers Static Assets from this repository. The
-[2.0 beta release](https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.7)
-includes the signed Android APK, corresponding runtime sources, metadata and
-checksums. Full iOS 2.0 (15), ai.wckd.niobium, is compiled and validated; its export
-and TestFlight upload await Apple account sign-in in Xcode. Build 14 is the latest
-accepted Apple upload. Tester availability remains unverified. The last stable release is
+[2.1 preview release](https://github.com/wckdboy/niobium/releases/tag/v2.1.0-beta.1)
+includes Linux x64 and macOS ARM64 desktop installers, a signed Android APK,
+corresponding runtime/OpenJDK sources, metadata and checksums. iOS sources remain
+available; iOS release work is parked. The last stable release is
 [1.1](https://github.com/wckdboy/niobium/releases/tag/v1.1.0).
 
 The Android UI is MIT; bundled PRoot/Alpine components retain their GPL/LGPL/BSD licenses. The iOS full build combines GPLv3 components. Niobium is
