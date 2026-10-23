@@ -49,6 +49,150 @@
   },
   {
     "look": {
+      "portrait": "lilith"
+    },
+    "rgba_sha256": "2f75d2e228b8f5c4a7f00b94aa09fcafc5a550918f2577597cc7fe9c26c4497c"
+  },
+  {
+    "look": {
+      "portrait": "kael"
+    },
+    "rgba_sha256": "fd36b46bb3d079d71306beea12ebaef62febf0163badf06b7b5942d29c3575e0"
+  },
+  {
+    "look": {
+      "portrait": "seraph"
+    },
+    "rgba_sha256": "bfc27ce2a9dad9c98cb7824dafeefc91a8be25299d588c4e2c331e7315f74d53"
+  },
+  {
+    "look": {
+      "portrait": "zero"
+    },
+    "rgba_sha256": "fd910fb7ce3c8a2bc31187f94f6492d12ce2fe064e6cc800c04842e8516dc3dc"
+  },
+  {
+    "look": {
+      "portrait": "thorn"
+    },
+    "rgba_sha256": "b5ba063a8ff3694b5f87d9fee2acfe43255a0907d568d06c1cbba0fe4eb2c6bf"
+  },
+  {
+    "look": {
+      "portrait": "echo"
+    },
+    "rgba_sha256": "246bdd71b06c9e656039537ca712bcebff70343740a1250226a29bda8c2259fa"
+  },
+  {
+    "look": {
+      "portrait": "ember"
+    },
+    "rgba_sha256": "f4132e8635c22b8f7cd5ab2c58e7413bdf960c6bce7c56a0fa62d661eccacd45"
+  },
+  {
+    "look": {
+      "portrait": "luna"
+    },
+    "rgba_sha256": "3c7f878546055dca965d21a878a383567661137eccc11115211b4f8d19893d86"
+  },
+  {
+    "look": {
+      "portrait": "riven"
+    },
+    "rgba_sha256": "17ff628e19fffe40fd4e54ff72c8cdd34815dcc7e109edd0949b7a16d2ec10c1"
+  },
+  {
+    "look": {
+      "portrait": "sable"
+    },
+    "rgba_sha256": "bb9242a4b8a9b345adb35b199e9f98c905711140f0bed5079125b40715e13bcb"
+  },
+  {
+    "look": {
+      "portrait": "ivy"
+    },
+    "rgba_sha256": "249750b78c02139937bc0710b41138cddae8d4ec91b6b76563dc6f59558b0b9e"
+  },
+  {
+    "look": {
+      "portrait": "volt"
+    },
+    "rgba_sha256": "c5481671f39bcc438a4f228dfba71302934c5bb16b56d1cf702d0ae8bbfc8561"
+  },
+  {
+    "look": {
+      "portrait": "iris"
+    },
+    "rgba_sha256": "ffd7ab68d799ae064536d18fc740caf931852abdebd34629d792de780b929c21"
+  },
+  {
+    "look": {
+      "portrait": "onyx"
+    },
+    "rgba_sha256": "58ee08f2ababbeb21a70c09c0442e7b18e861c8351fa152aca78456bfc0c0f3e"
+  },
+  {
+    "look": {
+      "portrait": "neve"
+    },
+    "rgba_sha256": "55df4adb142ba510409c1655d199774ea898aff28a4c755b05ed8b68c93aa197"
+  },
+  {
+    "look": {
+      "portrait": "sol"
+    },
+    "rgba_sha256": "f8dfd5b5206fefa268549939c0b7e4d1f5e31d8e168d45c83be87e1442c335d2"
+  },
+  {
+    "look": {
+      "portrait": "jade"
+    },
+    "rgba_sha256": "2f486bb6170f703815ed04580785c4e0bff940b233bc25cb3e29eaa2aff43e80"
+  },
+  {
+    "look": {
+      "portrait": "azrael"
+    },
+    "rgba_sha256": "53b03a91ef99e0ce7b1d3ef23b1fa41f458ee84520627bf51906e7a11622d95b"
+  },
+  {
+    "look": {
+      "portrait": "lyra"
+    },
+    "rgba_sha256": "f029ed20ce32c5a52366668535e0d2da35be1814fe474e2a2b584a220feb8a4c"
+  },
+  {
+    "look": {
+      "portrait": "cinder"
+    },
+    "rgba_sha256": "7ccbdca598bab0011e082f391c6162f25686f494081f3eac72423f233344cad9"
+  },
+  {
+    "look": {
+      "portrait": "mira"
+    },
+    "rgba_sha256": "f318302ae416ced9c2117e89ab2205edf615ad5f5d9246b8545fec9bf2600a26"
+  },
+  {
+    "look": {
+      "portrait": "cass"
+    },
+    "rgba_sha256": "c4eced74bfc7d90e55866191eb3d611669e5757141d877ef0e92e48074734c8e"
+  },
+  {
+    "look": {
+      "portrait": "talon"
+    },
+    "rgba_sha256": "84fbe987dd7751c1974e11beb865414521be01fc54773491f0b0600f5acd0710"
+  },
+  {
+    "look": {
+      "portrait": "opal"
+    },
+    "rgba_sha256": "c10122688261063d6ebe5521bed6e8c12e3b060143309b841b3d603c9addc5b0"
+  },
+  {
+    "look": {
       "portrait": "orion",
       "accent": "astra"
     },
@@ -102,5 +246,173 @@
       "accent": "nova"
     },
     "rgba_sha256": "d206888244948a195691dd148d70ae26c80456c69a2aeedac9310b55b133a84f"
+  },
+  {
+    "look": {
+      "portrait": "lilith",
+      "accent": "astra"
+    },
+    "rgba_sha256": "9e3b404772dc69a6d2dce99a16eccd826d06149f6e962b03714c116454075dba"
+  },
+  {
+    "look": {
+      "portrait": "kael",
+      "accent": "nova"
+    },
+    "rgba_sha256": "719b5d3129c69a6168bb409f30bc30f800c1210db72e493b3f129bd649c9039e"
+  },
+  {
+    "look": {
+      "portrait": "seraph",
+      "accent": "astra"
+    },
+    "rgba_sha256": "8da6e80dfc0f30ea6fea402eb4d477ad1b5c427bf51c5fe084d362f6e2514dfd"
+  },
+  {
+    "look": {
+      "portrait": "zero",
+      "accent": "nova"
+    },
+    "rgba_sha256": "c3a5f2e2774dd682ab96e3a35307ce4c6e6997e5f78036601bec4bf7dc4aad52"
+  },
+  {
+    "look": {
+      "portrait": "thorn",
+      "accent": "astra"
+    },
+    "rgba_sha256": "3dd1f419bb504f1c54fe48c8b136318f8a46a53526959de97520e85b33bc49b3"
+  },
+  {
+    "look": {
+      "portrait": "echo",
+      "accent": "nova"
+    },
+    "rgba_sha256": "9db9697e128a6437f476c13d87bbd28e6fe985527eee3694d580ef8b389aa0b9"
+  },
+  {
+    "look": {
+      "portrait": "ember",
+      "accent": "astra"
+    },
+    "rgba_sha256": "fe76b9f13be9acb7cd3b826012ab32c45ec5bde3213737f40c922d5f2dde45ca"
+  },
+  {
+    "look": {
+      "portrait": "luna",
+      "accent": "nova"
+    },
+    "rgba_sha256": "ffb539629ef0b97ee4fe909f6e0b4beff2b7d6c9447ccea799669ea65ef62d51"
+  },
+  {
+    "look": {
+      "portrait": "riven",
+      "accent": "astra"
+    },
+    "rgba_sha256": "a5988239f78d8d7562174b9538f100dbd56e7766e901d37e1a54c4e360f25433"
+  },
+  {
+    "look": {
+      "portrait": "sable",
+      "accent": "nova"
+    },
+    "rgba_sha256": "f0025760eccba08af1b82d0979b83b93c09d8d33aedcc52337a8bdf0e49e3aa5"
+  },
+  {
+    "look": {
+      "portrait": "ivy",
+      "accent": "astra"
+    },
+    "rgba_sha256": "8ba1b5f204d7c268ec218611e3779ecd602ff617014ad190edd7b84f1c918c8e"
+  },
+  {
+    "look": {
+      "portrait": "volt",
+      "accent": "nova"
+    },
+    "rgba_sha256": "349a7f2f284811b00a19d9ec206fe6a6d9345b4f9515a8c1daf689e4759c1a77"
+  },
+  {
+    "look": {
+      "portrait": "iris",
+      "accent": "astra"
+    },
+    "rgba_sha256": "c031aaa5903d788f597124b6f5dc1da25d6603015685cabc3a7b9fa31f24e1d8"
+  },
+  {
+    "look": {
+      "portrait": "onyx",
+      "accent": "nova"
+    },
+    "rgba_sha256": "f560c57b6469667e9c9b535b53aef751d10d1dd196e255581919b49bcb552689"
+  },
+  {
+    "look": {
+      "portrait": "neve",
+      "accent": "astra"
+    },
+    "rgba_sha256": "973d2e792da650934fa369bb59aab9da1f27f3b630431e89063c40588b528fc5"
+  },
+  {
+    "look": {
+      "portrait": "sol",
+      "accent": "nova"
+    },
+    "rgba_sha256": "355cc2761f82a9bb9053b29c377b2de1e255925d04489740b97ef4c50ee43c09"
+  },
+  {
+    "look": {
+      "portrait": "jade",
+      "accent": "astra"
+    },
+    "rgba_sha256": "c22ae08214ab9c725a1c1f12cb26a70d9ae9e72243020095f2fb4a24d0212480"
+  },
+  {
+    "look": {
+      "portrait": "azrael",
+      "accent": "nova"
+    },
+    "rgba_sha256": "aedd3eae028f0d5eededd8ff8f6aab70418664d2af7b1e553badb604c3957075"
+  },
+  {
+    "look": {
+      "portrait": "lyra",
+      "accent": "astra"
+    },
+    "rgba_sha256": "576c2197294ee8e305922961bd72e534bc1491ff54b8fa1c8c543cdd231072c6"
+  },
+  {
+    "look": {
+      "portrait": "cinder",
+      "accent": "nova"
+    },
+    "rgba_sha256": "e2c4c80e982424586f664e21ad67f5b6a656649891dec54f62430ac538d342eb"
+  },
+  {
+    "look": {
+      "portrait": "mira",
+      "accent": "astra"
+    },
+    "rgba_sha256": "936f0e2d55623d45070732c8ccc4a26023eaafb336244331402fa3bdbeb1fe23"
+  },
+  {
+    "look": {
+      "portrait": "cass",
+      "accent": "nova"
+    },
+    "rgba_sha256": "458b6d43d37b79672cce2b5f30dad063081836a5e1b62c7ae5403a2381c40132"
+  },
+  {
+    "look": {
+      "portrait": "talon",
+      "accent": "astra"
+    },
+    "rgba_sha256": "5466ac1dddb96e6f3689a4db222236dccfe063a71ca6012dfdde6629355844a5"
+  },
+  {
+    "look": {
+      "portrait": "opal",
+      "accent": "nova"
+    },
+    "rgba_sha256": "6d48f630ccbbb6481f1a0cefc3ff54281320f47ff2ca8d587b3c3a5ef8053260"
   }
 ]

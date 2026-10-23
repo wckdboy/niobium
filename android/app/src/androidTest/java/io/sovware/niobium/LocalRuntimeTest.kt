@@ -256,6 +256,9 @@ class LocalRuntimeTest {
         val proxy = LocalRuntimeProxy(socket.path)
         val mock = java.net.ServerSocket(0, 8, java.net.InetAddress.getByName("127.0.0.1"))
         val received = java.util.concurrent.CountDownLatch(1)
+        val profile = "native-" + java.util.UUID.randomUUID().toString().take(6)
+        val note = "Native private note " + profile
+        val sawMessaging = java.util.concurrent.atomic.AtomicBoolean(false)
         val responder = Thread {
             runCatching {
                 while (!mock.isClosed) mock.accept().use { peer ->
@@ -270,14 +273,24 @@ class LocalRuntimeTest {
                     val first = header.lineSequence().first()
                     val size = header.lineSequence().firstOrNull { it.startsWith("Content-Length:", true) }
                         ?.substringAfter(":")?.trim()?.toInt() ?: 0
-                    input.readNBytes(size)
+                    val body = input.readNBytes(size).toString(Charsets.UTF_8)
+                    val payload = runCatching { org.json.JSONObject(body) }.getOrNull()
+                    val toolsInRequest = payload?.optJSONArray("tools")
+                    if (toolsInRequest != null && (0 until toolsInRequest.length()).any { toolsInRequest.optJSONObject(it)?.optJSONObject("function")?.optString("name") == "message_agent" }) sawMessaging.set(true)
+                    val messages = payload?.optJSONArray("messages")
+                    val hasToolReply = messages != null && (0 until messages.length()).any { messages.optJSONObject(it)?.optString("role") == "tool" }
+                    val wantsDm = body.contains("Send a private note to Scout") && !hasToolReply
                     val reply = if (first.contains("/models")) """{"object":"list","data":[{"id":"deepseek-chat","object":"model"}]}"""
                     else {
                         received.countDown()
+                        val delta = if (wantsDm) org.json.JSONObject().put("tool_calls", org.json.JSONArray().put(org.json.JSONObject()
+                            .put("index",0).put("id","niobium-dm-call").put("type","function").put("function",org.json.JSONObject().put("name","message_agent")
+                                .put("arguments",org.json.JSONObject().put("recipient","default").put("text",note).toString()))))
+                            else org.json.JSONObject().put("content", "NATIVE-DSH-REPLY")
                         val chunk = org.json.JSONObject().put("id", "niobium-fixture").put("object", "chat.completion.chunk")
                             .put("created", 1700000000).put("model", "deepseek-chat")
                             .put("choices", org.json.JSONArray().put(org.json.JSONObject().put("index", 0)
-                                .put("delta", org.json.JSONObject().put("content", "NATIVE-DSH-REPLY")).put("finish_reason", "stop")))
+                                .put("delta", delta).put("finish_reason", if (wantsDm) "tool_calls" else "stop")))
                         "data: " + chunk.toString() + "\n\ndata: [DONE]\n\n"
                     }
                     val bytes = reply.toByteArray()
@@ -294,7 +307,7 @@ class LocalRuntimeTest {
             "DEEPSEEK_BASE_URL" to "http://127.0.0.1:" + mock.localPort,
             "NODE_OPTIONS" to "--require /usr/local/lib/niobium-local.cjs --require /usr/local/lib/niobium-agent.cjs")).start()
         Thread { process.inputStream.use { it.copyTo(java.io.OutputStream.nullOutputStream()) } }.apply { isDaemon = true; start() }
-        val profile = "native-" + java.util.UUID.randomUUID().toString().take(6)
+
         var vm: NiobiumViewModel? = null
         val vmStore = androidx.lifecycle.ViewModelStore()
         val preferences = context.getSharedPreferences("niobium", android.content.Context.MODE_PRIVATE)
@@ -317,7 +330,7 @@ class LocalRuntimeTest {
             waitFor("Native roster connected") { vm!!.state.connected && vm!!.state.bots.isNotEmpty() }
             assertFalse(vm!!.state.needsConnection)
             assertEquals(AgentEngine.DSH, vm!!.state.engine)
-            val tools = setOf("web", "file", "terminal", "todo", "skills", "delegation")
+            val tools = setOf("web", "file", "terminal", "todo", "skills", "delegation", "messaging")
             val original = PixelBuilder.fallback("Research")
             val fallback = original.copy(name = profile, toolsets = tools.toList(), permissions = original.permissions.copy(shell = true))
             val drafted = PixelDraft(fallback, false, tools, emptySet(), emptyList())
@@ -332,6 +345,26 @@ class LocalRuntimeTest {
             val bot = vm!!.state.activeBot!!
             instrumentation.runOnMainSync { vm!!.closeBot(); vm!!.openBot(bot); vm!!.openBot(bot) }
             waitFor("Native chat history restored") { !vm!!.state.loadingChat && vm!!.state.messages.any { it.text.contains("NATIVE-DSH-REPLY") } }
+            assertTrue("The actual DSH model request omitted the reviewed messaging tool", sawMessaging.get())
+            instrumentation.runOnMainSync { vm!!.send("Send a private note to Scout") }
+            val conversations = java.io.File(runtime.home,".dsh/niobium-conversations.json")
+            waitFor("Real message_agent delivered a DM and Scout replied") {
+                runCatching {
+                    val rooms = org.json.JSONObject(conversations.readText()).getJSONObject("rooms")
+                    rooms.keys().asSequence().map { rooms.getJSONObject(it) }.any { room ->
+                        val events = room.getJSONArray("events")
+                        val rows = (0 until events.length()).map { events.getJSONObject(it) }
+                        rows.any { it.optJSONObject("payload")?.optString("text") == note } &&
+                            rows.any { it.optString("kind") == "message.member" && it.optJSONObject("actor")?.optString("id") == "default" && it.optJSONObject("payload")?.optString("text") == "NATIVE-DSH-REPLY" }
+                    }
+                }.getOrDefault(false)
+            }
+            instrumentation.runOnMainSync { vm!!.closeBot(); vm!!.refreshAllAsync() }
+            waitFor("DM is visible in native rooms") { vm!!.state.groups.any { it.members.any { m -> m.profile == profile } } }
+            val dm = vm!!.state.groups.first { it.members.any { m -> m.profile == profile } }
+            instrumentation.runOnMainSync { vm!!.openGroup(dm) }
+            waitFor("Native room transcript contains the actual DM") { vm!!.state.roomEvents.any { it.text == note } }
+
         } finally {
             instrumentation.runOnMainSync { vm?.disconnect(); vmStore.clear() }
             preferences.edit().putString("agent-provider", previousProvider).apply()

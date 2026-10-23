@@ -188,12 +188,11 @@ struct LocalView: View {
                 engineCard("On device", subtitle: "DSH · private Linux workspace", icon: .pixels, selected: store.engine == .dsh) {
 
 #if NIOBIUM_LOCAL_DSH
-                    if store.engine == .dsh {
-                        HStack(spacing: 8) {
-                            if store.isConnecting { ProgressView().tint(NB.ion) }
-                            Text(store.connectionState.isConnected ? "Ready · chats and tasks run in Niobium" : store.localConnectionError ?? store.localStatus)
-                                .font(.nbBody(12)).foregroundStyle(store.connectionState.isConnected ? NB.mint : NB.secondary)
-                        }
+                    let local = store.engineHub?.local ?? store
+                    HStack(spacing: 8) {
+                        if local.isConnecting { ProgressView().tint(NB.ion) }
+                        Text(local.connectionState.isConnected ? "Connected" : local.localConnectionError ?? local.localStatus)
+                            .font(.nbBody(12)).foregroundStyle(local.connectionState.isConnected ? NB.mint : NB.secondary)
                     }
                     if store.engine != .dsh || (!store.connectionState.isConnected && !store.isConnecting) {
                         Button { store.useLocal() } label: { PixelActionLabel("Use on-device DSH", icon: .play) }
@@ -205,6 +204,9 @@ struct LocalView: View {
                 }
                 engineCard("Hermes", subtitle: "Your computer or VPS", icon: .link, selected: store.engine == .hermes) {
 
+                    let remote = store.engineHub?.hermes ?? store
+                    Text(remote.connectionState.isConnected && !remote.isDemo ? "Connected" : remote.isConnecting ? "Connecting…" : "Offline")
+                        .font(.nbBody(12)).foregroundStyle(remote.connectionState.isConnected && !remote.isDemo ? NB.mint : NB.secondary)
                     if store.engine != .hermes {
                         Button { Task { await store.useHermes() } } label: { PixelActionLabel("Use Hermes", icon: .link) }
                             .buttonStyle(NBQuietButtonStyle())
@@ -247,7 +249,7 @@ struct LocalView: View {
 #endif
                         Button { showRemote = true } label: { PixelActionLabel("Remote DSH workspace", icon: .link) }
                             .buttonStyle(NBQuietButtonStyle())
-                        Text("Local Pixels share a Linux workspace. Tool choices limit their available tools; workspace scopes are operating instructions. iOS may suspend local tasks when Niobium is in the background. Hermes provides group rooms and scheduled jobs.")
+                        Text("Local Pixels share a Linux workspace. Tool choices limit their available tools; workspace scopes are operating instructions. iOS may suspend local tasks when Niobium is in the background. Local rooms run on this device. Scheduled jobs require Hermes.")
                             .font(.nbBody(11)).foregroundStyle(NB.tertiary).lineSpacing(3)
                     }.padding(.top, 12)
                 } label: {

@@ -119,7 +119,7 @@ struct AIBuildView: View {
         let base = CastMember.all.first { $0.id == spec.character.archetype } ?? CastMember.all[0]
         let member = CastMember(id: base.id, name: spec.title, portrait: base.portrait, companion: spec.companion.kind,
                                 companionName: spec.companion.name, accentHex: base.accentHex,
-                                recipe: spec.character.recipe, look: spec.character.look)
+                                recipe: spec.character.recipe, look: spec.character.look, companionArt: spec.companion.art)
         return HStack(spacing: 16) {
             CastPortrait(member: member, size: 128, showGlow: false)
             VStack(alignment: .leading, spacing: 8) {
@@ -128,7 +128,7 @@ struct AIBuildView: View {
                     .font(.nbTitle(23)).foregroundStyle(NB.text).accessibilityLabel("Pixel name").disabled(working)
                 Text(spec.role).font(.nbBody(12)).foregroundStyle(NB.secondary).lineLimit(2)
                 Text("\(spec.character.age) · adult").font(.nbMono(10)).foregroundStyle(NB.tertiary)
-                Text(spec.companion.name + " · " + spec.companion.kind).font(.nbBody(11)).foregroundStyle(NB.secondary)
+                Text(spec.companion.name + " · " + (spec.companion.art == nil ? spec.companion.kind : "custom creature")).font(.nbBody(11)).foregroundStyle(NB.secondary)
             }.frame(maxWidth: .infinity, alignment: .leading)
         }
     }
@@ -143,8 +143,10 @@ struct AIBuildView: View {
         case "Creature":
             FamiliarPicker(kind: Binding(get: { draft?.spec.companion.kind ?? spec.companion.kind }, set: {
                 draft?.spec.companion.kind = $0
+                draft?.spec.companion.art = nil
                 draft?.spec.companion.trait = PixelSpec.companionTrait($0)
             }), enabled: !working)
+            CompanionArtEditor(kind: spec.companion.kind, art: Binding(get: { draft?.spec.companion.art }, set: { draft?.spec.companion.art = $0 })).disabled(working)
             TextField("Creature name", text: Binding(get: { draft?.spec.companion.name ?? "" }, set: { draft?.spec.companion.name = $0 }))
                 .font(.nbBody(14)).padding(12).pixelPanel().accessibilityLabel("Creature name")
             Text(spec.companion.trait).font(.nbBody(12)).foregroundStyle(NB.secondary)

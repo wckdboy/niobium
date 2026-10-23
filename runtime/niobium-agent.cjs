@@ -7,7 +7,9 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 const crypto = require('node:crypto');
 
-const TOOLSETS = ['file', 'terminal', 'web', 'todo', 'skills', 'delegation'];
+const {createMessaging} = require('./niobium-messaging.cjs');
+let activeProvider;
+const TOOLSETS = ['file', 'terminal', 'web', 'todo', 'skills', 'delegation', 'messaging'];
 const textOf = blocks => (blocks || []).filter(b => b.type === 'text').map(b => b.text || '').join('\n');
 const profileID = id => id === 'standard' ? 'default' : id;
 const presetID = id => !id || id === 'default' ? 'standard' : id;
@@ -52,6 +54,7 @@ function composition(spec, enabled, briefing) {
     add('subagent-control', 'dsh-tool-subagent-control');
     add('subagent-list', 'dsh-tool-subagent-control/list-agents');
   }
+  if (allowed.has('messaging')) rows.push({id: 'niobium-messaging', name: '/usr/local/lib/niobium-agent.cjs'});
   // JSON is valid YAML. No model-generated YAML or plugin names are executed.
   return JSON.stringify(rows, null, 2) + '\n';
 }
@@ -134,30 +137,32 @@ function createProvider({rpc, postResponse, home = '/root/.dsh', workspace = '/r
       info: {}, prompts: [], inflight: {streaming: s.running, assistant: s.running ? partial.stepText : ''},
       local_stream_state: partial, local_requests: [...pending.values()].filter(p => p.payload.sessionId === sessionId)};
   }
+  const messaging = createMessaging({rpc, home, workspace, metadata, pending, respond, frames: streamFrames});
   async function request(method, p = {}) {
+    if (method.startsWith('groups.')) return messaging.request(method, p);
     switch (method) {
       case 'client.capabilities': return {server_requests: true, declines_not_shown: false};
       case 'runtime.describe': return {provider: 'dsh', session_create: {sources: ['gui']}};
-      case 'gateway.capabilities': return {provider: 'dsh', groups: false, cron: false};
-      case 'groups.capabilities': return {driver: false, methods: []};
+      case 'gateway.capabilities': return {provider: 'dsh', groups: true, cron: false};
       case 'profiles.list': {
-        const [catalog, sessions, meta] = await Promise.all([rpc('agentPreset.list', {}), rpc('session.list', {}), metadata()]);
+        const [catalog, sessions, meta, roomSessions] = await Promise.all([rpc('agentPreset.list', {}), rpc('session.list', {}), metadata(), messaging.ownSessionIDs()]);
         const presets = catalog.presets.filter(a => a.id === 'standard' || a.trust === 'user');
         return {profiles: presets.filter(a => !a.broken).map(a => {
           const id = profileID(a.id);
-          const own = sessions.items.filter(s => presetID(s.agentPreset) === a.id && s.origin !== 'subagent').sort((a,b) => b.updatedAt-a.updatedAt);
+          const all = sessions.items.filter(s => presetID(s.agentPreset) === a.id && s.origin !== 'subagent').sort((a,b) => b.updatedAt-a.updatedAt);
+          const own = all.filter(s => !roomSessions.has(s.sessionId));
           const last = own[0];
           return {name: id, origin: 'dsh', display_name: a.id === 'standard' ? 'Scout' : a.name || id,
             description: a.id === 'standard' ? 'Research, files and everyday tasks' : a.description || 'Your on-device Pixel',
             provider: 'DSH', is_default: a.id === 'standard', ui_meta: meta[id]?.ui_meta || {},
-            enabled_toolsets: meta[id]?.enabled_toolsets || (a.id === 'standard' ? TOOLSETS : []),
+            enabled_toolsets: meta[id]?.enabled_toolsets || (a.id === 'standard' ? TOOLSETS.filter(t => t !== 'messaging') : []),
             ui_meta_revisions: {niobium: meta[id]?.revision || 0},
             canonical_session: last && {id: last.sessionId, last_active: last.updatedAt / 1000},
-            worker_session: own.find(s => s.running) && {last_active: Date.now() / 1000}};
+            worker_session: all.find(s => s.running) && {id: all.find(s => s.running).sessionId, last_active: Date.now() / 1000}};
         })};
       }
       case 'profiles.describe': return {toolsets: TOOLSETS.map(name => ({name})), skills: [],
-        provider: 'DSH', note: 'Local skills are workspace-wide. Connectors and room drivers are configured separately.'};
+        provider: 'DSH', note: 'Local skills are workspace-wide. Local rooms keep separate sessions. Messaging tools require reviewed messaging access.'};
       case 'profiles.configure': {
         // Appearance-only updates use an optimistic revision; agent composition
         // changes go through pixel.create and are never silently acknowledged.
@@ -188,7 +193,7 @@ function createProvider({rpc, postResponse, home = '/root/.dsh', workspace = '/r
           const stage = path.join(home, '.agent-presets', '.pending-' + crypto.randomUUID());
           await fs.mkdir(stage, {mode: 0o700});
           try {
-            const briefing = String(p.briefing || spec.soul) + '\nUse DSH subagent tools for real delegation. Local Pixels share the app workspace; requested scopes are operating rules, not an OS sandbox. Hermes rooms, agent mentions and scheduled jobs are unavailable on this engine.';
+            const briefing = String(p.briefing || spec.soul) + '\nUse DSH subagent tools for real delegation. Local Pixels share the app workspace; requested scopes are operating rules, not an OS sandbox. Use @mentions inside Niobium rooms for attributed collaboration. If messaging is granted, message_agent sends real DMs or posts to a room; queued is not completed. Local scheduled jobs remain unavailable.';
             await fs.writeFile(path.join(stage, 'agent.cordis.yml'), composition(spec, p.enabled_toolsets, briefing), {mode: 0o600});
             await fs.writeFile(path.join(stage, 'preset.yml'), JSON.stringify({name: spec.title, description: spec.role}), {mode: 0o600});
             const meta = await metadata();
@@ -208,7 +213,8 @@ function createProvider({rpc, postResponse, home = '/root/.dsh', workspace = '/r
         edits = operation.catch(() => {}); return operation;
       }
       case 'session.list': {
-        const rows = (await rpc('session.list', {})).items.filter(s => s.origin !== 'subagent' && (!p.profile || presetID(p.profile) === presetID(s.agentPreset)));
+        const roomSessions = await messaging.ownSessionIDs();
+        const rows = (await rpc('session.list', {})).items.filter(s => s.origin !== 'subagent' && !roomSessions.has(s.sessionId) && (!p.profile || presetID(p.profile) === presetID(s.agentPreset)));
         // Native session lists cannot request a continuation page yet. Preserve
         // every local chat rather than silently hiding rows beyond their limit.
         return {sessions: rows.sort((a,b) => b.updatedAt-a.updatedAt).map(s => ({id: s.sessionId, session_id: s.sessionId,
@@ -235,6 +241,8 @@ function createProvider({rpc, postResponse, home = '/root/.dsh', workspace = '/r
       case 'prompt.submit': {
         const image = attachments.get(p.session_id);
         attachments.delete(p.session_id);
+        const own = await summary(p.session_id);
+        if ((await metadata())[profileID(own.agentPreset)]?.enabled_toolsets?.includes('messaging')) await messaging.rememberUserPrompt(p.session_id);
         const receipt = await rpc('session.prompt', {sessionId: p.session_id, mode: 'queue', content: [{type: 'text', text: p.text}, ...(image ? [image] : [])]});
         return {accepted: receipt.accepted};
       }
@@ -321,7 +329,7 @@ function createProvider({rpc, postResponse, home = '/root/.dsh', workspace = '/r
       default: throw new Error('This feature requires Hermes or advanced DSH controls: ' + method);
     }
   }
-  return {request, respond, capture, pending};
+  return {request, respond, capture, pending, messaging};
 }
 
 function streamFrames(envelope, state) {
@@ -450,6 +458,7 @@ function install() {
     return full.result.value;
   };
   const provider = createProvider({rpc, postResponse: body => post('respond', body)});
+  activeProvider = provider;
   const wss = new WebSocket.WebSocketServer({noServer: true, maxPayload: 12 * 1024 * 1024});
   function authorized(request, url) {
     if (request.headers.origin && request.headers.origin !== 'http://127.0.0.1:' + port) return false;
@@ -543,5 +552,60 @@ function install() {
   };
 }
 
-module.exports = {createProvider, composition, transcript, streamFrames, connectEventStream};
+function messagingTool(defineTool, provider) {
+  return defineTool({
+    name: 'message_agent',
+    description: 'Send an attributed DM to another local Pixel or the user, or post to a room you belong to. Use recipient profile ID or user, or provide room_id and @mentions. A queued receipt is not a reply. Discussion has a finite budget; never loop or invent delivery/completion.',
+    parameters: {
+      recipient: {type: 'string', description: 'Local Pixel profile ID, or user. Omit when posting to room_id.'},
+      room_id: {type: 'string', description: 'An existing room you belong to; never guess an ID.'},
+      text: {type: 'string', required: true, description: 'A concise message, at most 4,000 characters.'}
+    },
+    output: {schema: {type: 'object', additionalProperties: false, properties: {
+      accepted: {type: 'boolean', required: true}, room_id: {type: 'string', required: true},
+      event_id: {type: 'string', required: true}, status: {type: 'string', required: true}
+    }}, render: (_args, value) => [{type: 'text', text: JSON.stringify(value)}]},
+    async execute(args, exec) {
+      if (!exec.agent?.session?.id) throw new Error('Messaging requires an owning Pixel session.');
+      return provider.messaging.messageFrom(exec.agent.session.id, args, exec.signal);
+    }
+  });
+}
+function directoryTool(defineTool, provider) {
+  const requiredString = {type: 'string', required: true};
+  return defineTool({
+    name: 'list_pixels',
+    description: 'List actual local Pixel IDs/handles and rooms this Pixel belongs to before using message_agent. Never guess identities or room IDs.',
+    parameters: {},
+    output: {
+      schema: {
+        type: 'object', additionalProperties: false,
+        properties: {
+          pixels: {type: 'array', required: true, items: {
+            type: 'object', additionalProperties: false,
+            properties: {id: requiredString, name: requiredString, handle: requiredString}
+          }},
+          rooms: {type: 'array', required: true, items: {
+            type: 'object', additionalProperties: false,
+            properties: {room_id: requiredString, name: requiredString,
+              members: {type: 'array', required: true, items: {type: 'string'}}}
+          }}
+        }
+      },
+      render: (_args, value) => [{type: 'text', text: JSON.stringify(value)}]
+    },
+    async execute(_args, exec) {
+      if (!exec.agent?.session?.id) throw new Error('Pixel directory requires an owning session.');
+      return provider.messaging.directoryFrom(exec.agent.session.id, exec.signal);
+    }
+  });
+}
+async function apply(ctx) {
+  if (!activeProvider) throw new Error('Local messaging is available through the Niobium on-device host.');
+  const {defineTool} = await import('/usr/local/lib/node_modules/@deepseek-ai/dsh-tools/lib/index.js');
+  ctx.tools.register(messagingTool(defineTool, activeProvider));
+  ctx.tools.register(directoryTool(defineTool, activeProvider));
+}
+module.exports = {createProvider, composition, transcript, streamFrames, connectEventStream,
+  name: 'niobium-messaging', inject: ['tools'], apply, messagingTool, directoryTool};
 if (process.env.NIOBIUM_AGENT_TOKEN && process.argv.some(v => v.endsWith('/dsh/lib/bin.js')) && process.argv.includes('web')) install();

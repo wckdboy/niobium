@@ -39,6 +39,7 @@ struct RoomsView: View {
                     LazyVStack(spacing: 7) {
                         ForEach(Array(store.groups.enumerated()), id: \.element.id) { index, room in
                             GroupRow(room: room) { store.openGroup(room) }
+                                .contextMenu { if store.engine == .dsh { Button("Clear room", role: .destructive) { Task { await store.clearLocalRoom(room) } } } }
                                 .opacity(appeared ? 1 : 0)
                                 .offset(y: appeared ? 0 : 8)
                                 .animation(.easeOut(duration: 0.34).delay(Double(index) * 0.04), value: appeared)
@@ -65,7 +66,7 @@ struct RoomsView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 16)
 
-                Text(store.isDemo ? "Demo rooms show how Pixels collaborate. Connect your gateway for real conversations." : (store.groupsHaveDriver ? "Your gateway runs these rooms. They can continue when the app disconnects." : "Reopen a room to sync its latest messages. Background discussion depends on your gateway."))
+                Text(store.isDemo ? "Demo rooms show how Pixels collaborate. Connect your gateway for real conversations." : (store.engine == .dsh ? "Replies run on this device. iOS may pause local work in the background." : store.groupsHaveDriver ? "Your gateway runs these rooms. They can continue when the app disconnects." : "Reopen a room to sync its latest messages. Background discussion depends on your gateway."))
                     .font(.nbBody(11))
                     .foregroundStyle(NB.tertiary)
                     .lineSpacing(2)
@@ -88,6 +89,8 @@ struct GroupChatView: View {
     let room: GroupRoom
     @State private var draft = ""
     @FocusState private var focused: Bool
+    @State private var showClarify = false
+    @State private var sending = false
 
     var body: some View {
         ZStack {
@@ -99,6 +102,13 @@ struct GroupChatView: View {
                 composer
             }
         }
+        .sheet(isPresented: $showClarify) {
+            if let request = store.clarifyRequest {
+                ClarifySheet(request: request) { answers, selected in store.resolveClarify(answers, selections: selected); showClarify = false }
+                    onCancel: { store.cancelClarify(); showClarify = false }
+            }
+        }
+        .onChange(of: store.clarifyRequest?.id) { _, id in if id != nil { showClarify = true } }
         .task {
             if store.activeGroup?.roomID != room.roomID {
                 store.openGroup(room)
@@ -123,6 +133,10 @@ struct GroupChatView: View {
                     .font(.nbBody(10.5)).foregroundStyle(NB.tertiary)
             }
             Spacer()
+            if store.engine == .dsh {
+                Button { Task { await store.stopRoom() } } label: { PixelIcon(.stop, size: 16, tint: NB.rose).frame(width: 44, height: 44) }
+                    .buttonStyle(.plain).accessibilityLabel("Stop room replies").accessibilityIdentifier("room.stop")
+            }
             Button { Task { await store.refreshGroup() } } label: {
                 Image(systemName: "arrow.clockwise")
                     .font(.system(size: 12, weight: .medium))
@@ -163,6 +177,12 @@ struct GroupChatView: View {
                             }
                         }
                     }
+                    ForEach(store.approvals) { approval in
+                        ApprovalCard(approval: approval) { store.resolveApproval(approval, choice: $0) }
+                    }
+                    if store.clarifyRequest != nil {
+                        Button("A Pixel is waiting for your answer") { showClarify = true }.buttonStyle(NBQuietButtonStyle())
+                    }
                     Color.clear.frame(height: 2).id("room-bottom")
                 }
                 .padding(.horizontal, 16)
@@ -183,7 +203,7 @@ struct GroupChatView: View {
         return HStack(alignment: .top, spacing: 9) {
             if isUser { Spacer(minLength: 52) }
             if !isUser {
-                PixelTile(accent: NB.color(for: event.actorID), size: 26)
+                CastPortrait(member: CastStore.shared.member(for: (store.engine == .dsh ? "dsh:" : "") + (member?.profile ?? event.actorID)), size: 32, showCompanion: false)
             }
             VStack(alignment: isUser ? .trailing : .leading, spacing: 4) {
                 HStack(spacing: 6) {
@@ -194,20 +214,11 @@ struct GroupChatView: View {
                         Text(ts.clockTime).font(.nbBody(9)).foregroundStyle(NB.tertiary)
                     }
                 }
-                MarkdownText(text: event.text, tint: isUser ? Color(hex: 0x0A0712) : NB.text)
+                MarkdownText(text: event.text, tint: isUser ? NB.onIon : NB.text)
                     .padding(.horizontal, 13)
                     .padding(.vertical, 10)
-                    .background(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(isUser
-                                  ? AnyShapeStyle(LinearGradient(colors: [NB.ion, NB.ionDeep],
-                                                                 startPoint: .topLeading, endPoint: .bottomTrailing))
-                                  : AnyShapeStyle(NB.fillSoft))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .strokeBorder(isUser ? .clear : NB.line, lineWidth: 1)
-                    )
+                    .background(PixelButtonShape(cut: 4).fill(isUser ? NB.ion : NB.fillSoft))
+                    .overlay(PixelButtonShape(cut: 4).stroke(isUser ? .clear : NB.line, lineWidth: 1))
             }
             if !isUser { Spacer(minLength: 36) }
         }
@@ -215,6 +226,12 @@ struct GroupChatView: View {
 
     private var composer: some View {
         HStack(spacing: 9) {
+            Menu {
+                ForEach(room.members) { member in
+                    Button("@" + member.handle) { draft += (draft.isEmpty || draft.hasSuffix(" ") ? "" : " ") + "@" + member.handle + " "; focused = true }
+                }
+            } label: { Text("@").font(.nbMono(17)).foregroundStyle(NB.ion).frame(width: 44, height: 44).background(PixelButtonShape().fill(NB.fillSoft)) }
+                .accessibilityLabel("Mention a Pixel")
             TextField("Message the room…", text: $draft, axis: .vertical)
                 .lineLimit(1...5)
                 .font(.nbBody(15))
@@ -223,20 +240,19 @@ struct GroupChatView: View {
                 .padding(.vertical, 8)
             Button {
                 let text = draft
-                draft = ""
-                Task { await store.sendGroup(text) }
-            } label: {
-                ZStack {
-                    Circle()
-                        .fill(draft.trimmingCharacters(in: .whitespaces).isEmpty ? NB.fill : NB.ion)
-                        .frame(width: 34, height: 34)
-                    Image(systemName: "arrow.up")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(draft.isEmpty ? NB.tertiary : .white)
+                sending = true
+                Task {
+                    let accepted = await store.sendGroup(text)
+                    if accepted && draft == text { draft = "" }
+                    sending = false
                 }
+            } label: {
+                PixelIcon(.play, size: 18, tint: draft.isEmpty ? NB.tertiary : NB.onIon)
+                    .rotationEffect(.degrees(-90)).frame(width: 44, height: 44)
+                    .background(PixelButtonShape().fill(draft.isEmpty ? NB.fillSoft : NB.ion))
             }
-            .buttonStyle(.plain)
-            .disabled(draft.trimmingCharacters(in: .whitespaces).isEmpty)
+            .buttonStyle(.plain).accessibilityLabel("Send room message")
+            .disabled(sending || draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || draft.count > 4000 || (!store.isDemo && !store.connectionState.isConnected))
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)

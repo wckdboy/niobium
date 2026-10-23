@@ -7,6 +7,8 @@ import androidx.compose.material3.*
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.*
 
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -30,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -46,7 +49,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.isActive
 
-data class CastMember(val id: String, val name: String, val portrait: String, val companion: String, val companionName: String, val accentHex: String, val recipe: CharacterRecipe? = null, val look: PixelLook? = null)
+data class CastMember(val id: String, val name: String, val portrait: String, val companion: String, val companionName: String, val accentHex: String, val recipe: CharacterRecipe? = null, val look: PixelLook? = null, val companionArt: PixelArt? = null)
 
 object Cast {
     val all = listOf(
@@ -95,6 +98,9 @@ object CastStore {
         saved.getString("look." + profile.lowercase(), null)?.let { raw ->
             runCatching { PixelLook.parse(org.json.JSONObject(raw)) }.getOrNull()?.takeIf { it.valid }?.let { member = member.copy(look = it) }
         }
+        saved.getString("companionArt." + profile.lowercase(), null)?.let { raw ->
+            runCatching { PixelArt.parse(org.json.JSONObject(raw)) }.getOrNull()?.takeIf { it.size == 16 }?.let { member = member.copy(companionArt = it) }
+        }
         return member
     }
     fun restore(context: Context, profile: String, metadata: org.json.JSONObject) {
@@ -111,12 +117,15 @@ object CastStore {
         val name = appearance?.s("companion_name") ?: spec?.o("companion")?.s("name") ?: member.companionName
         if (companion !in PixelBuilder.companions || name.isEmpty() || name.length > 24) return
         member = member.copy(companion = companion, companionName = name)
+        val art = if (appearance?.has("companion_art") == true) appearance.o("companion_art") else spec?.o("companion")?.o("art")
+        art?.let { runCatching { PixelArt.parse(it) }.getOrNull()?.takeIf { it.size == 16 }?.let { parsed -> member = member.copy(companionArt = parsed) } }
         if (get(context, profile) != member) put(context, profile, member)
     }
     fun put(context: Context, profile: String, member: CastMember) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .putString("recipe." + profile.lowercase(), member.recipe?.toJson()?.toString())
             .putString("look." + profile.lowercase(), member.look?.toJson()?.toString())
+            .putString("companionArt." + profile.lowercase(), member.companionArt?.toJson()?.toString())
             .putString("companionName." + profile.lowercase(), member.companionName).apply()
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(profile.lowercase(), member.id).apply()
         context.getSharedPreferences("niobium_portraits", Context.MODE_PRIVATE).edit().putString(profile.lowercase(), member.portrait).apply()
@@ -146,9 +155,8 @@ fun CastPortrait(member: CastMember, size: Dp = 64.dp, showCompanion: Boolean = 
                 contentScale = ContentScale.Fit, modifier = Modifier.size(spriteSide).align(Alignment.Center))
         }
         if (showCompanion) {
-            Box(Modifier.align(Alignment.BottomEnd).padding(size * 0.02f).size(size * 0.30f).clip(PixelButtonShape)
-                .background(Nb.Surface).border(1.dp, Nb.LineStrong, PixelButtonShape)) {
-                Box(Modifier.align(Alignment.Center)) { FamiliarSprite(member.companion, size * 0.26f) }
+            Box(Modifier.align(Alignment.BottomEnd).padding(size * 0.02f).size(size * 0.30f)) {
+                Box(Modifier.align(Alignment.Center)) { FamiliarSprite(member.companion, size * 0.26f, member.companionArt) }
             }
         }
     }
@@ -228,7 +236,7 @@ internal fun compRes(id: String): Int = when (id) {
 
 
 @Composable
-fun FamiliarSprite(kind: String, size: Dp = 32.dp) {
+fun FamiliarSprite(kind: String, size: Dp = 32.dp, art: PixelArt? = null) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val resource = compRes(kind)
     val bitmap = remember(resource) { androidx.compose.ui.graphics.ImageBitmap.imageResource(context.resources, resource) }
@@ -236,7 +244,10 @@ fun FamiliarSprite(kind: String, size: Dp = 32.dp) {
         (kotlin.math.floor(size.toPx()/16f).toInt().coerceAtLeast(1)*16).toDp()
     }
     Box(Modifier.size(size), contentAlignment = Alignment.Center) {
-        Image(bitmap, null, filterQuality = androidx.compose.ui.graphics.FilterQuality.None, modifier = Modifier.size(side))
+        val custom = remember(art) { art?.let(CharacterEngine::image) }
+    if (custom != null) Image(bitmap = custom, contentDescription = null, contentScale = ContentScale.Fit,
+        filterQuality = androidx.compose.ui.graphics.FilterQuality.None, modifier = Modifier.size(side))
+    else Image(bitmap, null, filterQuality = androidx.compose.ui.graphics.FilterQuality.None, modifier = Modifier.size(side))
     }
 }
 
@@ -253,40 +264,78 @@ internal fun characterValueLabel(value: String, field: String): String {
     return value.replace('_', ' ').replaceFirstChar { it.uppercase() }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PixelLookEditor(look: PixelLook, history: List<PixelLook>, enabled: Boolean = true,
                     onHistoryChange: (List<PixelLook>) -> Unit, onChange: (PixelLook) -> Unit) {
+    var browsing by remember { mutableStateOf(false) }
+    var family by remember { mutableStateOf("All") }
+    var search by remember { mutableStateOf("") }
     fun choose(next: PixelLook) {
         if (next != look) { onHistoryChange((history + look).takeLast(12)); onChange(next) }
     }
-    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        PixelLook.portraits.chunked(4).forEach { row ->
+    @Composable fun tiles(entries: List<PixelLookEntry>, close: Boolean = false) {
+        entries.chunked(4).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                row.forEach { id ->
-                    val base = Cast.all.first { it.id == id }
-                    Column(Modifier.weight(1f).clip(PixelButtonShape)
-                        .background(if (look.portrait == id) Nb.Ion.copy(alpha = 0.12f) else Nb.FillSoft)
-                        .border(1.dp, if (look.portrait == id) Nb.Ion else androidx.compose.ui.graphics.Color.Transparent, PixelButtonShape)
-                        .selectable(look.portrait == id, enabled, Role.RadioButton) { choose(look.copy(portrait = id)) }
-                        .semantics { contentDescription = base.name + " look" }.testTag("look." + id).padding(vertical = 6.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        CastPortrait(base.copy(look = PixelLook(id)), 54.dp, showCompanion = false)
-                        Text(base.name, color = Nb.Text, fontSize = 10.sp, maxLines = 1)
+                row.forEach { entry ->
+                    WardrobeTile(entry, look.portrait == entry.id, enabled, Modifier.weight(1f)) {
+                        choose(look.copy(portrait = entry.id, customArt = null)); if (close) browsing = false
                     }
                 }
+                repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            LookColorMenu("Outfit", listOf("auto") + PixelLook.portraits, look.accent, Modifier.weight(1f), enabled) { choose(look.copy(accent = it)) }
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            PixelButton("Remix", PixelGlyph.SPARK, Modifier.weight(1f).testTag("look.remix"), secondary = true, enabled = enabled) {
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        tiles(PixelWardrobe.entries.take(8))
+        PixelButton("Browse 32 looks · " + look.entry.label, PixelGlyph.PIXELS, Modifier.fillMaxWidth().testTag("look.browse"),
+            secondary = true, enabled = enabled) { browsing = true }
+        val artContext = androidx.compose.ui.platform.LocalContext.current
+        PixelArtistButton("pixel", CharacterEngine.image(artContext, look)?.asAndroidBitmap()) { art -> choose(look.copy(accent = "auto", customArt = art)) }
+        if (look.customArt == null) LookColorMenu("Outfit", listOf("auto") + PixelLook.accents, look.accent, Modifier.fillMaxWidth(), enabled) { choose(look.copy(accent = it)) }
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            PixelButton("Surprise", PixelGlyph.SPARK, Modifier.weight(1f).testTag("look.surprise"), secondary = true, enabled = enabled) {
+                val choices = PixelLook.portraits.filter { it != look.portrait }
+                choose(PixelLook(choices[CharacterRandom(java.util.UUID.randomUUID().toString()).index(choices.size)]))
+            }
+            PixelButton("Remix", PixelGlyph.SPARK, Modifier.weight(1f).testTag("look.remix"), secondary = true, enabled = enabled && look.customArt == null) {
                 choose(look.remixed(java.util.UUID.randomUUID().toString()))
             }
             PixelButton("Undo", PixelGlyph.BACK, Modifier.weight(1f).testTag("look.undo"), secondary = true, enabled = enabled && history.isNotEmpty()) {
                 history.lastOrNull()?.let { onChange(it); onHistoryChange(history.dropLast(1)) }
             }
         }
+    }
+    if (browsing) ModalBottomSheet(onDismissRequest = { browsing = false }, containerColor = Nb.Void,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        LazyColumn(Modifier.fillMaxWidth().testTag("wardrobe"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            item { Text("Wardrobe", color = Nb.Text, fontSize = 22.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold) }
+            item { OutlinedTextField(search, { search = it.take(80) }, Modifier.fillMaxWidth(), placeholder = { Text("Try vampire, cyborg, frost…") }, singleLine = true) }
+            item { Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                listOf("All", "Arcane", "Cyber", "Wild", "Dark").forEach { item ->
+                    FilterChip(family == item, { family = item }, label = { Text(item) }, shape = PixelButtonShape,
+                        modifier = Modifier.heightIn(min = 44.dp).testTag("wardrobe.family." + item.lowercase()))
+                }
+            } }
+            val filtered = PixelWardrobe.entries.filter {
+                (family == "All" || it.family == family) && (search.isBlank() || (listOf(it.label, it.family) + it.tags).joinToString(" ").contains(search.trim(), ignoreCase = true))
+            }
+            filtered.chunked(4).forEach { row -> item(key = row.first().id) { tiles(row, close = true) } }
+            if (filtered.isEmpty()) item { Text("No matching looks", color = Nb.Secondary, fontSize = 14.sp) }
+        }
+    }
+}
+
+@Composable
+private fun WardrobeTile(entry: PixelLookEntry, selected: Boolean, enabled: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    val base = Cast.all.firstOrNull { it.id == entry.archetype } ?: Cast.all.first()
+    Column(modifier.clip(PixelButtonShape).background(if (selected) Nb.Ion.copy(alpha = 0.12f) else Nb.FillSoft)
+        .border(1.dp, if (selected) Nb.Ion else androidx.compose.ui.graphics.Color.Transparent, PixelButtonShape)
+        .selectable(selected = selected, enabled = enabled, role = Role.RadioButton, onClick = onClick)
+        .semantics { contentDescription = entry.label + " look" }.testTag("look." + entry.id).padding(vertical = 7.dp),
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        CastPortrait(base.copy(name = entry.label, look = PixelLook(entry.id)), 58.dp, showCompanion = false)
+        Text(entry.label, color = Nb.Text, fontSize = 10.sp, maxLines = 1)
     }
 }
 
@@ -418,7 +467,8 @@ fun CastStudioSheet(vm: NiobiumViewModel, profile: String, title: String, onDism
             item {
                 SectionHeader("Creature")
                 Spacer(Modifier.height(10.dp))
-                FamiliarPicker(selected.companion, !saving) { selected = selected.copy(companion = it) }
+                FamiliarPicker(selected.companion, !saving) { selected = selected.copy(companion = it, companionArt = null) }
+                if (!saving) CompanionArtEditor(selected.companion, selected.companionArt) { selected = selected.copy(companionArt = it) }
             }
             item { SectionHeader("The cast", "eight starting points") }
             items(4) { row ->

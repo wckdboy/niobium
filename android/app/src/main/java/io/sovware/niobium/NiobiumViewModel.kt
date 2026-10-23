@@ -73,7 +73,8 @@ data class NbState(
         get() = activeBot != null && !loadingChat && (demo || (connected && sessionId != null))
 }
 
-class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
+class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine? = null) : AndroidViewModel(app) {
+    var engineHub: NiobiumEngineHub? = null
     private val prefs = SecurePrefs(app)
     private var gateway: GatewayClient? = null
     private var chatSource = "gui"
@@ -88,10 +89,12 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
     private var connectionEpoch = 0
     private var chatEpoch = 0
     private var groupEpoch = 0
+    private var groupSessionIds = emptySet<String>()
+    private var pendingRoomSend: Triple<String, String, String>? = null
     private val providerPrefs = app.getSharedPreferences("niobium", android.content.Context.MODE_PRIVATE)
     private var localToken: String? = null
 
-    var state by mutableStateOf(NbState())
+    var state by mutableStateOf(NbState(engine = managedEngine ?: AgentEngine.HERMES))
         private set
 
     init {
@@ -123,7 +126,7 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
         val saved = prefs.loadConnection()
         when {
             demoRequested -> enterDemo(botName)
-            providerPrefs.getString("agent-provider", null) == "dsh" || providerPrefs.getBoolean("local-mode", false) -> useLocal()
+            managedEngine == null && (providerPrefs.getString("agent-provider", null) == "dsh" || providerPrefs.getBoolean("local-mode", false)) -> useLocal()
             saved != null && saved.isDemo -> enterDemo(botName)
             saved != null -> {
                 state = state.copy(needsConnection = false, connection = saved)
@@ -134,6 +137,10 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun connect(rawUrl: String, token: String, name: String, remember: Boolean = true, local: Boolean = false, cookie: String? = null) {
+        engineHub?.let { hub ->
+            val owner = if (local) hub.local else hub.hermes
+            if (this !== owner) { hub.activate(if (local) AgentEngine.DSH else AgentEngine.HERMES); owner.connect(rawUrl, token, name, remember, local, cookie); return }
+        }
         if (state.connecting) return
         viewModelScope.launch {
             val normalized = normalizeUrl(rawUrl)
@@ -199,7 +206,7 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
                 val latency = if (caps != null) (android.os.SystemClock.elapsedRealtime() - probeStart).toInt().coerceAtLeast(1) else null
                 val saved = Connection(name.ifBlank { "My Hermes" }, normalized, token)
                 if (remember && !local) prefs.saveConnection(saved)
-                providerPrefs.edit().putString("agent-provider", if (local) "dsh" else "hermes").remove("local-mode").apply()
+                if (engineHub == null) providerPrefs.edit().putString("agent-provider", if (local) "dsh" else "hermes").remove("local-mode").apply()
                 state = state.copy(
                     needsConnection = false, connection = saved, connecting = false, connected = true,
                     demo = false, gatewayLatencyMs = latency, gatewayVersion = status.s("release_date") ?: status.s("version") ?: "Hermes",
@@ -228,11 +235,13 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun useLocal() {
+        engineHub?.let { hub -> if (this !== hub.local) { hub.activate(AgentEngine.DSH); hub.local.useLocal(); return } }
+        providerPrefs.edit().putBoolean("dsh-enabled", true).apply()
         if (state.engine != AgentEngine.DSH || state.demo || state.needsConnection) {
             disconnect()
             state = NbState(engine = AgentEngine.DSH, needsConnection = false, engineStatus = "Preparing your local engine…")
         }
-        providerPrefs.edit().putString("agent-provider", "dsh").remove("local-mode").apply()
+        if (engineHub == null) providerPrefs.edit().putString("agent-provider", "dsh").remove("local-mode").apply()
         val runtime = LocalRuntime.state.value
         if (runtime.phase == RuntimePhase.RUNNING && !state.connected && !state.connecting) connectLocal(runtime)
         else if (runtime.phase in listOf(RuntimePhase.OFF, RuntimePhase.ERROR)) LocalRuntime.start(getApplication())
@@ -246,9 +255,11 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun useHermes() {
+        engineHub?.let { hub -> if (this !== hub.hermes) { hub.activate(AgentEngine.HERMES); hub.hermes.useHermes(); return } }
+        if (state.engine == AgentEngine.HERMES && state.connected && !state.demo) return
         val saved = prefs.loadConnection()?.takeUnless { it.isDemo }
         disconnect()
-        providerPrefs.edit().putString("agent-provider", "hermes").remove("local-mode").apply()
+        if (engineHub == null) providerPrefs.edit().putString("agent-provider", "hermes").remove("local-mode").apply()
         state = NbState(needsConnection = saved == null, connection = saved)
         saved?.let { connect(it.url, it.token, it.name, remember = false) }
     }
@@ -280,7 +291,17 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun prepareStoppedLocal() { state = state.copy(needsConnection = false, engineStatus = "Stopped") }
+
+    fun stopLocal() {
+        engineHub?.let { hub -> if (this !== hub.local) { hub.local.stopLocal(); return } }
+        providerPrefs.edit().putBoolean("dsh-enabled", false).apply()
+        if (state.engine == AgentEngine.DSH) disconnect()
+        LocalRuntime.stop(getApplication())
+    }
+
     fun enterDemo(botName: String? = null) {
+        engineHub?.let { hub -> if (this !== hub.hermes) { hub.activate(AgentEngine.HERMES); hub.hermes.enterDemo(botName); return } }
         connectionEpoch++; chatEpoch++; groupEpoch++
         gateway?.disconnect(silent = true)
         gateway = null
@@ -729,7 +750,7 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
     // ── Events ───────────────────────────────────────────────────────────────
 
     private fun handleEvent(type: String, sessionId: String, payload: JSONObject) {
-        if (sessionId.isNotBlank() && sessionId != state.sessionId) return
+        if (sessionId.isNotBlank() && !showsSession(sessionId)) return
         when (type) {
             "message.start" -> {
                 ensureStreaming()
@@ -866,6 +887,7 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
                 val appearance = JSONObject().put("archetype", member.id).put("companion", member.companion).put("companion_name", member.companionName)
                 member.recipe?.let { appearance.put("recipe", it.toJson()) }
                 appearance.put("look", member.look?.toJson() ?: JSONObject.NULL)
+                appearance.put("companion_art", member.companionArt?.toJson() ?: JSONObject.NULL)
                 meta.put("appearance", appearance)
                 val revision = row.o("ui_meta_revisions")?.optInt("niobium") ?: 0
                 val result = client.request("profiles.configure", JSONObject().put("name", profile)
@@ -926,6 +948,8 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
             handleServerRequest(request.s("rpcId") ?: return@forEach, type, converted)
         }
     }
+
+    private fun showsSession(id: String) = state.sessionId == id || (state.engine == AgentEngine.DSH && state.activeGroup != null && id in groupSessionIds)
 
     private fun handleServerRequest(id: Any, method: String, params: JSONObject) {
         val sessionId = params.s("session_id") ?: ""
@@ -991,13 +1015,13 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
             return
         }
         val client = gateway ?: return
-        if (state.sessionId != approval.sessionId) return
+        if (!showsSession(approval.sessionId)) return
         if (approval.promptId != null && approval.executionGeneration != null) {
             viewModelScope.launch {
                 try {
                     client.request("approval.respond", JSONObject().put("session_id", approval.sessionId)
                         .put("execution_generation", approval.executionGeneration).put("prompt_id", approval.promptId).put("choice", choice))
-                    if (gateway !== client || state.sessionId != approval.sessionId) return@launch
+                    if (gateway !== client || !showsSession(approval.sessionId)) return@launch
                     state = state.copy(approvals = state.approvals.filterNot { it.id == approval.id })
                     showToast("Approval sent: $choice")
                 } catch (e: kotlinx.coroutines.CancellationException) { throw e }
@@ -1008,7 +1032,7 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
                 try {
                     client.request("approval.respond", JSONObject().put("session_id", approval.sessionId)
                         .put("request_id", approval.requestId).put("choice", choice))
-                    if (gateway !== client || state.sessionId != approval.sessionId) return@launch
+                    if (gateway !== client || !showsSession(approval.sessionId)) return@launch
                     state = state.copy(approvals = state.approvals.filterNot { it.id == approval.id })
                 } catch (e: kotlinx.coroutines.CancellationException) { throw e }
                 catch (e: Exception) { showError("Approval was not accepted. " + e.message) }
@@ -1023,7 +1047,7 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
     fun resolveClarify(answers: Map<String, String>, selections: Map<String, List<String>> = emptyMap()) {
         val req = state.clarify ?: return
         val client = gateway ?: return
-        if (state.sessionId != req.sessionId) return
+        if (!showsSession(req.sessionId)) return
         val flattened = answers + selections.mapValues { it.value.joinToString(", ") }
         if (req.questions.any { flattened[it.id].isNullOrBlank() }) {
             showError("Answer every question before sending. You can dismiss it and leave the task waiting.")
@@ -1033,12 +1057,12 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
             viewModelScope.launch {
                 try {
                     for (question in req.questions) {
-                        if (gateway !== client || state.sessionId != req.sessionId) return@launch
+                        if (gateway !== client || !showsSession(req.sessionId)) return@launch
                         val generation = req.promptGenerations[question.id] ?: continue
                         if (state.clarify?.promptGenerations?.get(question.id) != generation) return@launch
                         client.request("clarify.respond", JSONObject().put("session_id", req.sessionId)
                             .put("execution_generation", generation).put("prompt_id", question.id).put("answer", flattened.getValue(question.id)))
-                        if (gateway !== client || state.sessionId != req.sessionId ||
+                        if (gateway !== client || !showsSession(req.sessionId) ||
                             state.clarify?.promptGenerations?.get(question.id) != generation) return@launch
                         state = state.copy(clarify = state.clarify?.copy(questions = state.clarify!!.questions.filterNot { it.id == question.id },
                             promptGenerations = state.clarify!!.promptGenerations - question.id))
@@ -1059,7 +1083,7 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
     fun cancelClarify() {
         val req = state.clarify ?: return
         val client = gateway ?: return
-        if (state.sessionId != req.sessionId || req.promptGenerations.isNotEmpty()) return
+        if (!showsSession(req.sessionId) || req.promptGenerations.isNotEmpty()) return
         client.respond(req.rpcId, JSONObject().put("answers", JSONObject()).put("outcome", "cancelled"))
         state = state.copy(clarify = null)
     }
@@ -1087,7 +1111,9 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
     fun closeGroup() {
         groupEpoch++
         groupPoll?.cancel(); groupPoll = null
-        state = state.copy(activeGroup = null, roomEvents = emptyList())
+        state = state.copy(activeGroup = null, roomEvents = emptyList(), approvals = state.approvals.filterNot { it.sessionId in groupSessionIds },
+            clarify = state.clarify?.takeUnless { it.sessionId in groupSessionIds })
+        groupSessionIds = emptySet()
     }
 
     fun refreshGroup() {
@@ -1102,14 +1128,32 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
             }.onSuccess { result ->
                 if (groupEpoch != epoch || gateway !== client) return@onSuccess
                 state = state.copy(roomEvents = result.objects("events").mapNotNull(RoomEvent::parse))
+                if (state.engine == AgentEngine.DSH) {
+                    groupSessionIds = result.a("session_ids")?.let { a -> (0 until a.length()).map { a.getString(it) }.toSet() } ?: emptySet()
+                    val requests = result.objects("requests")
+                    val ids = requests.map { it.opt("id")?.toString().orEmpty() }.toSet()
+                    state = state.copy(approvals = state.approvals.filterNot { it.sessionId in groupSessionIds && it.rpcId.toString() !in ids },
+                        clarify = state.clarify?.takeUnless { it.sessionId in groupSessionIds && it.rpcId.toString() !in ids })
+                    requests.forEach { request -> request.o("params")?.let { handleServerRequest(request.get("id"), request.getString("method"), it) } }
+                }
             }
         }
     }
 
-    fun sendGroup(text: String) {
-        val value = text.trim()
-        if (value.isEmpty()) return
+    fun stopRoom() {
         val room = state.activeGroup ?: return
+        val client = gateway ?: return
+        if (state.engine != AgentEngine.DSH) return
+        viewModelScope.launch {
+            try { client.request("groups.stop", JSONObject().put("room_id", room.roomId)); refreshGroup() }
+            catch (e: Exception) { showError(e.message ?: "Could not stop this room.") }
+        }
+    }
+
+    fun sendGroup(text: String, onAccepted: () -> Unit = {}, onSettled: () -> Unit = {}) {
+        val value = text.trim()
+        if (value.isEmpty()) { onSettled(); return }
+        val room = state.activeGroup ?: run { onSettled(); return }
         if (state.demo) {
             val epoch = groupEpoch
             val next = (state.roomEvents.lastOrNull()?.seq ?: 0) + 1
@@ -1128,21 +1172,25 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
                         System.currentTimeMillis() / 1000, null, null))
                 }
             }
-            return
+            onAccepted(); onSettled(); return
         }
-        val client = gateway ?: return
+        val client = gateway ?: run { onSettled(); return }
         viewModelScope.launch {
-            val eventId = UUID.randomUUID().toString()
+            val eventId = pendingRoomSend?.takeIf { it.first == room.roomId && it.second == value }?.third ?: UUID.randomUUID().toString()
+            pendingRoomSend = Triple(room.roomId, value, eventId)
             try {
-                client.request("groups.send", JSONObject()
+                val receipt = client.request("groups.send", JSONObject()
                     .put("room_id", room.roomId)
                     .put("profile", state.activeBot?.name ?: state.bots.firstOrNull()?.name ?: "default")
                     .put("event_id", eventId)
                     .put("payload", JSONObject().put("text", value).put("thread_id", eventId)))
+                check(receipt.optBoolean("accepted",true)) { "The gateway did not accept that message." }
+                if (pendingRoomSend?.third == eventId) pendingRoomSend = null
+                onAccepted()
                 refreshGroup()
             } catch (e: Exception) {
                 state = state.copy(error = "Group send failed. ${e.message}")
-            }
+            } finally { onSettled() }
         }
     }
 
@@ -1194,7 +1242,7 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
             val slug = spec.name
             if (state.bots.any { it.name == slug }) { onError("That Pixel name already exists. Choose another name."); return@launch }
             val base = Cast.all.first { it.id == spec.character.archetype }
-            val member = base.copy(companion = spec.companion.kind, companionName = spec.companion.name, recipe = spec.character.recipe, look = spec.character.look)
+            val member = base.copy(companion = spec.companion.kind, companionName = spec.companion.name, recipe = spec.character.recipe, look = spec.character.look, companionArt = spec.companion.art)
             if (state.demo) {
                 val bot = BotProfile(slug, spec.title, spec.role, "", "Demo", spec.skills.size, "demo-$slug",
                     spec.companion.name + " and I are ready. What trouble are we solving?", System.currentTimeMillis() / 1000,
@@ -1471,4 +1519,42 @@ class NiobiumViewModel(app: Application) : AndroidViewModel(app) {
             I’ve noted the context in this bot’s memory, so the next turn starts where we left off.
         """.trimIndent()
     }
+}
+
+/** Provider lifetimes are owned by the activity ViewModel, never by the selected tab. */
+class NiobiumEngineHub(app: Application) : AndroidViewModel(app) {
+    private val owned = androidx.lifecycle.ViewModelStore()
+    private fun workspace(engine: AgentEngine): NiobiumViewModel {
+        val factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T = NiobiumViewModel(getApplication(), engine) as T
+        }
+        return androidx.lifecycle.ViewModelProvider(owned, factory).get(engine.name, NiobiumViewModel::class.java)
+    }
+    val hermes = workspace(AgentEngine.HERMES)
+    val local = workspace(AgentEngine.DSH)
+    var active by mutableStateOf(hermes)
+        private set
+    private val prefs = app.getSharedPreferences("niobium", android.content.Context.MODE_PRIVATE)
+    private var started = false
+    init { hermes.engineHub = this; local.engineHub = this }
+    fun bootstrap(demo: Boolean = false, bot: String? = null) {
+        if (started) return; started = true
+        val localSelected = prefs.getString("agent-provider", null) == "dsh" || prefs.getBoolean("local-mode", false)
+        active = if (!demo && localSelected) local else hermes
+        hermes.bootstrap(demo, bot)
+        if (!demo && prefs.getBoolean("dsh-enabled", localSelected)) local.useLocal()
+        else if (!demo && localSelected) local.prepareStoppedLocal()
+    }
+    fun activate(engine: AgentEngine) {
+        active = if (engine == AgentEngine.DSH) local else hermes
+        prefs.edit().putString("agent-provider", if (engine == AgentEngine.DSH) "dsh" else "hermes").remove("local-mode").apply()
+    }
+    fun resumeConnections() {
+        if (started) {
+            if (!hermes.state.demo && !hermes.state.needsConnection && !hermes.state.connected && !hermes.state.connecting) hermes.reconnect()
+            if (prefs.getBoolean("dsh-enabled", false) && !local.state.connected && !local.state.connecting) local.useLocal()
+        }
+    }
+    override fun onCleared() { owned.clear(); super.onCleared() }
 }

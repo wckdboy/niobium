@@ -228,3 +228,33 @@ scoped query confirmed only production Niobium remains. No production app data
 was erased. [Sanitized evidence](evidence/ios-build14-iphone-startup.json) includes
 the before/after startup traces. Real-account turns and delegation remain separate
 acceptance work.
+
+
+## Beta.7 wardrobe, image jobs and local conversations
+
+The wardrobe now has 32 base looks, 64 shared rendered-look fixtures, 12
+transparent stock creatures and shared 16/48px indexed custom-art fixtures.
+Original eight looks remain pixel-identical. Both native UIs exercise the
+filtered wardrobe and optional AI flow without paid image calls.
+
+Image-job tests cover stored receipt recovery via GET, ambiguous POST/server
+failures without automatic resubmission, provider cancellation transport,
+rejected redirects, strict bounded indexed pixels and opaque-background
+rejection. Network fixtures use fake keys; iOS tests inject an isolated memory
+vault. Android instrumented coverage tests actual Keystore encryption in its own
+unique namespace. Real image-provider account acceptance remains separate.
+
+Local messaging tests verify actual member/session attribution, separate room
+and DM sessions, durable idempotency even after transcript trimming, startup
+recovery of accepted work without replay, bounded @mention feedback, reviewed
+messaging access, pending questions, cancellation, corrupt-store preservation,
+archival and room activity in the roster. The Android controlled model fixture
+calls the real registered `message_agent` tool, receives Scout's actual DSH
+reply and restores that DM in native Rooms.
+
+Engine tests switch workspaces with both chats attached, preserve each transport
+and isolate disconnection, approvals and history. Failed room sends retain a
+receipt for explicit retry and leave the UI draft intact. The isolated full
+build 15 simulator acceptance preserves a streamed reply over eight seconds in
+the background and restores history after a cold guest launch. Production
+build 14 remains the latest physical iPhone acceptance until the phone unlocks.

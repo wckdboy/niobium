@@ -22,6 +22,7 @@
 		509A4E671F6E68A871DC6804 /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60029D35B25833C97FB3EE35 /* AppStore.swift */; };
 		55ADD8B9BD5D57FC91E0A453 /* PixelSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0BD636CA46D4C02C57B8406 /* PixelSpec.swift */; };
 		57ECAA5D4EFF73812A1CBEEB /* NiobiumUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B57601DD63B1EEF47A996E4F /* NiobiumUITests.swift */; };
+		623F56832993756DB597B3BD /* PixelArt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 486785330387232758B2750D /* PixelArt.swift */; };
 		6B21FAC38CE0AD90A671B232 /* character-recipes.json in Resources */ = {isa = PBXBuildFile; fileRef = DE00C4F548C347C129291A28 /* character-recipes.json */; };
 		6D2775B4258739F7CF2B4A84 /* NewBotView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E52F80CBF3907A307D7266D /* NewBotView.swift */; };
 		729B3290783DD31B41BBB098 /* DSHLocalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2071CB229CBC0CC7853AF958 /* DSHLocalView.swift */; };
@@ -34,12 +35,14 @@
 		8B95B674ADE0585F7049B74E /* RemoteHarnessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3BFA967917BA7D913DCD694 /* RemoteHarnessView.swift */; };
 		90694DD2EB755CDC5C559B4B /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A73453351829E3FFB57BF67 /* SettingsView.swift */; };
 		940FB9622DFCA4D81EAECAC1 /* PixelBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E416EFDE39DF4BC9C54A79 /* PixelBuilder.swift */; };
+		94E0B2A619FF33487E28C428 /* PixelArtistTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D8690776709F621CD8CB167 /* PixelArtistTests.swift */; };
 		963E259EB5A04F98028AA9C2 /* AIBuildView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C55B0D736E31F7FB52F44C2 /* AIBuildView.swift */; };
 		9A6839BC000C7C6759884C31 /* LocalDSHModelDeviceUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB1B8325F9C3BF64283A69CD /* LocalDSHModelDeviceUITests.swift */; };
 		9A989906327CB4BB829218DE /* Cast.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8273CAA1922CA7D96927FEAC /* Cast.swift */; };
 		B0931F9D858F9EB22B2FAB89 /* NBLocalModelFixture.m in Sources */ = {isa = PBXBuildFile; fileRef = D4553B863939692A6E694D56 /* NBLocalModelFixture.m */; };
 		B56C999C035DC8EED69892AE /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 03DDC2C567BD154F7B787F7C /* PrivacyInfo.xcprivacy */; };
 		BB69FCF61C90769403C69177 /* NiobiumTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B49BBE05B43B6B6AFAFFDA24 /* NiobiumTests.swift */; };
+		BF8CC3CA6D2B13266F9C0983 /* PixelArtist.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABD9F2D7E8AB6858823C2A61 /* PixelArtist.swift */; };
 		BFB3799D4EE79F918EEF91F6 /* Connection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7881BF04B81903578F406EAE /* Connection.swift */; };
 		C17232758B3098EBF00DDA63 /* Speech.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78C7DCBA2FAED667AAA3E0B3 /* Speech.swift */; };
 		D1E7BD349940934F25DB3D5F /* Mascot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64F32D9115F33BE49C715624 /* Mascot.swift */; };
@@ -50,6 +53,7 @@
 		DCEA09CCFFFB651D1E24AAF6 /* GatewayStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 938BEFBAAE3079D4B9AF8B29 /* GatewayStateTests.swift */; };
 		E8DBAB18000A20347C28129C /* DemoData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110D1522BB2728DAA3278BAA /* DemoData.swift */; };
 		EA6F8D6787B86622517832FE /* CharacterEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADBEA0E543C94268B3082620 /* CharacterEngine.swift */; };
+		FA69386F9C8AADCE11D7C9A9 /* custom-art.json in Resources */ = {isa = PBXBuildFile; fileRef = 7DA0703E71344C4982FEA68F /* custom-art.json */; };
 		FAECABBDDAB7061AD24EB493 /* NiobiumSceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C22F988531A89583ECB5D3D /* NiobiumSceneDelegate.swift */; };
 		FDB4611D1727E194BD250159 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD5A8D72D3F2FD723D9AAC2A /* HomeView.swift */; };
 /* End PBXBuildFile section */
@@ -89,15 +93,18 @@
 		3D65FE4758CBAF210B2115AA /* BotsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BotsView.swift; sourceTree = "<group>"; };
 		3E52F80CBF3907A307D7266D /* NewBotView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewBotView.swift; sourceTree = "<group>"; };
 		41196FDE9CF372B07CDC3D5A /* NiobiumApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NiobiumApp.swift; sourceTree = "<group>"; };
+		486785330387232758B2750D /* PixelArt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelArt.swift; sourceTree = "<group>"; };
 		4A73453351829E3FFB57BF67 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		4EFC7420AC0F58E58F3CC658 /* ChatSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatSheets.swift; sourceTree = "<group>"; };
 		4F7CD6081B76DBAC20A77786 /* PixelComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelComponents.swift; sourceTree = "<group>"; };
 		60029D35B25833C97FB3EE35 /* AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStore.swift; sourceTree = "<group>"; };
 		623D954C5930F945CC968714 /* bot-build.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "bot-build.md"; sourceTree = "<group>"; };
 		64F32D9115F33BE49C715624 /* Mascot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mascot.swift; sourceTree = "<group>"; };
+		6D8690776709F621CD8CB167 /* PixelArtistTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelArtistTests.swift; sourceTree = "<group>"; };
 		6E704B906D738908DBF1156D /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		7881BF04B81903578F406EAE /* Connection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Connection.swift; sourceTree = "<group>"; };
 		78C7DCBA2FAED667AAA3E0B3 /* Speech.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Speech.swift; sourceTree = "<group>"; };
+		7DA0703E71344C4982FEA68F /* custom-art.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "custom-art.json"; sourceTree = "<group>"; };
 		7DF3CEFC9C0EC54DC634DFF0 /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
 		7EAD7DDD7BB5986D38EE8947 /* CompanionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionsView.swift; sourceTree = "<group>"; };
 		8273CAA1922CA7D96927FEAC /* Cast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cast.swift; sourceTree = "<group>"; };
@@ -107,6 +114,7 @@
 		A3BFA967917BA7D913DCD694 /* RemoteHarnessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteHarnessView.swift; sourceTree = "<group>"; };
 		A7CC464017EAEE412A48977B /* ConnectionHandshakeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionHandshakeTests.swift; sourceTree = "<group>"; };
 		A8FAE52FE38FEF029F62C7B9 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
+		ABD9F2D7E8AB6858823C2A61 /* PixelArtist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelArtist.swift; sourceTree = "<group>"; };
 		ADBEA0E543C94268B3082620 /* CharacterEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CharacterEngine.swift; sourceTree = "<group>"; };
 		B1AFDA3DFCA502228435D1AC /* CredentialPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CredentialPromptView.swift; sourceTree = "<group>"; };
 		B49BBE05B43B6B6AFAFFDA24 /* NiobiumTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NiobiumTests.swift; sourceTree = "<group>"; };
@@ -174,6 +182,8 @@
 				B5C551A6F8A4092D6F86964E /* Niobium-Bridging-Header.h */,
 				41196FDE9CF372B07CDC3D5A /* NiobiumApp.swift */,
 				2C22F988531A89583ECB5D3D /* NiobiumSceneDelegate.swift */,
+				486785330387232758B2750D /* PixelArt.swift */,
+				ABD9F2D7E8AB6858823C2A61 /* PixelArtist.swift */,
 				E1E416EFDE39DF4BC9C54A79 /* PixelBuilder.swift */,
 				E0BD636CA46D4C02C57B8406 /* PixelSpec.swift */,
 				A3BFA967917BA7D913DCD694 /* RemoteHarnessView.swift */,
@@ -191,6 +201,7 @@
 				A7CC464017EAEE412A48977B /* ConnectionHandshakeTests.swift */,
 				938BEFBAAE3079D4B9AF8B29 /* GatewayStateTests.swift */,
 				B49BBE05B43B6B6AFAFFDA24 /* NiobiumTests.swift */,
+				6D8690776709F621CD8CB167 /* PixelArtistTests.swift */,
 			);
 			path = NativeTests;
 			sourceTree = "<group>";
@@ -231,6 +242,7 @@
 			isa = PBXGroup;
 			children = (
 				DE00C4F548C347C129291A28 /* character-recipes.json */,
+				7DA0703E71344C4982FEA68F /* custom-art.json */,
 				05C40C4F463E045FE832ABE8 /* portrait-looks.json */,
 			);
 			path = Fixtures;
@@ -369,6 +381,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				6B21FAC38CE0AD90A671B232 /* character-recipes.json in Resources */,
+				FA69386F9C8AADCE11D7C9A9 /* custom-art.json in Resources */,
 				80309E4E5217814551B83545 /* portrait-looks.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -401,6 +414,8 @@
 				7FEBC27F6E852EAF94812DF3 /* NiobiumApp.swift in Sources */,
 				FAECABBDDAB7061AD24EB493 /* NiobiumSceneDelegate.swift in Sources */,
 				2D34E9368C50EB82EA9C7628 /* OnboardingView.swift in Sources */,
+				623F56832993756DB597B3BD /* PixelArt.swift in Sources */,
+				BF8CC3CA6D2B13266F9C0983 /* PixelArtist.swift in Sources */,
 				940FB9622DFCA4D81EAECAC1 /* PixelBuilder.swift in Sources */,
 				16C551F33A5623C689152478 /* PixelComponents.swift in Sources */,
 				55ADD8B9BD5D57FC91E0A453 /* PixelSpec.swift in Sources */,
@@ -432,6 +447,7 @@
 				D3E6E0737D2A138B7A22C3A6 /* ConnectionHandshakeTests.swift in Sources */,
 				DCEA09CCFFFB651D1E24AAF6 /* GatewayStateTests.swift in Sources */,
 				BB69FCF61C90769403C69177 /* NiobiumTests.swift in Sources */,
+				94E0B2A619FF33487E28C428 /* PixelArtistTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -542,7 +558,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Resources/Niobium.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 14;
+				CURRENT_PROJECT_VERSION = 15;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -582,7 +598,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Resources/Niobium.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 14;
+				CURRENT_PROJECT_VERSION = 15;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (

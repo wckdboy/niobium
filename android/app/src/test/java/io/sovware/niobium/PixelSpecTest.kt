@@ -28,6 +28,36 @@ class PixelSpecTest {
         assertFalse(PixelLook("nyx", "unknown").valid)
         assertTrue(runCatching { PixelLook.parse(org.json.JSONObject().put("portrait", "nyx").put("accent", false)) }.isFailure)
     }
+    @Test fun portableCustomArtRoundTripsAndRejectsMalformedPixels() {
+        val fixtures = org.json.JSONArray(javaClass.getResourceAsStream("/custom-art.json")!!.bufferedReader().use { it.readText() })
+        for (i in 0 until fixtures.length()) {
+            val f = fixtures.getJSONObject(i)
+            val art = PixelArt.parse(f.getJSONObject("art"))
+            assertTrue(art.valid)
+            val hash = java.security.MessageDigest.getInstance("SHA-256").digest(requireNotNull(art.rgba())).joinToString("") { "%02x".format(it.toInt() and 255) }
+            assertEquals(f.getString("rgba_sha256"), hash)
+            assertEquals(art, PixelArt.parse(art.toJson()))
+            assertFalse(art.copy(palette = listOf(0x1000000)).valid)
+            assertFalse(art.copy(pixels = "short").valid)
+            assertFalse(art.copy(pixels = java.util.Base64.getEncoder().encodeToString(ByteArray(art.size*art.size))).valid)
+            if (art.size == 48) {
+                val look = PixelLook("lilith", customArt = art)
+                assertTrue(look.valid)
+                assertEquals(look, PixelLook.parse(look.toJson()))
+            }
+        }
+    }
+    @Test fun wardrobeVarietyFollowsBriefAndDoesNotExpandColorIDs() {
+        assertEquals(32, PixelLook.portraits.size)
+        assertEquals(8, PixelLook.accents.size)
+        assertEquals(12, PixelLook.masculine.size)
+        assertFalse(PixelLook("lilith", "lilith").valid)
+        assertEquals("lilith", PixelLook.generated("nyx", "woman", "same", "vampire crimson corset").portrait)
+        assertEquals("zero", PixelLook.generated("forge", "man", "same", "cyborg chrome harness").portrait)
+        val selected = (0 until 100).map { PixelLook.generated("orion", "man", it.toString()).portrait }.toSet()
+        assertTrue(selected.size > 2)
+        assertTrue(selected.all { it in PixelLook.masculine })
+    }
     @Test fun legacyRecipesDecodeAndRejectInvalidOptionalTypes() {
         val legacy = org.json.JSONObject("""{"body":"woman","palette":"nyx","hair":"cat_black","face":"fierce","outfit":"rogue","accessory":"cat_ears"}""")
         val original = CharacterRecipe.parse(legacy)

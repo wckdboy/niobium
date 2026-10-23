@@ -1,0 +1,14 @@
+Use case: stylized-concept. Asset: Niobium adult pixel-character wardrobe atlas B.
+Use the attached atlas only as style reference. Create eight DIFFERENT original adult fantasy/cyborg head-to-waist portraits in a precise 4-column by 2-row grid, all cells equal squares. Wide 2:1 atlas, truly transparent background, no labels, no frame, no dividing lines, no scenery, no companions. Keep the whole silhouette within its cell, consistent eye level and size.
+All characters are clearly mature adults aged 28–45, with adult proportions and confident expressive faces. Beautiful polished RPG pixel art with crisp clusters, substantial black outlines, strong readable eyes and bright tiny eye highlights. Their outfits should be sexy, skimpy and fashionable, with opaque chest coverage, cutouts, harnesses, cropped tops and bare shoulders. Male characters may have bare chests. Non-explicit. Design for attractive exact 48x48 portraits: bold shapes and limited colors, no smooth gradients or microscopic detail.
+Row 1:
+1. Adult rogue man, olive skin, tousled silver-black hair, green eyes, an open deep teal leather coat, black chest harness and one steel shoulder guard; sly adult expression.
+2. Adult night-assassin woman, deep brown skin, long platinum side braid, bright amber eyes, a black strappy corset and saturated violet detached sleeves, angular gold ear jewelry; confident sultry smile.
+3. Adult serpent-druid woman, warm copper skin, dark emerald wavy hair, small elegant gold snake headdress, green scaled halter with opaque cups, exposed midriff and gold waist chains; proud mischievous expression.
+4. Adult cyber-brawler man, pale skin, short electric-blue mohawk, chrome jaw detail, black open tech vest with lime accents, muscular chest and cybernetic arm; mature scarred face.
+Row 2:
+5. Adult arcane illusionist woman, light tan skin, deep blue long hair, violet eyes, rich magenta halter-corset with gold cutout framing and covered cups, detached dark gloves; playful knowing smile.
+6. Adult desert-prince man, dark skin, long black locs with gold rings, bright turquoise eyes, open ivory desert vest over a thin gold harness, bare chest and one warm bronze shoulder; handsome mature face.
+7. Adult frost-knight woman, fair skin, short silver-blue hair, blue eyes, opaque white armored bustier with dark teal straps and side cutouts, small fur shoulder detail and steel necklace; confident adult gaze.
+8. Adult sun-sorceress woman, brown skin, thick orange curly hair, violet eyes, dark purple strappy bodice with opaque cups, gold sun jewelry and detached silk-like opaque pixel sleeves; warm alluring smile.
+Every face, hair silhouette, pose and outfit must be visibly distinct from the reference. Keep hair colors separate from garment accent colors where possible. Original designs, exact clean grid, alpha outside each silhouette.

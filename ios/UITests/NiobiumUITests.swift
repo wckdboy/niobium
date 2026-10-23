@@ -36,6 +36,7 @@ final class NiobiumUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.buttons["look.nyx"].waitForExistence(timeout: 15))
         let nyx = app.buttons["look.nyx"]
+        nyx.tap()
         XCTAssertTrue(nyx.isSelected)
         let color = app.buttons["look.color.outfit"]
         let original = color.value as? String
@@ -59,6 +60,28 @@ final class NiobiumUITests: XCTestCase {
         look.tap()
         XCTAssertTrue(nyx.isSelected)
         XCTAssertEqual(color.value as? String, original)
+        XCTAssertTrue(app.buttons["Create Nyx"].isHittable)
+    }
+
+    @MainActor
+    func testWardrobeFiltersNewLooksAndAIStaysOptional() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--demo", "--light", "--no-splash", "--pixel-review"]
+        app.launch()
+        let browse = app.buttons["look.browse"]
+        XCTAssertTrue(browse.waitForExistence(timeout: 15))
+        for _ in 0..<4 where !browse.isHittable { app.swipeUp() }
+        browse.tap()
+        app.buttons["wardrobe.family.dark"].tap()
+        let lilith = app.buttons["look.lilith"]
+        XCTAssertTrue(lilith.waitForExistence(timeout: 3)); lilith.tap()
+        XCTAssertTrue(app.buttons["Create Nyx"].isHittable)
+        let ai = app.buttons["artist.open.pixel"]
+        for _ in 0..<4 where !ai.isHittable { app.swipeUp() }
+        ai.tap()
+        XCTAssertTrue(app.staticTexts["AI atelier"].waitForExistence(timeout: 3))
+        XCTAssertFalse(app.buttons["artist.generate"].isEnabled)
+        app.buttons["Done"].tap()
         XCTAssertTrue(app.buttons["Create Nyx"].isHittable)
     }
 

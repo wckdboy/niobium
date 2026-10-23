@@ -14,8 +14,25 @@ from png_rgba import read_rgba
 from character_engine48 import png, PALETTES
 
 ROOT = Path(__file__).resolve().parents[1]
-IDS = ["orion", "nova", "forge", "sage", "nyx", "astra", "vesper", "rook"]
-SOURCE = "brand/pixel-cast-runtime-v6.png"
+MANIFEST = json.loads((ROOT / "config/pixel-looks.json").read_text())
+IDS = [look["id"] for look in MANIFEST["looks"]]
+ACCENTS = MANIFEST["accents"]
+LOOKS = {look["id"]: look for look in MANIFEST["looks"]}
+SOURCE = "brand/pixel-wardrobe-runtime-v1.png"
+
+
+def source_pixels():
+    cells = {}
+    for atlas in MANIFEST["atlases"]:
+        width, height, pixels = read_rgba(ROOT / atlas["source"])
+        assert (width, height) == (192, 96)
+        for index, key in enumerate(atlas["ids"]):
+            assert key not in cells
+            cells[key] = [row[index % 4 * 48:(index % 4 + 1) * 48]
+                          for row in pixels[index // 4 * 48:(index // 4 + 1) * 48]]
+    assert set(cells) == set(IDS) and len(IDS) == len(set(IDS))
+    return cells
+
 
 
 def rgb(hex_color):
@@ -48,23 +65,22 @@ def material(key, x, y, color):
         "vesper": y >= 29 and 14 <= x <= 40,
         "rook": y >= 31 and (x < 22 or x > 35 or y >= 43),
     }
-    if not regions[key] or value < .14:
+    region = regions.get(key, y >= 29 and 9 <= x <= 40)
+    if not region or value < .14 or saturation < LOOKS[key].get("dye_min_saturation", 0):
         return 0
     warm = r > g * 1.12 and g > b * 1.04
     # Warm skin, leather and gold stay authored. Nyx's saturated red fabric
     # belongs to the garment, while her softer skin colors stay untouched.
-    red_fabric = key == "nyx" and saturation > .80 and (h < .035 or h > .96)
+    red_fabric = key in ("nyx", "lilith", "ember") and saturation > .80 and (h < .035 or h > .96)
     fabric = .48 < h < .92 or .18 < h < .45 or (value < .38 and saturation < .65)
     return 1 if red_fabric or (not warm and fabric) else 0
 
 
 def build_catalog():
-    width, height, pixels = read_rgba(ROOT / SOURCE)
-    assert (width, height) == (192, 96)
+    cells = source_pixels()
     looks = {}
     for index, key in enumerate(IDS):
-        cell = [row[index % 4 * 48:(index % 4 + 1) * 48]
-                for row in pixels[index // 4 * 48:(index // 4 + 1) * 48]]
+        cell = cells[key]
         colors = sorted({(r << 16) | (g << 8) | b for row in cell for r, g, b, a in row if a})
         assert len(colors) <= 32
         slots = {color: slot for slot, color in enumerate(colors)}
@@ -113,21 +129,54 @@ def artifacts():
     examples = [dict(portrait=key) for key in IDS]
     examples += [dict(portrait=key, accent="nova" if index % 2 else "astra")
                  for index, key in enumerate(IDS)]
-    sheet = [[None] * 192 for _ in range(192)]
+    sheet = [[None] * 384 for _ in range(384)]
     fixtures = []
     for index, look in enumerate(examples):
         cell = compose(look, data)
         for y, row in enumerate(cell):
-            sheet[index // 4 * 48 + y][index % 4 * 48:(index % 4 + 1) * 48] = row
+            sheet[index // 8 * 48 + y][index % 8 * 48:(index % 8 + 1) * 48] = row
         raw = bytes(channel for row in cell for color in row for channel in
                     ((*channels(rgb(color)), 255) if color else (0, 0, 0, 0)))
         fixtures.append(dict(look=look, rgba_sha256=hashlib.sha256(raw).hexdigest()))
-    outputs["brand/pixel-looks-v1-gallery.png"] = png(sheet, 5)
-    outputs["site/public/pixel-custom-atlas.png"] = png(sheet[96:])
+    outputs["brand/pixel-looks-v2-gallery.png"] = png(sheet, 4)
+    outputs["site/public/pixel-wardrobe-v1.png"] = png(sheet[:192])
+    # Four columns preserve the public sprite layout and canonical cell addressing.
+    base = [[None] * 192 for _ in range(len(IDS) // 4 * 48)]
+    variants = [[None] * 192 for _ in range(len(IDS) // 4 * 48)]
+    for index, key in enumerate(IDS):
+        for target, look in ((base, dict(portrait=key)),
+                             (variants, dict(portrait=key, accent="nova" if index % 2 else "astra"))):
+            for y, row in enumerate(compose(look, data)):
+                target[index // 4 * 48 + y][index % 4 * 48:(index % 4 + 1) * 48] = row
+    outputs[SOURCE] = png(base)
+    outputs["site/public/pixel-custom-atlas.png"] = png(variants)
+    outputs.update(metadata_artifacts())
     fixture_bytes = (json.dumps(fixtures, indent=2) + "\n").encode()
     for path in ["tests/fixtures/portrait-looks.json", "ios/NativeTests/Fixtures/portrait-looks.json",
                  "android/app/src/test/resources/portrait-looks.json", "android/app/src/androidTest/assets/portrait-looks.json"]:
         outputs[path] = fixture_bytes
+    return outputs
+
+
+def metadata_artifacts():
+    quoted = lambda values: ", ".join(json.dumps(v) for v in values)
+    entries = MANIFEST["looks"]
+    swift = "enum PixelWardrobe {\n    static let accents = [" + quoted(ACCENTS) + "]\n    static let entries: [PixelLookEntry] = [\n"
+    kotlin = "object PixelWardrobe {\n    val accents = listOf(" + quoted(ACCENTS) + ")\n    val entries = listOf(\n"
+    for look in entries:
+        args = [json.dumps(look[k]) for k in ("id", "label", "archetype", "body", "family")]
+        swift += "        .init(" + ", ".join(k + ": " + a for k, a in zip(("id", "label", "archetype", "body", "family"), args)) + ", tags: [" + quoted(look["tags"]) + "]),\n"
+        kotlin += "        PixelLookEntry(" + ", ".join(args) + ", listOf(" + quoted(look["tags"]) + ")),\n"
+    swift += "    ]\n}"
+    kotlin += "    )\n}"
+    outputs = {}
+    for path, block in [("ios/Sources/Niobium/PixelSpec.swift", swift),
+                        ("android/app/src/main/java/io/sovware/niobium/PixelSpec.kt", kotlin)]:
+        old = (ROOT / path).read_text()
+        start, end = "// BEGIN GENERATED WARDROBE", "// END GENERATED WARDROBE"
+        before, rest = old.split(start, 1)
+        _, after = rest.split(end, 1)
+        outputs[path] = (before + start + "\n" + block + "\n" + end + after).encode()
     return outputs
 
 
@@ -146,7 +195,7 @@ def main():
             path.write_bytes(raw)
     if stale:
         raise SystemExit("Stale portrait assets: " + ", ".join(stale))
-    print("Verified" if args.check else "Built", "eight material-aware portrait looks and sixteen portable fixtures")
+    print("Verified" if args.check else "Built", f"{len(IDS)} material-aware portrait looks and {len(IDS) * 2} portable fixtures")
 
 
 if __name__ == "__main__":

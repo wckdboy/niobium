@@ -5,7 +5,7 @@ final class PixelBuilder {
     static let shared = PixelBuilder()
     func preview(for prompt: String) -> PixelDraft {
         .init(spec: .fallback(for: prompt), usedModel: false,
-              availableToolsets: ["web", "file", "memory", "todo", "skills", "vision", "image_gen", "terminal", "delegation"],
+              availableToolsets: ["web", "file", "memory", "todo", "skills", "vision", "image_gen", "terminal", "delegation", "messaging"],
               availableSkills: [], notes: [])
     }
     func draft(for prompt: String, api: (any HermesRPC)?) async throws -> PixelDraft {
@@ -34,6 +34,7 @@ final class PixelBuilder {
         if !missing.isEmpty { notes.append("Unavailable skills excluded: \(missing.joined(separator: ", ")).") }
         spec.skills = spec.skills.filter { skills.contains($0) }
         if catalog.string("provider") == "DSH" {
+            if tools.contains("messaging"), !spec.toolsets.contains("messaging") { spec.toolsets.append("messaging") }
             if !spec.connectors.isEmpty { notes.append("Local connections need separate DSH setup. This Pixel starts without connector access.") }
             spec.connectors = []
             notes.append("Local reasoning follows the selected model’s DSH settings. Skills share the local workspace.")

@@ -45,7 +45,7 @@ class CharacterEngineTest {
         val activity = instrumentation.startActivitySync(android.content.Intent(instrumentation.targetContext, MainActivity::class.java)
             .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK).putExtra("demo", true).putExtra("tab", "pixel-review"))
         try {
-            compose.onNodeWithTag("look.nyx").assertIsSelected()
+            compose.onNodeWithTag("look.nyx").performScrollTo().performClick().assertIsSelected()
             val color = compose.onNodeWithTag("look.color.outfit")
             val original = color.fetchSemanticsNode().config[SemanticsProperties.StateDescription]
             compose.onNodeWithTag("look.remix").performScrollTo().performClick()
@@ -60,6 +60,57 @@ class CharacterEngineTest {
             assertEquals(original, color.fetchSemanticsNode().config[SemanticsProperties.StateDescription])
             compose.onNodeWithText("Create Nyx").assertIsDisplayed()
         } finally { instrumentation.runOnMainSync { activity.finish() } }
+    }
+    @Test fun wardrobeFiltersNewLooksAndKeepsAiOptional() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val activity = instrumentation.startActivitySync(android.content.Intent(instrumentation.targetContext, MainActivity::class.java)
+            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK).putExtra("demo",true).putExtra("tab","pixel-review"))
+        try {
+            compose.onNodeWithTag("look.browse").performScrollTo().performClick()
+            compose.onNodeWithTag("wardrobe.family.dark").performClick()
+            compose.onNodeWithTag("look.lilith").performScrollTo().performClick()
+            compose.onNodeWithText("Create Nyx").assertIsDisplayed()
+            compose.onNodeWithTag("artist.open.pixel").performScrollTo().performClick()
+            compose.onNodeWithTag("artist.generate").performScrollTo().assertIsNotEnabled()
+        } finally { instrumentation.runOnMainSync { activity.finish() } }
+    }
+    @Test fun imageProviderKeyUsesTheActualDeviceKeystore() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val namespace = "niobium.artist.tests." + java.util.UUID.randomUUID()
+        val secure = SecurePrefs(context,namespace,namespace)
+        val marker = "fixture-key-for-device-vault-only"
+        try {
+            secure.saveImageKey(marker)
+            assertEquals(marker,secure.loadImageKey())
+            val raw = context.getSharedPreferences(namespace,android.content.Context.MODE_PRIVATE).getString("image_key",null)
+            assertNotNull(raw);assertFalse(raw!!.contains(marker))
+            secure.saveImageKey(null);assertNull(secure.loadImageKey())
+        } finally {
+            context.deleteSharedPreferences(namespace)
+            java.security.KeyStore.getInstance("AndroidKeyStore").apply { load(null);deleteEntry(namespace) }
+        }
+    }
+    @Test fun generatedArtRendersPortablePixelsAndBakerRejectsOpaqueBackgrounds() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val fixtures = JSONArray(instrumentation.context.assets.open("custom-art.json").bufferedReader().use { it.readText() })
+        for (i in 0 until fixtures.length()) {
+            val f = fixtures.getJSONObject(i)
+            val art = PixelArt.parse(f.getJSONObject("art"))
+            val rendered = requireNotNull(CharacterEngine.image(art)).asAndroidBitmap()
+            assertEquals(art.size,rendered.width)
+            val rgba = ByteArray(art.size*art.size*4)
+            for (y in 0 until art.size) for (x in 0 until art.size) {
+                val c = rendered.getPixel(x,y);val offset=(y*art.size+x)*4
+                rgba[offset]=(c ushr 16).toByte();rgba[offset+1]=(c ushr 8).toByte();rgba[offset+2]=c.toByte();rgba[offset+3]=(c ushr 24).toByte()
+            }
+            val hash = MessageDigest.getInstance("SHA-256").digest(rgba).joinToString("") { "%02x".format(it.toInt() and 255) }
+            assertEquals(f.getString("rgba_sha256"),hash)
+            val bytes = java.io.ByteArrayOutputStream().use { rendered.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it);it.toByteArray() }
+            assertTrue(PixelArtBaker.bake(bytes,art.size).valid)
+        }
+        val opaque = android.graphics.Bitmap.createBitmap(48,48,android.graphics.Bitmap.Config.ARGB_8888).apply { eraseColor(android.graphics.Color.WHITE) }
+        val bytes = java.io.ByteArrayOutputStream().use { opaque.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it);it.toByteArray() }
+        assertTrue(runCatching { PixelArtBaker.bake(bytes,16) }.isFailure)
     }
     @Test fun authoredLooksMatchSharedPixelsAndSurviveAppearanceRoundTrip() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()

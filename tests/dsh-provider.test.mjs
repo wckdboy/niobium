@@ -196,7 +196,22 @@ test('restored DSH transcript keeps user, assistant and tool rows without chunk 
 
 test('unsupported Hermes features produce explicit errors, never false success', async () => {
   const p = createProvider({rpc: async () => { throw new Error('Should not reach DSH'); }});
-  assert.deepEqual(await p.request('groups.capabilities'), {driver: false, methods: []});
+  assert.equal((await p.request('groups.capabilities')).driver, true);
+  assert((await p.request('groups.capabilities')).methods.includes('groups.send'));
   await assert.rejects(p.request('cron.manage', {action: 'add'}), /requires Hermes/);
   await assert.rejects(p.request('profiles.configure', {name: 'x', enabled_toolsets: ['terminal']}), /Edit local tool access/);
+});
+
+test('room work marks a Pixel busy without replacing its direct-message session', async () => {
+  const home = await mkdtemp(path.join(tmpdir(), 'niobium-room-roster-'));
+  const p = createProvider({home, rpc: async method => method === 'agentPreset.list' ? {presets: [{id:'standard'}]} : {items: [
+    {sessionId:'direct',agentPreset:'standard',updatedAt:1000,running:false},
+    {sessionId:'room-work',agentPreset:'standard',updatedAt:2000,running:true}
+  ]}});
+  p.messaging.ownSessionIDs = async () => new Set(['room-work']);
+  try {
+    const row = (await p.request('profiles.list')).profiles[0];
+    assert.equal(row.canonical_session.id,'direct');
+    assert.equal(row.worker_session.id,'room-work');
+  } finally { await p.messaging.close(); await rm(home,{recursive:true,force:true}); }
 });

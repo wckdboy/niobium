@@ -13,6 +13,10 @@ target.parent.mkdir(parents=True, exist_ok=True)
 shutil.copy2(root / 'runtime/niobium-agent.cjs', target)
 manifest['files'] = [entry for entry in manifest['files'] if entry['dst'] != '/usr/local/lib/niobium-agent.cjs']
 manifest['files'].append({'src': 'files/lib/niobium-agent.cjs', 'dst': '/usr/local/lib/niobium-agent.cjs'})
+module = bundle / 'files/lib/niobium-messaging.cjs'
+shutil.copy2(root / 'runtime/niobium-messaging.cjs', module)
+manifest['files'] = [entry for entry in manifest['files'] if entry['dst'] != '/usr/local/lib/niobium-messaging.cjs']
+manifest['files'].append({'src': 'files/lib/niobium-messaging.cjs', 'dst': '/usr/local/lib/niobium-messaging.cjs'})
 # The upstream overlay uses version 4. Niobium owns its subsequent versions;
 # every app build reapplies the small adapter without replacing user data.
 manifest['version'] = 100000 + int(os.environ['CURRENT_PROJECT_VERSION'])

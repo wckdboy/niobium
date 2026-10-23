@@ -70,22 +70,6 @@
       "sha256": "4a9bbaa65a7714ab60c393cfd17fbd361715f3a5453d3da7a3c5a3b1a844af6c"
     },
     {
-      "file": "site/public/pixel-custom-atlas.png",
-      "tool": "tools/portrait_looks.py",
-      "source_reference": "brand/pixel-cast-runtime-v6.png",
-      "size": [
-        192,
-        96
-      ],
-      "cell_size": [
-        48,
-        48
-      ],
-      "alpha": "0 or 255",
-      "sha256": "bfa1e4eebd6b5f712c274be3a598036381939d5aa406cc009b8d5f01d7713139",
-      "purpose": "Eight actual garment-color variants of curated portraits."
-    },
-    {
       "file": "brand/pixel-cast-atlas-v5.png",
       "tool": "image_gen.imagegen",
       "date": "2026-10-22",
@@ -150,8 +134,143 @@
       ],
       "purpose": "Eight actual authored looks and eight garment-color examples, enlarged exactly 5x; faces, hair and skin preserved.",
       "sha256": "cfe91ee098495420a96867a508f5c620fdd166e0514dc6af3a846d575bca8eee"
+    },
+    {
+      "file": "brand/pixel-wardrobe-atlas-v1-a.png",
+      "sha256": "29c9d2df8b58d2fd418afb32e3554c274a92402ccd6a925b4a24a3da11050131",
+      "tool": "image_gen.imagegen",
+      "date": "2026-10-23",
+      "transparent": true,
+      "prompt_file": "brand/pixel-wardrobe-v1-a-prompt.txt",
+      "source_reference": "brand/pixel-cast-atlas-v6.png",
+      "purpose": "Original adult fantasy/cyborg wardrobe source; baked to 48px for runtime, not hand-placed 48px source art."
+    },
+    {
+      "file": "brand/pixel-wardrobe-runtime-v1-a.png",
+      "sha256": "442b4ef085a9ed0238c7843b5af18647ebf8ad9823c89f5ff0e54d61094e67ca",
+      "tool": "tools/bake-character-art.swift",
+      "date": "2026-10-23",
+      "transparent": true,
+      "source_reference": "brand/pixel-wardrobe-atlas-v1-a.png",
+      "size": [
+        192,
+        96
+      ],
+      "cell_size": [
+        48,
+        48
+      ],
+      "max_colors_per_cell": 32,
+      "alpha": "0 or 255"
+    },
+    {
+      "file": "brand/pixel-wardrobe-atlas-v1-b.png",
+      "sha256": "647064b969f7aacede783ab2ff5cf052d78120cbcd0bb1eef787d493372d3e5f",
+      "tool": "image_gen.imagegen",
+      "date": "2026-10-23",
+      "transparent": true,
+      "prompt_file": "brand/pixel-wardrobe-v1-b-prompt.txt",
+      "source_reference": "brand/pixel-cast-atlas-v6.png",
+      "purpose": "Original adult fantasy/cyborg wardrobe source; baked to 48px for runtime, not hand-placed 48px source art."
+    },
+    {
+      "file": "brand/pixel-wardrobe-runtime-v1-b.png",
+      "sha256": "78abd2499559b6d5ecc1a8e14e4dd1cb9b023cb2229ba3bdff4a510d58a5e13c",
+      "tool": "tools/bake-character-art.swift",
+      "date": "2026-10-23",
+      "transparent": true,
+      "source_reference": "brand/pixel-wardrobe-atlas-v1-b.png",
+      "size": [
+        192,
+        96
+      ],
+      "cell_size": [
+        48,
+        48
+      ],
+      "max_colors_per_cell": 32,
+      "alpha": "0 or 255"
+    },
+    {
+      "file": "brand/pixel-wardrobe-atlas-v1-c.png",
+      "sha256": "852cadb4544dfb35f0df3e1c1bebc0496abe736256e9e92230cc823cae88db3a",
+      "tool": "image_gen.imagegen",
+      "date": "2026-10-23",
+      "transparent": true,
+      "prompt_file": "brand/pixel-wardrobe-v1-c-prompt.txt",
+      "source_reference": "brand/pixel-cast-atlas-v6.png",
+      "purpose": "Original adult fantasy/cyborg wardrobe source; baked to 48px for runtime, not hand-placed 48px source art."
+    },
+    {
+      "file": "brand/pixel-wardrobe-runtime-v1-c.png",
+      "sha256": "2f08d290b3affd77023131c55946be0dcb8f42b160567d3b4eebfcbacb60dabc",
+      "tool": "tools/bake-character-art.swift",
+      "date": "2026-10-23",
+      "transparent": true,
+      "source_reference": "brand/pixel-wardrobe-atlas-v1-c.png",
+      "size": [
+        192,
+        96
+      ],
+      "cell_size": [
+        48,
+        48
+      ],
+      "max_colors_per_cell": 32,
+      "alpha": "0 or 255"
+    },
+    {
+      "file": "brand/pixel-wardrobe-runtime-v1.png",
+      "sha256": "498cf627aacc44a311f06c3b1e6cddde18d11b6b2ff503c07c893096ce177262",
+      "tool": "tools/portrait_looks.py",
+      "source_reference": "config/pixel-looks.json",
+      "cell_size": [
+        48,
+        48
+      ],
+      "alpha": "0 or 255",
+      "purpose": "32 canonical authored looks, original eight pixel-identical."
+    },
+    {
+      "file": "brand/pixel-looks-v2-gallery.png",
+      "sha256": "a167c796941d88e47613887629c59be847a8fbe77105589ad10e9885118adbe0",
+      "tool": "tools/portrait_looks.py",
+      "source_reference": "config/pixel-looks.json",
+      "cell_size": [
+        48,
+        48
+      ],
+      "alpha": "0 or 255",
+      "purpose": "32 base looks and 32 restricted garment-color variants, enlarged exactly 4x."
+    },
+    {
+      "file": "site/public/pixel-custom-atlas.png",
+      "sha256": "18c3a6a7b94d07092ea7b2c08cc59732075788bf8cdb707eb6182e985d4f362f",
+      "tool": "tools/portrait_looks.py",
+      "source_reference": "config/pixel-looks.json",
+      "cell_size": [
+        48,
+        48
+      ],
+      "alpha": "0 or 255",
+      "purpose": "32 restricted garment-color variants; 4 columns and 8 rows."
+    },
+    {
+      "file": "site/public/pixel-wardrobe-v1.png",
+      "sha256": "91b0c71ba3d840047b8a99cc94cfb902333fed90d5426e7438d12ad3075fb7d0",
+      "tool": "tools/portrait_looks.py",
+      "source_reference": "config/pixel-looks.json",
+      "cell_size": [
+        48,
+        48
+      ],
+      "size": [
+        384,
+        192
+      ],
+      "purpose": "32 original adult looks in eight columns; native pixels unchanged."
     }
   ],
-  "runtime_note": "Original generated atlases are retained at source resolution. The v6 source is baked by tools/bake-character-art.swift into the canonical 192×96 atlas: eight exact 48×48 cells, at most 32 opaque colors per base cell, hard alpha and a transparent border. Both native clients crop those pixels without resizing. tools/portrait_looks.py packages authored portraits and restricted garment masks for cached local color variants. Faces, hair, skin and mechanical parts stay authored; this is a finite library of eight silhouettes, not unlimited image generation. New previews require no model or image call. Older custom recipes remain readable through the backwards-compatible layered engine v3 and its optional decorative blink frames. Independent companions are code-native 16×16 sprites. AI-styled high-resolution art is not a claim of hand-placed 48px originals.",
+  "runtime_note": "Original generated atlases are retained at source resolution. The v6 cast and three wardrobe v1 source atlases are baked by tools/bake-character-art.swift into eight exact 48\u00d748 cells each, at most 32 opaque colors per base cell, hard alpha and a transparent border. config/pixel-looks.json orders all 32 looks. tools/portrait_looks.py combines these unchanged cells and restricted garment masks for cached local color variants; faces and hair remain authored. This finite library is immediate and requires no model or image call. Older custom recipes remain readable through the backwards-compatible layered engine v3. Independent companions are transparent code-native 16\u00d716 sprites. AI-styled high-resolution art is not a claim of hand-placed 48px originals.",
   "reference": "docs/reference-dashboard.png is the user-supplied design reference, not generated product output."
 }

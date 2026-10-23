@@ -65,7 +65,7 @@ class RuntimeInstaller(private val context: Context) {
         check(home.isDirectory) { "The local workspace is missing. Your Linux image has been preserved." }
         safeDirectory(home, "workspace")
         val adapterDirectory = safeDirectory(root, "usr/local/lib")
-        for (name in listOf("niobium-local.cjs", "niobium-agent.cjs")) {
+        for (name in listOf("niobium-local.cjs", "niobium-agent.cjs", "niobium-messaging.cjs")) {
             val stage = Files.createTempFile(adapterDirectory.toPath(), ".niobium-", ".pending")
             try {
                 context.assets.open(name).use { input -> Files.newOutputStream(stage).use(input::copyTo) }

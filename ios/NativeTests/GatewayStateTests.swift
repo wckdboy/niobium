@@ -15,12 +15,20 @@ private final class FixtureRPC: HermesRPC {
     var holdClarify = false
     var createdName = "fixture-profile"
     var madeLocally = false
+    var disconnectCalls = 0
+    var roomApprovals = false
+    var failRoomSendOnce = false
     var holdListFor: String?
     var failLocalAttach = false
 
     func request(_ method: String, params: JSONObject, timeout: TimeInterval) async throws -> Any {
         calls.append((method, params))
         switch method {
+        case "groups.log":
+            return ["events": [], "session_ids": ["room-owned"], "requests": roomApprovals ? [["id": "room-approval", "method": "approval", "params": ["session_id": "room-owned", "request_id": "room-approval", "tool_name": "bash", "choices": ["once", "deny"]]]] : []] as JSONObject
+        case "groups.send":
+            if failRoomSendOnce { failRoomSendOnce = false; throw RPCError.timeout }
+            return ["accepted": true]
         case "session.list":
             if params.string("profile") == holdListFor, holdListFor != nil {
                 return try await withCheckedThrowingContinuation { held = $0 }.value
@@ -60,11 +68,59 @@ private final class FixtureRPC: HermesRPC {
     }
     func respond(id: JSONValueID, result: JSONObject) { responses.append((id, result)) }
     func respondError(id: JSONValueID, code: Int, message: String) {}
-    func disconnect(notify: Bool) {}
+    func disconnect(notify: Bool) { disconnectCalls += 1 }
 }
 
 @MainActor
 final class GatewayStateTests: XCTestCase {
+    func testRoomApprovalsStayWithTheirSessionAndDoNotDuplicateOnPolling() async throws {
+        let rpc = FixtureRPC(); rpc.roomApprovals = true
+        let store = AppStore(api: rpc, managedEngine: .dsh)
+        store.activeGroup = GroupRoom.parse(["room_id": "fixture", "name": "Fixture", "members": []])
+        await store.refreshGroup(); await store.refreshGroup()
+        XCTAssertEqual(store.approvals.count, 1)
+        let approval = try XCTUnwrap(store.approvals.first)
+        XCTAssertEqual(approval.sessionID, "room-owned")
+        store.resolveApproval(approval, choice: "once")
+        XCTAssertEqual(rpc.responses.first?.0, .string("room-approval"))
+        XCTAssertEqual(rpc.responses.first?.1.string("choice"), "once")
+        store.closeGroup(); store.resolveApproval(approval, choice: "once")
+        XCTAssertEqual(rpc.responses.count, 1)
+    }
+    func testFailedRoomSendKeepsItsReceiptForAnExplicitRetry() async throws {
+        let rpc = FixtureRPC(); rpc.failRoomSendOnce = true
+        let store = AppStore(api: rpc, managedEngine: .dsh)
+        store.activeGroup = GroupRoom.parse(["room_id": "fixture", "name": "Fixture", "members": []])
+        let first = await store.sendGroup("Keep this draft")
+        let second = await store.sendGroup("Keep this draft")
+        XCTAssertFalse(first); XCTAssertTrue(second)
+        let sends = rpc.calls.filter { $0.0 == "groups.send" }
+        XCTAssertEqual(sends.count, 2)
+        XCTAssertEqual(sends[0].1.string("event_id"), sends[1].1.string("event_id"))
+    }
+    func testSwitchingWorkspacesKeepsBothSessionsAndIndependentTransports() async throws {
+        let remoteRPC = FixtureRPC(), localRPC = FixtureRPC()
+        let remote = AppStore(api: remoteRPC, managedEngine: .hermes), local = AppStore(api: localRPC, managedEngine: .dsh)
+        remote.connectionState = .connected(version: "Hermes"); local.connectionState = .connected(version: "DSH")
+        let hub = EngineHub(hermes: remote, local: local, autostart: false)
+        let remoteBot = try XCTUnwrap(BotProfile.parse(["name": "remote-pixel", "origin": "hermes"]))
+        let localBot = try XCTUnwrap(BotProfile.parse(["name": "local-pixel", "origin": "dsh"]))
+        remote.openBot(remoteBot); local.openBot(localBot)
+        for _ in 0..<2000 { if remote.chatSessionID != nil && local.chatSessionID != nil { break }; await Task.yield() }
+        XCTAssertEqual(remote.chatSessionID, "chat-remote-pixel")
+        XCTAssertEqual(local.chatSessionID, "chat-local-pixel")
+        hub.activate(.dsh)
+        XCTAssertTrue(hub.active === local)
+        await local.useHermes()
+        XCTAssertTrue(hub.active === remote)
+        XCTAssertEqual(remote.activeBot?.name, remoteBot.name)
+        XCTAssertEqual(local.activeBot?.name, localBot.name)
+        XCTAssertEqual(remoteRPC.disconnectCalls, 0); XCTAssertEqual(localRPC.disconnectCalls, 0)
+        local.disconnect()
+        XCTAssertTrue(remote.connectionState.isConnected)
+        XCTAssertEqual(remote.chatSessionID, "chat-remote-pixel")
+        XCTAssertEqual(remoteRPC.disconnectCalls, 0)
+    }
     func testLocalConnectionFailureStaysVisibleWhileLinuxIsReady() {
         let store = AppStore(api: FixtureRPC())
         store.engine = .dsh

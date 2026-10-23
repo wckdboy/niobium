@@ -1,11 +1,13 @@
 import Foundation
 import SwiftUI
 import UIKit
+import Combine
 
 enum AgentEngine: String { case hermes, dsh }
 
 @MainActor
 final class AppStore: ObservableObject {
+    weak var engineHub: EngineHub?
     @Published var engine: AgentEngine = .hermes
     @Published var localStatus = "Stopped"
     @Published var localReady = false
@@ -75,6 +77,8 @@ final class AppStore: ObservableObject {
     private var pendingDemoToolID: String?
     private var chatEpoch = 0
     private var groupEpoch = 0
+    private var groupSessionIDs: Set<String> = []
+    private var pendingRoomSend: (room: String, text: String, id: String)?
     private var connectionEpoch = 0
     private var localBootTask: Task<Void, Never>?
     private var localProviderToken = UUID().uuidString + UUID().uuidString
@@ -82,7 +86,8 @@ final class AppStore: ObservableObject {
     private var localObserver: NSObjectProtocol?
 #endif
 
-    init(api: (any HermesRPC)? = nil) {
+    init(api: (any HermesRPC)? = nil, managedEngine: AgentEngine? = nil) {
+        if let managedEngine { engine = managedEngine }
 #if NIOBIUM_LOCAL_DSH
         localObserver = NotificationCenter.default.addObserver(forName: .init("DSHHarnessStateDidChangeNotification"), object: nil, queue: .main) { [weak self] _ in
             Task { @MainActor in
@@ -105,6 +110,11 @@ final class AppStore: ObservableObject {
             needsConnection = false
             return
         }
+        if managedEngine != nil { return }
+        restoreLaunchState()
+    }
+
+    func restoreLaunchState() {
         let env = ProcessInfo.processInfo.environment
         if env["NIOBIUM_DEMO"] == "1" || ProcessInfo.processInfo.arguments.contains("--demo") {
             enterDemo()
@@ -132,6 +142,10 @@ final class AppStore: ObservableObject {
     // MARK: - Connection
 
     func connect(url rawURL: String, token: String, name: String, local: Bool = false) async {
+        if let hub = engineHub, self !== (local ? hub.local : hub.hermes) {
+            hub.activate(local ? .dsh : .hermes)
+            await hub.active.connect(url: rawURL, token: token, name: name, local: local); return
+        }
         guard !isConnecting else { return }
         guard let normalized = ConnectionPrefs.normalizedURL(rawURL) else {
             connectError = "Enter a full gateway address, like http://192.168.1.20:9119"
@@ -169,7 +183,7 @@ final class AppStore: ObservableObject {
             if !local {
                 guard ConnectionPrefs.save(saved, token: token) else { client.disconnect(notify: false); throw RPCError.transport("Could not store the gateway token securely.") }
             }
-            UserDefaults.standard.set(local ? "dsh" : "hermes", forKey: "niobium.agent-provider")
+            if engineHub == nil { UserDefaults.standard.set(local ? "dsh" : "hermes", forKey: "niobium.agent-provider") }
             connection = saved
             isDemo = false
             needsConnection = false
@@ -234,12 +248,16 @@ final class AppStore: ObservableObject {
     }
 
     func useLocal() {
+        if let hub = engineHub, self !== hub.local {
+            hub.activate(.dsh); hub.local.useLocal(); return
+        }
 #if NIOBIUM_LOCAL_DSH
         if engine == .dsh && (isConnecting || connectionState.isConnected) { return }
         disconnect()
         engine = .dsh; isDemo = false; needsConnection = false
         isConnecting = true; connectionState = .connecting
-        UserDefaults.standard.set("dsh", forKey: "niobium.agent-provider")
+        if engineHub == nil { UserDefaults.standard.set("dsh", forKey: "niobium.agent-provider") }
+        UserDefaults.standard.set(true, forKey: "niobium.dsh-enabled")
         let epoch = connectionEpoch
         let token = localProviderToken
         localBootTask = Task { @MainActor [weak self] in
@@ -267,16 +285,22 @@ final class AppStore: ObservableObject {
     }
 
     func useHermes() async {
+        if let hub = engineHub, self !== hub.hermes {
+            hub.activate(.hermes); await hub.hermes.useHermes(); return
+        }
+        if engine == .hermes && connectionState.isConnected && !isDemo { return }
         let saved = ConnectionPrefs.load().flatMap { $0.isDemo ? nil : $0 }
         disconnect()
         engine = .hermes; isDemo = false
-        UserDefaults.standard.set("hermes", forKey: "niobium.agent-provider")
+        if engineHub == nil { UserDefaults.standard.set("hermes", forKey: "niobium.agent-provider") }
         connection = saved
         needsConnection = saved == nil
         if let saved { await connect(url: saved.baseURL, token: ConnectionPrefs.token(for: saved), name: saved.name) }
     }
 
     func stopLocal() {
+        if let hub = engineHub, self !== hub.local { hub.local.stopLocal(); return }
+        UserDefaults.standard.set(false, forKey: "niobium.dsh-enabled")
 #if NIOBIUM_LOCAL_DSH
         if engine == .dsh { disconnect() }
         DSHHarness.shared().stop()
@@ -318,6 +342,7 @@ final class AppStore: ObservableObject {
     }
 
     func enterDemo() {
+        if let hub = engineHub, self !== hub.hermes { hub.activate(.hermes); hub.hermes.enterDemo(); return }
         connectionEpoch += 1; localBootTask?.cancel(); engine = .hermes
         UserDefaults.standard.set("hermes", forKey: "niobium.agent-provider")
         api?.disconnect(notify: false)
@@ -963,16 +988,20 @@ final class AppStore: ObservableObject {
         if let message = payload.string("message") { messages[index].toolPreview = message }
     }
 
+    private func showsSession(_ id: String) -> Bool {
+        chatSessionID == id || (engine == .dsh && activeGroup != nil && groupSessionIDs.contains(id))
+    }
+
     private func handleServerRequest(id: JSONValueID, method: String, params: JSONObject) {
         let sessionID = params.string("session_id") ?? ""
-        if !sessionID.isEmpty, chatSessionID != sessionID {
+        if !sessionID.isEmpty, !showsSession(sessionID) {
             if api?.declinesNotShown == true { api?.respondError(id: id, code: 4404, message: "This window does not show that session.") }
             return
         }
         switch method {
         case "approval":
             let approval = parseApproval(params, sessionID: sessionID, rpcID: id)
-            approvals.append(approval)
+            if !approvals.contains(where: { $0.rpcID == approval.rpcID }) { approvals.append(approval) }
             addActivity(.approval, title: "Approval needed", detail: approval.command, bot: activeBot?.name ?? "")
             Haptics.warning()
         case "clarify":
@@ -1012,6 +1041,7 @@ final class AppStore: ObservableObject {
                 appearance["recipe"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(recipe))
             }
             appearance["look"] = try member.look.map { try JSONSerialization.jsonObject(with: JSONEncoder().encode($0)) } ?? NSNull()
+            appearance["companion_art"] = try member.companionArt.map { try JSONSerialization.jsonObject(with: JSONEncoder().encode($0)) } ?? NSNull()
             metadata["appearance"] = appearance
             let revision = row.dict("ui_meta_revisions")?.int("niobium") ?? 0
             let result = try await api.request("profiles.configure", params: ["name": profile,
@@ -1113,12 +1143,12 @@ final class AppStore: ObservableObject {
             isTurnActive = false
             return
         }
-        guard let api, chatSessionID == approval.sessionID else { return }
+        guard let api, showsSession(approval.sessionID) else { return }
         if let promptID = approval.promptID, let generation = approval.executionGeneration {
             Task {
                 do {
                     _ = try await api.request("approval.respond", params: ["session_id": approval.sessionID, "execution_generation": generation, "prompt_id": promptID, "choice": choice])
-                    guard self.api === api, chatSessionID == approval.sessionID else { return }
+                    guard self.api === api, showsSession(approval.sessionID) else { return }
                     approvals.removeAll { $0.id == approval.id }
                     toastMessage("Approval sent: \(choice)")
                 } catch { showError("Approval was not accepted. \(error.localizedDescription)") }
@@ -1127,7 +1157,7 @@ final class AppStore: ObservableObject {
             Task {
                 do {
                     _ = try await api.request("approval.respond", params: ["session_id": approval.sessionID, "request_id": approval.requestID, "choice": choice])
-                    guard self.api === api, chatSessionID == approval.sessionID else { return }
+                    guard self.api === api, showsSession(approval.sessionID) else { return }
                     approvals.removeAll { $0.id == approval.id }
                 } catch { showError("Approval was not accepted. \(error.localizedDescription)") }
             }
@@ -1140,7 +1170,7 @@ final class AppStore: ObservableObject {
 
     func resolveClarify(_ answers: [String: String], selections: [String: [String]] = [:]) {
         guard let request = clarifyRequest else { return }
-        guard let api, chatSessionID == request.sessionID else { return }
+        guard let api, showsSession(request.sessionID) else { return }
         let flattened = answers.merging(selections.mapValues { $0.joined(separator: ", ") }, uniquingKeysWith: { _, new in new })
         guard request.questions.allSatisfy({ !(flattened[$0.id] ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
             showError("Answer every question before sending. You can dismiss it and leave the task waiting.")
@@ -1156,12 +1186,12 @@ final class AppStore: ObservableObject {
         Task {
             do {
                 for question in request.questions {
-                    guard self.api === api, chatSessionID == request.sessionID,
+                    guard self.api === api, showsSession(request.sessionID),
                           let generation = request.promptGenerations[question.id],
                           clarifyRequest?.promptGenerations[question.id] == generation else { return }
                     _ = try await api.request("clarify.respond", params: ["session_id": request.sessionID,
                         "execution_generation": generation, "prompt_id": question.id, "answer": flattened[question.id]!])
-                    guard self.api === api, chatSessionID == request.sessionID,
+                    guard self.api === api, showsSession(request.sessionID),
                           clarifyRequest?.promptGenerations[question.id] == generation else { return }
                     clarifyRequest?.questions.removeAll { $0.id == question.id }
                     clarifyRequest?.promptGenerations.removeValue(forKey: question.id)
@@ -1172,7 +1202,7 @@ final class AppStore: ObservableObject {
     }
 
     func cancelClarify() {
-        guard let request = clarifyRequest, let api, chatSessionID == request.sessionID else { return }
+        guard let request = clarifyRequest, let api, showsSession(request.sessionID) else { return }
         // Recovered prompts have no cancellable RPC request. Keep them pending on the host.
         guard request.promptGenerations.isEmpty else { return }
         api.respond(id: request.rpcID, result: ["answers": JSONObject(), "outcome": "cancelled"])
@@ -1205,6 +1235,9 @@ final class AppStore: ObservableObject {
         groupPollTask?.cancel(); groupPollTask = nil
         activeGroup = nil
         roomEvents = []
+        approvals.removeAll { groupSessionIDs.contains($0.sessionID) }
+        if let request = clarifyRequest, groupSessionIDs.contains(request.sessionID) { clarifyRequest = nil }
+        groupSessionIDs = []
     }
 
     func refreshGroup() async {
@@ -1216,15 +1249,27 @@ final class AppStore: ObservableObject {
             ]) as? JSONObject
             guard groupEpoch == epoch, self.api === api else { return }
             roomEvents = result?.objects("events").compactMap(RoomEvent.parse) ?? []
+            if engine == .dsh {
+                groupSessionIDs = Set((result?.array("session_ids") as? [String]) ?? [])
+                let requests = result?.objects("requests") ?? []
+                let ids = Set(requests.compactMap { JSONValueID.parse($0["id"]) })
+                approvals.removeAll { groupSessionIDs.contains($0.sessionID) && !ids.contains($0.rpcID) }
+                if let current = clarifyRequest, groupSessionIDs.contains(current.sessionID), !ids.contains(current.rpcID) { clarifyRequest = nil }
+                for request in requests {
+                    guard let id = JSONValueID.parse(request["id"]), let method = request.string("method"), let params = request.dict("params") else { continue }
+                    handleServerRequest(id: id, method: method, params: params)
+                }
+            }
         } catch {
             // Background polling should stay quiet.
         }
     }
 
-    func sendGroup(_ text: String) async {
-        guard let room = activeGroup else { return }
+    @discardableResult
+    func sendGroup(_ text: String) async -> Bool {
+        guard let room = activeGroup else { return false }
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
+        guard !trimmed.isEmpty else { return false }
         if isDemo {
             let event = RoomEvent(seq: (roomEvents.last?.seq ?? 0) + 1, roomID: room.roomID,
                                   eventID: UUID().uuidString, kind: "message.user",
@@ -1232,10 +1277,11 @@ final class AppStore: ObservableObject {
                                   text: trimmed, timestamp: Date(), status: nil, reason: nil)
             roomEvents.append(event)
             demoGroupReply(room: room, prompt: trimmed)
-            return
+            return true
         }
-        guard let api else { return }
-        let eventID = UUID().uuidString
+        guard let api else { return false }
+        let eventID = pendingRoomSend.flatMap { $0.room == room.roomID && $0.text == trimmed ? $0.id : nil } ?? UUID().uuidString
+        pendingRoomSend = (room.roomID, trimmed, eventID)
         do {
             let result = try await api.request("groups.send", params: [
                 "room_id": room.roomID,
@@ -1243,13 +1289,28 @@ final class AppStore: ObservableObject {
                 "event_id": eventID,
                 "payload": ["text": trimmed, "thread_id": eventID]
             ]) as? JSONObject
+            if result?.bool("accepted") == false { throw RPCError.transport("The gateway did not accept that message.") }
             if let eventDict = result?.dict("event"), let event = RoomEvent.parse(eventDict) {
                 roomEvents.append(event)
             }
+            if pendingRoomSend?.id == eventID { pendingRoomSend = nil }
             await refreshGroup()
+            return true
         } catch {
-            showError("Group send failed. \(error.localizedDescription)")
+            showError("Delivery wasn’t confirmed. Your draft is kept; retry uses the same receipt. " + error.localizedDescription)
+            return false
         }
+    }
+
+    func stopRoom() async {
+        guard engine == .dsh, let api, let room = activeGroup else { return }
+        do { _ = try await api.request("groups.stop", params: ["room_id": room.roomID]); await refreshGroup() }
+        catch { showError(error.localizedDescription) }
+    }
+    func clearLocalRoom(_ room: GroupRoom) async {
+        guard engine == .dsh, let api else { return }
+        do { _ = try await api.request("groups.clear", params: ["room_id": room.roomID]); groups.removeAll { $0.id == room.id } }
+        catch { showError(error.localizedDescription) }
     }
 
     private func demoGroupReply(room: GroupRoom, prompt: String) {
@@ -1316,7 +1377,7 @@ final class AppStore: ObservableObject {
         guard let base = CastMember.all.first(where: { $0.id == spec.character.archetype }) else { throw RPCError.malformed }
         let member = CastMember(id: base.id, name: base.name, portrait: base.portrait,
                                 companion: spec.companion.kind, companionName: spec.companion.name,
-                                accentHex: base.accentHex, recipe: spec.character.recipe, look: spec.character.look)
+                                accentHex: base.accentHex, recipe: spec.character.recipe, look: spec.character.look, companionArt: spec.companion.art)
         if isDemo {
             let bot = BotProfile(name: slug, title: spec.title, role: spec.role, provider: "", model: "Demo",
                                  skillCount: spec.skills.count, canonicalSessionID: "demo-\(slug)",
@@ -1671,4 +1732,59 @@ private extension String {
         if !current.isEmpty { result.append(current) }
         return result
     }
+}
+
+/// Each provider owns its transport, sessions, turn callbacks and approvals.
+/// Selecting a workspace changes presentation and never disconnects its peer.
+@MainActor
+final class EngineHub: ObservableObject {
+    let hermes: AppStore
+    let local: AppStore
+    @Published private(set) var active: AppStore
+    private var subscriptions: Set<AnyCancellable> = []
+
+    init(hermes: AppStore? = nil, local: AppStore? = nil, autostart: Bool = true) {
+        let remote = hermes ?? AppStore(managedEngine: .hermes)
+        let device = local ?? AppStore(managedEngine: .dsh)
+        self.hermes = remote; self.local = device
+        let args = ProcessInfo.processInfo.arguments
+        let localSelected = args.contains("--dsh") || UserDefaults.standard.string(forKey: "niobium.agent-provider") == "dsh"
+        active = localSelected ? device : remote
+        remote.engineHub = self; device.engineHub = self
+        for source in [remote, device] {
+            source.objectWillChange.sink { [weak self, weak source] _ in
+                guard let self, let source else { return }
+                self.objectWillChange.send()
+                if self.active !== source { self.active.objectWillChange.send() }
+            }.store(in: &subscriptions)
+        }
+        guard autostart else { return }
+        if args.contains("--demo") || ProcessInfo.processInfo.environment["NIOBIUM_DEMO"] == "1" {
+            active = remote; remote.restoreLaunchState(); return
+        }
+        let stored = ConnectionPrefs.load()
+        if let saved = stored, !saved.isDemo {
+            remote.connection = saved; remote.needsConnection = false
+            Task { await remote.reconnect() }
+        } else if !localSelected { remote.restoreLaunchState() }
+        let enabled = UserDefaults.standard.object(forKey: "niobium.dsh-enabled") == nil ? localSelected : UserDefaults.standard.bool(forKey: "niobium.dsh-enabled")
+        if enabled || args.contains("--dsh") { device.useLocal() }
+        else if localSelected { device.needsConnection = false }
+    }
+    func activate(_ engine: AgentEngine) {
+        let next = engine == .dsh ? local : hermes
+        if active !== next { active = next }
+        UserDefaults.standard.set(engine.rawValue, forKey: "niobium.agent-provider")
+    }
+    func resumeConnections() async {
+        // Reattachment is independent: a stalled remote cannot block local UI.
+        async let remote: Void = hermes.resumeConnection()
+        async let device: Void = local.resumeConnection()
+        _ = await (remote, device)
+    }
+}
+
+struct EngineWorkspaceView: View {
+    @ObservedObject var hub: EngineHub
+    var body: some View { RootView().environmentObject(hub.active) }
 }

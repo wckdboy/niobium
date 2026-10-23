@@ -93,7 +93,7 @@ fun AIBuildSheet(vm: NiobiumViewModel, preview: Boolean = false, onDismiss: () -
                     val spec = current.spec
                     val base = Cast.all.first { it.id == spec.character.archetype }
                     val member = base.copy(companion = spec.companion.kind, companionName = spec.companion.name,
-                        recipe = spec.character.recipe, look = spec.character.look)
+                        recipe = spec.character.recipe, look = spec.character.look, companionArt = spec.companion.art)
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         CastPortrait(member, 128.dp)
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -104,7 +104,7 @@ fun AIBuildSheet(vm: NiobiumViewModel, preview: Boolean = false, onDismiss: () -
                                 modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Pixel name" }.testTag("builder.name"))
                             Text(spec.role, color = Nb.Secondary, fontSize = 12.sp, maxLines = 2)
                             Text(spec.character.age.toString() + " · adult", color = Nb.Tertiary, style = NbMono, fontSize = 10.sp)
-                            Text(spec.companion.name + " · " + spec.companion.kind, color = Nb.Secondary, fontSize = 11.sp)
+                            Text(spec.companion.name + " · " + (if (spec.companion.art == null) spec.companion.kind else "custom creature"), color = Nb.Secondary, fontSize = 11.sp)
                         }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -123,7 +123,10 @@ fun AIBuildSheet(vm: NiobiumViewModel, preview: Boolean = false, onDismiss: () -
                         }
                         "Creature" -> {
                             FamiliarPicker(spec.companion.kind, !working) {
-                                draft = current.copy(spec = spec.copy(companion = spec.companion.copy(kind = it, trait = PixelBuilder.companionTrait(it))))
+                                draft = current.copy(spec = spec.copy(companion = spec.companion.copy(kind = it, trait = PixelBuilder.companionTrait(it), art = null)))
+                            }
+                            if (!working) CompanionArtEditor(spec.companion.kind, spec.companion.art) { art ->
+                                draft = latest?.let { it.copy(spec = it.spec.copy(companion = it.spec.companion.copy(art = art))) }
                             }
                             OutlinedTextField(value = spec.companion.name, onValueChange = { draft = current.copy(spec = spec.copy(companion = spec.companion.copy(name = it))) },
                                 label = { Text("Creature name") }, enabled = !working, singleLine = true,
