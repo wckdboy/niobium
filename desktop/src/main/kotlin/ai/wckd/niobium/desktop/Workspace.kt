@@ -37,6 +37,7 @@ import org.json.JSONObject
     var localSelected by remember { mutableStateOf(false) }
     var page by remember { mutableStateOf("Pixels") }
     var creating by remember { mutableStateOf(false) }
+    var initialLook by remember { mutableStateOf<PixelLook?>(null) }
     var createRoom by remember { mutableStateOf(false) }
     val agent = if (localSelected) dsh else hermes
     val state = if (localSelected) local else remote
@@ -79,7 +80,7 @@ import org.json.JSONObject
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                     if (state.connecting) Text("Connecting…", color = Ink.Muted, fontSize = 12.sp)
                     if (page == "Rooms") PixelButton("New room", secondary = true, enabled = state.connected && "groups.create" in state.groupMethods && state.bots.size >= 2, icon = "add") { createRoom = true }
-                    if (page in listOf("Pixels", "Wardrobe")) PixelButton("New Pixel", icon = "add") { creating = true }
+                    if (page in listOf("Pixels", "Wardrobe")) PixelButton("New Pixel", icon = "add") { initialLook = null; creating = true }
                 }
             }
             HorizontalDivider(color = Ink.Line)
@@ -89,7 +90,7 @@ import org.json.JSONObject
             } }
             when (page) {
                 "Engines" -> EnginesPanel(hermes, dsh, runtime, onLocal = { localSelected = true; page = "Pixels" })
-                "Wardrobe" -> Wardrobe { creating = true }
+                "Wardrobe" -> Wardrobe { look -> initialLook = look; creating = true }
                 "Rooms" -> Row(Modifier.weight(1f)) {
                     Column(Modifier.width(255.dp).fillMaxHeight().padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         if (state.groups.isEmpty()) EmptyHint("A room for the whole crew.", if (state.connected && state.groupsSupported) "Choose two to six Pixels to begin." else "Connect an engine with room support.")
@@ -129,7 +130,7 @@ import org.json.JSONObject
             }
         }
     }
-    if (creating) PixelCreator(agent, artist, connected = state.connected, onClose = { creating = false; if (agent.state.value.bot != null) page = "Pixels" })
+    if (creating) PixelCreator(agent, artist, connected = state.connected, initialLook = initialLook, onClose = { creating = false; if (agent.state.value.bot != null) page = "Pixels" })
     if (createRoom) RoomCreator(agent, state.bots) { createRoom = false }
     // Each engine owns its dialog. Switching engines cannot answer the other one.
     state.prompts.firstOrNull()?.let { prompt -> PromptDialog(agent, prompt) }
@@ -164,7 +165,7 @@ import org.json.JSONObject
 @Composable private fun EnginesPanel(hermes: DesktopAgent, dsh: DesktopAgent, runtime: LocalEngine, onLocal: () -> Unit) {
     val remote by hermes.state.collectAsState(); val local by dsh.state.collectAsState(); val status by runtime.state.collectAsState()
     var address by remember { mutableStateOf("") }; var token by remember { mutableStateOf("") }
-    var key by remember { mutableStateOf("") }; var provider by remember { mutableStateOf("DEEPSEEK_API_KEY") }; var saved by remember { mutableStateOf(false) }
+    var key by remember { mutableStateOf("") }; var saved by remember { mutableStateOf(false) }
     var stopConfirm by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(28.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
@@ -191,10 +192,10 @@ import org.json.JSONObject
                 if (local.connected) {
                     HorizontalDivider(color = Ink.Line)
                     Eyebrow("Provider key")
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) { listOf("DEEPSEEK_API_KEY" to "DeepSeek", "OPENAI_API_KEY" to "OpenAI", "ANTHROPIC_API_KEY" to "Anthropic").forEach { (ref, label) -> TextButton(onClick = { provider = ref; key = ""; saved = false }) { Text(label, fontSize = 11.sp, color = if (ref == provider) Ink.Violet else Ink.Muted) } } }
-                    OutlinedTextField(key, { key = it; saved = false }, Modifier.fillMaxWidth(), label = { Text("API key") }, singleLine = true, visualTransformation = PasswordVisualTransformation())
+                    Text("Local chat starts with DeepSeek. Choose available models inside a Pixel chat.", color = Ink.Muted, fontSize = 11.sp)
+                    OutlinedTextField(key, { key = it; saved = false }, Modifier.fillMaxWidth(), label = { Text("DeepSeek API key") }, singleLine = true, visualTransformation = PasswordVisualTransformation())
                     Text("Saved in DSH’s private local credential file (owner access only).", color = Ink.Muted, fontSize = 10.sp)
-                    PixelButton(if (saved) "Key saved" else "Save key", secondary = true, enabled = key.isNotBlank()) { dsh.saveCredential(provider, key) { key = ""; saved = true } }
+                    PixelButton(if (saved) "Key saved" else "Save key", secondary = true, enabled = key.isNotBlank()) { dsh.saveCredential("DEEPSEEK_API_KEY", key) { key = ""; saved = true } }
                 }
             }
         }
@@ -203,7 +204,7 @@ import org.json.JSONObject
         confirmButton = { TextButton(onClick = { dsh.disconnect(); runtime.stop(); stopConfirm = false }) { Text("Stop DSH") } }, dismissButton = { TextButton(onClick = { stopConfirm = false }) { Text("Keep running") } }, shape = PixelShape)
 }
 
-@Composable private fun Wardrobe(onCreate: () -> Unit) {
+@Composable private fun Wardrobe(onCreate: (PixelLook) -> Unit) {
     var family by remember { mutableStateOf("All") }
     Column(Modifier.fillMaxSize().padding(26.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -212,7 +213,7 @@ import org.json.JSONObject
         }
         LazyVerticalGrid(GridCells.Adaptive(140.dp), verticalArrangement = Arrangement.spacedBy(14.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             items(PixelWardrobe.entries.filter { family == "All" || it.family == family }, key = { it.id }) { entry ->
-                Column(Modifier.clip(PixelShape).background(Ink.Panel).border(1.dp, Ink.Line, PixelShape).clickable(onClick = onCreate).padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Column(Modifier.clip(PixelShape).background(Ink.Panel).border(1.dp, Ink.Line, PixelShape).clickable { onCreate(PixelLook(entry.id)) }.padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Portrait(PixelLook(entry.id), 96)
                     Text(entry.label, color = Ink.Text, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                     Text(entry.family, color = Ink.Muted, fontSize = 10.sp)

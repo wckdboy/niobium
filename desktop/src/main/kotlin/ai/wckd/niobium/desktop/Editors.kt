@@ -9,6 +9,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -19,9 +21,12 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable fun PixelCreator(agent: DesktopAgent, artist: DesktopArtist, connected: Boolean, onClose: () -> Unit) {
+@Composable fun PixelCreator(agent: DesktopAgent, artist: DesktopArtist, connected: Boolean, initialLook: PixelLook? = null, onClose: () -> Unit) {
     var brief by remember { mutableStateOf("A clever creative partner with a mischievous edge") }
-    var draft by remember { mutableStateOf(PixelBuilder.preview(brief)) }
+    var draft by remember(agent, initialLook) { mutableStateOf(PixelBuilder.preview(brief).let { base ->
+        if (initialLook == null) base else base.copy(spec = base.spec.copy(character = base.spec.character.copy(
+            archetype = initialLook.entry.archetype, recipe = base.spec.character.recipe.copy(body = initialLook.body), look = initialLook)))
+    }) }
     var tab by remember { mutableStateOf("Look") }
     var atelier by remember { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(false) }
@@ -36,7 +41,7 @@ import org.json.JSONObject
                 TextButton(onClick = onClose, enabled = !busy) { Text("Close") }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(22.dp), verticalAlignment = Alignment.CenterVertically) {
-                Row(Modifier.width(208.dp).height(130.dp).clip(PixelShape).background(Ink.Pale), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.Center) { Portrait(look, 120); Familiar(spec.companion.kind, spec.companion.art, 48) }
+                Row(Modifier.semantics { contentDescription = "Selected look: ${look.entry.label}" }.width(208.dp).height(130.dp).clip(PixelShape).background(Ink.Pale), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.Center) { Portrait(look, 120); Familiar(spec.companion.kind, spec.companion.art, 48) }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(spec.title, { draft = draft.copy(spec = spec.copy(title = it.take(24))) }, label = { Text("Name") }, singleLine = true, modifier = Modifier.fillMaxWidth(), enabled = !busy)
                     Text(spec.role, color = Ink.Muted, fontSize = 12.sp)

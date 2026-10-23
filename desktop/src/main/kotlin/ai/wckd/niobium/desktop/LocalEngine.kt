@@ -109,7 +109,7 @@ class LocalEngine(private val scope: CoroutineScope, private val home: Path = Ap
     private fun terminate(child: Process) {
         // Closing stdin asks the host to stop its owned DSH process group.
         runCatching { child.outputStream.close() }
-        if (!child.waitFor(6, TimeUnit.SECONDS)) {
+        if (!child.waitFor(10, TimeUnit.SECONDS)) {
             child.descendants().forEach { it.destroy() }
             child.destroy()
             if (!child.waitFor(2, TimeUnit.SECONDS)) { child.descendants().forEach { it.destroyForcibly() }; child.destroyForcibly() }

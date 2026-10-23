@@ -26,6 +26,8 @@ class WorkspaceTest {
         compose.onNodeWithText("Lilith").assertDoesNotExist()
         File("build/evidence").mkdirs()
         ImageIO.write(compose.onRoot().captureToImage().toAwtImage(), "png", File("build/evidence/desktop-wardrobe.png"))
+        compose.onNodeWithText("Zero").performClick()
+        compose.onNodeWithContentDescription("Selected look: Zero").assertIsDisplayed()
     }
     @Test fun workshopHasInstantLooksAndExplicitAiAndAccessControls() {
         open()

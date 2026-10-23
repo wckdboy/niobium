@@ -73,7 +73,12 @@ async function start({root, home, workspace, node = process.execPath, signal, on
     server?.close();
     if (child?.pid) {
       try { process.kill(-child.pid, 'SIGTERM'); } catch (e) { if (e.code !== 'ESRCH') throw e; }
-      if (child.exitCode === null && child.signalCode === null) await Promise.race([new Promise(resolve => child.once('exit', resolve)), new Promise(resolve => setTimeout(resolve, 2000))]);
+      // DSH allows five seconds to dispose its managed detached process trees.
+      if (child.exitCode === null && child.signalCode === null) await new Promise(resolve => {
+        const done = () => { clearTimeout(timer); child.off('exit', done); resolve(); };
+        const timer = setTimeout(done, 6000);
+        child.once('exit', done);
+      });
       try { process.kill(-child.pid, 'SIGKILL'); } catch (e) { if (e.code !== 'ESRCH') throw e; }
     }
     await fs.rm(temp, {recursive: true, force: true});

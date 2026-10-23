@@ -325,11 +325,10 @@ label/reviewer assignment. `.greptile/config.json` disables Greptile automatic
 reviews, status checks/comments and automatic approvals for this repository.
 Historical release evidence retains the reviewer that actually ran at the time.
 
-The CodeRabbit GitHub App must be granted access to `wckdboy/niobium` at
-https://github.com/apps/coderabbitai/installations/new . Repository configuration
-alone cannot install or authorize a GitHub App. Request an existing PR review with
-`@coderabbitai full review`; do not report a completed CodeRabbit review until its
-bot returns a result. Configuration reference: https://docs.coderabbit.ai/reference/configuration .
+The CodeRabbit GitHub App is connected to `wckdboy/niobium` and has reviewed
+[PR #11](https://github.com/wckdboy/niobium/pull/11) using this configuration.
+Request a fresh complete review with `@coderabbitai full review`. Configuration
+reference: https://docs.coderabbit.ai/reference/configuration .
 
 The 2.1 desktop review adds forced early-handshake publication and slow-probe
 responsiveness regressions, strict canonical resume parameters, failed-tool
@@ -340,3 +339,14 @@ private DSH API with global Java/Node removed from PATH. It verifies runtime
 hashes and every recorded executable mode; packaging restores those modes after
 jpackage copies resources. Desktop familiar sprites now use Android's authored
 source directly. CodeRabbit reviews the active PR using `.coderabbit.yaml`.
+
+The shutdown regression lets an owning DSH process finish delayed disposal of a
+detached child before escalation; Node coverage is now 67 checks. The race test
+uses a monitor checkpoint rather than a timing assumption. Linux verifies both
+the application image and the extracted DEB; generated DEB permissions are
+restored before upload. macOS verifies the application image and mounted DMG.
+
+The AI-art controller also verifies that an unusable completed image becomes a
+terminal failure, retains its receipt and starts another billable design only on
+an explicit request. Wardrobe selection opens the chosen look in the workshop.
+The desktop suite now has 16 tests, alongside 30 shared-core tests.

@@ -8,6 +8,7 @@ plugins {
     id("org.jetbrains.compose") version "1.12.2"
     id("org.jetbrains.kotlin.plugin.compose") version "2.4.21"
 }
+val niobiumDesktopVersion = "2.1.0"
 kotlin { jvmToolchain(17) }
 dependencies {
     implementation(project(":core"))
@@ -32,7 +33,7 @@ compose.desktop {
             appResourcesRootDir.set(layout.projectDirectory.dir("runtime/bundle"))
             targetFormats(TargetFormat.Dmg, TargetFormat.Deb)
             packageName = "Niobium"
-            packageVersion = "2.1.0"
+            packageVersion = niobiumDesktopVersion
             description = "Your Pixels, everywhere. Hermes and local DSH."
             vendor = "WCKD"
             copyright = "© 2026 WCKD"
@@ -78,5 +79,16 @@ tasks.matching { it.name == "createDistributable" }.configureEach {
             val permissions = PosixFilePermission.values().filterIndexed { index, _ -> mode and (1 shl (8 - index)) != 0 }.toSet()
             Files.setPosixFilePermissions(target, permissions)
         }
+    }
+}
+// The Linux DEB bundler normalizes resource modes again when building data.tar.
+tasks.matching { it.name == "packageDeb" }.configureEach {
+    inputs.file("../tools/restore-desktop-deb-modes.py")
+    doLast {
+        val tool = projectDir.parentFile.resolve("tools/restore-desktop-deb-modes.py")
+        val directory = layout.buildDirectory.dir("compose/binaries/main/deb").get().asFile
+        val process = ProcessBuilder("python3", tool.absolutePath, directory.absolutePath, "niobium_${niobiumDesktopVersion}-")
+            .directory(projectDir.parentFile).inheritIO().start()
+        check(process.waitFor() == 0) { "Could not restore native desktop DEB permissions." }
     }
 }

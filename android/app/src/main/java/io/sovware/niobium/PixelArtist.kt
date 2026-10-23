@@ -116,13 +116,18 @@ class PixelArtist private constructor(context: Context) {
         if (!PixelArtistWire.validId(id) || phase !in listOf("queued", "in_progress", "completed", "failed", "incomplete", "cancelled") || (job?.responseId != null && job?.responseId != id)) throw ArtistHttpError(0)
         job = job?.copy(responseId = id, phase = if (phase == "completed") "in_progress" else phase, message = null); persist()
         if (phase == "completed") {
-            val output = value.a("output") ?: throw ArtistHttpError(0)
-            val encoded = (0 until output.length()).mapNotNull { output.optJSONObject(it) }.firstOrNull { it.s("type") == "image_generation_call" }?.s("result") ?: throw ArtistHttpError(0)
-            if (encoded.length > 28*1024*1024) throw ArtistHttpError(0)
-            val size = if (job?.target == "companion") 16 else 48
-            val art = withContext(Dispatchers.Default) { PixelArtBaker.bake(Base64.getDecoder().decode(encoded), size) }
-            currentCoroutineContext().ensureActive()
-            job = job?.copy(phase = "completed", candidate = art); persist()
+            try {
+                val output = value.a("output") ?: throw ArtistHttpError(0)
+                val encoded = (0 until output.length()).mapNotNull { output.optJSONObject(it) }.firstOrNull { it.s("type") == "image_generation_call" }?.s("result") ?: throw ArtistHttpError(0)
+                if (encoded.length > 28*1024*1024) throw ArtistHttpError(0)
+                val size = if (job?.target == "companion") 16 else 48
+                val art = withContext(Dispatchers.Default) { PixelArtBaker.bake(Base64.getDecoder().decode(encoded), size) }
+                currentCoroutineContext().ensureActive()
+                job = job?.copy(phase = "completed", candidate = art); persist()
+            } catch (error: CancellationException) { throw error }
+            catch (_: Exception) {
+                job = job?.copy(phase = "failed", candidate = null, message = "The provider finished, but its image could not become a transparent sprite. Your current art is unchanged."); persist()
+            }
         } else if (phase in listOf("failed", "incomplete")) { job = job?.copy(message = "The provider couldn’t finish this design. Your current art is unchanged."); persist() }
     }
     companion object {

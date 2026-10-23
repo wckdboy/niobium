@@ -29,14 +29,19 @@ class GatewayOpeningRaceTest {
                     override fun cancel() {}
                 }
                 val started = CountDownLatch(1)
-                Thread {
+                val response = Response.Builder().request(request).protocol(Protocol.HTTP_1_1).code(101).message("Switching Protocols").build()
+                val worker = Thread {
                     started.countDown()
-                    listener.onOpen(socket, Response.Builder().request(request).protocol(Protocol.HTTP_1_1).code(101).message("Switching Protocols").build())
+                    listener.onOpen(socket, response)
                     listener.onMessage(socket, """{"jsonrpc":"2.0","method":"event","params":{"type":"gateway.ready","payload":{}}}""")
                 }.apply { isDaemon = true; start() }
                 check(started.await(1, TimeUnit.SECONDS))
-                // Hold construction open while the callback tries to run.
-                Thread.sleep(40)
+                // The fixed callback blocks on the publication monitor. The old
+                // implementation terminates after dropping the ready frame.
+                val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2)
+                val checkpoints = setOf(Thread.State.BLOCKED, Thread.State.TERMINATED)
+                while (worker.state !in checkpoints && System.nanoTime() < deadline) java.util.concurrent.locks.LockSupport.parkNanos(100_000)
+                check(worker.state in checkpoints) { "The opening callback did not reach its publication checkpoint." }
                 return socket
             }
         }

@@ -15,8 +15,8 @@ import java.util.Base64
 import javax.imageio.ImageIO
 
 /** One persisted receipt, no automatic retry of a billable POST. Key stays in memory. */
-class DesktopArtist(private val scope: CoroutineScope, private val wire: PixelArtistWire = PixelArtistWire()) {
-    private val receipt = AppPaths.data.resolve("image-design.json")
+class DesktopArtist(private val scope: CoroutineScope, private val wire: PixelArtistWire = PixelArtistWire(),
+                    private val receipt: java.nio.file.Path = AppPaths.data.resolve("image-design.json")) {
     private val mutable = MutableStateFlow(runCatching { PixelArtJob.parse(JSONObject(Files.readString(receipt))) }.getOrNull()?.let {
         if (it.phase == "submitting" && it.responseId == null) it.copy(phase = "unknown", message = "The request was interrupted before its receipt arrived. Check provider usage before another design.") else it
     })
@@ -63,16 +63,22 @@ class DesktopArtist(private val scope: CoroutineScope, private val wire: PixelAr
         if (!PixelArtistWire.validId(id) || phase !in listOf("queued", "in_progress", "completed", "failed", "incomplete", "cancelled") || mutable.value?.responseId?.let { it != id } == true) throw ArtistHttpError(0)
         mutable.value = mutable.value?.copy(responseId = id, phase = if (phase == "completed") "in_progress" else phase, message = null); persist()
         if (phase == "completed") {
-            val encoded = response.objects("output").firstOrNull { it.s("type") == "image_generation_call" }?.s("result") ?: throw ArtistHttpError(0)
-            if (encoded.length > 28 * 1024 * 1024) throw ArtistHttpError(0)
-            val size = if (mutable.value?.target == "companion") 16 else 48
-            val art = withContext(Dispatchers.Default) { DesktopArtBaker.bake(Base64.getDecoder().decode(encoded), size) }
-            mutable.value = mutable.value?.copy(phase = "completed", candidate = art); persist()
+            try {
+                val encoded = response.objects("output").firstOrNull { it.s("type") == "image_generation_call" }?.s("result") ?: throw ArtistHttpError(0)
+                if (encoded.length > 28 * 1024 * 1024) throw ArtistHttpError(0)
+                val size = if (mutable.value?.target == "companion") 16 else 48
+                val art = withContext(Dispatchers.Default) { DesktopArtBaker.bake(Base64.getDecoder().decode(encoded), size) }
+                mutable.value = mutable.value?.copy(phase = "completed", candidate = art); persist()
+            } catch (error: CancellationException) { throw error }
+            catch (_: Exception) {
+                mutable.value = mutable.value?.copy(phase = "failed", candidate = null, message = "The provider finished, but its image could not become a transparent sprite. Your current art is unchanged.")
+                persist()
+            }
         } else if (phase in listOf("failed", "incomplete")) { mutable.value = mutable.value?.copy(message = "The provider could not finish this design. Your current art is unchanged."); persist() }
     }
     private fun persist() {
-        AppPaths.privateDirectory(AppPaths.data)
-        val stage = Files.createTempFile(AppPaths.data, ".design-", ".json", PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")))
+        AppPaths.privateDirectory(receipt.parent)
+        val stage = Files.createTempFile(receipt.parent, ".design-", ".json", PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")))
         try {
             Files.writeString(stage, mutable.value?.toJson()?.toString() ?: "null")
             Files.move(stage, receipt, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)

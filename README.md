@@ -30,6 +30,8 @@ socket; only the authenticated Niobium API is exposed on loopback. Start and
 Stop are explicit. Closing the app stops owned local work; Hermes continues on
 its host. Tools use your account permissions, not a desktop OS sandbox.
 
+The first desktop preview provides native DeepSeek key setup for local chat;
+additional local provider setup is planned. Hermes uses its host’s providers.
 Remote gateway tokens and the AI image key are session-only on desktop. DSH
 provider keys use its owner-only credential file. Android retains Keystore storage.
 
@@ -179,11 +181,12 @@ node site/build.mjs
 node site/check.mjs
 ~~~
 
-The current source passes 50 iOS unit and six UI checks, 35 Android unit
+Beta.7 passed 50 iOS unit and six UI checks, 35 Android unit
 and sixteen ARM64 emulator checks, 61 Node and 15 Python checks. Sixty-four
 shared wardrobe fixtures verify both native renderers. All three CI jobs pass
 at source 8a988cf; final Codex review has no findings, with nine earlier review
-issues fixed and resolved. Greptile's trial quota prevents a fresh review.
+issues fixed and resolved. CodeRabbit now reviews new changes; historical
+release evidence records the reviewer used at the time.
 
 The full iOS build 15 simulator test opens local Rooms, preserves an unfinished
 model stream over backgrounding and restores actual DSH history after a cold

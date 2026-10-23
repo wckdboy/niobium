@@ -18,7 +18,7 @@ Protocol audit: [HERMES-PARITY.md](docs/HERMES-PARITY.md).
   loopback API over a private DSH Unix socket, explicit lifecycle and safe shutdown.
 - Complete controlled model/room/restart acceptance, Linux and macOS packaging,
   Android regressions, and public download verification before declaring a release.
-- Next desktop work: OS credential vaults, richer session/history controls, companion
+- Next desktop work: additional local provider setup, OS credential vaults, richer session/history controls, companion
   task monitoring, skill/MCP/routine surfaces, accessibility and long-running work.
 - Continue real-account acceptance, physical Android/16 KB execution, cross-engine
   rooms, Hermes replay and connector authorization. These remain unverified goals.

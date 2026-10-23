@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp, mkdir, copyFile, symlink, writeFile, rm, stat} from 'node:fs/promises';
+import {mkdtemp, mkdir, copyFile, symlink, writeFile, readFile, rm, stat} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import http from 'node:http';
@@ -8,14 +8,18 @@ import {createRequire} from 'node:module';
 const require = createRequire(import.meta.url);
 const {start, prepareAdapters} = require('../desktop/runtime/desktop-host.cjs');
 
-async function fixture() {
+async function fixture(cleanupDelay = 0) {
   const directory = await mkdtemp(path.join(tmpdir(), 'nb-host-test-'));
   const root = path.join(directory, 'runtime');
   await mkdir(path.join(root, 'node_modules/@deepseek-ai/dsh/lib'), {recursive: true});
   await symlink(path.dirname(require.resolve('../runtime/node_modules/ws/package.json')), path.join(root, 'node_modules/ws'));
   for (const name of ['niobium-agent.cjs', 'niobium-messaging.cjs']) await copyFile(new URL('../runtime/' + name, import.meta.url), path.join(root, name));
   await copyFile(new URL('../android/runtime/niobium-local.cjs', import.meta.url), path.join(root, 'niobium-local.cjs'));
-  await writeFile(path.join(root, 'node_modules/@deepseek-ai/dsh/lib/bin.js'), `require('node:http').createServer((req,res)=>{res.writeHead(404);res.end()}).listen(3080,'127.0.0.1');`);
+  const detached = cleanupDelay ? `const cp=require('node:child_process'),fs=require('node:fs'),p=require('node:path');
+    const job=cp.spawn(process.execPath,['-e','setInterval(()=>{},1000)'],{detached:true,stdio:'ignore'});
+    fs.writeFileSync(p.join(process.env.DSH_HOME,'owned-child.pid'),String(job.pid));
+    process.on('SIGTERM',()=>setTimeout(()=>{job.once('exit',()=>{fs.writeFileSync(p.join(process.env.DSH_HOME,'cleanup-complete'),'done');process.exit(0)});job.kill('SIGTERM')},${cleanupDelay}));` : '';
+  await writeFile(path.join(root, 'node_modules/@deepseek-ai/dsh/lib/bin.js'), detached + `require('node:http').createServer((req,res)=>{res.writeHead(404);res.end()}).listen(3080,'127.0.0.1');`);
   let runtime;
   try {
     runtime = await start({root, home: path.join(directory, 'home'), workspace: path.join(directory, 'workspace')});
@@ -50,6 +54,16 @@ test('desktop DSH socket is private and Stop releases owned processes and files'
     await assert.rejects(stat(socketPath),{code:'ENOENT'});
     await assert.rejects(fetch(f.runtime.origin+'/api/status'),/fetch failed/);
   } finally { await f.close(); }
+});
+test('Stop leaves enough time for DSH to reap a detached task during disposal', async () => {
+  const f = await fixture(2600);
+  const pid = Number(await readFile(path.join(f.directory,'home/owned-child.pid'),'utf8'));
+  try {
+    await f.runtime.stop();
+    assert.equal(await readFile(path.join(f.directory,'home/cleanup-complete'),'utf8'),'done');
+    assert.equal(f.runtime.child.exitCode,0);
+    assert.throws(()=>process.kill(pid,0),{code:'ESRCH'});
+  } finally { try { process.kill(pid,'SIGKILL'); } catch {} await f.close(); }
 });
 test('desktop startup cancellation removes its child and private socket', async () => {
   const f = await fixture();
