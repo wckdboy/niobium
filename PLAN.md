@@ -571,3 +571,30 @@ questions, and preserve a checkpointed active-time budget across suspension and
 restart. Time awaiting a user answer does not spend the room execution budget.
 Both native clients confirm permanent room clearing; the real Android DSH test
 checks cancel preserves the room before confirming archival.
+
+## 2.1 desktop and Android cycle
+
+The active PR is [#11](https://github.com/wckdboy/niobium/pull/11). CodeRabbit
+is connected and automatic Greptile reviews/status/approval are disabled.
+Linux x64 DEB, macOS ARM64 DMG and signed Android 2.1/code13 are the release
+targets. iOS release/signing work remains parked. Native CI and final publication
+are the remaining release gates.
+
+Validated locally: 30 shared-core tests, 16 desktop tests, seven additional
+Android JVM tests, 67 Node checks, 15 Python checks and 64 exact wardrobe fixtures.
+The signed APK installs and cold-launches on the ARM64 Android 16 emulator.
+All 16 instrumented checks passed after extraction; the two affected DSH/transport
+checks were repeated after the shared transport fixes. macOS app-image and mounted
+DMG checks start real DSH through the packaged launcher and verify current runtime
+source hashes and executable permissions.
+
+Next acceptance work is tracked in Plane:
+
+- NIO-39: additional native desktop provider setup, with actual model activation,
+  streaming and restart fixtures. The first preview offers DeepSeek setup.
+- NIO-31: desktop OS credential vaults; gateway and image keys are session-only now.
+- NIO-32: keyboard/accessibility, desktop layout and long-running task soaks.
+- NIO-34/NIO-35: richer history, companion controls, skill/MCP/routine surfaces,
+  Hermes contracts and reconnect replay.
+- NIO-29/NIO-33/NIO-36: physical Android/16 KB execution, cross-engine rooms and
+  real-account model/image acceptance. Controlled fixtures do not establish these.

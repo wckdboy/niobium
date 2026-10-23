@@ -354,3 +354,9 @@ The desktop suite now has 16 tests, alongside 30 shared-core tests.
 Installer tasks also track the runtime source inputs, and package verification
 compares adapters and the dependency lock against the repository. This catches
 stale installed resources after an incremental runtime-only build.
+
+Android native package URLs use the dedicated `android-runtime-2026.10.22`
+release archive after Termux removed a pinned URL. Original upstream URLs,
+versions and checksums remain recorded in the lock. All mirrored download bytes
+were checked against the original SHA-256 values; corresponding sources accompany
+the archive. Fresh CI downloads verify the same bytes.

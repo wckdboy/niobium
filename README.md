@@ -8,7 +8,7 @@ A pixel-art home for agents on Linux, macOS and Android: connect Hermes, run
 DSH locally, or keep both engines ready. Pixels have their own personas, tools
 and companions. The existing iOS client is retained; iOS release work is parked.
 
-**New release: [2.0.0-beta.7](https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.7).** Full Hermes parity is the target;
+**2.1 preview: [Linux, macOS and Android](https://github.com/wckdboy/niobium/releases/tag/v2.1.0-beta.1).** Full Hermes parity is the target;
 it is not finished. The current scope is in [PLAN.md](PLAN.md), the implementation
 audit is in [docs/HERMES-PARITY.md](docs/HERMES-PARITY.md), and the work is tracked
 in [Plane](https://app.plane.so/wckd/projects/2fbcf987-20de-43dc-80ac-0a6bab7ec03a/issues/).
@@ -50,7 +50,15 @@ runtime, Node and the locked DSH dependency graph. Use Temurin or another suppor
 JDK distribution for packaging. The first macOS preview is unsigned and unnotarized.
 Desktop CI runs native tests and packaging on both Linux and macOS; iOS CI is opt-in.
 
-## The app
+CodeRabbit reviews new pull requests and incremental pushes using
+[repository guidance](.coderabbit.yaml). Automatic Greptile reviews are disabled.
+The 2.1 checks include 30 shared-core, 16 desktop and seven Android-specific JVM
+tests, 67 Node checks and 15 Python checks. Native installer checks run the
+packaged app and its private DSH API, and reject stale adapters.
+
+<img src="site/public/desktop-preview.png" width="760" alt="Niobium desktop wardrobe">
+
+## The mobile app
 
 Five tabs: **Home · Pixels · Engines · Activity · Settings**.
 
