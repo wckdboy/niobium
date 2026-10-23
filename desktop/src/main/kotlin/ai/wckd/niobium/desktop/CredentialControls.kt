@@ -61,6 +61,7 @@ import androidx.compose.ui.unit.sp
         Text("Save in ${credentials.vaultName}", color = Ink.Muted, fontSize = 11.sp)
     }
     if (rememberKey) OutlinedTextField(name, { name = it.take(64) }, Modifier.fillMaxWidth().testTag("hermes.saved-name"), label = { Text("Connection name") }, singleLine = true, shape = PixelShape, enabled = editable)
+    if (rememberKey) Text("Local processes using your OS account can access saved keys.", color = Ink.Muted, fontSize = 10.sp)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         PixelButton(if (remote.connecting) "Connecting…" else if (rememberKey) "Save & connect" else "Connect", enabled = address.isNotBlank() && !remote.connecting && (!storage.busy || !rememberKey && storage.checking) && (!rememberKey || name.isNotBlank() && token.isNotBlank())) {
             val submittedAddress = address; val submittedDraft = token; val submittedToken = submittedDraft.trim(); val submittedName = name
@@ -95,6 +96,7 @@ import androidx.compose.ui.unit.sp
             Text("Save in ${credentials.vaultName}", color = Ink.Muted, fontSize = 11.sp)
         }
         if (rememberKey) OutlinedTextField(name, { name = it.take(64) }, Modifier.fillMaxWidth(), label = { Text("Image account name") }, singleLine = true, shape = PixelShape, enabled = editable)
+        if (rememberKey) Text("Local processes using your OS account can access saved keys.", color = Ink.Muted, fontSize = 10.sp)
         TextButton(onClick = {
             val submittedDraft = key; val submittedKey = submittedDraft.trim()
             if (rememberKey) credentials.save(CredentialKind.IMAGES, name, "", submittedKey) { entry ->

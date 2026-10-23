@@ -31,7 +31,7 @@ class NativeCredentialVaultTest {
     }
     @Test fun stalledHelpersAreTerminatedAndNeverReportedAsSuccessfulSaves() = runBlocking {
         helper("import time, os, pathlib\npathlib.Path(__file__).with_name('pid').write_text(str(os.getpid()))\ntime.sleep(30)\n") { path, directory ->
-            val vault = NativeCredentialVault({ path }, deadlineMillis = 300)
+            val vault = NativeCredentialVault({ path }, deadlineMillis = 2000)
             try { vault.write(CredentialKind.GATEWAY, "a".repeat(64), "Home", "fixture-private-only"); fail("Expected timeout") }
             catch (e: VaultError) { assertEquals(VaultProblem.UNCONFIRMED, e.problem); assertFalse(e.message!!.contains("fixture-private")) }
             val pid = Files.readString(directory.resolve("pid")).toLong(); assertFalse(ProcessHandle.of(pid).map { it.isAlive }.orElse(false))

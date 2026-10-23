@@ -435,6 +435,12 @@ isolated Secret Service. Test-only keychain controls are excluded from the shipp
 helper. The packaged helper accepts only the small production protocol; installer
 checks verify its source hash, executable mode and Linux library dependency.
 
+These checks prove storage and app-operation ownership, not isolation from other
+same-user processes. The unsigned helper's `get` path has no signed-parent
+validation, and Linux Secret Service uses the user-session boundary. Local agent
+tools with the user's permissions can access saved values. The opt-in controls
+state that limitation; authenticated-caller restrictions remain future work.
+
 All fixture credentials are fake. Existing shared-core/Android contracts, 85 Node
 and 15 Python checks remain unchanged. Linux native acceptance, platform packages
 and CodeRabbit review are release gates. Real host credential prompts, real

@@ -48,6 +48,14 @@ and `pkg-config`; the DEB declares its `libsecret-1-0` runtime dependency. A
 configured Secret Service is needed for vault storage, and session-only use works
 without one. macOS uses the system Security/CoreFoundation frameworks.
 
+Vault storage protects credentials at rest at the OS-user level. It does not
+isolate them from processes or local agent tools running as your user. In this
+unsigned preview, another same-user process can invoke the helper's `get` path;
+caller authentication is not implemented. macOS signing alone would not close
+that path: a future restricted helper must validate its signed caller. Linux's
+Secret Service is also shared by the user session. Use session-only credentials
+when that storage boundary does not fit your setup.
+
 ```sh
 python3 tools/prepare-desktop-runtime.py
 cd desktop
