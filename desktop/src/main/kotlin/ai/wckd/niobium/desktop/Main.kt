@@ -13,6 +13,7 @@ import io.sovware.niobium.*
 import java.nio.file.Files
 import kotlinx.coroutines.flow.first
 import org.json.JSONObject
+import java.util.prefs.Preferences
 
 fun main(args: Array<String>) {
     if (args.contentEquals(arrayOf("--check-runtime"))) {
@@ -30,6 +31,8 @@ fun main(args: Array<String>) {
     val hermes = remember { DesktopAgent(false, scope) }
     val dsh = remember { DesktopAgent(true, scope) }
     val credentials = remember { DesktopCredentials(scope) }
+    val viewPreferences = remember { runCatching { Preferences.userRoot().node("ai/wckd/niobium/desktop/view") }.getOrNull() }
+    var textPercent by remember { mutableIntStateOf(runCatching { viewPreferences?.getInt("textPercent", 100) }.getOrNull()?.takeIf { it in listOf(100, 125, 150) } ?: 100) }
     val runtime by local.state.collectAsState()
     val remoteState by hermes.state.collectAsState()
     val localState by dsh.state.collectAsState()
@@ -45,13 +48,19 @@ fun main(args: Array<String>) {
         if (runtime.phase in listOf("Running", "Starting") || localState.working || remoteState.working) confirmQuit = true else quit()
     }, title = "Niobium", state = rememberWindowState(width = 1220.dp, height = 830.dp), icon = painterResource("niobium.png")) {
         LaunchedEffect(Unit) { window.minimumSize = Dimension(960, 650) }
-        DesktopTheme {
+        MenuBar { Menu("View", mnemonic = 'V') { Menu("Text size") {
+            listOf(100, 125, 150).forEach { percent -> RadioButtonItem("$percent%", selected = textPercent == percent, onClick = {
+                textPercent = percent
+                runCatching { viewPreferences?.putInt("textPercent", percent) }
+            }) }
+        } } }
+        DesktopTextScale(textPercent) { DesktopTheme {
             NiobiumApp(hermes, dsh, local, credentials)
             if (confirmQuit) AlertDialog(onDismissRequest = { confirmQuit = false }, title = { Text("Close Niobium?") },
                 text = { Text("Local DSH and its running tasks will stop. Hermes continues on its host.") },
                 confirmButton = { TextButton(onClick = ::quit, enabled = !quitting) { Text("Quit") } },
                 dismissButton = { TextButton(onClick = { confirmQuit = false }) { Text("Keep open") } }, shape = PixelShape)
-        }
+        } }
     }
     } }
 }

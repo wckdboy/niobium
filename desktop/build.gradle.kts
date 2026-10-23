@@ -8,7 +8,7 @@ plugins {
     id("org.jetbrains.compose") version "1.12.2"
     id("org.jetbrains.kotlin.plugin.compose") version "2.4.21"
 }
-val niobiumDesktopVersion = "2.1.2"
+val niobiumDesktopVersion = "2.1.3"
 kotlin { jvmToolchain(17) }
 dependencies {
     implementation(project(":core"))
