@@ -12,14 +12,14 @@ Protocol audit: [HERMES-PARITY.md](docs/HERMES-PARITY.md).
 
 - Build and ship the Compose desktop preview alongside Android; retain iOS sources
   and make its CI/signing work opt-in while desktop and Android are the priority.
-  The 2.1 beta.1 desktop preview and Android 2.1/code13 are published.
+  The 2.1.1 beta.1 desktop preview and Android 2.1.1/code14 are published.
 - Share Kotlin protocol, persona/spec validation and art reduction across Android
   and desktop. Keep engine connection/session/prompt ownership separate.
 - Native desktop DSH: pinned private runtime, direct host process, authenticated
   loopback API over a private DSH Unix socket, explicit lifecycle and safe shutdown.
 - Complete controlled model/room/restart acceptance, Linux and macOS packaging,
   Android regressions, and public download verification before declaring a release.
-- Next desktop work: additional local provider setup, OS credential vaults, richer session/history controls, companion
+- Next desktop work: OS credential vaults, richer session/history controls, companion
   task monitoring, skill/MCP/routine surfaces, accessibility and long-running work.
 - Continue real-account acceptance, physical Android/16 KB execution, cross-engine
   rooms, Hermes replay and connector authorization. These remain unverified goals.
@@ -604,21 +604,52 @@ Next acceptance work is tracked in Plane:
 - NIO-29/NIO-33/NIO-36: physical Android/16 KB execution, cross-engine rooms and
   real-account model/image acceptance. Controlled fixtures do not establish these.
 
-## Native provider cycle — NIO-39
+## Shipped: 2.1.1 beta.1 — NIO-39
 
-Current branch: `codex/native-local-providers`. Native desktop setup activates
-DeepSeek, OpenAI, Anthropic and a compatible route through DSH's own settings and
-credential APIs. Models come from its installed catalog. Defaults require explicit
-selection; existing chats, other routes and custom settings remain intact.
-Compatible no-auth endpoints use an isolated nonsecret credential placeholder.
-The shared adapter also fixes legacy Android OpenAI/Anthropic key activation.
+[Release](https://github.com/wckdboy/niobium/releases/tag/v2.1.1-beta.1),
+[CodeRabbit-approved PR #12](https://github.com/wckdboy/niobium/pull/12) and
+[green release CI](https://github.com/wckdboy/niobium/actions/runs/39984243147).
+Native desktop setup activates DeepSeek, OpenAI, Anthropic and compatible chat
+endpoints through DSH's revision-checked settings and credential APIs. Android's
+existing key-saving screen activates the vendor routes too. Explicit defaults
+apply to new chats; original conversations retain their model. Open model pickers
+refresh after setup, and a queued Refresh cannot leave Save stuck.
 
-Local acceptance: 33 shared-core tests, 22 desktop tests, seven Android JVM tests,
-85 Node checks and 15 Python checks. Real DSH streams all four provider protocols
-against controlled loopback fixtures, restores the original conversation after
-restart and keeps keys out of settings/responses. Android provider setup passes
-on the ARM64 Android 16 emulator. The streaming regression is repeated separately.
+Advanced custom model fields and other wire protocols stay in advanced controls.
+Compatible display names and unrelated provider settings are preserved. No-auth
+servers use an isolated nonsecret placeholder. One failed dormant catalog does
+not block the other providers. Configured status confirms local setup, not account
+entitlement or successful authentication with a real provider.
 
-Next gates: CodeRabbit review, native Linux/macOS package checks, signed Android
-upgrade/install validation and release publication. OS credential vaults and
-accessibility/soaks remain NIO-31/NIO-32. Real account acceptance remains open.
+Acceptance: 33 shared-core, 22 desktop, seven additional Android JVM, 85 Node and
+15 Python checks. Real pinned DSH streams all four provider protocols against
+loopback fixtures and restores the original conversation after restart. Native
+Linux/macOS app images and installers pass actual launcher/private-runtime checks;
+the final downloaded DMG also passes on the development Mac. Both final Android
+provider-activation and existing streaming/rooms cases pass separately on ARM64
+Android 16. The signed APK installs and renders its welcome screen after a cold
+launch. An emulator System UI boot dialog was dismissed before repeated visual
+acceptance; Niobium's crash log is empty.
+
+Evidence: [release validation](docs/evidence/beta211-release-validation.json).
+macOS still requires 13.5+ and the preview remains unsigned and unnotarized. iOS
+sources are retained and Apple release work stays parked.
+
+## Next cycle
+
+1. **NIO-31 — desktop credential vaults.** macOS Keychain and Linux Secret Service
+   for gateway/image credentials, with deliberate saving and deletion. Verify
+   locked/unavailable vaults, reconnects, account switching and redaction. Plan the
+   DSH credential bridge against its pinned contract; its current provider keys
+   remain in an owner-only file.
+2. **NIO-32 — accessibility and measured soaks.** Keyboard traversal, focus,
+   screen readers, text scaling, narrow/wide layouts and HiDPI pixel rendering.
+   Exercise large histories and long-running tasks/rooms/reconnects; measure
+   CPU/memory and verify owned-process cleanup.
+3. **NIO-29 — Android hardware acceptance.** Physical/16 KB execution, foreground
+   service/background restoration, battery behavior and host bridges. Emulator
+   checks and 16 KB packaging do not substitute for physical hardware.
+4. **NIO-34/NIO-35 — Hermes parity and replay.** Complete the remaining native
+   surfaces and durable reconnect behavior while retaining engine/session
+   ownership and unknown-delivery receipts. Real-account model/image and
+   connector authorization acceptance remain separate open work.

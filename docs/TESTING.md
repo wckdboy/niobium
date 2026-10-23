@@ -381,7 +381,7 @@ published from `b683440`, approved by CodeRabbit and merged in PR #11. All activ
 See [release validation](evidence/beta21-release-validation.json) for artifact
 hashes, device receipts, review, merge and website deployment evidence.
 
-## Native provider setup (2.1.1 candidate)
+## Native provider setup (2.1.1 beta.1)
 
 The current suite has 33 shared-core, 22 desktop, seven Android-specific JVM,
 85 Node and 15 Python tests. The provider integration runs real pinned DSH against
@@ -404,3 +404,15 @@ entitlements, real provider acceptance and physical Android/16 KB execution rema
 open. The API fixtures follow the pinned SDK and the official streaming references:
 [OpenAI](https://developers.openai.com/api/reference/resources/responses/streaming-events)
 and [Anthropic](https://platform.claude.com/docs/en/build-with-claude/streaming).
+
+[PR #12](https://github.com/wckdboy/niobium/pull/12) is approved by CodeRabbit and
+merged. All active [release CI jobs](https://github.com/wckdboy/niobium/actions/runs/39984243147)
+pass on source `5bb793d`; its tree matches merge `d083740`. The final signed Android
+APK installs and renders its welcome screen after a cold launch. A System UI
+boot dialog from the emulator was dismissed before repeated visual acceptance;
+Niobium's crash log is empty. The final downloaded macOS DMG also passes the local
+installed-launcher/runtime check.
+
+See [release validation](evidence/beta211-release-validation.json) and the two
+separate native receipts: [provider activation](evidence/beta211-android-provider-activation.xml)
+and [DSH streaming/rooms](evidence/beta211-android-native-stream.xml).

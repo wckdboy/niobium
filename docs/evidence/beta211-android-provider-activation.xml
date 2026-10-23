@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuites tests="1" failures="0" errors="0" skipped="0" time="0.000" timestamp="2026-10-23T16:17:08" hostname="localhost">
+  <testsuite name="io.sovware.niobium.LocalRuntimeTest" tests="1" failures="0" errors="0" skipped="0" time="109.745" timestamp="2026-10-23T16:17:08" hostname="localhost">
+    <properties>
+      <property name="device" value="emulator-5554" />
+    </properties>
+    <testcase name="nativeProviderSetupActivatesModelRoutesAndKeepsKeysOutOfSettings" classname="io.sovware.niobium.LocalRuntimeTest" time="109.745" />
+  </testsuite>
+</testsuites>

@@ -8,7 +8,7 @@ A pixel-art home for agents on Linux, macOS and Android: connect Hermes, run
 DSH locally, or keep both engines ready. Pixels have their own personas, tools
 and companions. The existing iOS client is retained; iOS release work is parked.
 
-**2.1 preview: [Linux, macOS and Android](https://github.com/wckdboy/niobium/releases/tag/v2.1.0-beta.1).** Full Hermes parity is the target;
+**2.1.1 preview: [Linux, macOS and Android](https://github.com/wckdboy/niobium/releases/tag/v2.1.1-beta.1).** Full Hermes parity is the target;
 it is not finished. The current scope is in [PLAN.md](PLAN.md), the implementation
 audit is in [docs/HERMES-PARITY.md](docs/HERMES-PARITY.md), and the work is tracked
 in [Plane](https://app.plane.so/wckd/projects/2fbcf987-20de-43dc-80ac-0a6bab7ec03a/issues/).
@@ -30,11 +30,10 @@ socket; only the authenticated Niobium API is exposed on loopback. Start and
 Stop are explicit. Closing the app stops owned local work; Hermes continues on
 its host. Tools use your account permissions, not a desktop OS sandbox.
 
-Native setup in the current source supports DeepSeek, OpenAI, Anthropic and an
+Native setup supports DeepSeek, OpenAI, Anthropic and an
 OpenAI-compatible endpoint. Adding a key activates its DSH route; an explicit
 model choice sets the default for new chats. Existing conversations retain their
 model. Compatible local servers may omit a key. Hermes uses its host’s providers.
-These controls are in the next preview; the published 2.1 beta.1 starts with DeepSeek.
 Remote gateways require HTTPS; HTTP is reserved for literal loopback addresses.
 Authenticated gateway requests do not follow redirects.
 Remote gateway tokens and the AI image key are session-only on desktop. DSH
@@ -57,12 +56,12 @@ Desktop CI runs native tests and packaging on both Linux and macOS; iOS CI is op
 
 CodeRabbit reviews new pull requests and incremental pushes using
 [repository guidance](.coderabbit.yaml). Automatic Greptile reviews are disabled.
-The published 2.1 beta.1 checks include 33 shared-core, 18 desktop and seven Android-specific JVM
-tests, 67 Node checks and 15 Python checks. Native installer checks run the
+The published 2.1.1 beta.1 checks include 33 shared-core, 22 desktop and seven Android-specific JVM
+tests, 85 Node checks and 15 Python checks. Native installer checks run the
 packaged app and its private DSH API, and reject stale adapters.
-CodeRabbit [approved PR #11](https://github.com/wckdboy/niobium/pull/11); all active
-[release CI jobs](https://github.com/wckdboy/niobium/actions/runs/39961030217) pass.
-See the [release evidence](docs/evidence/beta21-release-validation.json).
+CodeRabbit [approved PR #12](https://github.com/wckdboy/niobium/pull/12); all active
+[release CI jobs](https://github.com/wckdboy/niobium/actions/runs/39984243147) pass.
+See the [release evidence](docs/evidence/beta211-release-validation.json).
 
 <img src="site/public/desktop-preview.png" width="760" alt="Niobium desktop wardrobe">
 
@@ -246,7 +245,7 @@ acceptance and actual delegation remain. Mobile gateway push delivery is not pro
 
 [niobium.sh](https://niobium.sh) uses the shared WCKD web design and is deployed
 with Cloudflare Workers Static Assets from this repository. The
-[2.1 preview release](https://github.com/wckdboy/niobium/releases/tag/v2.1.0-beta.1)
+[2.1 preview release](https://github.com/wckdboy/niobium/releases/tag/v2.1.1-beta.1)
 includes Linux x64 and macOS ARM64 desktop installers, a signed Android APK,
 corresponding runtime/OpenJDK sources, metadata and checksums. iOS sources remain
 available; iOS release work is parked. The last stable release is
