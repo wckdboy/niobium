@@ -6,7 +6,7 @@ import path from 'node:path';
 import http from 'node:http';
 import {createRequire} from 'node:module';
 const require = createRequire(import.meta.url);
-const {start} = require('../desktop/runtime/desktop-host.cjs');
+const {start, prepareAdapters} = require('../desktop/runtime/desktop-host.cjs');
 
 async function fixture() {
   const directory = await mkdtemp(path.join(tmpdir(), 'nb-host-test-'));
@@ -59,4 +59,24 @@ test('desktop startup cancellation removes its child and private socket', async 
   const directory = await mkdtemp(path.join(tmpdir(),'nb-cancel-test-'));
   try { await assert.rejects(start({root,home:path.join(directory,'home'),workspace:path.join(directory,'workspace'),signal:controller.signal}),/cancelled/); }
   finally { await rm(directory,{recursive:true,force:true}); }
+});
+test('desktop relocation migrates only owned messaging rows to a stable private adapter', async () => {
+  const home = await mkdtemp(path.join(tmpdir(), 'nb-adapter-test-'));
+  const root = path.resolve('runtime');
+  const preset = path.join(home,'.agent-presets/safe-pixel');
+  const metadata = {'safe-pixel':{enabled_toolsets:['messaging'],ui_meta:{niobium:{pixel_spec:{name:'safe-pixel'}}}}};
+  try {
+    await mkdir(preset,{recursive:true});
+    const original = [{id:'persona',name:'@deepseek-ai/dsh-persona',config:{text:'Keep this persona.'}},
+      {id:'niobium-messaging',name:'/Old App/resources/niobium-agent.cjs'}];
+    await writeFile(path.join(home,'niobium-pixels.json'),JSON.stringify(metadata));
+    await writeFile(path.join(preset,'agent.cordis.yml'),JSON.stringify(original));
+    const plugin = await prepareAdapters(root,home);
+    const changed = JSON.parse(await (await import('node:fs/promises')).readFile(path.join(preset,'agent.cordis.yml'),'utf8'));
+    assert.equal(plugin,path.join(home,'.niobium-runtime/niobium-agent.cjs'));
+    assert.equal(changed[1].name,plugin); assert.deepEqual(changed[0],original[0]);
+    assert.equal((await stat(plugin)).mode & 0o777,0o600);
+    assert.deepEqual(JSON.parse(await (await import('node:fs/promises')).readFile(path.join(home,'niobium-pixels.json'),'utf8')),metadata);
+    assert.equal(await prepareAdapters(root,home),plugin);
+  } finally { await rm(home,{recursive:true,force:true}); }
 });

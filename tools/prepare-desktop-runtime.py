@@ -69,6 +69,8 @@ def main():
                     "files": {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in stage.glob("*.cjs")},
                     "lock_sha256": hashlib.sha256((stage / "package-lock.json").read_bytes()).hexdigest()}
         manifest["node_sha256"] = hashlib.sha256((stage / "node").read_bytes()).hexdigest()
+        manifest["executables"] = {str(p.relative_to(stage)): p.stat().st_mode & 0o777
+                                   for p in stage.rglob("*") if p.is_file() and p.stat().st_mode & 0o111}
         (stage / "runtime-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
         shutil.rmtree(bundle, ignore_errors=True)
         stage.replace(bundle)

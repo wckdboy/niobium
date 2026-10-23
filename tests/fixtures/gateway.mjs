@@ -36,7 +36,9 @@ server.on('upgrade', (request, socket) => {
       case 'profiles.list': result({profiles:[{name:'remote-fixture',display_name:'Remote fixture',canonical_session:{id:'fixture-session'}}]}); break;
       case 'tools.list': result({toolsets:[]}); break;
       case 'model.options': result({providers:[]}); break;
-      case 'session.resume': result({session_id:'fixture-session',messages:[],revision:0}); break;
+      case 'session.resume':
+        if (Object.keys(frame.params || {}).some(key=>!['session_id','profile','source','omit_messages'].includes(key))) { reject('Unexpected session.resume keys'); break; }
+        result({session_id:'fixture-session',messages:[],revision:0}); break;
       case 'prompt.submit':
         if (frame.params.text === 'fixture tool results') {
           for (const [id,payload] of [['local-failed',{is_error:true}],['remote-failed',{success:false}],['completed',{is_error:false}]]) {

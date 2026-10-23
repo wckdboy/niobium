@@ -1,4 +1,7 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import groovy.json.JsonSlurper
+import java.nio.file.Files
+import java.nio.file.attribute.PosixFilePermission
 
 plugins {
     kotlin("jvm") version "2.4.21"
@@ -34,18 +37,46 @@ compose.desktop {
             vendor = "WCKD"
             copyright = "© 2026 WCKD"
             includeAllModules = true
-            macOS { bundleID = "ai.wckd.niobium.desktop"; iconFile.set(project.file("src/main/resources/niobium.icns")) }
+            macOS { bundleID = "ai.wckd.niobium.desktop"; minimumSystemVersion = "13.0"; iconFile.set(project.file("src/main/resources/niobium.icns")) }
             linux { iconFile.set(project.file("src/main/resources/niobium.png")); packageName = "niobium"; appCategory = "Utility" }
         }
     }
 }
 
+val desktopRuntimeInputs = files("runtime/package.json", "runtime/package-lock.json", "runtime/desktop-host.cjs",
+    "../config/desktop-runtime.json", "../tools/prepare-desktop-runtime.py", "../runtime/niobium-agent.cjs",
+    "../runtime/niobium-messaging.cjs", "../android/runtime/niobium-local.cjs", "../LICENSE", "../NOTICE")
 val prepareDesktopRuntime = tasks.register<Exec>("prepareDesktopRuntime") {
     workingDir = rootProject.projectDir.parentFile
     commandLine("python3", "tools/prepare-desktop-runtime.py")
-    inputs.files("runtime/package.json", "runtime/package-lock.json", "runtime/desktop-host.cjs",
-        "../config/desktop-runtime.json", "../tools/prepare-desktop-runtime.py", "../runtime/niobium-agent.cjs",
-        "../runtime/niobium-messaging.cjs", "../android/runtime/niobium-local.cjs", "../LICENSE", "../NOTICE")
+    inputs.files(desktopRuntimeInputs)
     outputs.dir("runtime/bundle")
 }
 tasks.matching { it.name in setOf("prepareAppResources", "createDistributable") }.configureEach { dependsOn(prepareDesktopRuntime) }
+tasks.test { dependsOn(prepareDesktopRuntime); inputs.files(desktopRuntimeInputs) }
+
+// Share authored familiar sprites with Android instead of maintaining copies.
+tasks.processResources {
+    from("../android/app/src/main/res/drawable-nodpi") { include("comp_*.png") }
+}
+
+// jpackage strips executable bits from additional app resources on macOS.
+// Restore the exact pinned bundle modes before creating the installer.
+tasks.matching { it.name == "createDistributable" }.configureEach {
+    doLast {
+        val image = layout.buildDirectory.dir("compose/binaries/main/app").get().asFile.toPath()
+        val manifests = Files.walk(image).use { paths -> paths.filter { it.fileName.toString() == "runtime-manifest.json" }.toList() }
+        check(manifests.size == 1) { "Expected one packaged private runtime." }
+        val manifest = manifests.single()
+        val resources = manifest.parent.toRealPath()
+        val metadata = JsonSlurper().parse(manifest.toFile()) as Map<*, *>
+        val executables = metadata["executables"] as Map<*, *>
+        for ((relative, value) in executables) {
+            val target = resources.resolve(relative.toString()).toRealPath()
+            check(target.startsWith(resources)) { "Runtime executable leaves its package." }
+            val mode = (value as Number).toInt()
+            val permissions = PosixFilePermission.values().filterIndexed { index, _ -> mode and (1 shl (8 - index)) != 0 }.toSet()
+            Files.setPosixFilePermissions(target, permissions)
+        }
+    }
+}

@@ -72,9 +72,7 @@ jobs:
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: '17'
-      - name: Prepare pinned native DSH bundle
-        run: python3 tools/prepare-desktop-runtime.py
+          java-version: '17.0.21+9'
       - name: Shared core, desktop UI, real DSH restart and native package
         working-directory: desktop
         shell: bash
@@ -84,6 +82,10 @@ jobs:
           else
             ./gradlew :core:test test createDistributable packageDistributionForCurrentOS --console=plain
           fi
+      - name: Verify installed launcher and private runtime without global Java/Node
+        run: |
+          python3 tools/check-desktop-package.py desktop/build/compose/binaries/main/app
+          python3 tools/check-desktop-package.py desktop/build/compose/binaries/main --installers
       - uses: actions/upload-artifact@v7
         if: always()
         with:

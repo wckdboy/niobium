@@ -2,6 +2,8 @@ package io.sovware.niobium
 
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -171,7 +173,7 @@ class GatewayClient(private val listener: Listener, private val webSocketFactory
     }
 
     companion object {
-        suspend fun probe(baseUrl: String, token: String, cookie: String? = null): JSONObject {
+        suspend fun probe(baseUrl: String, token: String, cookie: String? = null): JSONObject = withContext(Dispatchers.IO) {
             val url = baseUrl.trimEnd('/').toHttpUrlOrNull()?.newBuilder()?.addPathSegments("api/status")?.build()
                 ?: throw GatewayException("That gateway address isn’t valid.")
             val request = Request.Builder().url(url)
@@ -186,7 +188,7 @@ class GatewayClient(private val listener: Listener, private val webSocketFactory
             client.newCall(request).execute().use { response ->
                 if (response.code == 401 || response.code == 403) throw GatewayException("That access token was rejected.")
                 if (!response.isSuccessful) throw GatewayException("Gateway returned HTTP ${response.code}.")
-                return JSONObject(response.body.string())
+                JSONObject(response.body.string())
             }
         }
     }

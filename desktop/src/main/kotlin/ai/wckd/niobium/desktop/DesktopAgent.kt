@@ -113,7 +113,9 @@ class DesktopAgent(val local: Boolean, private val scope: CoroutineScope, privat
             try {
                 val stored = bot.canonicalSessionId ?: client.request("session.list", JSONObject().put("profile", bot.name).put("title", "Bot Chat")).objects("sessions").firstOrNull()?.s("id")
                 if (!owns(client, connection) || chatEpoch != epoch) return@launch
-                val result = client.request(if (stored == null) "session.create" else "session.resume", JSONObject().put("profile", bot.name).put("title", "Bot Chat").put("source", source).apply { stored?.let { put("session_id", it) } }, 90_000)
+                val params = JSONObject().put("profile", bot.name).put("source", source)
+                if (stored == null) params.put("title", "Bot Chat") else params.put("session_id", stored)
+                val result = client.request(if (stored == null) "session.create" else "session.resume", params, 90_000)
                 if (!owns(client, connection) || chatEpoch != epoch) return@launch
                 restore(result)
                 if (local) client.request("local.attach", JSONObject().put("session_id", mutable.value.session))

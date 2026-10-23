@@ -33,7 +33,8 @@ object AppPaths {
 data class LocalStatus(val phase: String = "Stopped", val error: String? = null)
 data class LocalEndpoint(val origin: String, val token: String)
 
-class LocalEngine(private val scope: CoroutineScope, private val home: Path = AppPaths.dsh, val workspace: Path = AppPaths.workspace) {
+class LocalEngine(private val scope: CoroutineScope, private val home: Path = AppPaths.dsh, val workspace: Path = AppPaths.workspace,
+                  private val runtimeRoot: () -> Path = { AppPaths.runtime() }) {
     private val mutable = MutableStateFlow(LocalStatus())
     val state = mutable.asStateFlow()
     private var process: Process? = null
@@ -48,7 +49,7 @@ class LocalEngine(private val scope: CoroutineScope, private val home: Path = Ap
         startup = scope.launch {
             var owned: Process? = null
             try {
-                val root = AppPaths.runtime().toAbsolutePath().normalize()
+                val root = runtimeRoot().toAbsolutePath().normalize()
                 withContext(Dispatchers.IO) { AppPaths.privateDirectory(home); AppPaths.privateDirectory(workspace) }
                 val child = withContext(Dispatchers.IO) {
                     ProcessBuilder(root.resolve("node").toString(), root.resolve("desktop-host.cjs").toString())

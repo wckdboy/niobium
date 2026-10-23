@@ -9,8 +9,52 @@ const os = require('node:os');
 const crypto = require('node:crypto');
 const {spawn} = require('node:child_process');
 
+async function prepareAdapters(root, home) {
+  const directory = path.join(home, '.niobium-runtime');
+  await fs.mkdir(directory, {recursive: true, mode: 0o700});
+  if (!(await fs.lstat(directory)).isDirectory()) throw new Error('The private adapter directory needs repair.');
+  await fs.chmod(directory, 0o700);
+  async function atomicWrite(file, bytes) {
+    const stage = file + '.' + crypto.randomUUID();
+    try { await fs.writeFile(stage, bytes, {mode: 0o600, flag: 'wx'}); await fs.rename(stage, file); }
+    finally { await fs.rm(stage, {force: true}); }
+  }
+  for (const name of ['niobium-agent.cjs', 'niobium-messaging.cjs']) {
+    await atomicWrite(path.join(directory, name), await fs.readFile(path.join(root, name)));
+  }
+  const pluginPath = path.join(directory, 'niobium-agent.cjs');
+  // Older previews stored a bundle/translocation path. Migrate only generated
+  // Niobium presets, before DSH scans them. Keep unrelated presets untouched.
+  let metadata;
+  try { metadata = JSON.parse(await fs.readFile(path.join(home, 'niobium-pixels.json'), 'utf8')); }
+  catch (error) { if (error.code === 'ENOENT') return pluginPath; throw error; }
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) throw new Error('Local Pixel metadata needs repair. Its original file is preserved.');
+  for (const [id, entry] of Object.entries(metadata)) {
+    if (!/^[a-z][a-z0-9-]{1,30}$/.test(id) || (!Array.isArray(entry?.enabled_toolsets) || !entry.enabled_toolsets.includes('messaging')) || entry.ui_meta?.niobium?.pixel_spec?.name !== id) continue;
+    const preset = path.join(home, '.agent-presets', id, 'agent.cordis.yml');
+    let rows;
+    try {
+      for (const folder of [path.join(home, '.agent-presets'), path.dirname(preset)]) {
+        if (!(await fs.lstat(folder)).isDirectory()) throw new Error('A local preset directory is linked or needs repair: ' + id);
+      }
+      if (!(await fs.lstat(preset)).isFile()) throw new Error('A local preset is linked or needs repair: ' + id);
+      rows = JSON.parse(await fs.readFile(preset, 'utf8'));
+    } catch (error) { if (error.code === 'ENOENT') continue; throw error; }
+    if (!Array.isArray(rows)) throw new Error('Review this local preset before updating its adapter: ' + id);
+    let changed = false;
+    for (const row of rows) {
+      if (row.id !== 'niobium-messaging' || row.name === pluginPath) continue;
+      if (typeof row.name !== 'string' || !path.isAbsolute(row.name) || path.basename(row.name) !== 'niobium-agent.cjs') throw new Error('Review this Pixel’s modified messaging plugin: ' + id);
+      row.name = pluginPath; changed = true;
+    }
+    if (changed) await atomicWrite(preset, JSON.stringify(rows, null, 2) + '\n');
+  }
+  return pluginPath;
+}
+
 async function start({root, home, workspace, node = process.execPath, signal, onDiagnostic}) {
   if (![root, home, workspace].every(p => typeof p === 'string' && path.isAbsolute(p))) throw new Error('Absolute runtime, home and workspace paths are required.');
+  if (signal?.aborted) throw new Error('Local startup cancelled.');
   await fs.mkdir(home, {recursive: true, mode: 0o700});
   await fs.chmod(home, 0o700);
   await fs.mkdir(workspace, {recursive: true, mode: 0o700});
@@ -35,7 +79,8 @@ async function start({root, home, workspace, node = process.execPath, signal, on
     await fs.rm(temp, {recursive: true, force: true});
   }
   try {
-    child = spawn(node, ['--require', path.join(root, 'niobium-local.cjs'), '--require', path.join(root, 'niobium-agent.cjs'),
+    const pluginPath = await prepareAdapters(root, home);
+    child = spawn(node, ['--require', path.join(root, 'niobium-local.cjs'), '--require', pluginPath,
       path.join(modules, '@deepseek-ai/dsh/lib/bin.js'), 'web'], {
       cwd: workspace, detached: true, stdio: ['ignore', 'pipe', 'pipe'],
       env: {...process.env, DSH_HOME: home, NIOBIUM_DSH_HOME: home, NIOBIUM_WORKSPACE: workspace,
@@ -115,7 +160,7 @@ async function start({root, home, workspace, node = process.execPath, signal, on
   } catch (error) { await stop(); throw error; }
 }
 
-module.exports = {start};
+module.exports = {start, prepareAdapters};
 if (require.main === module) {
   let runtime;
   let ending = false;

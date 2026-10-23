@@ -296,7 +296,7 @@ receipts.
 `python3 tools/prepare-desktop-runtime.py` verifies the pinned official Node archive,
 installs only the locked DSH graph, restores the audited native helper permission,
 and checks WebSocket, Koffi and real PTY execution before staging the bundle.
-`cd desktop && ./gradlew :core:test :test` runs 29 shared Kotlin checks and the
+`cd desktop && ./gradlew :core:test :test` runs 30 shared Kotlin checks and the
 current desktop suite. UI tests capture the actual Compose wardrobe. Linux runs
 these UI checks under Xvfb, then creates its own native `.deb`; macOS builds `.dmg`.
 
@@ -330,3 +330,13 @@ https://github.com/apps/coderabbitai/installations/new . Repository configuratio
 alone cannot install or authorize a GitHub App. Request an existing PR review with
 `@coderabbitai full review`; do not report a completed CodeRabbit review until its
 bot returns a result. Configuration reference: https://docs.coderabbit.ai/reference/configuration .
+
+The 2.1 desktop review adds forced early-handshake publication and slow-probe
+responsiveness regressions, strict canonical resume parameters, failed-tool
+status/capability checks, cold restart after app relocation and legacy messaging
+path migration. Runtime source inputs invalidate the Gradle test task.
+`tools/check-desktop-package.py` checks the actual packaged launcher and its
+private DSH API with global Java/Node removed from PATH. It verifies runtime
+hashes and every recorded executable mode; packaging restores those modes after
+jpackage copies resources. Desktop familiar sprites now use Android's authored
+source directly. CodeRabbit reviews the active PR using `.coderabbit.yaml`.

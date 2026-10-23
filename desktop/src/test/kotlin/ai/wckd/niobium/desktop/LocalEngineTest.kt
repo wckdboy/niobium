@@ -34,7 +34,15 @@ class LocalEngineTest {
         Files.writeString(credentials, "DEEPSEEK_API_KEY: niobium-fixture-only\n")
         Files.setPosixFilePermissions(credentials, PosixFilePermissions.fromString("rw-------"))
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-        val engine = LocalEngine(scope, temporary.resolve("dsh"), temporary.resolve("workspace"))
+        val original = AppPaths.runtime().toAbsolutePath().normalize()
+        fun facade(name: String): java.nio.file.Path {
+            val folder = temporary.resolve(name); Files.createDirectories(folder)
+            for (file in listOf("desktop-host.cjs", "niobium-local.cjs", "niobium-agent.cjs", "niobium-messaging.cjs")) Files.copy(original.resolve(file), folder.resolve(file))
+            for (file in listOf("node", "node_modules")) Files.createSymbolicLink(folder.resolve(file), original.resolve(file))
+            return folder
+        }
+        var installed = facade("Original App")
+        val engine = LocalEngine(scope, temporary.resolve("dsh"), temporary.resolve("workspace")) { installed }
         val agent = DesktopAgent(true, scope)
         suspend fun connect() {
             withContext(Dispatchers.Main) { engine.start { agent.connect(it.origin, it.token) } }
@@ -64,6 +72,13 @@ class LocalEngineTest {
             assertEquals(2, agent.state.value.room?.members?.size)
             withContext(Dispatchers.Main) { agent.disconnect(); engine.close() }
             assertEquals("Stopped", engine.state.value.phase)
+            // Emulate an older preset and an app moved after its first launch.
+            val presetFile = temporary.resolve("dsh/.agent-presets/${first.spec.name}/agent.cordis.yml")
+            val legacy = org.json.JSONArray(Files.readString(presetFile))
+            for (i in 0 until legacy.length()) if (legacy.getJSONObject(i).s("id") == "niobium-messaging") legacy.getJSONObject(i).put("name", installed.resolve("niobium-agent.cjs").toString())
+            Files.writeString(presetFile, legacy.toString())
+            Files.walk(installed).use { paths -> paths.sorted(Comparator.reverseOrder()).forEach { Files.deleteIfExists(it) } }
+            installed = facade("Moved App")
             connect()
             assertEquals(3, agent.state.value.bots.size)
             assertEquals(first.spec.companion, agent.state.value.specs[first.spec.name]?.companion)
@@ -75,6 +90,8 @@ class LocalEngineTest {
             val composition = Files.readString(temporary.resolve("dsh/.agent-presets/${first.spec.name}/agent.cordis.yml"))
             assertTrue(composition.contains("niobium-agent.cjs"))
             assertFalse(composition.contains("/usr/local/lib/niobium-agent.cjs"))
+            assertTrue(composition.contains(".niobium-runtime"))
+            assertFalse(composition.contains("Original App"))
         } finally {
             withContext(Dispatchers.Main) { agent.disconnect(); engine.close(); scope.cancel() }
             model.stop(0)
