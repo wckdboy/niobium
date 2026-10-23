@@ -36,10 +36,25 @@ model choice sets the default for new chats. Existing conversations retain their
 model. Compatible local servers may omit a key. Hermes uses its host’s providers.
 Remote gateways require HTTPS; HTTP is reserved for literal loopback addresses.
 Authenticated gateway requests do not follow redirects.
-Remote gateway tokens and the AI image key are session-only on desktop. DSH
-provider keys use its owner-only credential file. Android retains Keystore storage.
+The 2.1.2 desktop candidate adds opt-in macOS Keychain and Linux Secret Service
+storage for named gateway and image accounts. Session-only use remains available;
+saved credentials are loaded only when you choose Use. DSH provider keys still
+use its owner-only credential file. Android retains Keystore storage.
 
 From the repository root, with Python 3.12+, Node for fixtures, and a JDK 17+:
+
+Desktop builds also require a C compiler. On Linux, install `libsecret-1-dev`
+and `pkg-config`; the DEB declares its `libsecret-1-0` runtime dependency. A
+configured Secret Service is needed for vault storage, and session-only use works
+without one. macOS uses the system Security/CoreFoundation frameworks.
+
+Vault storage protects credentials at rest at the OS-user level. It does not
+isolate them from processes or local agent tools running as your user. In this
+unsigned preview, another same-user process can invoke the helper's `get` path;
+caller authentication is not implemented. macOS signing alone would not close
+that path: a future restricted helper must validate its signed caller. Linux's
+Secret Service is also shared by the user session. Use session-only credentials
+when that storage boundary does not fit your setup.
 
 ```sh
 python3 tools/prepare-desktop-runtime.py

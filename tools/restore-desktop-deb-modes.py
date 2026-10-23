@@ -25,6 +25,17 @@ try:
             raise SystemExit("Expected one private runtime inside the DEB.")
         resources = manifests[0].parent.resolve()
         manifest = json.loads(manifests[0].read_text())
+        # The native Secret Service bridge links to the distribution's libsecret.
+        # Compose's Linux DSL does not expose jpackage's dependency flag.
+        if "vault_source_sha256" in manifest:
+            control = payload / "DEBIAN/control"
+            lines = control.read_text().splitlines()
+            dependencies = next((n for n, line in enumerate(lines) if line.startswith("Depends:")), None)
+            if dependencies is None:
+                lines.append("Depends: libsecret-1-0")
+            elif not any(part.strip().split()[0] == "libsecret-1-0" for part in lines[dependencies].split(":", 1)[1].split(",") if part.strip()):
+                lines[dependencies] += ", libsecret-1-0"
+            control.write_text("\n".join(lines) + "\n")
         for relative, mode in manifest["executables"].items():
             target = (resources / relative).resolve()
             if not target.is_relative_to(resources) or not target.is_file() or not isinstance(mode, int) or mode & ~0o777:

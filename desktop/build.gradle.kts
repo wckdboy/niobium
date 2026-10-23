@@ -8,7 +8,7 @@ plugins {
     id("org.jetbrains.compose") version "1.12.2"
     id("org.jetbrains.kotlin.plugin.compose") version "2.4.21"
 }
-val niobiumDesktopVersion = "2.1.1"
+val niobiumDesktopVersion = "2.1.2"
 kotlin { jvmToolchain(17) }
 dependencies {
     implementation(project(":core"))
@@ -45,6 +45,7 @@ compose.desktop {
 }
 
 val desktopRuntimeInputs = files("runtime/package.json", "runtime/package-lock.json", "runtime/desktop-host.cjs",
+    "native/vault.c", "../tools/build-desktop-vault.py",
     "../config/desktop-runtime.json", "../tools/prepare-desktop-runtime.py", "../runtime/niobium-agent.cjs",
     "../runtime/niobium-messaging.cjs", "../android/runtime/niobium-local.cjs", "../LICENSE", "../NOTICE")
 val prepareDesktopRuntime = tasks.register<Exec>("prepareDesktopRuntime") {

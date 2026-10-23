@@ -7,6 +7,7 @@ from pathlib import Path
 import platform
 import shutil
 import subprocess
+import sys
 import tarfile
 import urllib.request
 
@@ -63,12 +64,15 @@ def main():
             shutil.copy2(ROOT / name, stage / name)
         for name in ["package.json", "package-lock.json"]:
             shutil.copy2(runtime / name, stage / name)
+        subprocess.run([sys.executable, str(ROOT / "tools/build-desktop-vault.py"), str(stage / "niobium-vault")], check=True)
         subprocess.run([str(stage / "node"), "-e", "require('./node_modules/ws'); require('koffi'); const p=require('node-pty').spawn('/bin/sh',['-c','printf niobium-native-ok'],{cols:80,rows:24}); let out=''; p.onData(s=>out+=s); p.onExit(e=>{if(e.exitCode || !out.includes('niobium-native-ok')) process.exitCode=1}); const t=setTimeout(()=>{p.kill();process.exit(1)},10000); t.unref();"], cwd=stage, env=env, check=True, timeout=20)
         manifest = {"platform": target, "node": config["node_version"], "dsh": config["dsh_version"],
                     "node_archive_sha256": expected,
                     "files": {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in stage.glob("*.cjs")},
                     "lock_sha256": hashlib.sha256((stage / "package-lock.json").read_bytes()).hexdigest()}
         manifest["node_sha256"] = hashlib.sha256((stage / "node").read_bytes()).hexdigest()
+        manifest["files"]["niobium-vault"] = hashlib.sha256((stage / "niobium-vault").read_bytes()).hexdigest()
+        manifest["vault_source_sha256"] = hashlib.sha256((ROOT / "desktop/native/vault.c").read_bytes()).hexdigest()
         manifest["executables"] = {str(p.relative_to(stage)): p.stat().st_mode & 0o777
                                    for p in stage.rglob("*") if p.is_file() and p.stat().st_mode & 0o111}
         (stage / "runtime-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")

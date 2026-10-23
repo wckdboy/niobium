@@ -416,3 +416,33 @@ installed-launcher/runtime check.
 See [release validation](evidence/beta211-release-validation.json) and the two
 separate native receipts: [provider activation](evidence/beta211-android-provider-activation.xml)
 and [DSH streaming/rooms](evidence/beta211-android-native-stream.xml).
+
+## Desktop credential vault candidate (2.1.2)
+
+The desktop suite has 42 tests. Native controller/process/UI cases cover metadata
+without keys, separate accounts at one gateway, exact URL binding, corruption,
+unavailable/locked vaults, failed deletion, deadline and caller cancellation,
+late loads after Disconnect/Clear session, masked input and explicit storage.
+Image receipts retain their key scope; another or rotated key needs an explicit
+account confirmation and a successful status response before it owns that receipt.
+Interrupted image submissions stay unknown and never replay their POST.
+
+`python3 tools/test-desktop-vault.py` compiles the actual native boundary and runs
+save/read/replace/delete, process restart and lock acceptance. macOS uses a unique
+temporary keychain, then verifies the user's search list is unchanged. Linux runs
+in a private D-Bus session with temporary XDG data/runtime directories and an
+isolated Secret Service. Test-only keychain controls are excluded from the shipped
+helper. The packaged helper accepts only the small production protocol; installer
+checks verify its source hash, executable mode and Linux library dependency.
+
+These checks prove storage and app-operation ownership, not isolation from other
+same-user processes. The unsigned helper's `get` path has no signed-parent
+validation, and Linux Secret Service uses the user-session boundary. Local agent
+tools with the user's permissions can access saved values. The opt-in controls
+state that limitation; authenticated-caller restrictions remain future work.
+
+All fixture credentials are fake. Existing shared-core/Android contracts, 85 Node
+and 15 Python checks remain unchanged. Linux native acceptance, platform packages
+and CodeRabbit review are release gates. Real host credential prompts, real
+provider accounts, physical Android/16 KB acceptance and signed/notarized macOS
+distribution remain open; iOS release work stays parked.

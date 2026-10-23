@@ -73,6 +73,11 @@ jobs:
         with:
           distribution: temurin
           java-version: '17.0.21+9'
+      - name: Linux vault development libraries and isolated test service
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libsecret-1-dev gnome-keyring dbus-x11 pkg-config
+      - name: Native vault isolation, restart, account switching and lock acceptance
+        run: python3 tools/test-desktop-vault.py
       - name: Shared core, desktop UI, real DSH restart and native package
         working-directory: desktop
         shell: bash

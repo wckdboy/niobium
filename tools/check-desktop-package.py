@@ -23,6 +23,9 @@ if root.is_file():
         mounted = False
         try:
             if root.suffix == ".deb":
+                dependencies = subprocess.run(["dpkg-deb", "--field", str(root), "Depends"], capture_output=True, text=True, check=True, timeout=15).stdout
+                if not re.search(r"(?:^|[,\s])libsecret-1-0(?:\s|,|$)", dependencies):
+                    raise SystemExit("The desktop DEB is missing its native libsecret dependency.")
                 subprocess.run(["dpkg-deb", "--extract", str(root), directory], check=True, timeout=60)
             elif root.suffix == ".dmg":
                 subprocess.run(["hdiutil", "attach", "-readonly", "-nobrowse", "-mountpoint", directory, str(root)], check=True, capture_output=True, timeout=60)
@@ -57,6 +60,13 @@ for name, expected in manifest["files"].items():
     if digest(resources / name) != expected:
         raise SystemExit("Packaged runtime checksum mismatch: " + name)
 source = Path(__file__).resolve().parents[1]
+if manifest.get("vault_source_sha256") != digest(source / "desktop/native/vault.c"):
+    raise SystemExit("Packaged native vault helper is stale.")
+if not os.access(resources / "niobium-vault", os.X_OK):
+    raise SystemExit("Packaged native vault helper is not executable.")
+vault = subprocess.run([str(resources / "niobium-vault"), "invalid"], capture_output=True, timeout=10)
+if vault.returncode != 14 or vault.stdout or vault.stderr:
+    raise SystemExit("Packaged native vault helper did not enforce its request boundary.")
 for relative in ["desktop/runtime/desktop-host.cjs", "runtime/niobium-agent.cjs", "runtime/niobium-messaging.cjs", "android/runtime/niobium-local.cjs"]:
     origin = source / relative
     if digest(resources / origin.name) != digest(origin):

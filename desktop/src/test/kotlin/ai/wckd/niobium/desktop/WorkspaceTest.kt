@@ -13,7 +13,14 @@ class WorkspaceTest {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private fun open() {
         val hermes = DesktopAgent(false, scope); val dsh = DesktopAgent(true, scope); val runtime = LocalEngine(scope)
-        compose.setContent { DesktopTheme { NiobiumApp(hermes, dsh, runtime) } }
+        val credentials = DesktopCredentials(scope, object : CredentialVault {
+            override val name = "Test vault"
+            override suspend fun status() = VaultStatus.UNAVAILABLE
+            override suspend fun read(kind: CredentialKind, id: String): VaultSecret? = null
+            override suspend fun write(kind: CredentialKind, id: String, label: String, value: String) = Unit
+            override suspend fun delete(kind: CredentialKind, id: String) = Unit
+        }, java.nio.file.Files.createTempDirectory("nb-workspace-vault-").resolve("entries.json"))
+        compose.setContent { DesktopTheme { NiobiumApp(hermes, dsh, runtime, credentials) } }
     }
     @After fun close() { scope.cancel() }
     @Test fun desktopStartsWithoutBootingDshAndNavigatesTheWardrobe() {

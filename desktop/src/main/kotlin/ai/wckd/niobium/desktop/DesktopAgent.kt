@@ -10,6 +10,7 @@ import java.util.UUID
 
 data class AgentPrompt(val id: Any, val method: String, val session: String, val params: JSONObject)
 data class DesktopState(
+    val savedCredentialId: String? = null,
     val connected: Boolean = false, val connecting: Boolean = false, val address: String = "",
     val bots: List<BotProfile> = emptyList(), val specs: Map<String, PixelSpec> = emptyMap(),
     val groups: List<GroupRoom> = emptyList(), val room: GroupRoom? = null, val events: List<RoomEvent> = emptyList(),
@@ -38,11 +39,11 @@ class DesktopAgent(val local: Boolean, private val scope: CoroutineScope, privat
     // Reuse a receipt after an ambiguous room send; changing engines cannot mix it.
     private var receiptScope = ""
 
-    fun connect(address: String, token: String) {
+    fun connect(address: String, token: String, savedCredentialId: String? = null) {
         disconnect()
         val epoch = connectionEpoch
         receiptScope = if (local) "dsh" else RoomOutbox.digest(address.trim().trimEnd('/') + "|" + token)
-        mutable.value = DesktopState(connecting = true, address = address.trim().trimEnd('/'))
+        mutable.value = DesktopState(connecting = true, address = address.trim().trimEnd('/'), savedCredentialId = savedCredentialId)
         val ready = CompletableDeferred<Unit>()
         lateinit var client: GatewayClient
         client = GatewayClient(object : GatewayClient.Listener {
