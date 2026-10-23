@@ -49,7 +49,7 @@ cd desktop
 
 Packaging uses the host platform (Linux `.deb`, macOS `.dmg`) and bundles a Java
 runtime, Node and the locked DSH dependency graph. Use Temurin or another supported
-JDK distribution for packaging. The first macOS preview is unsigned and unnotarized.
+JDK distribution for packaging. The first macOS preview requires macOS 13.5+ and is unsigned and unnotarized.
 Desktop CI runs native tests and packaging on both Linux and macOS; iOS CI is opt-in.
 
 CodeRabbit reviews new pull requests and incremental pushes using

@@ -38,7 +38,7 @@ compose.desktop {
             vendor = "WCKD"
             copyright = "© 2026 WCKD"
             includeAllModules = true
-            macOS { bundleID = "ai.wckd.niobium.desktop"; minimumSystemVersion = "13.0"; iconFile.set(project.file("src/main/resources/niobium.icns")) }
+            macOS { bundleID = "ai.wckd.niobium.desktop"; minimumSystemVersion = "13.5"; iconFile.set(project.file("src/main/resources/niobium.icns")) }
             linux { iconFile.set(project.file("src/main/resources/niobium.png")); packageName = "niobium"; appCategory = "Utility" }
         }
     }

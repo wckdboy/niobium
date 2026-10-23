@@ -372,3 +372,6 @@ specific JVM tests, 67 Node and 15 Python checks.
 Gateway request deadlines report transport errors rather than masquerading as
 caller cancellation. External coroutine cancellation still propagates. A delayed
 WebSocket handshake also clears the desktop Connecting state with a retry action.
+
+The macOS package minimum is 13.5, matching the bundled Node Mach-O load command.
+Installer verification compares the app Info.plist against that binary minimum.

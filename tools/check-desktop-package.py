@@ -3,6 +3,8 @@
 import hashlib
 import json
 import os
+import plistlib
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -40,6 +42,15 @@ if len(manifests) != 1:
     raise SystemExit("Expected one private DSH runtime manifest.")
 manifest = json.loads(manifests[0].read_text())
 resources = manifests[0].parent
+if manifest["platform"].startswith("darwin-"):
+    info = plistlib.loads((launchers[0].parents[1] / "Info.plist").read_bytes())
+    commands = subprocess.run(["otool", "-l", str(resources / "node")], capture_output=True, text=True, check=True, timeout=15).stdout
+    minimum = re.search(r"^\s+minos (\d+(?:\.\d+)+)", commands, re.MULTILINE)
+    def version(value):
+        parts = tuple(map(int, value.split(".")))
+        return parts + (0,) * (3 - len(parts))
+    if minimum is None or version(info["LSMinimumSystemVersion"]) < version(minimum[1]):
+        raise SystemExit("The macOS app minimum is older than its bundled Node runtime.")
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 for name, expected in manifest["files"].items():
