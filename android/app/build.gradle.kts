@@ -66,6 +66,7 @@ android {
         )
     }
     sourceSets["main"].assets.directories += layout.buildDirectory.dir("generated/runtime/assets").get().asFile.path
+    sourceSets["androidTest"].assets.directories += file("../tests/fixtures").path
     sourceSets["main"].jniLibs.directories += layout.buildDirectory.dir("generated/runtime/jniLibs").get().asFile.path
     androidResources.noCompress += "image"
 }

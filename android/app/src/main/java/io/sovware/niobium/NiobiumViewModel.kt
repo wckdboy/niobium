@@ -119,18 +119,18 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
         }
     }
 
-    fun bootstrap(demoRequested: Boolean = false, botName: String? = null) {
+    fun bootstrap(demoRequested: Boolean = false, botName: String? = null, initialConnection: Connection? = null) {
         if (bootstrapped) return
         bootstrapped = true
         launchBotName = botName
-        val saved = prefs.loadConnection()
+        val saved = initialConnection ?: prefs.loadConnection()
         when {
             demoRequested -> enterDemo(botName)
             managedEngine == null && (providerPrefs.getString("agent-provider", null) == "dsh" || providerPrefs.getBoolean("local-mode", false)) -> useLocal()
             saved != null && saved.isDemo -> enterDemo(botName)
             saved != null -> {
                 state = state.copy(needsConnection = false, connection = saved)
-                connect(saved.url, saved.token, saved.name, remember = false)
+                connect(saved.url, saved.token, saved.name, remember = initialConnection != null)
             }
             else -> state = state.copy(needsConnection = true)
         }
@@ -1562,11 +1562,12 @@ class NiobiumEngineHub(app: Application) : AndroidViewModel(app) {
     private val prefs = app.getSharedPreferences("niobium", android.content.Context.MODE_PRIVATE)
     private var started = false
     init { hermes.engineHub = this; local.engineHub = this }
-    fun bootstrap(demo: Boolean = false, bot: String? = null) {
+    fun bootstrap(demo: Boolean = false, bot: String? = null, initialConnection: Connection? = null) {
         if (started) return; started = true
-        val localSelected = prefs.getString("agent-provider", null) == "dsh" || prefs.getBoolean("local-mode", false)
+        val localSelected = initialConnection == null && (prefs.getString("agent-provider", null) == "dsh" || prefs.getBoolean("local-mode", false))
         active = if (!demo && localSelected) local else hermes
-        hermes.bootstrap(demo, if (demo || !localSelected) bot else null)
+        if (!demo && initialConnection != null) activate(AgentEngine.HERMES)
+        hermes.bootstrap(demo, if (demo || !localSelected) bot else null, initialConnection)
         local.prepareStoppedLocal(if (!demo && localSelected) bot else null)
         if (!demo && prefs.getBoolean("dsh-enabled", localSelected)) local.useLocal()
     }

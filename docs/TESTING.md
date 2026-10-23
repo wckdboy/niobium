@@ -277,3 +277,9 @@ prevents a paid prompt, clearing waits for in-flight ownership to settle, and
 failed archival retains room ownership for a later retry. The real Android DSH
 test starts through the engine hub with a local Pixel launch target and verifies
 that its chat opens in the selected local workspace.
+
+An isolated Node/WebSocket Hermes fixture now runs inside the Android test
+sandbox to prove explicit gateway launches override saved DSH selection and
+open the requested remote chat. Android reaches its real DSH DM through Pixels
+→ Rooms before clearing it. The full iOS DSH lifecycle test also opens Rooms
+from Pixels, then returns to its model/history acceptance flow.

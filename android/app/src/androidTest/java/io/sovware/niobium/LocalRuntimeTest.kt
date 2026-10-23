@@ -241,6 +241,54 @@ class LocalRuntimeTest {
             executor.shutdownNow()
         }
     }
+    @Test fun explicitGatewayLaunchOverridesSavedLocalWithoutLosingThePixel() = kotlinx.coroutines.runBlocking {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        val runtime = RuntimeInstaller(context).prepare()
+        val name = ".launch-fixture-" + java.util.UUID.randomUUID() + ".mjs"
+        val script = java.io.File(runtime.home,"workspace/$name")
+        script.writeText(instrumentation.context.assets.open("gateway.mjs").bufferedReader().use { it.readText() })
+        val process = RuntimeCommand.process(runtime,listOf("node","/root/workspace/$name")).start()
+        val reader = process.inputStream.bufferedReader()
+        val executor = Executors.newSingleThreadExecutor()
+        val preferences = context.getSharedPreferences("niobium",android.content.Context.MODE_PRIVATE)
+        val previousProvider = preferences.getString("agent-provider",null)
+        val hadEnabled = preferences.contains("dsh-enabled")
+        val wasEnabled = preferences.getBoolean("dsh-enabled",false)
+        val secure = SecurePrefs(context)
+        val previousConnection = secure.loadConnection()
+        val store = androidx.lifecycle.ViewModelStore()
+        try {
+            val line = executor.submit<String> { reader.readLine() }.get(45,TimeUnit.SECONDS)
+            assertTrue(line,line.startsWith("PORT "))
+            val origin = "http://127.0.0.1:${line.substringAfter("PORT ").toInt()}/proxy"
+            var hub: NiobiumEngineHub? = null
+            instrumentation.runOnMainSync {
+                preferences.edit().putString("agent-provider","dsh").putBoolean("dsh-enabled",false).commit()
+                hub = NiobiumEngineHub(context.applicationContext as android.app.Application)
+                store.put("explicit-launch",hub!!)
+                hub!!.bootstrap(bot = "remote-fixture",initialConnection = Connection("Launch fixture",origin,"fixture-token+&?"))
+                assertSame(hub!!.hermes,hub!!.active)
+            }
+            val deadline = System.nanoTime()+TimeUnit.SECONDS.toNanos(45)
+            while (System.nanoTime()<deadline && (hub!!.hermes.state.loadingChat || hub!!.hermes.state.sessionId==null) && hub!!.hermes.state.error==null) kotlinx.coroutines.delay(100)
+            assertEquals(hub!!.hermes.state.error,"remote-fixture",hub!!.hermes.state.activeBot?.name)
+            assertEquals("fixture-session",hub!!.hermes.state.sessionId)
+            assertEquals(AgentEngine.HERMES,hub!!.active.state.engine)
+            assertNull(hub!!.local.state.activeBot)
+            assertFalse(hub!!.local.state.connected)
+        } finally {
+            instrumentation.runOnMainSync { store.clear() }
+            if (previousConnection==null) secure.clear() else secure.saveConnection(previousConnection)
+            preferences.edit().putString("agent-provider",previousProvider).apply {
+                if (hadEnabled) putBoolean("dsh-enabled",wasEnabled) else remove("dsh-enabled")
+            }.commit()
+            process.outputStream.close();process.waitFor(20,TimeUnit.SECONDS)
+            if (process.isAlive) process.destroyForcibly()
+            reader.close();executor.shutdownNow();script.delete()
+        }
+    }
+
     @Test fun nativeDshProviderCreatesPixelsAndStreamsThroughRealDsh() = kotlinx.coroutines.runBlocking {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
@@ -379,7 +427,11 @@ class LocalRuntimeTest {
             val activity = instrumentation.startActivitySync(android.content.Intent(context, MainActivity::class.java)
                 .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK).putExtra("demo", true)) as MainActivity
             try {
-                instrumentation.runOnMainSync { activity.setContent { GroupChatScreen(vm!!,dm) } }
+                instrumentation.runOnMainSync { vm!!.closeGroup();activity.setContent { NiobiumTheme { NiobiumApp(vm!!,"pixels") } } }
+                compose.onNodeWithTag("pixels.rooms").performClick()
+                compose.onNodeWithText("Rooms").assertIsDisplayed()
+                compose.onNodeWithText(dm.name).performClick()
+                compose.waitUntil(5000) { compose.onAllNodesWithText(note).fetchSemanticsNodes().isNotEmpty() }
                 compose.onNodeWithTag("room.actions").performClick()
                 compose.onNodeWithText("Clear room").performClick()
                 compose.onNodeWithTag("room.clear.confirm").assertIsDisplayed()

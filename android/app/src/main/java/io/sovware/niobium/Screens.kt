@@ -35,6 +35,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.rotate
@@ -80,9 +83,10 @@ fun PixelsScreen(vm: NiobiumViewModel, state: NbState, onNewPixel: () -> Unit, o
                         Spacer(Modifier.height(5.dp))
                         Text("Your agents, close at hand.", color = Nb.Secondary, fontSize = 14.sp)
                     }
-                    if (state.engine == AgentEngine.HERMES) Box(Modifier.size(38.dp).clip(CircleShape).background(Nb.FillSoft)
-                        .border(1.dp, Nb.Line, CircleShape).clickable { onOpenRooms() }, contentAlignment = Alignment.Center) {
-                        Text("◎", color = Nb.Secondary, fontSize = 13.sp)
+                    Box(Modifier.size(44.dp).clip(PixelButtonShape).background(Nb.FillSoft)
+                        .border(1.dp, Nb.Line, PixelButtonShape).clickable { onOpenRooms() }
+                        .semantics { contentDescription = "Rooms" }.testTag("pixels.rooms"), contentAlignment = Alignment.Center) {
+                        PixelIcon(PixelGlyph.PIXELS, Nb.Secondary,20.dp)
                     }
                     Spacer(Modifier.width(7.dp))
                     Box(Modifier.size(38.dp).clip(CircleShape).background(Nb.FillSoft)
