@@ -442,7 +442,7 @@ fun CastStudioSheet(vm: NiobiumViewModel, profile: String, title: String, onDism
     ModalBottomSheet(onDismissRequest = { if (!saving) onDismiss() }, containerColor = Nb.Ink,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true,
             confirmValueChange = { !saving || it != SheetValue.Hidden })) {
-        LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+        LazyColumn(modifier = Modifier.testTag("studio.content"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
             item {
                 Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     CastPortrait(selected, 160.dp)
@@ -477,7 +477,8 @@ fun CastStudioSheet(vm: NiobiumViewModel, profile: String, title: String, onDism
                         Row(Modifier.weight(1f).clip(RoundedCornerShape(14.dp))
                             .background(if (selected.id == member.id) Nb.Ion.copy(alpha = 0.1f) else Nb.FillSoft)
                             .border(1.dp, if (selected.id == member.id) Nb.Ion.copy(alpha = 0.4f) else Nb.Line, RoundedCornerShape(14.dp))
-                            .clickable(enabled = !saving) { selected = member.copy(companion = selected.companion, companionName = selected.companionName) }
+                            .clickable(enabled = !saving) { selected = member.copy(companion = selected.companion, companionName = selected.companionName, companionArt = selected.companionArt) }
+                            .testTag("studio.cast.${member.id}")
                             .padding(8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             CastPortrait(member, 54.dp, showCompanion = false)
                             Text(member.name, color = Nb.Text, style = NbTitle, fontSize = 13.sp)

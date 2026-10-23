@@ -154,25 +154,6 @@ class LocalRuntimeTest {
             if (node == null) return emptyList()
             return listOf(node) + (0 until node.childCount).flatMap { walk(node.getChild(it)) }
         }
-        fun click(text: String) {
-            repeat(60) {
-                val root = instrumentation.uiAutomation.rootInActiveWindow
-                for (node in walk(root).filter { it.isVisibleToUser && it.text?.toString() == text }) {
-                    var current: android.view.accessibility.AccessibilityNodeInfo? = node
-                    repeat(5) {
-                        if (current?.isClickable == true && current?.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK) == true) {
-                            instrumentation.waitForIdleSync()
-                            Thread.sleep(150)
-                            return
-                        }
-                        current = current?.parent
-                    }
-                }
-                walk(root).filter { it.isScrollable }.forEach { it.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_SCROLL_FORWARD) }
-                Thread.sleep(150)
-            }
-            fail("Missing native control: " + text + "; screen=" + walk(instrumentation.uiAutomation.rootInActiveWindow).mapNotNull { it.text }.joinToString(" | "))
-        }
         fun findWeb(view: android.view.View): android.webkit.WebView? {
             if (view is android.webkit.WebView) return view
             if (view is android.view.ViewGroup) for (index in 0 until view.childCount) findWeb(view.getChildAt(index))?.let { return it }
@@ -186,10 +167,11 @@ class LocalRuntimeTest {
             assertEquals(running.message, io.sovware.niobium.runtime.RuntimePhase.RUNNING, running.phase)
             val origin = running.origin!!
             instrumentation.runOnMainSync { assertNull("DSH replaced the native app with a WebView", findWeb(activity.window.decorView)) }
-            click("Home")
-            Thread.sleep(300)
-            assertTrue("Native dashboard was not shown", walk(instrumentation.uiAutomation.rootInActiveWindow).any { it.text?.toString() == "Your Pixels" })
-            click("Engines")
+            compose.onNodeWithTag("nav.home").performClick().assertIsSelected()
+            val dashboardDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10)
+            while (System.nanoTime() < dashboardDeadline && walk(instrumentation.uiAutomation.rootInActiveWindow).none { it.text?.toString() == "Your Pixels" }) Thread.sleep(100)
+            assertTrue("Native dashboard was not shown; screen=" + walk(instrumentation.uiAutomation.rootInActiveWindow).mapNotNull { it.text }.joinToString(" | "), walk(instrumentation.uiAutomation.rootInActiveWindow).any { it.text?.toString() == "Your Pixels" })
+            compose.onNodeWithTag("nav.local").performClick().assertIsSelected()
             // Connection completion inserts the provider card above this control.
             // Wait for that layout before finding/clicking its accessibility node.
             val readyDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30)
@@ -199,23 +181,29 @@ class LocalRuntimeTest {
             assertTrue("Local provider did not become ready", walk(instrumentation.uiAutomation.rootInActiveWindow).any {
                 it.text?.toString() == "Ready · chats and tasks run in Niobium"
             })
-            click("Advanced controls")
-            click("Advanced DSH workspace")
+            compose.onNodeWithText("Advanced controls").performScrollTo().performClick()
+            compose.onNodeWithText("Advanced DSH workspace").performScrollTo().performClick()
+            compose.onNodeWithText("Advanced DSH").assertIsDisplayed()
             var cssHeight = 0.0
+            var webState = "No WebView"
             val renderDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15)
             while (cssHeight < 300 && System.nanoTime() < renderDeadline) {
+                compose.waitForIdle()
                 val result = java.util.concurrent.CountDownLatch(1)
                 instrumentation.runOnMainSync {
                     val web = findWeb(activity.window.decorView)
                     if (web == null) result.countDown()
-                    else web.evaluateJavascript("(()=>{let e=document.createElement('div');e.style.height='100vh';document.body.append(e);let h=e.getBoundingClientRect().height;e.remove();return h})()") {
-                        cssHeight = it.toDoubleOrNull() ?: 0.0; result.countDown()
+                    else {
+                        webState = "${web.width}×${web.height}; ${web.url}"
+                        web.evaluateJavascript("(()=>{let e=document.createElement('div');e.style.height='100vh';document.body.append(e);let h=e.getBoundingClientRect().height;e.remove();return h})()") {
+                            cssHeight = it.toDoubleOrNull() ?: 0.0; result.countDown()
+                        }
                     }
                 }
                 result.await(2, TimeUnit.SECONDS)
                 if (cssHeight < 300) Thread.sleep(200)
             }
-            assertTrue("Advanced WebView CSS viewport collapsed", cssHeight > 300)
+            assertTrue("Advanced WebView CSS viewport collapsed: $cssHeight; $webState", cssHeight > 300)
             io.sovware.niobium.runtime.LocalRuntime.stop(context)
             val stopped = System.nanoTime() + TimeUnit.SECONDS.toNanos(20)
             while (System.nanoTime() < stopped && io.sovware.niobium.runtime.LocalRuntime.state.value.phase != io.sovware.niobium.runtime.RuntimePhase.OFF) Thread.sleep(100)

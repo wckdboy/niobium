@@ -89,6 +89,43 @@ class CharacterEngineTest {
             assertFalse(context.getSharedPreferences(namespace,android.content.Context.MODE_PRIVATE).all.toString().contains("Keep the draft"))
         } finally { context.deleteSharedPreferences(namespace) }
     }
+    @Test fun changingTheCastPreservesCustomCompanionArtWhenSaving() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        val profile = "studio-art-test-" + java.util.UUID.randomUUID()
+        val fixture = JSONArray(instrumentation.context.assets.open("custom-art.json").bufferedReader().use { it.readText() })
+        val art = (0 until fixture.length()).map { PixelArt.parse(fixture.getJSONObject(it).getJSONObject("art")) }.first { it.size == 16 }
+        val initial = Cast.all.first().copy(companion = "mimic", companionName = "Bite", companionArt = art)
+        CastStore.put(context,profile,initial)
+        val activity = instrumentation.startActivitySync(android.content.Intent(context,MainActivity::class.java)
+            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK).putExtra("demo",true)) as MainActivity
+        val vmStore = androidx.lifecycle.ViewModelStore()
+        val finished = java.util.concurrent.atomic.AtomicBoolean(false)
+        try {
+            instrumentation.runOnMainSync {
+                val vm = NiobiumViewModel(activity.application)
+                vmStore.put("studio-test",vm)
+                vm.bootstrap(demoRequested = true)
+                activity.setContent { NiobiumTheme { CastStudioSheet(vm,profile,"Studio test") { finished.set(true) } } }
+            }
+            compose.onNodeWithTag("studio.content").performScrollToNode(hasTestTag("studio.cast.nova"))
+            compose.onNodeWithTag("studio.cast.nova").performClick()
+            compose.onNodeWithTag("studio.content").performScrollToNode(hasText("Use this character"))
+            compose.onNodeWithText("Use this character").performClick()
+            compose.waitUntil(3000) { finished.get() }
+            val saved = CastStore.get(context,profile)
+            assertEquals("nova",saved.id);assertEquals("mimic",saved.companion)
+            assertEquals("Bite",saved.companionName);assertEquals(art,saved.companionArt)
+        } finally {
+            instrumentation.runOnMainSync { vmStore.clear();activity.finish() }
+            for (namespace in listOf("niobium_cast","niobium_portraits","niobium_companions")) {
+                val prefs = context.getSharedPreferences(namespace,android.content.Context.MODE_PRIVATE)
+                val edit = prefs.edit()
+                prefs.all.keys.filter { it == profile || it.endsWith(".$profile") }.forEach { edit.remove(it) }
+                edit.commit()
+            }
+        }
+    }
     @Test fun imageProviderKeyUsesTheActualDeviceKeystore() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val namespace = "niobium.artist.tests." + java.util.UUID.randomUUID()
