@@ -40,6 +40,49 @@ class LocalRuntimeTest {
         fun snapshot(): String = synchronized(tail) { tail.toString() }
     }
 
+    @Test fun nativeProviderSetupActivatesModelRoutesAndKeepsKeysOutOfSettings() = kotlinx.coroutines.runBlocking {
+        val runtime = RuntimeInstaller(InstrumentationRegistry.getInstrumentation().targetContext).prepare()
+        val name = ".provider-test-" + java.util.UUID.randomUUID()
+        val home = java.io.File(runtime.home, name).apply { mkdirs() }
+        val guestHome = "/root/$name"
+        val socket = java.io.File(runtime.root, "tmp/nb-providers.sock").apply { delete() }
+        val proxy = LocalRuntimeProxy(socket.path)
+        val process = RuntimeCommand.process(runtime, listOf("/usr/local/bin/dsh-serve"), mapOf(
+            "DSH_PORT" to proxy.port.toString(), "NIOBIUM_SOCKET" to "/tmp/nb-providers.sock", "NIOBIUM_AGENT_TOKEN" to proxy.key,
+            "DSH_HOME" to guestHome, "NIOBIUM_DSH_HOME" to guestHome,
+            "NODE_OPTIONS" to "--require /usr/local/lib/niobium-local.cjs --require /usr/local/lib/niobium-agent.cjs")).start()
+        Thread { process.inputStream.use { it.copyTo(java.io.OutputStream.nullOutputStream()) } }.apply { isDaemon = true; start() }
+        val ready = kotlinx.coroutines.CompletableDeferred<Unit>()
+        val client = GatewayClient(object : GatewayClient.Listener {
+            override fun onReady(payload: org.json.JSONObject) { ready.complete(Unit) }
+            override fun onNotification(type: String, sessionId: String, payload: org.json.JSONObject) {}
+            override fun onServerRequest(id: Any, method: String, params: org.json.JSONObject) {}
+            override fun onClosed(reason: String) { ready.completeExceptionally(IllegalStateException(reason)) }
+        })
+        try {
+            kotlinx.coroutines.withTimeout(90_000) { while (process.isAlive && !LocalRuntimeProxy.ready(socket.path)) kotlinx.coroutines.delay(200) }
+            assertTrue("DSH did not start", process.isAlive)
+            client.connect(proxy.origin + "/niobium", proxy.key, proxy.key)
+            kotlinx.coroutines.withTimeout(20_000) { ready.await() }
+            val before = client.request("local.providers").getJSONObject("default").getString("provider")
+            for ((ref, id) in listOf("DEEPSEEK_API_KEY" to "deepseek-official", "OPENAI_API_KEY" to "openai", "ANTHROPIC_API_KEY" to "anthropic")) {
+                val key = "fixture-$id-private-only"
+                val result = client.request("local.credential", org.json.JSONObject().put("ref", ref).put("value", key), 30_000)
+                val provider = result.objects("providers").first { it.getString("id") == id }
+                assertTrue(provider.getBoolean("active")); assertTrue(provider.getBoolean("key_configured"))
+                assertTrue(provider.getJSONArray("models").length() > 0); assertFalse(result.toString().contains(key))
+                assertEquals(before, result.getJSONObject("default").getString("provider"))
+                assertFalse(java.io.File(home, "settings.yaml").readText().contains(key))
+            }
+            assertEquals(384, android.system.Os.stat(java.io.File(home, ".credentials.yaml").path).st_mode and 511)
+        } finally {
+            client.disconnect(true); proxy.close(); process.outputStream.close()
+            if (!process.waitFor(15, TimeUnit.SECONDS)) { process.destroyForcibly(); process.waitFor(3, TimeUnit.SECONDS) }
+            socket.delete()
+            java.nio.file.Files.walk(home.toPath()).use { paths -> paths.sorted(Comparator.reverseOrder()).forEach { java.nio.file.Files.deleteIfExists(it) } }
+        }
+    }
+
     @Test fun dshWebIsPrivateAndAuthenticated() {
         val runtime = RuntimeInstaller(InstrumentationRegistry.getInstrumentation().targetContext).prepare()
         val socket = java.io.File(runtime.root, "tmp/nb-test.sock")
