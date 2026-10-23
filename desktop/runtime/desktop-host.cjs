@@ -27,7 +27,11 @@ async function prepareAdapters(root, home) {
   // Niobium presets, before DSH scans them. Keep unrelated presets untouched.
   let metadata;
   try { metadata = JSON.parse(await fs.readFile(path.join(home, 'niobium-pixels.json'), 'utf8')); }
-  catch (error) { if (error.code === 'ENOENT') return pluginPath; throw error; }
+  catch (error) {
+    if (error.code === 'ENOENT') return pluginPath;
+    if (error instanceof SyntaxError) throw new Error('Local Pixel metadata needs repair. Its original file is preserved.');
+    throw error;
+  }
   if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) throw new Error('Local Pixel metadata needs repair. Its original file is preserved.');
   for (const [id, entry] of Object.entries(metadata)) {
     if (!/^[a-z][a-z0-9-]{1,30}$/.test(id) || (!Array.isArray(entry?.enabled_toolsets) || !entry.enabled_toolsets.includes('messaging')) || entry.ui_meta?.niobium?.pixel_spec?.name !== id) continue;
@@ -39,7 +43,11 @@ async function prepareAdapters(root, home) {
       }
       if (!(await fs.lstat(preset)).isFile()) throw new Error('A local preset is linked or needs repair: ' + id);
       rows = JSON.parse(await fs.readFile(preset, 'utf8'));
-    } catch (error) { if (error.code === 'ENOENT') continue; throw error; }
+    } catch (error) {
+      if (error.code === 'ENOENT') continue;
+      if (error instanceof SyntaxError) throw new Error('Review this local preset before updating its adapter: ' + id);
+      throw error;
+    }
     if (!Array.isArray(rows)) throw new Error('Review this local preset before updating its adapter: ' + id);
     let changed = false;
     for (const row of rows) {

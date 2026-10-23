@@ -92,5 +92,13 @@ test('desktop relocation migrates only owned messaging rows to a stable private 
     assert.equal((await stat(plugin)).mode & 0o777,0o600);
     assert.deepEqual(JSON.parse(await (await import('node:fs/promises')).readFile(path.join(home,'niobium-pixels.json'),'utf8')),metadata);
     assert.equal(await prepareAdapters(root,home),plugin);
+    const metadataFile = path.join(home,'niobium-pixels.json'), presetFile = path.join(preset,'agent.cordis.yml');
+    await writeFile(metadataFile,'{broken metadata');
+    await assert.rejects(prepareAdapters(root,home),/metadata needs repair/);
+    assert.equal(await readFile(metadataFile,'utf8'),'{broken metadata');
+    await writeFile(metadataFile,JSON.stringify(metadata));
+    await writeFile(presetFile,'[broken preset');
+    await assert.rejects(prepareAdapters(root,home),/Review this local preset/);
+    assert.equal(await readFile(presetFile,'utf8'),'[broken preset');
   } finally { await rm(home,{recursive:true,force:true}); }
 });
