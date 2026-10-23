@@ -8,7 +8,7 @@ A pixel-art home for agents on Linux, macOS and Android: connect Hermes, run
 DSH locally, or keep both engines ready. Pixels have their own personas, tools
 and companions. The existing iOS client is retained; iOS release work is parked.
 
-**2.1.1 preview: [Linux, macOS and Android](https://github.com/wckdboy/niobium/releases/tag/v2.1.1-beta.1).** Full Hermes parity is the target;
+**Desktop [2.1.2 beta.1](https://github.com/wckdboy/niobium/releases/tag/v2.1.2-beta.1) · Android [2.1.1/code14](https://github.com/wckdboy/niobium/releases/tag/v2.1.1-beta.1).** Full Hermes parity is the target;
 it is not finished. The current scope is in [PLAN.md](PLAN.md), the implementation
 audit is in [docs/HERMES-PARITY.md](docs/HERMES-PARITY.md), and the work is tracked
 in [Plane](https://app.plane.so/wckd/projects/2fbcf987-20de-43dc-80ac-0a6bab7ec03a/issues/).
@@ -36,7 +36,7 @@ model choice sets the default for new chats. Existing conversations retain their
 model. Compatible local servers may omit a key. Hermes uses its host’s providers.
 Remote gateways require HTTPS; HTTP is reserved for literal loopback addresses.
 Authenticated gateway requests do not follow redirects.
-The 2.1.2 desktop candidate adds opt-in macOS Keychain and Linux Secret Service
+Desktop 2.1.2 adds opt-in macOS Keychain and Linux Secret Service
 storage for named gateway and image accounts. Session-only use remains available;
 saved credentials are loaded only when you choose Use. DSH provider keys still
 use its owner-only credential file. Android retains Keystore storage.
@@ -71,12 +71,14 @@ Desktop CI runs native tests and packaging on both Linux and macOS; iOS CI is op
 
 CodeRabbit reviews new pull requests and incremental pushes using
 [repository guidance](.coderabbit.yaml). Automatic Greptile reviews are disabled.
-The published 2.1.1 beta.1 checks include 33 shared-core, 22 desktop and seven Android-specific JVM
-tests, 85 Node checks and 15 Python checks. Native installer checks run the
-packaged app and its private DSH API, and reject stale adapters.
-CodeRabbit [approved PR #12](https://github.com/wckdboy/niobium/pull/12); all active
-[release CI jobs](https://github.com/wckdboy/niobium/actions/runs/39984243147) pass.
-See the [release evidence](docs/evidence/beta211-release-validation.json).
+The published desktop 2.1.2 beta.1 checks include 33 shared-core, 42 desktop,
+seven additional Android JVM, 85 Node and 15 Python checks. Native macOS/Linux
+vault acceptance uses isolated keychains/services, verifies account isolation,
+locked operations and deletion, and preserves data across helper/service restarts.
+Installer checks exercise the packaged launchers, private runtime and helper.
+CodeRabbit [approved PR #13](https://github.com/wckdboy/niobium/pull/13); all active
+[release CI jobs](https://github.com/wckdboy/niobium/actions/runs/40010407815) pass. Android remains 2.1.1/code14.
+See the [release evidence](docs/evidence/beta212-release-validation.json).
 
 <img src="site/public/desktop-preview.png" width="760" alt="Niobium desktop wardrobe">
 

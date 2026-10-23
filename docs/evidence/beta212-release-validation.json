@@ -1,0 +1,382 @@
+{
+  "schema_version": 2,
+  "verified_at": "2026-10-23T19:38:07.439125+00:00",
+  "release_id": 422236902,
+  "release_url": "https://github.com/wckdboy/niobium/releases/tag/v2.1.2-beta.1",
+  "published_at": "2026-10-23T19:35:52Z",
+  "source_commit": "7b03323a5e016791166b45d99af2e2d48caa8f79",
+  "merge_commit": "8a968902d4bfea67650a974b87d4dd86b6285aca",
+  "source_and_merge_git_tree": "866d2e91efdb628d317fcdc26d2617a7421e1b77",
+  "ci": {
+    "url": "https://github.com/wckdboy/niobium/actions/runs/40010407815",
+    "source_commit": "7b03323a5e016791166b45d99af2e2d48caa8f79",
+    "status": "success",
+    "jobs": [
+      {
+        "name": "desktop (ubuntu-24.04)",
+        "conclusion": "success",
+        "url": "https://github.com/wckdboy/niobium/actions/runs/40010407815/job/120609016951",
+        "startedAt": "2026-10-23T19:18:50Z",
+        "completedAt": "2026-10-23T19:29:39Z"
+      },
+      {
+        "name": "shared",
+        "conclusion": "success",
+        "url": "https://github.com/wckdboy/niobium/actions/runs/40010407815/job/120609017342",
+        "startedAt": "2026-10-23T19:18:50Z",
+        "completedAt": "2026-10-23T19:19:07Z"
+      },
+      {
+        "name": "android",
+        "conclusion": "success",
+        "url": "https://github.com/wckdboy/niobium/actions/runs/40010407815/job/120609017424",
+        "startedAt": "2026-10-23T19:18:50Z",
+        "completedAt": "2026-10-23T19:24:19Z"
+      },
+      {
+        "name": "desktop (macos-15)",
+        "conclusion": "success",
+        "url": "https://github.com/wckdboy/niobium/actions/runs/40010407815/job/120609017639",
+        "startedAt": "2026-10-23T19:18:50Z",
+        "completedAt": "2026-10-23T19:28:19Z"
+      },
+      {
+        "name": "ios",
+        "conclusion": "skipped",
+        "url": "https://github.com/wckdboy/niobium/actions/runs/40010407815/job/120609018703",
+        "startedAt": "2026-10-23T19:18:48Z",
+        "completedAt": "2026-10-23T19:18:47Z"
+      }
+    ]
+  },
+  "review": {
+    "provider": "CodeRabbit",
+    "pr": "https://github.com/wckdboy/niobium/pull/13",
+    "state": "APPROVED",
+    "review_id": 5633516564,
+    "source_commit": "7b03323a5e016791166b45d99af2e2d48caa8f79",
+    "author_override_used": false,
+    "greptile_automatic_reviews": false,
+    "url": "https://github.com/wckdboy/niobium/pull/13#pullrequestreview-5633516564"
+  },
+  "checks": {
+    "shared_kotlin_core": 33,
+    "desktop_jvm_and_ui": 42,
+    "android_specific_jvm": 7,
+    "android_total_jvm": 40,
+    "node": 85,
+    "python": 15,
+    "native_vault_acceptance": {
+      "linux": {
+        "platform": "linux-secret-service",
+        "native_operations": 23,
+        "isolated_vault": true,
+        "restart_persistence": true,
+        "account_and_kind_isolation": true,
+        "locked_reads_writes_deletes_rejected": true,
+        "idempotent_delete": true,
+        "invalid_requests_rejected": true,
+        "private_bus_mandatory": true
+      },
+      "macos": {
+        "platform": "macos-keychain",
+        "native_operations": 27,
+        "isolated_vault": true,
+        "restart_persistence": true,
+        "account_and_kind_isolation": true,
+        "locked_reads_writes_deletes_rejected": true,
+        "idempotent_delete": true,
+        "invalid_requests_rejected": true,
+        "private_bus_mandatory": false
+      }
+    },
+    "installed_launchers_and_native_installers": "pass on Linux x64 and macOS ARM64",
+    "final_macos_installer_checked_locally": true
+  },
+  "native_vault_receipts": [
+    {
+      "platform": "macos-keychain",
+      "path": "docs/evidence/beta212-native-vault-macos.json",
+      "sha256": "19d72de612ec86723b6dac7a8a49360d4cf1b80ac277b70597fac6b844c68315",
+      "source_commit": "7b03323a5e016791166b45d99af2e2d48caa8f79",
+      "native_operations": 27,
+      "isolated_vault": true,
+      "restart_persistence": true,
+      "account_and_kind_isolation": true,
+      "locked_reads_writes_deletes_rejected": true,
+      "idempotent_delete": true,
+      "invalid_requests_rejected": true,
+      "private_bus_mandatory": false
+    },
+    {
+      "platform": "linux-secret-service",
+      "path": "docs/evidence/beta212-native-vault-linux.json",
+      "sha256": "c53c01892e72cd72030024d197aac4c08a8873c9aafad3f1259ed31314413a82",
+      "source_commit": "7b03323a5e016791166b45d99af2e2d48caa8f79",
+      "native_operations": 23,
+      "isolated_vault": true,
+      "restart_persistence": true,
+      "account_and_kind_isolation": true,
+      "locked_reads_writes_deletes_rejected": true,
+      "idempotent_delete": true,
+      "invalid_requests_rejected": true,
+      "private_bus_mandatory": true
+    }
+  ],
+  "desktop": {
+    "version": "2.1.2",
+    "bundle_id": "ai.wckd.niobium.desktop",
+    "platforms": [
+      "linux-x64",
+      "darwin-arm64"
+    ],
+    "linux_tested": "Ubuntu 24.04 x64",
+    "linux_dependency": "libsecret-1-0 and a configured Secret Service for optional vault use",
+    "macos_minimum": "13.5",
+    "macos_distribution_signed": false,
+    "macos_notarized": false,
+    "macos_signature": "ad-hoc",
+    "jdk": "Temurin 17.0.21+9",
+    "node": "24.22.1",
+    "dsh": "0.1.0-rc.7",
+    "scope": "preview",
+    "vault_storage": "opt-in OS vault for named gateway and image accounts; session-only use remains available",
+    "vault_boundary": "OS-user-level storage at rest. Same-user processes/local tools can read saved values. The unsigned helper does not validate a signed parent; Linux Secret Service shares the user session.",
+    "dsh_provider_keys": "unchanged owner-only credential file; vault bridge remains open",
+    "saved_credentials_autoloaded": false,
+    "image_receipt_ownership": "Another/rotated key or legacy receipt requires explicit account confirmation and a successful matching status response; unknown submissions never replay their POST."
+  },
+  "android": {
+    "rebuilt_in_this_release": false,
+    "version": "2.1.1",
+    "version_code": 14,
+    "retained_release": "https://github.com/wckdboy/niobium/releases/tag/v2.1.1-beta.1",
+    "apk_url": "https://github.com/wckdboy/niobium/releases/download/v2.1.1-beta.1/Niobium-2.1.1-beta.1-android-arm64.apk",
+    "sha256": "8394fb5105825d7f8c8339b53d40a95c96a8fd77825bd3d341d398f9964398a2",
+    "physical_device_tested": false,
+    "physical_16kb_device_tested": false,
+    "retained_public_download": {
+      "public_http_status": 200,
+      "size": 90802742,
+      "url": "https://github.com/wckdboy/niobium/releases/download/v2.1.1-beta.1/Niobium-2.1.1-beta.1-android-arm64.apk",
+      "verified_at": "2026-10-23T19:37:47.196158+00:00"
+    }
+  },
+  "runtime_hashes": {
+    "desktop/native/vault.c": "962bc519372c93419408e8d63d1084210933704da137f7f9ba6c3dcea4c87514",
+    "runtime/niobium-agent.cjs": "211073f4eee26b1a3041716f70d4a005978cd6bdf0312b353c77b521546e3901",
+    "runtime/niobium-messaging.cjs": "f04695ffd40a03f33f207d5b6b0d63f45dacb504085fe9af20a05ac3234b5e2e",
+    "android/runtime/niobium-local.cjs": "dd7391760bcb9195c2e6855ebadd634c7143a692ac81cec40004a2a5cce91f80",
+    "desktop/runtime/desktop-host.cjs": "19501b2bc55591cbaf0daf71d0af93518d161fa153053cf99700982266f5d032",
+    "desktop/runtime/package-lock.json": "bf2149e66f67536036ab81329c65c8034e6b1d79dfb9374ddfa903650c643aee"
+  },
+  "public_assets": [
+    {
+      "name": "Niobium-2.1.2-beta.1-linux-amd64.deb",
+      "size": 197036214,
+      "sha256": "6e68efd39f2a1af09252bb96cdfb9a32180eb9673826287d88d361416795c5b4",
+      "public_http_status": 200,
+      "url": "https://github.com/wckdboy/niobium/releases/download/v2.1.2-beta.1/Niobium-2.1.2-beta.1-linux-amd64.deb"
+    },
+    {
+      "name": "Niobium-2.1.2-beta.1-macos-arm64.dmg",
+      "size": 210023888,
+      "sha256": "fb6a7a7ef1613bc80387939b628f3a99378eeb5b65724badddbfde8e33d06a08",
+      "public_http_status": 200,
+      "url": "https://github.com/wckdboy/niobium/releases/download/v2.1.2-beta.1/Niobium-2.1.2-beta.1-macos-arm64.dmg"
+    },
+    {
+      "name": "OpenJDK17U-jdk-sources_17.0.21_9.tar.gz",
+      "size": 109791166,
+      "sha256": "89a455fa83b19e3a166bca47a465d51712441be607543dd465083ef2437a426d",
+      "public_http_status": 200,
+      "url": "https://github.com/wckdboy/niobium/releases/download/v2.1.2-beta.1/OpenJDK17U-jdk-sources_17.0.21_9.tar.gz"
+    },
+    {
+      "name": "release-metadata.json",
+      "size": 5697,
+      "sha256": "73516fa9a51cd9a1bbbe60366c294ea7cf5783ee30e40a3491dfbb1091319b59",
+      "public_http_status": 200,
+      "url": "https://github.com/wckdboy/niobium/releases/download/v2.1.2-beta.1/release-metadata.json"
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "size": 400,
+      "sha256": "30ea0c5a3f2b18f63e3d5aeeffbfd18cdc339d224021f9987c80538277d688f8",
+      "public_http_status": 200,
+      "url": "https://github.com/wckdboy/niobium/releases/download/v2.1.2-beta.1/SHA256SUMS.txt"
+    }
+  ],
+  "public_metadata_and_checksums_exact": true,
+  "canonical_tag_commit": "7b03323a5e016791166b45d99af2e2d48caa8f79",
+  "website": {
+    "deployment_version": "e9178443-b66a-4894-859b-37c1d5deb38e",
+    "verified_at": "2026-10-23T19:36:35.614270+00:00",
+    "public_files_verified": 20,
+    "files": [
+      {
+        "path": "bot-build.md",
+        "url": "https://niobium.sh/bot-build.md",
+        "status": 200,
+        "sha256": "aa0046f35bd5a99a5d53dc3f95d996d2008e912337532190984c2670a437d46f",
+        "size": 9184
+      },
+      {
+        "path": "build/index.html",
+        "url": "https://niobium.sh/build/",
+        "status": 200,
+        "sha256": "e5f2ee3dd24bd882ef2ab7d74d0202c75903f7d7316647c88901cb3b8dcb28cd",
+        "size": 5490
+      },
+      {
+        "path": "cast-strip.png",
+        "url": "https://niobium.sh/cast-strip.png",
+        "status": 200,
+        "sha256": "e76095833f0e1c8edc9cedf71866739c5de46f48b0eda057d5d6293e8167c165",
+        "size": 4248
+      },
+      {
+        "path": "desktop-preview.png",
+        "url": "https://niobium.sh/desktop-preview.png",
+        "status": 200,
+        "sha256": "23d4bfb79bf103dedcd56a0ba0dda3b0b52c4a7d5cebca77dfce488b1ac6fb45",
+        "size": 60511
+      },
+      {
+        "path": "favicon.svg",
+        "url": "https://niobium.sh/favicon.svg",
+        "status": 200,
+        "sha256": "be2ee73797c4ae40cefd46c0739b6c4f69ad3db6371abd957d07e3f10e19a1a2",
+        "size": 928
+      },
+      {
+        "path": "fonts/jetbrains-mono-latin.woff2",
+        "url": "https://niobium.sh/fonts/jetbrains-mono-latin.woff2",
+        "status": 200,
+        "sha256": "2c32b9b3ee358c119e210f6f5195f9bd34894d78a785ff2e95d60e718e400af4",
+        "size": 31340
+      },
+      {
+        "path": "index.html",
+        "url": "https://niobium.sh/",
+        "status": 200,
+        "sha256": "f7090450da35bbd8810590bbfd5faf437fcca644eb533b2479413154d5745cb6",
+        "size": 7336
+      },
+      {
+        "path": "legal/index.html",
+        "url": "https://niobium.sh/legal/",
+        "status": 200,
+        "sha256": "5a3df29c5e408681df905fbba76a9764eb4264c23c2907a57d72d2757c293123",
+        "size": 5993
+      },
+      {
+        "path": "local/index.html",
+        "url": "https://niobium.sh/local/",
+        "status": 200,
+        "sha256": "44b067c4af756ac4e8887ee56685d3783d0bd9b3c17d039c9478b986963a9ef0",
+        "size": 7110
+      },
+      {
+        "path": "og/icon.png",
+        "url": "https://niobium.sh/og/icon.png",
+        "status": 200,
+        "sha256": "74c70309fa9f5abeea610ebf613f93186db4d5fba7d7e21f75a2613c8756aacf",
+        "size": 7743
+      },
+      {
+        "path": "og/niobium.png",
+        "url": "https://niobium.sh/og/niobium.png",
+        "status": 200,
+        "sha256": "5f380e11d3f7a12d6c52c5f1393e856ce7854d30cfb9f5c58d6b0d392c834867",
+        "size": 13253
+      },
+      {
+        "path": "pixel-cast-atlas.png",
+        "url": "https://niobium.sh/pixel-cast-atlas.png",
+        "status": 200,
+        "sha256": "4c16507ca42f6332c601457691d63e43d858362b73c504242465f701eeadf93b",
+        "size": 28036
+      },
+      {
+        "path": "pixel-custom-atlas.png",
+        "url": "https://niobium.sh/pixel-custom-atlas.png",
+        "status": 200,
+        "sha256": "18c3a6a7b94d07092ea7b2c08cc59732075788bf8cdb707eb6182e985d4f362f",
+        "size": 48544
+      },
+      {
+        "path": "pixel-familiars.png",
+        "url": "https://niobium.sh/pixel-familiars.png",
+        "status": 200,
+        "sha256": "ef956c3bf74275c4b2a0f241cb802b263dbd0fbcd1f0090179f1b55e859badf1",
+        "size": 1198
+      },
+      {
+        "path": "pixel-wardrobe-v1.png",
+        "url": "https://niobium.sh/pixel-wardrobe-v1.png",
+        "status": 200,
+        "sha256": "91b0c71ba3d840047b8a99cc94cfb902333fed90d5426e7438d12ad3075fb7d0",
+        "size": 50958
+      },
+      {
+        "path": "releases/index.html",
+        "url": "https://niobium.sh/releases/",
+        "status": 200,
+        "sha256": "6c5b5a78c8fe2e0b45a0add208f2032c17332e8c342f1bb7acb50b286ac6a0c0",
+        "size": 7583
+      },
+      {
+        "path": "robots.txt",
+        "url": "https://niobium.sh/robots.txt",
+        "status": 200,
+        "sha256": "552d1e6069be74e21050173d4fa54ee1ba8520c95108b1f4d0255dcb61171763",
+        "size": 63
+      },
+      {
+        "path": "site.css",
+        "url": "https://niobium.sh/site.css",
+        "status": 200,
+        "sha256": "62c5d13d82a818b37f2c8b8f3c4c8346c757cf001a03d348f8c1038760ea6253",
+        "size": 16199
+      },
+      {
+        "path": "sitemap.xml",
+        "url": "https://niobium.sh/sitemap.xml",
+        "status": 200,
+        "sha256": "b1681b9159011e7ab8bb110505240ee4f083bdbacba5fbe022818a41ab9fcc9b",
+        "size": 396
+      },
+      {
+        "path": "system/index.html",
+        "url": "https://niobium.sh/system/",
+        "status": 200,
+        "sha256": "180898f10a05b630f979d24ef04c94257fc21bf2501776fb63bdf22146743232",
+        "size": 5887
+      }
+    ],
+    "www_home_bytes_match": true,
+    "custom_404_bytes_match": true
+  },
+  "plane": {
+    "project_id": "2fbcf987-20de-43dc-80ac-0a6bab7ec03a",
+    "credential_vaults": "NIO-31",
+    "state": "In Progress",
+    "exported_items": 39,
+    "next": [
+      "NIO-32: accessibility, keyboard/focus and measured soaks",
+      "NIO-31: live host-prompt acceptance, DSH vault bridge and caller authentication",
+      "NIO-29: physical Android/16 KB acceptance",
+      "NIO-34/NIO-35: Hermes parity and reconnect replay"
+    ]
+  },
+  "ios": {
+    "release_work": "parked by user request",
+    "new_build_in_this_release": false
+  },
+  "limitations": [
+    "Vault storage does not isolate credentials from same-user processes or local agent tools. Signed-parent authentication is not implemented.",
+    "Live host credential-prompt acceptance, the DSH credential-vault bridge, full Hermes parity, accessibility/soaks and reconnect replay remain open.",
+    "Real-account model/image acceptance and physical Android/16 KB execution remain open."
+  ]
+}

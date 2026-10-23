@@ -12,15 +12,15 @@ Protocol audit: [HERMES-PARITY.md](docs/HERMES-PARITY.md).
 
 - Build and ship the Compose desktop preview alongside Android; retain iOS sources
   and make its CI/signing work opt-in while desktop and Android are the priority.
-  The 2.1.1 beta.1 desktop preview and Android 2.1.1/code14 are published.
+  The 2.1.2 beta.1 desktop preview and Android 2.1.1/code14 are published.
 - Share Kotlin protocol, persona/spec validation and art reduction across Android
   and desktop. Keep engine connection/session/prompt ownership separate.
 - Native desktop DSH: pinned private runtime, direct host process, authenticated
   loopback API over a private DSH Unix socket, explicit lifecycle and safe shutdown.
 - Complete controlled model/room/restart acceptance, Linux and macOS packaging,
   Android regressions, and public download verification before declaring a release.
-- Next desktop work: OS credential vaults, richer session/history controls, companion
-  task monitoring, skill/MCP/routine surfaces, accessibility and long-running work.
+- Next desktop work: accessibility and measured soaks, the DSH vault bridge,
+  richer history and companion controls, and skill/MCP/routine surfaces.
 - Continue real-account acceptance, physical Android/16 KB execution, cross-engine
   rooms, Hermes replay and connector authorization. These remain unverified goals.
 
@@ -637,15 +637,13 @@ sources are retained and Apple release work stays parked.
 
 ## Next cycle
 
-1. **NIO-31 — desktop credential vaults.** macOS Keychain and Linux Secret Service
-   for gateway/image credentials, with deliberate saving and deletion. Verify
-   locked/unavailable vaults, reconnects, account switching and redaction. Plan the
-   DSH credential bridge against its pinned contract; its current provider keys
-   remain in an owner-only file.
-2. **NIO-32 — accessibility and measured soaks.** Keyboard traversal, focus,
+1. **NIO-32 — accessibility and measured soaks.** Keyboard traversal, focus,
    screen readers, text scaling, narrow/wide layouts and HiDPI pixel rendering.
    Exercise large histories and long-running tasks/rooms/reconnects; measure
    CPU/memory and verify owned-process cleanup.
+2. **NIO-31 — finish credential acceptance.** Desktop OS storage is shipped. Verify
+   live host prompts and reconnect races, then implement the DSH vault bridge
+   against its pinned contract and authenticated-caller hardening.
 3. **NIO-29 — Android hardware acceptance.** Physical/16 KB execution, foreground
    service/background restoration, battery behavior and host bridges. Emulator
    checks and 16 KB packaging do not substitute for physical hardware.
@@ -654,23 +652,35 @@ sources are retained and Apple release work stays parked.
    ownership and unknown-delivery receipts. Real-account model/image and
    connector authorization acceptance remain separate open work.
 
-## Desktop vault cycle — NIO-31
+## Shipped: desktop 2.1.2 beta.1 — NIO-31 checkpoint
 
-Branch `codex/desktop-credential-vaults`, desktop candidate 2.1.2. Named Hermes
-and image credentials can be saved explicitly in macOS Keychain or Linux Secret
-Service. Metadata contains names, canonical URLs and opaque IDs; keys stay out of
-files, argv, environment, shared status and diagnostics. Session-only use remains
-available. Local DSH's provider-key file remains a separate runtime integration.
+[Release](https://github.com/wckdboy/niobium/releases/tag/v2.1.2-beta.1),
+[CodeRabbit-approved PR #13](https://github.com/wckdboy/niobium/pull/13) and
+[green release CI](https://github.com/wckdboy/niobium/actions/runs/40010407815). Named gateway/image credentials have
+explicit session-only or OS-vault storage, exact gateway URL/name binding,
+confirmed deletion and visible locked/unavailable/denied/unknown outcomes.
+Metadata contains no credential values. Pending loads cannot reconnect or restore
+an image session after cancellation; app shutdown waits for owned helpers.
 
-Native calls run in a small bundled C helper with bounded private pipes and a
-deadline. Locked/unavailable vaults and unknown write outcomes stay visible.
-Deletes require confirmation and clear a linked active session. Cancelling,
-disconnecting or clearing a session invalidates pending credential loads.
-Image receipts retain account scope, support explicit confirmation for rotated
-keys/legacy receipts, and preserve unknown acceptance without paid replay.
+Rotated keys and legacy image receipts require explicit account confirmation and
+successful status acceptance before ownership changes. Interrupted submissions
+retain unknown acceptance and never replay the generation POST automatically.
 
-Local acceptance: 42 desktop tests, 33 shared-core tests, 85 Node and 15 Python
-checks; 27 isolated native macOS vault operations. Native Linux acceptance,
-installed packages and CodeRabbit review remain release gates. Android remains
-2.1.1/code14 in this desktop-only cycle. NIO-31's live host-prompt acceptance and
-the DSH vault bridge remain open after desktop OS storage ships.
+42 desktop, 33 shared-core, seven additional Android JVM, 85 Node and 15 Python
+checks pass. Both native vault suites use isolated OS storage and cover restart
+persistence, account/kind isolation, locked operations and idempotent deletion.
+Linux owns a private bus without a command-line bypass. Native installers pass
+actual launcher/runtime/helper integrity checks; the final DMG also passes locally.
+Android stays 2.1.1/code14. iOS release work stays parked.
+
+Vault storage provides OS-user-level protection at rest. Same-user processes and
+local agent tools can read saved values, and the unsigned helper has no signed-parent
+validation. Session-only use remains the default. macOS is unsigned/unnotarized.
+
+NIO-31 remains In Progress for live host-prompt acceptance, the DSH vault bridge
+and authenticated-caller hardening. Next execution focus is NIO-32 keyboard,
+focus, screen-reader/text-scaling/HiDPI acceptance and measured task/room/reconnect
+soaks, followed by remaining Hermes history/companion/parity work. Physical Android/
+16 KB and real provider accounts remain separate acceptance gates.
+
+Evidence: [release validation](docs/evidence/beta212-release-validation.json).

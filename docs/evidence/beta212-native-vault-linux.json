@@ -1,0 +1,11 @@
+{
+  "platform": "linux-secret-service",
+  "native_operations": 23,
+  "isolated_vault": true,
+  "restart_persistence": true,
+  "account_and_kind_isolation": true,
+  "locked_reads_writes_deletes_rejected": true,
+  "idempotent_delete": true,
+  "invalid_requests_rejected": true,
+  "private_bus_mandatory": true
+}

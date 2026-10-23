@@ -417,7 +417,7 @@ See [release validation](evidence/beta211-release-validation.json) and the two
 separate native receipts: [provider activation](evidence/beta211-android-provider-activation.xml)
 and [DSH streaming/rooms](evidence/beta211-android-native-stream.xml).
 
-## Desktop credential vault candidate (2.1.2)
+## Desktop credential vaults (2.1.2 beta.1)
 
 The desktop suite has 42 tests. Native controller/process/UI cases cover metadata
 without keys, separate accounts at one gateway, exact URL binding, corruption,
@@ -442,7 +442,16 @@ tools with the user's permissions can access saved values. The opt-in controls
 state that limitation; authenticated-caller restrictions remain future work.
 
 All fixture credentials are fake. Existing shared-core/Android contracts, 85 Node
-and 15 Python checks remain unchanged. Linux native acceptance, platform packages
-and CodeRabbit review are release gates. Real host credential prompts, real
+and 15 Python checks remain unchanged. Native Linux/macOS acceptance, platform
+packages and CodeRabbit review pass. Real host credential prompts, real
 provider accounts, physical Android/16 KB acceptance and signed/notarized macOS
 distribution remain open; iOS release work stays parked.
+
+[PR #13](https://github.com/wckdboy/niobium/pull/13) is merged after CodeRabbit approval.
+All active [release CI jobs](https://github.com/wckdboy/niobium/actions/runs/40010407815) pass. The final downloaded macOS
+DMG passes local installed-launcher/runtime/helper checks. See
+[release validation](evidence/beta212-release-validation.json),
+[macOS native receipt](evidence/beta212-native-vault-macos.json) and
+[Linux native receipt](evidence/beta212-native-vault-linux.json).
+The Linux acceptance entry point always owns its private bus and accepts no CLI
+bypass. Android is not rebuilt in this desktop-only release.
