@@ -24,7 +24,7 @@ async function fixture(options = {}) {
     if (method==='llm.providers') return {providers:[{provider:'deepseek-official',settingsNs:'llm-deepseek',settingsPath:[],active:true},...['openai','anthropic','niobium-compatible'].map(id=>({provider:id,settingsNs:'llm-pi-ai',settingsPath:['providers',id],active:!!profile(id)&&!options.dormant}))]};
     if (method==='settings.describe') return {writable:true,namespaces:Object.entries(sections).map(([ns,value])=>({ns,value:structuredClone(value),revision:revision[ns]}))};
     if (method==='llm.models') return {groups:['deepseek-official',...Object.keys(sections['llm-pi-ai'].providers)].filter(id=>id==='deepseek-official'||!options.dormant).map(id=>({id,models:models(id)})),failures:[]};
-    if (method==='llm.discoverModels') return {models:models(p.provider)};
+    if (method==='llm.discoverModels') { if(options.discoveryFailure===p.provider) throw new Error('unavailable catalog'); return {models:models(p.provider)}; }
     if (method==='credentials.describe') return {credentials:Object.fromEntries(p.refs.map(ref=>[ref,{configured:!!keys[ref],writable:!options.readonly}]))};
     if (method==='credentials.set') { if(options.keyFailure) throw new Error('do not expose '+p.value); keys[p.ref]=p.value; return {}; }
     if (method==='settings.mutate') {
@@ -131,4 +131,20 @@ test('editing a no-auth endpoint never reactivates a previously stored real key'
   assert.equal(f.keys.NIOBIUM_COMPATIBLE_API_KEY,'inactive-private-key');
   assert.equal(result.providers.find(p=>p.id==='niobium-compatible').key_configured,false);
   assert(!JSON.stringify(result).includes('inactive-private-key'));
+});
+test('advanced compatible model fields remain intact and cannot be overwritten by the native editor',async()=>{
+  const f=await fixture();const profile={apiKeyEnv:'NIOBIUM_COMPATIBLE_API_KEY',baseURL:'http://127.0.0.1:9000/v1',models:[{id:'custom-model',contextWindow:8192,maxTokens:1024,name:'Custom model',reasoningEfforts:{high:'high'}}]};
+  f.sections['llm-pi-ai'].providers['niobium-compatible']=structuredClone(profile);
+  const result=await f.provider.request('local.providers');assert.equal(result.providers.find(p=>p.id==='niobium-compatible').advanced,true);
+  await assert.rejects(f.provider.request('local.provider.configure',{provider:'niobium-compatible',base_url:'http://127.0.0.1:9001/v1',model:'replacement',context_window:8192,max_tokens:1024}),/advanced DSH settings/);
+  assert.deepEqual(f.sections['llm-pi-ai'].providers['niobium-compatible'],profile);
+  assert.equal(f.calls.filter(c=>c.method==='settings.mutate'||c.method==='credentials.set').length,0);
+});
+test('a failed dormant catalog does not block other providers or legacy key activation',async()=>{
+  const f=await fixture({discoveryFailure:'openai'});const catalog=await f.provider.request('local.providers');
+  assert.deepEqual(catalog.providers.find(p=>p.id==='openai').models,[]);
+  assert(catalog.providers.find(p=>p.id==='anthropic').models.length);
+  const result=await f.provider.request('local.credential',{ref:'DEEPSEEK_API_KEY',value:'fixture-deepseek'});
+  assert.equal(result.providers.find(p=>p.id==='deepseek-official').credential_ready,true);
+  assert.equal(f.keys.DEEPSEEK_API_KEY,'fixture-deepseek');
 });

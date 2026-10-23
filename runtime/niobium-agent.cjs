@@ -45,10 +45,14 @@ function providerSetup(rpc) {
       const supported = !!section && (definition.custom || directory.providers.some(p => p.provider === definition.id && p.settingsNs === definition.ns && JSON.stringify(p.settingsPath) === JSON.stringify(definition.path)));
       const active = directory.providers.some(p => p.provider === definition.id && p.active);
       let models = catalog.groups.find(g => g.id === definition.id)?.models || [];
-      if (supported && !active && !definition.custom) models = (await rpc('llm.discoverModels', {settingsNs: definition.ns, provider: definition.id})).models;
+      if (supported && !active && !definition.custom) {
+        try { models = (await rpc('llm.discoverModels', {settingsNs: definition.ns, provider: definition.id})).models; }
+        catch { models = []; }
+      }
       let baseURL = '', advanced = false;
       if (profile.baseURL) { try { baseURL = endpoint(profile.baseURL); } catch { advanced = true; } }
-      if (definition.custom && profile.models?.length > 1) advanced = true;
+      if (definition.custom && (profile.models?.length > 1 ||
+          Object.keys(profile.models?.[0] || {}).some(k => !['id', 'contextWindow', 'maxTokens'].includes(k)))) advanced = true;
       if (typeof ref !== 'string' || !/^[A-Za-z_][A-Za-z0-9_]{0,127}$/.test(ref)) advanced = true;
       return {definition, section, profile, ref, supported, active, models, baseURL, advanced, noAuth};
     }));
