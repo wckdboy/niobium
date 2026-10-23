@@ -296,7 +296,7 @@ receipts.
 `python3 tools/prepare-desktop-runtime.py` verifies the pinned official Node archive,
 installs only the locked DSH graph, restores the audited native helper permission,
 and checks WebSocket, Koffi and real PTY execution before staging the bundle.
-`cd desktop && ./gradlew :core:test :test` runs 30 shared Kotlin checks and the
+`cd desktop && ./gradlew :core:test :test` runs 33 shared Kotlin checks and the
 current desktop suite. UI tests capture the actual Compose wardrobe. Linux runs
 these UI checks under Xvfb, then creates its own native `.deb`; macOS builds `.dmg`.
 
@@ -338,7 +338,7 @@ path migration. Runtime source inputs invalidate the Gradle test task.
 private DSH API with global Java/Node removed from PATH. It verifies runtime
 hashes and every recorded executable mode; packaging restores those modes after
 jpackage copies resources. Desktop familiar sprites now use Android's authored
-source directly. CodeRabbit reviews the active PR using `.coderabbit.yaml`.
+source directly. CodeRabbit approved the release commit in PR #11 using `.coderabbit.yaml`.
 
 The shutdown regression lets an owning DSH process finish delayed disposal of a
 detached child before escalation; Node coverage is now 67 checks. The race test
@@ -349,7 +349,7 @@ restored before upload. macOS verifies the application image and mounted DMG.
 The AI-art controller also verifies that an unusable completed image becomes a
 terminal failure, retains its receipt and starts another billable design only on
 an explicit request. Wardrobe selection opens the chosen look in the workshop.
-The desktop suite now has 16 tests, alongside 30 shared-core tests.
+The desktop suite has 18 tests, alongside 33 shared-core tests.
 
 Installer tasks also track the runtime source inputs, and package verification
 compares adapters and the dependency lock against the repository. This catches
@@ -375,3 +375,9 @@ WebSocket handshake also clears the desktop Connecting state with a retry action
 
 The macOS package minimum is 13.5, matching the bundled Node Mach-O load command.
 Installer verification compares the app Info.plist against that binary minimum.
+
+[2.1 beta.1](https://github.com/wckdboy/niobium/releases/tag/v2.1.0-beta.1) is
+published from `b683440`, approved by CodeRabbit and merged in PR #11. All active
+[release CI jobs](https://github.com/wckdboy/niobium/actions/runs/39961030217) pass.
+See [release validation](evidence/beta21-release-validation.json) for artifact
+hashes, device receipts, review, merge and website deployment evidence.

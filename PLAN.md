@@ -12,6 +12,7 @@ Protocol audit: [HERMES-PARITY.md](docs/HERMES-PARITY.md).
 
 - Build and ship the Compose desktop preview alongside Android; retain iOS sources
   and make its CI/signing work opt-in while desktop and Android are the priority.
+  The 2.1 beta.1 desktop preview and Android 2.1/code13 are published.
 - Share Kotlin protocol, persona/spec validation and art reduction across Android
   and desktop. Keep engine connection/session/prompt ownership separate.
 - Native desktop DSH: pinned private runtime, direct host process, authenticated
@@ -577,8 +578,12 @@ checks cancel preserves the room before confirming archival.
 The active PR is [#11](https://github.com/wckdboy/niobium/pull/11). CodeRabbit
 is connected and automatic Greptile reviews/status/approval are disabled.
 Linux x64 DEB, macOS ARM64 DMG and signed Android 2.1/code13 are the release
-targets. iOS release/signing work remains parked. Native CI and final publication
-are the remaining release gates.
+targets. iOS release/signing work remains parked.
+[2.1 beta.1 is published](https://github.com/wckdboy/niobium/releases/tag/v2.1.0-beta.1),
+CodeRabbit approved the release commit and PR #11 is merged to main. All active
+[release CI jobs](https://github.com/wckdboy/niobium/actions/runs/39961030217) pass.
+Artifact and deployment receipts are in
+[release validation](docs/evidence/beta21-release-validation.json).
 
 Validated locally: 33 shared-core tests, 18 desktop tests, seven additional
 Android JVM tests, 67 Node checks, 15 Python checks and 64 exact wardrobe fixtures.

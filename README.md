@@ -57,6 +57,9 @@ CodeRabbit reviews new pull requests and incremental pushes using
 The 2.1 checks include 33 shared-core, 18 desktop and seven Android-specific JVM
 tests, 67 Node checks and 15 Python checks. Native installer checks run the
 packaged app and its private DSH API, and reject stale adapters.
+CodeRabbit [approved PR #11](https://github.com/wckdboy/niobium/pull/11); all active
+[release CI jobs](https://github.com/wckdboy/niobium/actions/runs/39961030217) pass.
+See the [release evidence](docs/evidence/beta21-release-validation.json).
 
 <img src="site/public/desktop-preview.png" width="760" alt="Niobium desktop wardrobe">
 
