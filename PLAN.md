@@ -501,9 +501,9 @@ both exports record the verified checkpoint and the expanded next-cycle scope,
 with all existing workflow states preserved.
 
 
-## Wardrobe and connected workspaces — beta.7 candidate
+## Wardrobe and connected workspaces — beta.7
 
-Implemented in the current branch:
+Shipped in beta.7:
 
 - 32 adult authored looks, automatic brief-based choice, family/search wardrobe,
   eight outfit palettes, surprise/remix/undo and twelve transparent creatures.
@@ -523,14 +523,23 @@ its code and artwork were not copied. Research source:
 https://github.com/milind-soni/OpenMausBot at
 30b62aaf18adc22099c24a7181abf5e9ddead980.
 
-Acceptance so far: 50 iOS unit + six UI checks, an isolated full iOS build 15
-background/cold-launch DSH model test (104.984 seconds), shared catalog hashes,
-and real Android DSH messaging through the registered tool and native Rooms.
-The current iPhone is reachable over Wi-Fi but locked. Build 14's physical
-production acceptance remains the latest phone result. New signed artifacts,
-CI/review, release publication, website deployment and Plane updates follow.
+[PR #10](https://github.com/wckdboy/niobium/pull/10) merged to main at a60067f.
+Source 8a988cf and the merge have the same Git tree. All three CI jobs pass;
+final Codex review has no findings and all nine review threads are resolved.
+Greptile cannot review at its exhausted trial quota.
 
-Next after this candidate: physical Android/16 KB and real-account provider
+[Beta.7](https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.7) is published
+with signed Android code 12, corresponding sources, metadata and checksums.
+Validation: 50 iOS unit + six UI tests, 35 Android JVM + sixteen ARM64 native
+checks, 61 Node, 15 Python and 38 standalone Swift checks. Full iOS build 15
+simulator acceptance covers local Rooms, background streaming and cold history
+in 134.594 seconds. The current full iOS archive verifies its source modules,
+identity and Release exclusions; export/TestFlight upload is blocked by Xcode's
+“No Accounts” error. Build 14 remains the latest accepted Apple upload and
+physical iPhone result; the paired phone is still locked. No stale IPA is published.
+
+Next acceptance cycle: restore Apple signing and upload build 15; verify the
+current physical iPhone build; physical Android/16 KB and real-account provider
 acceptance; explicit cross-engine conversation bridging; recovered room work
 when a delivery receipt is lost; longer-running delegation and native connector
 consent. Expand wardrobe collections and image-provider choices after measuring

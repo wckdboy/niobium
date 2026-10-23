@@ -1,0 +1,237 @@
+{
+  "schema_version": 1,
+  "release_id": 421606511,
+  "release_url": "https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.7",
+  "published_at": "2026-10-23T08:30:02Z",
+  "source_commit": "8a988cf412e8b9611d03236a4e11114caf6d6be9",
+  "merge_commit": "a60067f42970372f2465e45a32a7d9519dfb1ddc",
+  "source_and_merge_git_tree": "e57755e384e9fac5416c0b7c368508b40e5e164b",
+  "ci": {
+    "source_commit": "8a988cf412e8b9611d03236a4e11114caf6d6be9",
+    "url": "https://github.com/wckdboy/niobium/actions/runs/39923573513",
+    "all_three_jobs": "success"
+  },
+  "review": {
+    "pr": "https://github.com/wckdboy/niobium/pull/10",
+    "codex_final_source": "8a988cf412e8b9611d03236a4e11114caf6d6be9",
+    "codex_final_findings": 0,
+    "historical_findings_fixed_and_resolved": 9,
+    "greptile": "50-credit trial limit prevented a new review"
+  },
+  "checks": {
+    "ios_unit": 50,
+    "ios_ui": 6,
+    "android_jvm": 35,
+    "android_arm64": 16,
+    "node": 61,
+    "python": 15,
+    "standalone_swift_assertions": 38,
+    "shared_wardrobe_rgba_fixtures": 64,
+    "android_lint": "pass",
+    "runtime_hashes": "pass",
+    "signature_and_alignment": "pass"
+  },
+  "android": {
+    "application_id": "io.sovware.niobium",
+    "version": "2.0",
+    "version_code": 12,
+    "min_sdk": 28,
+    "target_sdk": 37,
+    "abi": "arm64-v8a",
+    "certificate_sha256": "2f44d7e7316de46bf7d81a126bff456950a77df5c1e295afb753832aa1891b5d",
+    "jvm_tests": 35,
+    "arm64_emulator_tests": 16,
+    "signed_package_install_and_cold_launch": true,
+    "elf_and_zip_16k_alignment_verified": true,
+    "physical_device_tested": false,
+    "physical_16k_device_tested": false
+  },
+  "runtime_hashes": {
+    "provider_sha256": "b357fadcd2a5405f32e2f09ece6cded7acec5fbe4e492b500ca4318a40251c8d",
+    "messaging_sha256": "f04695ffd40a03f33f207d5b6b0d63f45dacb504085fe9af20a05ac3234b5e2e"
+  },
+  "ios": {
+    "bundle_id": "ai.wckd.niobium",
+    "version": "2.0",
+    "build": 15,
+    "flavor": "full DSH Release",
+    "archive": "dist/Niobium-2.0-15-wardrobe.xcarchive",
+    "archive_signature": "verified development signature",
+    "overlay_version": 100015,
+    "exact_runtime_modules_verified": true,
+    "release_fixture_exclusion_verified": true,
+    "unit_tests": 50,
+    "ui_tests": 6,
+    "opt_in_ci_skips": 2,
+    "full_simulator_acceptance": {
+      "passed": true,
+      "duration_seconds": 134.594,
+      "controlled_model": true,
+      "real_account": false,
+      "rooms_navigation": true,
+      "unfinished_stream_background_return": true,
+      "cold_guest_history": true
+    },
+    "physical_build15_tested": false,
+    "physical_phone_status": "paired but locked",
+    "distribution_export": "blocked: Xcode reports No Accounts and no accessible cloud distribution identity",
+    "testflight_build15_uploaded": false,
+    "tester_availability_verified": false,
+    "latest_accepted_apple_upload": {
+      "build": 14,
+      "accepted_at": "2026-10-22T23:13:15Z"
+    }
+  },
+  "art": {
+    "base_looks": 32,
+    "garment_palettes": 8,
+    "stock_creature_types": 12,
+    "character_logical_size": [
+      48,
+      48
+    ],
+    "creature_logical_size": [
+      16,
+      16
+    ],
+    "maximum_base_colors": 32,
+    "hard_alpha": true,
+    "original_eight_unchanged": true,
+    "generation_mode": "built-in image_gen",
+    "gallery": "brand/pixel-looks-v2-gallery.png",
+    "provenance": "brand/art-provenance.json",
+    "prompt_files": [
+      "brand/pixel-wardrobe-v1-a-prompt.txt",
+      "brand/pixel-wardrobe-v1-b-prompt.txt",
+      "brand/pixel-wardrobe-v1-c-prompt.txt"
+    ]
+  },
+  "verified_github_assets": [
+    {
+      "name": "Niobium-2.0-beta.7.apk",
+      "size": 90799454,
+      "sha256": "b9235f9196ae22f54e00c93872eed43a1ed851262936d3f3ba2091475ef6f227",
+      "download_url": "https://github.com/wckdboy/niobium/releases/download/v2.0.0-beta.7/Niobium-2.0-beta.7.apk"
+    },
+    {
+      "name": "Niobium-Android-runtime-sources.tar.gz",
+      "size": 1204821,
+      "sha256": "db4c5f1cf8dc79790b8db581778d0decb308d670a549fb464bc31a527d06f923",
+      "download_url": "https://github.com/wckdboy/niobium/releases/download/v2.0.0-beta.7/Niobium-Android-runtime-sources.tar.gz"
+    },
+    {
+      "name": "release-metadata.json",
+      "size": 8026,
+      "sha256": "3d9605a9349e131e2aedfb91cdda7695fa3303e096b5de2d91f70d56371d01bc",
+      "download_url": "https://github.com/wckdboy/niobium/releases/download/v2.0.0-beta.7/release-metadata.json"
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "size": 282,
+      "sha256": "2daa9a0cedb019f43a6c1141cf23053697580331c743f1f3f8bfa5438a52eec2",
+      "download_url": "https://github.com/wckdboy/niobium/releases/download/v2.0.0-beta.7/SHA256SUMS.txt"
+    }
+  ],
+  "website": {
+    "url": "https://niobium.sh",
+    "deployment_id": "321ea6fe-03c4-4f2f-a81c-0b1f181db3f2",
+    "deployment_status": "verified",
+    "public_files_verified": 19,
+    "www_home_matches": true,
+    "not_found_response_verified": true,
+    "checksums_match": true,
+    "source_files": [
+      {
+        "path": "https://niobium.sh/",
+        "sha256": "38bdb6b6c0010996e73e9c61ef34f0ffa156050f47acc93d258242ef50555981"
+      },
+      {
+        "path": "https://niobium.sh/pixel-cast-atlas.png",
+        "sha256": "4c16507ca42f6332c601457691d63e43d858362b73c504242465f701eeadf93b"
+      },
+      {
+        "path": "https://niobium.sh/bot-build.md",
+        "sha256": "aa0046f35bd5a99a5d53dc3f95d996d2008e912337532190984c2670a437d46f"
+      },
+      {
+        "path": "https://niobium.sh/cast-strip.png",
+        "sha256": "e76095833f0e1c8edc9cedf71866739c5de46f48b0eda057d5d6293e8167c165"
+      },
+      {
+        "path": "https://niobium.sh/pixel-wardrobe-v1.png",
+        "sha256": "91b0c71ba3d840047b8a99cc94cfb902333fed90d5426e7438d12ad3075fb7d0"
+      },
+      {
+        "path": "https://niobium.sh/sitemap.xml",
+        "sha256": "b1681b9159011e7ab8bb110505240ee4f083bdbacba5fbe022818a41ab9fcc9b"
+      },
+      {
+        "path": "https://niobium.sh/site.css",
+        "sha256": "62c5d13d82a818b37f2c8b8f3c4c8346c757cf001a03d348f8c1038760ea6253"
+      },
+      {
+        "path": "https://niobium.sh/pixel-custom-atlas.png",
+        "sha256": "18c3a6a7b94d07092ea7b2c08cc59732075788bf8cdb707eb6182e985d4f362f"
+      },
+      {
+        "path": "https://niobium.sh/pixel-familiars.png",
+        "sha256": "ef956c3bf74275c4b2a0f241cb802b263dbd0fbcd1f0090179f1b55e859badf1"
+      },
+      {
+        "path": "https://niobium.sh/robots.txt",
+        "sha256": "552d1e6069be74e21050173d4fa54ee1ba8520c95108b1f4d0255dcb61171763"
+      },
+      {
+        "path": "https://niobium.sh/favicon.svg",
+        "sha256": "be2ee73797c4ae40cefd46c0739b6c4f69ad3db6371abd957d07e3f10e19a1a2"
+      },
+      {
+        "path": "https://niobium.sh/releases/",
+        "sha256": "9d0b3382beb6a5ae0e4ebbab5bbed213ecf1124d25fac53ea20f12c454dd86cf"
+      },
+      {
+        "path": "https://niobium.sh/local/",
+        "sha256": "94baf737f084db6b72bb4a38ed7a710ab830dac292b4178c4738fa5458dbd66a"
+      },
+      {
+        "path": "https://niobium.sh/system/",
+        "sha256": "9940abec812d8d846d5fcfc39b9a306b531cfe26b7c0d78e445a6485f8932cdf"
+      },
+      {
+        "path": "https://niobium.sh/build/",
+        "sha256": "e5f2ee3dd24bd882ef2ab7d74d0202c75903f7d7316647c88901cb3b8dcb28cd"
+      },
+      {
+        "path": "https://niobium.sh/og/icon.png",
+        "sha256": "74c70309fa9f5abeea610ebf613f93186db4d5fba7d7e21f75a2613c8756aacf"
+      },
+      {
+        "path": "https://niobium.sh/og/niobium.png",
+        "sha256": "5f380e11d3f7a12d6c52c5f1393e856ce7854d30cfb9f5c58d6b0d392c834867"
+      },
+      {
+        "path": "https://niobium.sh/legal/",
+        "sha256": "32886c7d886f0eee8421422ecc607db585fee3a36207f5bbfa210045139c0f9a"
+      },
+      {
+        "path": "https://niobium.sh/fonts/jetbrains-mono-latin.woff2",
+        "sha256": "2c32b9b3ee358c119e210f6f5195f9bd34894d78a785ff2e95d60e718e400af4"
+      }
+    ]
+  },
+  "plane": {
+    "verified_work_items": [
+      3,
+      10,
+      12,
+      24,
+      29,
+      32,
+      36,
+      33,
+      35
+    ],
+    "workflow_states_preserved": true,
+    "exports": "plane/snapshot.json and plane/issues.csv"
+  }
+}

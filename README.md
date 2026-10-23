@@ -7,7 +7,7 @@
 A native iPhone, iPad and Android home for Pixels: your agents on a Hermes host
 or in the on-device DSH engine, with their own personas, tools and companions.
 
-**New release: [2.0.0-beta.6](https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.6).** Full Hermes parity is the target;
+**New release: [2.0.0-beta.7](https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.7).** Full Hermes parity is the target;
 it is not finished. The current scope is in [PLAN.md](PLAN.md), the implementation
 audit is in [docs/HERMES-PARITY.md](docs/HERMES-PARITY.md), and the work is tracked
 in [Plane](https://app.plane.so/wckd/projects/2fbcf987-20de-43dc-80ac-0a6bab7ec03a/issues/).
@@ -145,24 +145,29 @@ node site/build.mjs
 node site/check.mjs
 ~~~
 
-The current release passes 39 iOS unit and five UI checks, 30 Android unit
-and ten ARM64 emulator checks, 40 Node and 14 Python checks. Sixteen shared
-RGBA fixtures verify both native portrait renderers. All three CI jobs pass
-at source 0e76310; independent Codex review reports no findings. Greptile's
-trial quota prevents a fresh review.
+The current source passes 50 iOS unit and six UI checks, 35 Android unit
+and sixteen ARM64 emulator checks, 61 Node and 15 Python checks. Sixty-four
+shared wardrobe fixtures verify both native renderers. All three CI jobs pass
+at source 8a988cf; final Codex review has no findings, with nine earlier review
+issues fixed and resolved. Greptile's trial quota prevents a fresh review.
 
-Production full iOS build 14 passed four physical iPhone smoke runs, including
-native roster/chat attachment and an eight-second background return. Two
-observed startup resets recovered in roughly 0.3 seconds. Android checks include
-a real DSH preset, controlled model stream and history restoration. Signed
-Android code 11 and full iOS build 14 packages verify. See the
-[release evidence](docs/evidence/dsh-startup-release-validation.json) and
-[phone traces](docs/evidence/ios-build14-iphone-startup.json). Real-account
-provider acceptance and full Hermes parity remain open.
+The full iOS build 15 simulator test opens local Rooms, preserves an unfinished
+model stream over backgrounding and restores actual DSH history after a cold
+launch (134.594 seconds). Android verifies real tool-driven DMs, native questions,
+room-clear cancellation, retained custom creatures and explicit remote/local
+launch targets. Signed Android code 12 installs and cold-launches; runtime hashes,
+corresponding sources and 16 KB ELF/ZIP alignment verify.
 
-## Beta.7 candidate
+Full iOS build 15 archives successfully, with exact current runtime modules and
+Release fixture exclusions. Distribution export and TestFlight upload are blocked
+because Xcode reports “No Accounts.” Build 14 remains the latest accepted Apple
+upload and physical iPhone acceptance; the paired phone is currently locked.
+Real-account provider/image acceptance and full Hermes parity remain open. See
+[beta.7 evidence](docs/evidence/beta7-release-validation.json).
 
-The next build adds the 32-look wardrobe and optional AI atelier. Hermes and
+## Connected workspaces
+
+Beta.7 adds the 32-look wardrobe and optional AI atelier. Hermes and
 DSH now own independent transports, conversations and approvals; changing the
 selected workspace does not disconnect its peer. Hermes-only mode does not boot
 Linux. Stop DSH explicitly to return to Hermes alone.
@@ -188,12 +193,11 @@ acceptance and actual delegation remain. Mobile gateway push delivery is not pro
 
 [niobium.sh](https://niobium.sh) uses the shared WCKD web design and is deployed
 with Cloudflare Workers Static Assets from this repository. The
-[2.0 beta release](https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.6)
-includes the signed Android APK, iOS distribution IPA, checksums and complete
-release notes. Apple accepted full iOS 2.0 (14), ai.wckd.niobium, for TestFlight
-processing on 22 October; tester availability remains unverified. TestFlight
-manages installation; the App Store
-IPA is not a universally sideloadable download. The last stable release is
+[2.0 beta release](https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.7)
+includes the signed Android APK, corresponding runtime sources, metadata and
+checksums. Full iOS 2.0 (15), ai.wckd.niobium, is compiled and validated; its export
+and TestFlight upload await Apple account sign-in in Xcode. Build 14 is the latest
+accepted Apple upload. Tester availability remains unverified. The last stable release is
 [1.1](https://github.com/wckdboy/niobium/releases/tag/v1.1.0).
 
 The Android UI is MIT; bundled PRoot/Alpine components retain their GPL/LGPL/BSD licenses. The iOS full build combines GPLv3 components. Niobium is
