@@ -1260,9 +1260,9 @@ final class AppStore: ObservableObject {
                     guard let id = JSONValueID.parse(request["id"]), let method = request.string("method"), let params = request.dict("params") else { continue }
                     handleServerRequest(id: id, method: method, params: params)
                 }
-                let ids = (result?.array("receipt_ids") as? [String]) ?? []
-                roomReceipts.acknowledge(Set(ids))
-                if !ids.isEmpty { _ = try? await api.request("groups.ack", params: ["room_id": room.roomID, "event_ids": ids], timeout: 6) }
+                let receiptIDs = (result?.array("receipt_ids") as? [String]) ?? []
+                roomReceipts.acknowledge(Set(receiptIDs))
+                if !receiptIDs.isEmpty { _ = try? await api.request("groups.ack", params: ["room_id": room.roomID, "event_ids": receiptIDs], timeout: 6) }
             }
         } catch {
             // Background polling should stay quiet.
