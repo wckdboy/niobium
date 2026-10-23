@@ -153,7 +153,7 @@ def artifacts():
     outputs.update(metadata_artifacts())
     fixture_bytes = (json.dumps(fixtures, indent=2) + "\n").encode()
     for path in ["tests/fixtures/portrait-looks.json", "ios/NativeTests/Fixtures/portrait-looks.json",
-                 "android/app/src/test/resources/portrait-looks.json", "android/app/src/androidTest/assets/portrait-looks.json"]:
+                 "core/src/test/resources/portrait-looks.json", "android/app/src/androidTest/assets/portrait-looks.json"]:
         outputs[path] = fixture_bytes
     return outputs
 
@@ -171,7 +171,7 @@ def metadata_artifacts():
     kotlin += "    )\n}"
     outputs = {}
     for path, block in [("ios/Sources/Niobium/PixelSpec.swift", swift),
-                        ("android/app/src/main/java/io/sovware/niobium/PixelSpec.kt", kotlin)]:
+                        ("core/src/main/kotlin/io/sovware/niobium/PixelSpec.kt", kotlin)]:
         old = (ROOT / path).read_text()
         start, end = "// BEGIN GENERATED WARDROBE", "// END GENERATED WARDROBE"
         before, rest = old.split(start, 1)

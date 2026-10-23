@@ -277,15 +277,3 @@ fun StatChip(value: String, label: String, color: Color) {
         Text("$value $label", color = Nb.Secondary, style = NbMono, fontSize = 10.sp)
     }
 }
-
-fun formatRelative(epochSec: Long?): String {
-    if (epochSec == null || epochSec <= 0) return "ready"
-    val delta = (System.currentTimeMillis() / 1000) - epochSec
-    return when {
-        delta < 60 -> "now"
-        delta < 3600 -> "${delta / 60}m"
-        delta < 86400 -> "${delta / 3600}h"
-        delta < 604800 -> "${delta / 86400}d"
-        else -> "${delta / 604800}w"
-    }
-}

@@ -1,6 +1,5 @@
 package io.sovware.niobium
 
-import android.content.Context
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
@@ -161,7 +160,7 @@ data class CharacterRecipe(
     }
 }
 
-internal class CharacterRandom(seed: String) {
+class CharacterRandom(seed: String) {
     private var state: UInt = 2166136261u
     init {
         seed.toByteArray(Charsets.UTF_8).forEach { state = (state xor it.toUByte().toUInt()) * 16777619u }

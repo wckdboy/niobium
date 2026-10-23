@@ -39,7 +39,7 @@ private val pixelPersonas = listOf(
         kotlin += "    PixelPersona(" + ", ".join(kotlin_value(row[key]) for key in FIELDS) + "),\n"
     return {
         "ios/Sources/Niobium/PixelSpec.swift": swift + "]\n" + END,
-        "android/app/src/main/java/io/sovware/niobium/PixelBuilder.kt": kotlin + ")\n" + END
+        "core/src/main/kotlin/io/sovware/niobium/PixelBuilder.kt": kotlin + ")\n" + END
     }
 
 def main():

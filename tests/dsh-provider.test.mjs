@@ -27,6 +27,11 @@ test('local tool grants produce only trusted plugin rows and honor denied access
   assert.equal(rows[0].config.text, 'personality');
 });
 
+test('desktop messaging composition uses the owned host plugin path', () => {
+  const rows = JSON.parse(composition({permissions:{network:false,shell:false,filesystem:'none'}},['messaging'],'desktop persona','/private/niobium/niobium-agent.cjs'));
+  assert.equal(rows.find(r=>r.id==='niobium-messaging').name,'/private/niobium/niobium-agent.cjs');
+});
+
 test('native Pixel creation persists a real DSH composition and appearance atomically', async () => {
   const home = await mkdtemp(path.join(tmpdir(), 'niobium-provider-'));
   const p = createProvider({home, rpc: async () => ({presets: []})});

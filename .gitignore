@@ -35,3 +35,11 @@ site/.wrangler/
 !.env.example
 .secrets/
 site/.dev.vars
+
+# Shared Kotlin and desktop builds
+core/build/
+desktop/.gradle/
+desktop/.kotlin/
+desktop/build/
+desktop/runtime/node_modules/
+desktop/runtime/bundle/

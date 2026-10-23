@@ -1,6 +1,6 @@
 # Niobium v2
 
-The goal is a complete native mobile surface for Hermes Bot Mode, with an
+The goal is a complete native desktop and mobile surface for Hermes Bot Mode, with an
 optional on-device DSH runtime, a professional pixel-art interface, and Pixels
 that feel like individual teammates.
 
@@ -8,9 +8,25 @@ Reference: [the supplied dashboard](docs/reference-dashboard.png).
 Ledger: [Plane](https://app.plane.so/wckd/projects/2fbcf987-20de-43dc-80ac-0a6bab7ec03a/issues/).
 Protocol audit: [HERMES-PARITY.md](docs/HERMES-PARITY.md).
 
+## Active focus: Linux, macOS and Android
+
+- Build and ship the Compose desktop preview alongside Android; retain iOS sources
+  and make its CI/signing work opt-in while desktop and Android are the priority.
+- Share Kotlin protocol, persona/spec validation and art reduction across Android
+  and desktop. Keep engine connection/session/prompt ownership separate.
+- Native desktop DSH: pinned private runtime, direct host process, authenticated
+  loopback API over a private DSH Unix socket, explicit lifecycle and safe shutdown.
+- Complete controlled model/room/restart acceptance, Linux and macOS packaging,
+  Android regressions, and public download verification before declaring a release.
+- Next desktop work: OS credential vaults, richer session/history controls, companion
+  task monitoring, skill/MCP/routine surfaces, accessibility and long-running work.
+- Continue real-account acceptance, physical Android/16 KB execution, cross-engine
+  rooms, Hermes replay and connector authorization. These remain unverified goals.
+
 ## Decisions
 
-- SwiftUI on iOS/iPadOS; Kotlin/Compose on Android. Keep platform UI native.
+- Kotlin/Compose on Android and Linux/macOS desktop, with a shared Kotlin core.
+  Existing SwiftUI iOS/iPadOS sources remain available.
 - Shared PixelSpec, bot-build skill, character recipes, palette and terminology.
 - 48×48 portrait output, cached and displayed without smoothing; smaller
   companion sprites. Original adult fantasy/cyborg cast, with mature outfits

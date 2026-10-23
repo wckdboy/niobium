@@ -14,3 +14,6 @@ dependencyResolutionManagement {
 }
 rootProject.name = "Niobium"
 include(":app")
+
+include(":core")
+project(":core").projectDir = file("../core")

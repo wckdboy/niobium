@@ -199,7 +199,7 @@ def artifacts():
  data=atlas();outputs={}
  fixture=recipe_fixtures()
  for name in ["tests/fixtures/character-recipes.json","ios/NativeTests/Fixtures/character-recipes.json",
-              "android/app/src/test/resources/character-recipes.json","android/app/src/androidTest/assets/character-recipes.json"]:
+              "core/src/test/resources/character-recipes.json","android/app/src/androidTest/assets/character-recipes.json"]:
   outputs[name]=fixture
  encoded=(json.dumps(data,separators=(',',':'))+'\n').encode()
  for path in ['ios/Resources/character_engine.json','android/app/src/main/assets/character_engine.json']:outputs[path]=encoded

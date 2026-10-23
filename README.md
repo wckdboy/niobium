@@ -4,8 +4,9 @@
 
 **Your pixels, everywhere. By [WCKD.ai](https://wckd.ai).**
 
-A native iPhone, iPad and Android home for Pixels: your agents on a Hermes host
-or in the on-device DSH engine, with their own personas, tools and companions.
+A pixel-art home for agents on Linux, macOS and Android: connect Hermes, run
+DSH locally, or keep both engines ready. Pixels have their own personas, tools
+and companions. The existing iOS client is retained; iOS release work is parked.
 
 **New release: [2.0.0-beta.7](https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.7).** Full Hermes parity is the target;
 it is not finished. The current scope is in [PLAN.md](PLAN.md), the implementation
@@ -13,6 +14,39 @@ audit is in [docs/HERMES-PARITY.md](docs/HERMES-PARITY.md), and the work is trac
 in [Plane](https://app.plane.so/wckd/projects/2fbcf987-20de-43dc-80ac-0a6bab7ec03a/issues/).
 
 <img src="docs/evidence/clean-pixels-ios-dashboard.png" width="280" alt="Niobium v2 on iPhone"> <img src="docs/evidence/clean-pixels-android-workshop.png" width="252" alt="Niobium v2 on Android">
+
+## Desktop preview: Linux and macOS
+
+The Compose desktop client shares transport, PixelSpec, persona generation and
+image palette reduction with Android in `core/`. It includes independent Hermes
+and local DSH stores, persistent chats, streamed tools, approvals/questions,
+model selection, engine-owned rooms and the wardrobe/workshop with optional AI art.
+Desktop is an early preview: mobile photos/dictation, routines, full connector
+management, companion task controls and complete Hermes parity are still ahead.
+
+Local DSH runs directly as a host process using a bundled Node runtime, with a
+private engine home and workspace. Its raw web listener uses a private Unix
+socket; only the authenticated Niobium API is exposed on loopback. Start and
+Stop are explicit. Closing the app stops owned local work; Hermes continues on
+its host. Tools use your account permissions, not a desktop OS sandbox.
+
+Remote gateway tokens and the AI image key are session-only on desktop. DSH
+provider keys use its owner-only credential file. Android retains Keystore storage.
+
+From the repository root, with Python 3.12+, Node for fixtures, and a JDK 17+:
+
+```sh
+python3 tools/prepare-desktop-runtime.py
+cd desktop
+./gradlew :core:test :test
+./gradlew run
+./gradlew packageDistributionForCurrentOS
+```
+
+Packaging uses the host platform (Linux `.deb`, macOS `.dmg`) and bundles a Java
+runtime, Node and the locked DSH dependency graph. Use Temurin or another supported
+JDK distribution for packaging. The first macOS preview is unsigned and unnotarized.
+Desktop CI runs native tests and packaging on both Linux and macOS; iOS CI is opt-in.
 
 ## The app
 
@@ -56,7 +90,7 @@ when the roster refreshes. An incomplete setup is reported without silently
 creating a second profile.
 
 Local creation writes reviewed DSH presets and keeps credentials in DSH app storage.
-Group rooms and routines require Hermes. See [the native provider](docs/DSH-PROVIDER.md)
+Local DSH supports attributed DMs and rooms. Scheduled routines require Hermes. See [the native provider](docs/DSH-PROVIDER.md)
 for the method mapping, execution limits and acceptance evidence.
 
 ## Characters and companions
@@ -65,7 +99,7 @@ Thirty-two adult fantasy/cyborg looks, with mature, non-explicit outfits and a
 playful edge. Every human Pixel is 18+; default templates are 28–40.
 
 Four art atlases provide exact **48×48** portraits with at most 32 colors per
-base cell and hard alpha. Both native clients use the same pixels, garment
+base cell and hard alpha. Android and desktop use the same Kotlin core and pixels; iOS keeps the same portable art, garment
 accents and cached renderers. Twelve transparent **16×16** creatures accompany
 any look. Automatic selection follows the brief; the wardrobe has style filters,
 search, surprise, color remix and undo. The first preview makes no model call.
