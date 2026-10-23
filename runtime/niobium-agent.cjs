@@ -80,20 +80,21 @@ function providerSetup(rpc) {
     const keyInfo = state.value.providers.find(r => r.id === definition.id);
     if (key && !keyInfo.key_writable) throw new Error('This key is supplied by a read-only credential source.');
     if (!definition.custom && !key && !keyInfo.key_configured) throw new Error('Enter this provider’s API key.');
-    const noAuth = definition.custom && !key && !keyInfo.key_configured && (!row.profile.apiKeyEnv || row.noAuth);
+    const noAuth = definition.custom && !key && (row.noAuth || (!row.profile.apiKeyEnv && !keyInfo.key_configured));
     const ref = noAuth ? noAuthRef : row.ref;
+    const model = typeof p.model === 'string' ? p.model.trim() : p.model;
     if (noAuth && !(await rpc('credentials.describe', {refs: [noAuthRef]})).credentials[noAuthRef]?.writable) throw new Error('Local credential storage is read-only for this endpoint.');
     const ops = [{op: 'set', path: [...definition.path, 'apiKeyEnv'], value: ref}];
     if (p.base_url !== undefined) ops.push(p.base_url === '' && !definition.custom ? {op: 'unset', path: [...definition.path, 'baseURL']} : {op: 'set', path: [...definition.path, 'baseURL'], value: endpoint(p.base_url)});
     if (definition.custom) {
       if (!p.base_url && !row.baseURL) throw new Error('Enter the compatible endpoint URL.');
-      if (typeof p.model !== 'string' || !p.model.trim() || p.model.length > 200 || /[\x00-\x1f\x7f]/.test(p.model)) throw new Error('Enter the model ID served by this endpoint.');
+      if (typeof model !== 'string' || !model || model.length > 200 || /[\x00-\x1f\x7f]/.test(p.model)) throw new Error('Enter the model ID served by this endpoint.');
       const context = p.context_window, output = p.max_tokens;
       if (!Number.isInteger(context) || context < 512 || context > 2000000 || !Number.isInteger(output) || output < 1 || output > context) throw new Error('Choose valid context and output limits.');
       ops.push({op: 'set', path: [...definition.path, 'api'], value: 'openai-completions'},
         {op: 'set', path: [...definition.path, 'displayName'], value: 'Compatible endpoint'},
-        {op: 'set', path: [...definition.path, 'models'], value: [{id: p.model.trim(), contextWindow: context, maxTokens: output}]});
-    } else if (p.make_default && !row.models.some(m => m.id === p.model)) throw new Error('Choose a model from this provider’s catalog.');
+        {op: 'set', path: [...definition.path, 'models'], value: [{id: model, contextWindow: context, maxTokens: output}]});
+    } else if (p.make_default && !row.models.some(m => m.id === model)) throw new Error('Choose a model from this provider’s catalog.');
     let changed;
     try { changed = await rpc('settings.mutate', {ns: definition.ns, ops, expectedRevision: row.section.revision}); }
     catch { throw new Error('Provider settings could not be saved. Refresh before trying again.'); }
@@ -112,13 +113,13 @@ function providerSetup(rpc) {
     const saved = current.value.providers.find(r => r.id === definition.id);
     if (saved.revision !== changed.revision || !saved.active || !saved.models.length || !saved.credential_ready) throw new Error('Provider setup could not be confirmed. Refresh to check its saved state.');
     if (p.make_default) {
-      if (!saved.models.some(m => m.id === p.model)) throw new Error('Provider saved, but this model is not available. Choose its default again.');
+      if (!saved.models.some(m => m.id === model)) throw new Error('Provider saved, but this model is not available. Choose its default again.');
       let selected;
       try { selected = await rpc('settings.mutate', {ns: 'agent-default-model', expectedRevision: p.expected_default_revision, ops: [
-        {op: 'set', path: ['provider'], value: definition.id}, {op: 'set', path: ['model'], value: p.model}, {op: 'unset', path: ['reasoningEffort']}
+        {op: 'set', path: ['provider'], value: definition.id}, {op: 'set', path: ['model'], value: model}, {op: 'unset', path: ['reasoningEffort']}
       ]}); } catch { throw new Error('Provider saved, but its default model could not be changed. Refresh before trying again.'); }
       current = await inspect();
-      if (current.value.default.revision !== selected.revision || current.value.default.provider !== definition.id || current.value.default.model !== p.model) throw new Error('Provider saved, but the default changed elsewhere. Refresh before trying again.');
+      if (current.value.default.revision !== selected.revision || current.value.default.provider !== definition.id || current.value.default.model !== model) throw new Error('Provider saved, but the default changed elsewhere. Refresh before trying again.');
     }
     return {ok: true, ...current.value};
   }

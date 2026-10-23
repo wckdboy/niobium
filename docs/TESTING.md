@@ -384,7 +384,7 @@ hashes, device receipts, review, merge and website deployment evidence.
 ## Native provider setup (2.1.1 candidate)
 
 The current suite has 33 shared-core, 22 desktop, seven Android-specific JVM,
-79 Node and 15 Python tests. The provider integration runs real pinned DSH against
+81 Node and 15 Python tests. The provider integration runs real pinned DSH against
 loopback DeepSeek chat, OpenAI Responses, Anthropic Messages and compatible chat
 streams. It checks exact credential routing, explicit defaults, preserved original
 conversations, key-free settings, owner-only credential files and cold restart.

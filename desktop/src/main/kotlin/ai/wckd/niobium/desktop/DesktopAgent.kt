@@ -355,7 +355,11 @@ class DesktopAgent(val local: Boolean, private val scope: CoroutineScope, privat
                 val result = client.request("local.provider.configure", params, 20_000)
                 check(result.optBoolean("ok")) { "Provider setup was not confirmed. Refresh to check its state." }
                 val catalog = LocalProviders.parse(result)
-                if (owns(client, connection) && epoch == providerEpoch) { mutable.value = mutable.value.copy(localProviders = catalog); onSaved() }
+                if (owns(client, connection) && epoch == providerEpoch) {
+                    mutable.value = mutable.value.copy(localProviders = catalog)
+                    loadModels(client, chatEpoch)
+                    if (owns(client, connection) && epoch == providerEpoch) onSaved()
+                }
             } catch (e: CancellationException) { throw e }
             catch (e: Exception) { if (owns(client, connection) && epoch == providerEpoch) mutable.value = mutable.value.copy(providerError = e.message ?: "Could not confirm provider setup. Refresh to check its state.") }
             finally { if (owns(client, connection) && epoch == providerEpoch) mutable.value = mutable.value.copy(providerSaving = false) }

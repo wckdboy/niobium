@@ -270,8 +270,9 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
         viewModelScope.launch {
             try {
                 client.request("local.credential", JSONObject().put("ref", ref).put("value", key), 20_000)
-                if (gateway === client) { onSaved(); showToast("Provider key saved on this device") }
-            } catch (e: Exception) { showError(e.message ?: "Could not save provider key.") }
+                if (gateway === client) { loadModels(); onSaved(); showToast("Provider key saved on this device") }
+            } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+            catch (e: Exception) { if (gateway === client) showError(e.message ?: "Could not save provider key.") }
         }
     }
 

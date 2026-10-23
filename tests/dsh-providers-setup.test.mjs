@@ -117,3 +117,18 @@ test('a concurrent default change preserves the saved provider and asks for a fr
   await assert.rejects(f.provider.request('local.provider.configure',{provider:'openai',key:'fixture-key',model:'openai-model',make_default:true,expected_revision:0,expected_default_revision:0}),/Provider saved, but its default model could not be changed/);
   assert(f.sections['llm-pi-ai'].providers.openai);assert.equal(f.keys.OPENAI_API_KEY,'fixture-key');assert.equal(f.sections['agent-default-model'].provider,'deepseek-official');
 });
+test('compatible model IDs are normalized consistently before saving and selecting a default',async()=>{
+  const f=await fixture();const result=await f.provider.request('local.provider.configure',{provider:'niobium-compatible',base_url:'http://127.0.0.1:9000/v1',model:'  local-model  ',context_window:8192,max_tokens:1024,make_default:true,expected_revision:0,expected_default_revision:0});
+  assert.equal(result.default.model,'local-model');
+  assert.equal(f.sections['llm-pi-ai'].providers['niobium-compatible'].models[0].id,'local-model');
+});
+test('editing a no-auth endpoint never reactivates a previously stored real key',async()=>{
+  const f=await fixture();const params={provider:'niobium-compatible',base_url:'http://127.0.0.1:9000/v1',model:'fixture',context_window:8192,max_tokens:1024};
+  await f.provider.request('local.provider.configure',params);
+  f.keys.NIOBIUM_COMPATIBLE_API_KEY='inactive-private-key';
+  const result=await f.provider.request('local.provider.configure',{...params,model:'changed-model',expected_revision:1});
+  assert.equal(f.sections['llm-pi-ai'].providers['niobium-compatible'].apiKeyEnv,'NIOBIUM_COMPATIBLE_NO_AUTH');
+  assert.equal(f.keys.NIOBIUM_COMPATIBLE_API_KEY,'inactive-private-key');
+  assert.equal(result.providers.find(p=>p.id==='niobium-compatible').key_configured,false);
+  assert(!JSON.stringify(result).includes('inactive-private-key'));
+});

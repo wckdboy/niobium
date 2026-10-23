@@ -113,6 +113,8 @@ class LocalProvidersIntegrationTest {
             val original = turn("deepseek", "DEEPSEEK-LOCAL", "deepseek-v4-flash")
             configure("openai", "gpt-4.1-mini", "$origin/openai/v1", "fixture-openai-only")
             assertEquals("deepseek-v4-flash", agent.state.value.model)
+            assertTrue(agent.state.value.modelChoices.any { it.provider == "openai" && it.model == "gpt-4.1-mini" })
+            assertTrue(agent.state.value.modelChoices.any { it.provider == "deepseek-official" && it.current })
             turn("openai", "OPENAI-LOCAL", "gpt-4.1-mini")
             configure("anthropic", "claude-haiku-4-5", "$origin/anthropic", "fixture-anthropic-only")
             turn("anthropic", "ANTHROPIC-LOCAL", "claude-haiku-4-5")

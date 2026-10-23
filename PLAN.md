@@ -614,7 +614,7 @@ Compatible no-auth endpoints use an isolated nonsecret credential placeholder.
 The shared adapter also fixes legacy Android OpenAI/Anthropic key activation.
 
 Local acceptance: 33 shared-core tests, 22 desktop tests, seven Android JVM tests,
-79 Node checks and 15 Python checks. Real DSH streams all four provider protocols
+81 Node checks and 15 Python checks. Real DSH streams all four provider protocols
 against controlled loopback fixtures, restores the original conversation after
 restart and keeps keys out of settings/responses. Android provider setup passes
 on the ARM64 Android 16 emulator. The streaming regression is repeated separately.
