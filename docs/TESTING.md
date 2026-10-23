@@ -125,7 +125,7 @@ After inspection, remove only the temporary `ai.wckd.niobium.acceptance` app and
 acceptance remain pending until it reconnects.
 
 
-GitHub Actions runs shared, Android and iOS suites for pull requests and pushes.
+GitHub Actions runs shared, Android, Linux desktop and macOS desktop suites for pull requests and pushes. The parked iOS suite is opt-in through workflow_dispatch.
 The client suite pins macOS 15 ARM64 and Xcode 26.3, both listed in the
 [official runner image](https://github.com/actions/runner-images/blob/main/images/macos/macos-15-arm64-Readme.md).
 This keeps the client toolchain explicit as the latest image migrates. Full DSH
@@ -290,3 +290,28 @@ still removes that grant. A held-acceptance room test presses Stop before the
 receipt returns, verifies a second cancellation after acceptance, and proves no
 prompt is replayed. Explicit Stop also cancels known sessions with uncertain
 receipts.
+
+## Linux/macOS desktop preview
+
+`python3 tools/prepare-desktop-runtime.py` verifies the pinned official Node archive,
+installs only the locked DSH graph, restores the audited native helper permission,
+and checks WebSocket, Koffi and real PTY execution before staging the bundle.
+`cd desktop && ./gradlew :core:test :test` runs 28 shared Kotlin checks and the
+current desktop suite. UI tests capture the actual Compose wardrobe. Linux runs
+these UI checks under Xvfb, then creates its own native `.deb`; macOS builds `.dmg`.
+
+Desktop acceptance uses an isolated temporary DSH home and a local model fixture:
+real preset creation, reviewed messaging plugin exposure, streamed reply, native
+chat restoration, room creation, Stop/restart and persisted appearance/history.
+The fixture makes no external model request. Tests delete their temporary trees
+with NIO traversal that does not follow DSH's dependency symlinks.
+Additional checks exercise independent engine stores, stale connection work,
+proxy authentication/origin/host rules, private socket lifetime, durable room
+receipts, corrupt receipt preservation, single-instance ownership, exact shared
+RGBA fixtures and rejection of opaque generated-art backgrounds.
+
+Android regression checks after the shared-core extraction pass the JVM suite,
+debug build and lint, plus 16 ARM64 Android 16 emulator instrumented tests covering
+the renderer, Android Keystore, native DSH streaming, service lifecycle, private
+access and workspace preservation. Physical Android and actual 16 KB device
+execution remain separate acceptance tasks.

@@ -136,6 +136,16 @@ class DesktopAgent(val local: Boolean, private val scope: CoroutineScope, privat
             val params = JSONObject(prompt.toString()).put("session_id", mutable.value.session).put("_recovered", true)
             mutable.value = mutable.value.copy(prompts = mutable.value.prompts + AgentPrompt(prompt.s("prompt_id") ?: prompt.s("request_id") ?: "", "approval", mutable.value.session ?: "", params))
         }
+        snapshot.objects("prompts").filter { it.s("kind") == "clarify" && it.s("prompt_id") != null && it.has("execution_generation") }.forEach { prompt ->
+            val id = prompt.getString("prompt_id")
+            val question = JSONObject(prompt.toString()).put("qid", id)
+            val params = JSONObject(prompt.toString()).put("session_id", mutable.value.session).put("_recovered", true).put("questions", JSONArray().put(question))
+            mutable.value = mutable.value.copy(prompts = mutable.value.prompts + AgentPrompt(id, "clarify", mutable.value.session.orEmpty(), params))
+        }
+        if (mutable.value.prompts.none { it.method == "approval" }) snapshot.o("pending_approval")?.let { prompt ->
+            val params = JSONObject(prompt.toString()).put("session_id", mutable.value.session).put("_recovered", true)
+            mutable.value = mutable.value.copy(prompts = mutable.value.prompts + AgentPrompt(prompt.s("request_id").orEmpty(), "approval", mutable.value.session.orEmpty(), params))
+        }
     }
     private suspend fun loadModels(client: GatewayClient, epoch: Int) {
         val session = mutable.value.session ?: return
@@ -228,11 +238,14 @@ class DesktopAgent(val local: Boolean, private val scope: CoroutineScope, privat
     fun answer(prompt: AgentPrompt, result: JSONObject) { perform { client ->
         if (prompt !in mutable.value.prompts) return@perform
         if (prompt.params.optBoolean("_recovered")) {
-            client.request("approval.respond", JSONObject().put("session_id", prompt.session).put("choice", result.s("choice"))
+            client.request(if (prompt.method == "clarify") "clarify.respond" else "approval.respond", JSONObject().put("session_id", prompt.session)
+                .apply { if (prompt.method == "clarify") put("answer", result.o("answers")?.s(prompt.id.toString()).orEmpty()) else put("choice", result.s("choice")) }
                 .apply { for (key in listOf("prompt_id", "execution_generation", "request_id")) if (prompt.params.has(key)) put(key, prompt.params.get(key)) })
         } else client.respond(prompt.id, result)
+        if (gateway !== client) return@perform
         mutable.value = mutable.value.copy(prompts = mutable.value.prompts.filterNot { it == prompt })
     } }
+    fun defer(prompt: AgentPrompt) { mutable.value = mutable.value.copy(prompts = mutable.value.prompts.filterNot { it == prompt }) }
     fun openRoom(room: GroupRoom) {
         ++chatEpoch; streamId = null; groupSessionIDs = emptySet()
         mutable.value = mutable.value.copy(room = room, bot = null, session = null, messages = emptyList(), prompts = emptyList(), events = emptyList(), loading = false, working = false)

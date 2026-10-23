@@ -194,5 +194,5 @@ import org.json.JSONObject
             }) else JSONObject().put("value", secret)
             agent.answer(prompt, value); secret = ""
         }, enabled = if (prompt.method == "clarify") questions.all { answers[it.getString("qid")].orEmpty().isNotEmpty() || custom[it.getString("qid")].orEmpty().isNotBlank() } else secret.isNotBlank()) { Text("Send answer") }
-    }, dismissButton = { if (prompt.method != "approval") TextButton(onClick = { agent.answer(prompt, if (prompt.method == "clarify") JSONObject().put("outcome", "cancelled").put("answers", JSONObject()) else JSONObject().put("value", "")) }) { Text("Cancel") } }, shape = PixelShape)
+    }, dismissButton = { if (prompt.method != "approval") TextButton(onClick = { if (prompt.params.optBoolean("_recovered")) agent.defer(prompt) else agent.answer(prompt, if (prompt.method == "clarify") JSONObject().put("outcome", "cancelled").put("answers", JSONObject()) else JSONObject().put("value", "")) }) { Text(if (prompt.params.optBoolean("_recovered")) "Leave waiting" else "Cancel") } }, shape = PixelShape)
 }

@@ -56,4 +56,3 @@ class PixelArtistWire(private val http: OkHttpClient = OkHttpClient.Builder().re
         }
     }
 }
-
