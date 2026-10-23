@@ -19,12 +19,13 @@ object AppPaths {
         Files.createDirectories(path)
         Files.setPosixFilePermissions(path, PosixFilePermissions.fromString("rwx------"))
     }
-    fun runtime(): Path {
+    fun runtime(packaged: Path? = System.getProperty("compose.application.resources.dir")?.let(Path::of)): Path {
         val platform = if (System.getProperty("os.name").startsWith("Mac")) "macos" else "linux"
         val arch = if (System.getProperty("os.arch") in listOf("aarch64", "arm64")) "arm64" else "x64"
-        val packaged = System.getProperty("compose.application.resources.dir")?.let(Path::of)
-        val candidates = listOfNotNull(packaged, Path.of("runtime/bundle/$platform-$arch"), Path.of("desktop/runtime/bundle/$platform-$arch"))
-        return candidates.firstOrNull { Files.isExecutable(it.resolve("node")) && Files.isRegularFile(it.resolve("desktop-host.cjs")) }
+        val candidates = if (packaged != null) listOf(packaged, packaged.resolve("$platform-$arch"))
+            else listOf(Path.of("runtime/bundle/$platform-$arch"), Path.of("desktop/runtime/bundle/$platform-$arch"))
+        return candidates.firstOrNull { root -> Files.isExecutable(root.resolve("node")) &&
+            listOf("desktop-host.cjs", "node_modules/ws/package.json", "node_modules/@deepseek-ai/dsh/lib/bin.js").all { Files.isRegularFile(root.resolve(it)) } }
             ?: error("The local runtime is missing. Use a complete Niobium desktop package, or run tools/prepare-desktop-runtime.py when developing.")
     }
 }

@@ -16,7 +16,8 @@ data class DesktopState(
     val bot: BotProfile? = null, val session: String? = null, val messages: List<ChatMessage> = emptyList(),
     val loading: Boolean = false, val working: Boolean = false, val sending: Boolean = false,
     val prompts: List<AgentPrompt> = emptyList(), val error: String? = null,
-    val modelChoices: List<ModelChoice> = emptyList(), val model: String = "", val groupsSupported: Boolean = false
+    val modelChoices: List<ModelChoice> = emptyList(), val model: String = "", val groupsSupported: Boolean = false,
+    val groupMethods: Set<String> = emptySet()
 )
 
 /** One store per engine. A switch never transfers sessions, requests or tokens. */
@@ -100,7 +101,7 @@ class DesktopAgent(val local: Boolean, private val scope: CoroutineScope, privat
         if (!owns(client, epoch)) return
         val supported = "groups.list" in caps.strings("methods")
         val rooms = if (supported) client.request("groups.list").objects("rooms").mapNotNull(GroupRoom::parse).filterNot { it.disbanded } else emptyList()
-        if (owns(client, epoch)) mutable.value = mutable.value.copy(groups = rooms, groupsSupported = supported)
+        if (owns(client, epoch)) mutable.value = mutable.value.copy(groups = rooms, groupsSupported = supported, groupMethods = caps.strings("methods").toSet())
     }
     fun open(bot: BotProfile) {
         val client = gateway ?: return
@@ -183,7 +184,10 @@ class DesktopAgent(val local: Boolean, private val scope: CoroutineScope, privat
     }
     fun stopTurn() { perform { client ->
         val snapshot = mutable.value
-        if (snapshot.room != null) client.request("groups.stop", JSONObject().put("room_id", snapshot.room.roomId))
+        if (snapshot.room != null) {
+            if ("groups.stop" !in snapshot.groupMethods) return@perform
+            client.request("groups.stop", JSONObject().put("room_id", snapshot.room.roomId))
+        }
         else snapshot.session?.let { session ->
             val current = client.request("session.resume", JSONObject().put("session_id", session).put("profile", snapshot.bot?.name).put("source", source).put("omit_messages", true))
             check(gateway === client && mutable.value.session == session) { "The chat changed. Stop it from its current window." }
@@ -212,7 +216,7 @@ class DesktopAgent(val local: Boolean, private val scope: CoroutineScope, privat
                 payload.s("error")?.let { mutable.value = mutable.value.copy(error = it) }
             }
             "tool.start" -> mutable.value = mutable.value.copy(messages = mutable.value.messages + ChatMessage(payload.s("tool_id") ?: UUID.randomUUID().toString(), "tool", toolName = payload.s("name"), toolArgs = jstr(payload.opt("args")), toolStatus = ToolStatus.RUNNING))
-            "tool.complete" -> mutable.value = mutable.value.copy(messages = mutable.value.messages.map { if (it.id == payload.s("tool_id")) it.copy(toolResult = jstr(payload.opt("result")), toolStatus = if (payload.optBoolean("success", true)) ToolStatus.DONE else ToolStatus.FAILED) else it })
+            "tool.complete" -> mutable.value = mutable.value.copy(messages = mutable.value.messages.map { if (it.id == payload.s("tool_id")) it.copy(toolResult = jstr(payload.opt("result")), toolStatus = if (payload.optBoolean("is_error") || !payload.optBoolean("success", true)) ToolStatus.FAILED else ToolStatus.DONE) else it })
             "request.cancel" -> mutable.value = mutable.value.copy(prompts = mutable.value.prompts.filterNot { it.id.toString() == (payload.opt("id") ?: payload.s("request_id")).toString() })
             "error" -> mutable.value = mutable.value.copy(working = false, error = payload.s("message") ?: "The engine returned an error.")
         }
@@ -288,6 +292,7 @@ class DesktopAgent(val local: Boolean, private val scope: CoroutineScope, privat
         }
     }
     fun createRoom(name: String, members: List<BotProfile>, onCreated: () -> Unit) { perform { client ->
+        check("groups.create" in mutable.value.groupMethods) { "This engine does not support creating rooms." }
         require(name.trim().length in 1..60 && members.size in 2..6)
         val roster = JSONArray(members.map { JSONObject().put("member_id", it.name).put("profile", it.name).put("handle", it.name).put("display_name", it.title).put("target", JSONObject().put("kind", "local").put("profile", it.name)) })
         val result = client.request("groups.create", JSONObject().put("room_id", UUID.randomUUID().toString()).put("name", name.trim()).put("members", roster))

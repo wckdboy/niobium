@@ -296,7 +296,7 @@ receipts.
 `python3 tools/prepare-desktop-runtime.py` verifies the pinned official Node archive,
 installs only the locked DSH graph, restores the audited native helper permission,
 and checks WebSocket, Koffi and real PTY execution before staging the bundle.
-`cd desktop && ./gradlew :core:test :test` runs 28 shared Kotlin checks and the
+`cd desktop && ./gradlew :core:test :test` runs 29 shared Kotlin checks and the
 current desktop suite. UI tests capture the actual Compose wardrobe. Linux runs
 these UI checks under Xvfb, then creates its own native `.deb`; macOS builds `.dmg`.
 
@@ -315,3 +315,18 @@ debug build and lint, plus 16 ARM64 Android 16 emulator instrumented tests cover
 the renderer, Android Keystore, native DSH streaming, service lifecycle, private
 access and workspace preservation. Physical Android and actual 16 KB device
 execution remain separate acceptance tasks.
+
+## Review provider
+
+CodeRabbit is the selected reviewer. `.coderabbit.yaml` enables assertive reviews
+and incremental review of pushes, with specific protocol, ownership, runtime,
+packaging and Android instructions. It disables unsolicited chat replies and
+label/reviewer assignment. `.greptile/config.json` disables Greptile automatic
+reviews, status checks/comments and automatic approvals for this repository.
+Historical release evidence retains the reviewer that actually ran at the time.
+
+The CodeRabbit GitHub App must be granted access to `wckdboy/niobium` at
+https://github.com/apps/coderabbitai/installations/new . Repository configuration
+alone cannot install or authorize a GitHub App. Request an existing PR review with
+`@coderabbitai full review`; do not report a completed CodeRabbit review until its
+bot returns a result. Configuration reference: https://docs.coderabbit.ai/reference/configuration .

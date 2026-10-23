@@ -78,7 +78,7 @@ import org.json.JSONObject
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                     if (state.connecting) Text("Connecting…", color = Ink.Muted, fontSize = 12.sp)
-                    if (page == "Rooms") PixelButton("New room", secondary = true, enabled = state.connected && state.groupsSupported && state.bots.size >= 2, icon = "add") { createRoom = true }
+                    if (page == "Rooms") PixelButton("New room", secondary = true, enabled = state.connected && "groups.create" in state.groupMethods && state.bots.size >= 2, icon = "add") { createRoom = true }
                     if (page in listOf("Pixels", "Wardrobe")) PixelButton("New Pixel", icon = "add") { creating = true }
                 }
             }
@@ -236,7 +236,7 @@ import org.json.JSONObject
             if (state.bot != null) Portrait(state.specs[state.bot.name]?.character?.look ?: PixelLook("rook"), 48) else Glyph("rooms", Ink.Violet, 24.dp)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) { Text(title, color = Ink.Text, fontSize = 17.sp, fontWeight = FontWeight.Bold); Text(if (roomMode) state.room!!.members.joinToString(" · ") { it.name } else state.model.ifEmpty { if (agent.local) "Local DSH" else "Hermes" }, color = Ink.Muted, fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis) }
             if (state.modelChoices.isNotEmpty()) Box { TextButton(onClick = { models = true }) { Text("Model", fontSize = 11.sp) }; DropdownMenu(models, { models = false }) { state.modelChoices.forEach { choice -> DropdownMenuItem(text = { Text((if (choice.current) "✓ " else "") + choice.label) }, onClick = { agent.selectModel(choice); models = false }) } } }
-            if (state.working || roomMode) PixelButton("Stop", secondary = true, icon = "stop", onClick = agent::stopTurn)
+            if ((!roomMode && state.working) || (roomMode && "groups.stop" in state.groupMethods)) PixelButton("Stop", secondary = true, icon = "stop", onClick = agent::stopTurn)
         }
         HorizontalDivider(color = Ink.Line)
         if (state.loading) LinearProgressIndicator(Modifier.fillMaxWidth(), color = Ink.Violet)
@@ -244,7 +244,9 @@ import org.json.JSONObject
             if (rows.isEmpty() && !state.loading) item { EmptyHint(if (roomMode) "Bring everyone in." else "A fresh conversation.", if (roomMode) "Use @mentions to give a Pixel the floor." else "Send a task, a question, or a wonderfully odd idea.") }
             items(rows, key = { it.id }) { message ->
                 Column(Modifier.fillMaxWidth(), horizontalAlignment = if (message.role == "user") Alignment.End else Alignment.Start) {
-                    Eyebrow(if (message.isTool) message.toolName ?: "Tool" else if (message.role == "user") "You" else if (roomMode) message.toolPreview ?: "Pixel" else title)
+                    Eyebrow(if (message.isTool) "${message.toolName ?: "Tool"} · ${when (message.toolStatus) { ToolStatus.RUNNING -> "Running"; ToolStatus.FAILED -> "Failed"; ToolStatus.DONE -> "Done" }}"
+                        else if (message.role == "user") "You" else if (roomMode) message.toolPreview ?: "Pixel" else title,
+                        if (message.isTool && message.toolStatus == ToolStatus.FAILED) Ink.Red else Ink.Muted)
                     Spacer(Modifier.height(7.dp))
                     SelectionContainer {
                         Column(Modifier.widthIn(max = 640.dp).clip(PixelShape).background(if (message.role == "user") Ink.Pale else Ink.Panel).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

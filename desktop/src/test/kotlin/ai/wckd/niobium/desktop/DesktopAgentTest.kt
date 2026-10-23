@@ -59,4 +59,22 @@ class DesktopAgentTest {
         assertTrue(agent.state.value.connected); assertEquals("fixture-session", agent.state.value.session)
         assertEquals(DesktopState(), other.state.value)
     }
+    @Test fun failedToolsUseBothDshAndHermesErrorFlags() = runBlocking {
+        val ready = connected()
+        withContext(Dispatchers.Main) { agent.open(ready.bots.single()) }
+        withTimeout(10_000) { agent.state.first { it.session != null && !it.loading } }
+        withContext(Dispatchers.Main) { agent.send("fixture tool results") }
+        val result = withTimeout(10_000) { agent.state.first { it.messages.count { message -> message.isTool } == 3 && !it.working } }
+        assertEquals(ToolStatus.FAILED, result.messages.first { it.id == "local-failed" }.toolStatus)
+        assertEquals(ToolStatus.FAILED, result.messages.first { it.id == "remote-failed" }.toolStatus)
+        assertEquals(ToolStatus.DONE, result.messages.first { it.id == "completed" }.toolStatus)
+    }
+    @Test fun listOnlyRoomsNeverOfferUnsupportedStopOrCreation() = runBlocking {
+        connected()
+        val ready = withTimeout(10_000) { agent.state.first { it.groupsSupported } }
+        assertEquals(setOf("groups.list"), ready.groupMethods)
+        withContext(Dispatchers.Main) { agent.openRoom(GroupRoom("room-fixture", "Room", emptyList(), null, 0)); agent.stopTurn() }
+        delay(150)
+        assertNull(agent.state.value.error)
+    }
 }

@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: en-US
+early_access: false
+tone_instructions: "Be concise and evidence-focused. Prioritize reproducible bugs, security, data loss, incorrect API contracts and performance regressions. Avoid style-only comments."
+reviews:
+  profile: assertive
+  request_changes_workflow: true
+  allow_author_approval: false
+  high_level_summary: true
+  collapse_walkthrough: true
+  poem: false
+  auto_apply_labels: false
+  auto_assign_reviewers: false
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+    drafts: false
+    base_branches: ["^main$"]
+  path_filters:
+    - "!ios/ThirdParty/**"
+    - "!**/gradle/wrapper/**"
+    - "!brand/**/*.png"
+    - "!screenshots/**"
+    - "!docs/evidence/**/*.png"
+  path_instructions:
+    - path: "core/**"
+      instructions: "Shared by Android and Linux/macOS desktop. Check RPC wire keys against runtime/ and docs/HERMES-PARITY.md, socket ownership, cancellation, session generations, adult PixelSpec validation and capability narrowing. Preserve Android compatibility."
+    - path: "desktop/**"
+      instructions: "Check installed-package resource paths as well as development execution. Verify independent engine/session/prompt ownership, explicit native DSH lifecycle, private authentication, receipt persistence, credential handling and actual backend state. Never follow DSH dependency symlinks during cleanup."
+    - path: "runtime/**"
+      instructions: "Review against the pinned DSH 0.1.0-rc.7 contract. Check attributed messaging, bounded delegation, idempotent receipts, unknown acceptance without paid replay, native questions/approvals, private paths and shutdown races. Mobile defaults must remain compatible."
+    - path: "android/**"
+      instructions: "Check native runtime/foreground-service lifecycle, Keystore storage, ABI/16 KB packaging, engine separation and shared-core behavior. Avoid assuming agent permissions constitute an OS sandbox."
+chat:
+  auto_reply: false

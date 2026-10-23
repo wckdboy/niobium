@@ -56,7 +56,7 @@ jobs:
             android/app/build/reports/tests/
             android/app/build/test-results/
             android/app/build/reports/lint-results-debug.html
-            core/build/test-results/
+            core/build/**/test-results/
   desktop:
     strategy:
       fail-fast: false
@@ -95,7 +95,7 @@ jobs:
             desktop/build/reports/tests/
             desktop/build/test-results/
             desktop/build/evidence/
-            core/build/test-results/
+            core/build/**/test-results/
   ios:
     if: github.event_name == 'workflow_dispatch' && inputs.ios
     runs-on: macos-15

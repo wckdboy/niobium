@@ -32,10 +32,20 @@ server.on('upgrade', (request, socket) => {
       case 'gateway.capabilities': result({}); break;
       case 'groups.capabilities': result({driver:false,methods:['groups.list']}); break;
       case 'groups.list': result({rooms:[]}); break;
+      case 'groups.log': result({events:[]}); break;
       case 'profiles.list': result({profiles:[{name:'remote-fixture',display_name:'Remote fixture',canonical_session:{id:'fixture-session'}}]}); break;
       case 'tools.list': result({toolsets:[]}); break;
       case 'model.options': result({providers:[]}); break;
       case 'session.resume': result({session_id:'fixture-session',messages:[],revision:0}); break;
+      case 'prompt.submit':
+        if (frame.params.text === 'fixture tool results') {
+          for (const [id,payload] of [['local-failed',{is_error:true}],['remote-failed',{success:false}],['completed',{is_error:false}]]) {
+            event('tool.start',{tool_id:id,name:'fixture'});
+            event('tool.complete',{tool_id:id,result:'tool result',...payload});
+          }
+        }
+        event('message.complete',{text:'Fixture reply'});
+        result({accepted:true}); break;
       case 'fixture.configure': failMethod = frame.params.fail_method || ''; result({ ok: true }); break;
       case 'fixture.state': result({ calls, profiles: Array.from(profiles.values()) }); break;
       case 'profiles.create':
