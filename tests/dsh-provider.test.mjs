@@ -229,3 +229,15 @@ test('room work marks a Pixel busy without replacing its direct-message session'
     assert.equal(row.worker_session.id,'room-work');
   } finally { await p.messaging.close(); await rm(home,{recursive:true,force:true}); }
 });
+
+test('DSH archived workspace sessions never become a canonical or selectable DM', async () => {
+  const p = createProvider({rpc: async method => {
+    if (method === 'agentPreset.list') return {presets:[{id:'standard'}]};
+    if (method === 'workspace.list') return {archivedSessionIds:['archived-room']};
+    return {items:[{sessionId:'archived-room',agentPreset:'standard',updatedAt:2000,running:false},
+      {sessionId:'personal',agentPreset:'standard',updatedAt:1000,running:false}]};
+  }});
+  const rows = (await p.request('session.list',{profile:'default'})).sessions;
+  assert.deepEqual(rows.map(s=>s.id),['personal']);
+  assert.equal((await p.request('profiles.list')).profiles[0].canonical_session.id,'personal');
+});

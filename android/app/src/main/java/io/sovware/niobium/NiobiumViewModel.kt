@@ -1141,6 +1141,20 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
         }
     }
 
+    fun clearLocalRoom(room: GroupRoom) {
+        val client = gateway ?: return
+        if (state.engine != AgentEngine.DSH) return
+        viewModelScope.launch {
+            try {
+                client.request("groups.clear", JSONObject().put("room_id",room.roomId))
+                if (gateway !== client) return@launch
+                if (state.activeGroup?.roomId == room.roomId) closeGroup()
+                state = state.copy(groups = state.groups.filterNot { it.roomId == room.roomId })
+                refreshRoster()
+            } catch (e: Exception) { showError(e.message ?: "Could not clear this room.") }
+        }
+    }
+
     fun stopRoom() {
         val room = state.activeGroup ?: return
         val client = gateway ?: return

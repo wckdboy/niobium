@@ -364,6 +364,15 @@ class LocalRuntimeTest {
             val dm = vm!!.state.groups.first { it.members.any { m -> m.profile == profile } }
             instrumentation.runOnMainSync { vm!!.openGroup(dm) }
             waitFor("Native room transcript contains the actual DM") { vm!!.state.roomEvents.any { it.text == note } }
+            val roomState = org.json.JSONObject(conversations.readText()).getJSONObject("rooms").getJSONObject(dm.roomId)
+            val sessionMap = roomState.getJSONObject("sessions")
+            val ownedSessions = sessionMap.keys().asSequence().map { sessionMap.getString(it) }.toSet()
+            assertTrue(ownedSessions.isNotEmpty())
+            instrumentation.runOnMainSync { vm!!.clearLocalRoom(dm) }
+            waitFor("Room is cleared from native navigation") { vm!!.state.groups.none { it.roomId == dm.roomId } }
+            waitFor("Archived room sessions never become Scout's DM") {
+                vm!!.state.bots.firstOrNull { it.name == "default" }?.canonicalSessionId !in ownedSessions
+            }
 
         } finally {
             instrumentation.runOnMainSync { vm?.disconnect(); vmStore.clear() }

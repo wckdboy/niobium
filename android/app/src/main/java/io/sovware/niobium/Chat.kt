@@ -498,6 +498,7 @@ fun GroupChatScreen(vm: NiobiumViewModel, room: GroupRoom) {
     val state = vm.state
     var clarifyHidden by remember(state.clarify?.rpcId) { mutableStateOf(false) }
     var draft by remember { mutableStateOf("") }
+    var actionsOpen by remember { mutableStateOf(false) }
     var sending by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     LaunchedEffect(state.roomEvents.size) {
@@ -515,8 +516,14 @@ fun GroupChatScreen(vm: NiobiumViewModel, room: GroupRoom) {
                 Text(room.name, color = Nb.Text, style = NbTitle, fontSize = 16.sp)
                 Text("${room.members.size} Pixels", color = Nb.Tertiary, fontSize = 11.sp)
             }
-            if (state.engine == AgentEngine.DSH) Box(Modifier.size(44.dp).clickable { vm.stopRoom() }.semantics { contentDescription = "Stop room replies" }.testTag("room.stop"), contentAlignment = Alignment.Center) { PixelIcon(PixelGlyph.STOP, Nb.Rose, 16.dp) }
-            Box(Modifier.size(44.dp).clickable { vm.refreshGroup() }.semantics { contentDescription = "Refresh room" }, contentAlignment = Alignment.Center) { PixelIcon(PixelGlyph.ACTIVITY, Nb.Secondary, 18.dp) }
+            if (state.engine == AgentEngine.DSH) Box {
+                Box(Modifier.size(44.dp).clickable { actionsOpen = true }.semantics { contentDescription = "Room actions" }.testTag("room.actions"), contentAlignment = Alignment.Center) { PixelIcon(PixelGlyph.SETTINGS, Nb.Secondary, 18.dp) }
+                DropdownMenu(actionsOpen,{ actionsOpen = false }) {
+                    DropdownMenuItem(text = { Text("Refresh") }, onClick = { actionsOpen = false;vm.refreshGroup() })
+                    DropdownMenuItem(text = { Text("Stop replies") }, onClick = { actionsOpen = false;vm.stopRoom() })
+                    DropdownMenuItem(text = { Text("Clear room",color = Nb.Rose) }, onClick = { actionsOpen = false;vm.clearLocalRoom(room) })
+                }
+            } else Box(Modifier.size(44.dp).clickable { vm.refreshGroup() }.semantics { contentDescription = "Refresh room" }, contentAlignment = Alignment.Center) { PixelIcon(PixelGlyph.ACTIVITY, Nb.Secondary, 18.dp) }
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(Nb.Line))
         LazyColumn(

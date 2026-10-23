@@ -138,6 +138,12 @@ function createProvider({rpc, postResponse, home = '/root/.dsh', workspace = '/r
       local_stream_state: partial, local_requests: [...pending.values()].filter(p => p.payload.sessionId === sessionId)};
   }
   const messaging = createMessaging({rpc, home, workspace, metadata, pending, respond, frames: streamFrames});
+  async function sessionVisibility() {
+    const [roomIDs, workspaceInfo] = await Promise.all([messaging.ownSessionIDs(), rpc('workspace.list', {})]);
+    // DSH archives workspace membership separately; session.list still returns
+    // those attached/cold logs. Never make an archived room a personal DM.
+    return {roomIDs, archived: new Set(workspaceInfo.archivedSessionIds || [])};
+  }
   async function request(method, p = {}) {
     if (method.startsWith('groups.')) return messaging.request(method, p);
     switch (method) {
@@ -145,12 +151,12 @@ function createProvider({rpc, postResponse, home = '/root/.dsh', workspace = '/r
       case 'runtime.describe': return {provider: 'dsh', session_create: {sources: ['gui']}};
       case 'gateway.capabilities': return {provider: 'dsh', groups: true, cron: false};
       case 'profiles.list': {
-        const [catalog, sessions, meta, roomSessions] = await Promise.all([rpc('agentPreset.list', {}), rpc('session.list', {}), metadata(), messaging.ownSessionIDs()]);
+        const [catalog, sessions, meta, visibility] = await Promise.all([rpc('agentPreset.list', {}), rpc('session.list', {}), metadata(), sessionVisibility()]);
         const presets = catalog.presets.filter(a => a.id === 'standard' || a.trust === 'user');
         return {profiles: presets.filter(a => !a.broken).map(a => {
           const id = profileID(a.id);
-          const all = sessions.items.filter(s => presetID(s.agentPreset) === a.id && s.origin !== 'subagent').sort((a,b) => b.updatedAt-a.updatedAt);
-          const own = all.filter(s => !roomSessions.has(s.sessionId));
+          const all = sessions.items.filter(s => presetID(s.agentPreset) === a.id && s.origin !== 'subagent' && !visibility.archived.has(s.sessionId)).sort((a,b) => b.updatedAt-a.updatedAt);
+          const own = all.filter(s => !visibility.roomIDs.has(s.sessionId));
           const last = own[0];
           return {name: id, origin: 'dsh', display_name: a.id === 'standard' ? 'Scout' : a.name || id,
             description: a.id === 'standard' ? 'Research, files and everyday tasks' : a.description || 'Your on-device Pixel',
@@ -213,8 +219,8 @@ function createProvider({rpc, postResponse, home = '/root/.dsh', workspace = '/r
         edits = operation.catch(() => {}); return operation;
       }
       case 'session.list': {
-        const roomSessions = await messaging.ownSessionIDs();
-        const rows = (await rpc('session.list', {})).items.filter(s => s.origin !== 'subagent' && !roomSessions.has(s.sessionId) && (!p.profile || presetID(p.profile) === presetID(s.agentPreset)));
+        const visibility = await sessionVisibility();
+        const rows = (await rpc('session.list', {})).items.filter(s => s.origin !== 'subagent' && !visibility.roomIDs.has(s.sessionId) && !visibility.archived.has(s.sessionId) && (!p.profile || presetID(p.profile) === presetID(s.agentPreset)));
         // Native session lists cannot request a continuation page yet. Preserve
         // every local chat rather than silently hiding rows beyond their limit.
         return {sessions: rows.sort((a,b) => b.updatedAt-a.updatedAt).map(s => ({id: s.sessionId, session_id: s.sessionId,
