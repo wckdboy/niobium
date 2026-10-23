@@ -1,6 +1,6 @@
 {
   "project_id": "2fbcf987-20de-43dc-80ac-0a6bab7ec03a",
-  "exported_at": "2026-10-23T08:45:01.470396+00:00",
+  "exported_at": "2026-10-23T12:44:57.665275+00:00",
   "work_items": [
     {
       "id": "8371c624-7ff2-45f5-9c15-6e0e1ff38917",
@@ -366,11 +366,31 @@
       "id": "fd95b656-9094-44e4-89b4-d8c23b4ec67f",
       "sequence_id": 37,
       "name": "Evaluate Harness2 for evidence-based Pixel improvement",
+      "description": "User-linked Harness2 evaluated at google-research/harness2 commit 1cfe254e8d25b15f37048c3730134686abe60335, Apache-2.0, Python 3.12/3.13. Deterministic credential-free demo passed parallel and sequential recursion at k=2: two tasks, zero failures, 28 executions and 32 editor calls. Existing executors are OpenCode/Codex; Hermes/DSH needs a substrate adapter. Proposed next experiment: one bounded probe step per explicitly selected test task on PC/VPS, evidence-based persona/skill/delegation suggestions shown as a reviewed PixelSpec diff, versioned adoption and rollback. Keep secrets, connector authorization and enforced access outside the editable harness. Do not replay side-effecting tasks as probes. Acceptance: real Hermes adapter, independent outcome checks, budget/cancellation/reconnect/partial-failure coverage, evidence redaction and unchanged access. Not integrated or shipped as a mobile runtime. Source and plan: https://github.com/google-research/harness2 and https://github.com/wckdboy/niobium/blob/main/PLAN.md.",
       "priority": "medium",
       "state": "67b7c35f-9516-4123-b1cf-b9d32aeaadb0",
       "external_id": "harness2-pixel-improvement",
-      "external_source": "niobium-v2-audit",
-      "description": "User-linked Harness2 evaluated at google-research/harness2 commit 1cfe254e8d25b15f37048c3730134686abe60335, Apache-2.0, Python 3.12/3.13. Deterministic credential-free demo passed parallel and sequential recursion at k=2: two tasks, zero failures, 28 executions and 32 editor calls. Existing executors are OpenCode/Codex; Hermes/DSH needs a substrate adapter. Proposed next experiment: one bounded probe step per explicitly selected test task on PC/VPS, evidence-based persona/skill/delegation suggestions shown as a reviewed PixelSpec diff, versioned adoption and rollback. Keep secrets, connector authorization and enforced access outside the editable harness. Do not replay side-effecting tasks as probes. Acceptance: real Hermes adapter, independent outcome checks, budget/cancellation/reconnect/partial-failure coverage, evidence redaction and unchanged access. Not integrated or shipped as a mobile runtime. Source and plan: https://github.com/google-research/harness2 and https://github.com/wckdboy/niobium/blob/main/PLAN.md."
+      "external_source": "niobium-v2-audit"
+    },
+    {
+      "id": "279a41d5-eac5-4633-98d1-97404f4791f2",
+      "sequence_id": 38,
+      "name": "Linux/macOS desktop preview and shared Android core",
+      "description": "Linux/macOS desktop preview alongside Android; iOS release/signing work is parked by user request. Shared Kotlin core covers Hermes transport, PixelSpec, persona creation, portraits and image palette reduction. Desktop provides independent Hermes/local DSH workspaces, chats, tools, model controls, recovered prompts, rooms and reviewed character creation.\nPrivate native DSH runtime: pinned Node and dependency lock, private Unix socket, authenticated loopback API, explicit lifecycle, delayed detached-task cleanup and messaging adapters that survive moving the app. Actual installer checks reject stale resources and verify hashes/executable modes, the native launcher and local API.\nCodeRabbit is connected and reviews PR #11; Greptile automatic reviews/status/approval are disabled. Findings fixed include UI-thread probes, canonical resume parameters, path relocation, shutdown grace, deterministic socket race coverage, corrupt-file guidance and package permissions.\nLocal validation: 30 shared-core tests, 16 desktop tests, seven Android-specific JVM tests, 67 Node and 15 Python checks. All 16 ARM64 Android 16 emulator checks passed after extraction; two affected transport/DSH regressions were rerun. Signed Android 2.1/code13 installs and cold-launches. Native final CI and release publication remain in progress.\nPR #11. Desktop remains a preview: additional local providers, OS vaults, richer history/companion controls, skill/MCP/routine UIs and accessibility/soaks remain follow-up work. Physical Android/16 KB execution and real-account model/image acceptance remain open.",
+      "priority": "high",
+      "state": "429820e5-f4b1-4754-9dd5-55b8a3c7cd64",
+      "external_id": "desktop-preview",
+      "external_source": "niobium-v2-audit"
+    },
+    {
+      "id": "6e56bd53-b3b3-4b27-8d1d-8fa95627acb2",
+      "sequence_id": 39,
+      "name": "Native desktop setup for additional DSH providers",
+      "description": "After the 2.1 desktop preview, add native OpenAI/Anthropic and compatible provider setup against the pinned DSH contract. Saving a credential must activate the correct provider/model route rather than leaving a dormant key.\nAcceptance: controlled local HTTP fixtures verify provider activation, model discovery, a streamed turn and restart persistence without leaking credentials or changing the other engine. Keep DeepSeek working. Real-account acceptance is separate and must be recorded honestly.\nRelated: NIO-31 for OS credential vaults, NIO-32 for desktop accessibility/performance, NIO-34 for Hermes feature parity.",
+      "priority": "high",
+      "state": "bb5501a7-f73d-4bd6-b23e-f2e54d9a1982",
+      "external_id": "desktop-native-providers",
+      "external_source": "niobium-v2-audit"
     }
   ]
 }

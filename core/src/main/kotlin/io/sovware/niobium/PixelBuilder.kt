@@ -1,6 +1,5 @@
 package io.sovware.niobium
 
-import android.content.Context
 import org.json.JSONObject
 import org.json.JSONArray
 import org.json.JSONTokener
@@ -89,15 +88,14 @@ object PixelBuilder {
             .takeIf { it.validationError == null }
     }.getOrNull()
 
-    suspend fun draft(context: Context, client: GatewayClient?, prompt: String): PixelDraft {
+    suspend fun draft(skill: String, client: GatewayClient?, prompt: String): PixelDraft {
         val clean = prompt.trim()
         require(clean.isNotEmpty() && clean.length <= 4000) { "Describe the job in 1–4,000 characters." }
-        val defaults = setOf("web", "file", "memory", "todo", "skills", "vision", "image_gen", "terminal", "delegation")
+        val defaults = setOf("web", "file", "memory", "todo", "skills", "vision", "image_gen", "terminal", "delegation", "messaging")
         if (client == null) return PixelDraft(fallback(clean), false, defaults, emptySet(), listOf("Local template. Review the briefing and access before creating."))
         val catalog = client.request("profiles.describe", JSONObject().put("name", "default"), 12_000)
         val tools = catalog.objects("toolsets").mapNotNull { it.s("name") }.toSet()
         val skills = catalog.objects("skills").mapNotNull { it.s("name") }.toSet()
-        val skill = context.assets.open("bot_build.md").bufferedReader().use { it.readText() }
         val notes = mutableListOf<String>()
         val parsed = try {
             val result = client.request("llm.oneshot", JSONObject().put("profile", "default")

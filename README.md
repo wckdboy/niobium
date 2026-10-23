@@ -4,17 +4,63 @@
 
 **Your pixels, everywhere. By [WCKD.ai](https://wckd.ai).**
 
-A native iPhone, iPad and Android home for Pixels: your agents on a Hermes host
-or in the on-device DSH engine, with their own personas, tools and companions.
+A pixel-art home for agents on Linux, macOS and Android: connect Hermes, run
+DSH locally, or keep both engines ready. Pixels have their own personas, tools
+and companions. The existing iOS client is retained; iOS release work is parked.
 
-**New release: [2.0.0-beta.7](https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.7).** Full Hermes parity is the target;
+**2.1 preview: [Linux, macOS and Android](https://github.com/wckdboy/niobium/releases/tag/v2.1.0-beta.1).** Full Hermes parity is the target;
 it is not finished. The current scope is in [PLAN.md](PLAN.md), the implementation
 audit is in [docs/HERMES-PARITY.md](docs/HERMES-PARITY.md), and the work is tracked
 in [Plane](https://app.plane.so/wckd/projects/2fbcf987-20de-43dc-80ac-0a6bab7ec03a/issues/).
 
 <img src="docs/evidence/clean-pixels-ios-dashboard.png" width="280" alt="Niobium v2 on iPhone"> <img src="docs/evidence/clean-pixels-android-workshop.png" width="252" alt="Niobium v2 on Android">
 
-## The app
+## Desktop preview: Linux and macOS
+
+The Compose desktop client shares transport, PixelSpec, persona generation and
+image palette reduction with Android in `core/`. It includes independent Hermes
+and local DSH stores, persistent chats, streamed tools, approvals/questions,
+model selection, engine-owned rooms and the wardrobe/workshop with optional AI art.
+Desktop is an early preview: mobile photos/dictation, routines, full connector
+management, companion task controls and complete Hermes parity are still ahead.
+
+Local DSH runs directly as a host process using a bundled Node runtime, with a
+private engine home and workspace. Its raw web listener uses a private Unix
+socket; only the authenticated Niobium API is exposed on loopback. Start and
+Stop are explicit. Closing the app stops owned local work; Hermes continues on
+its host. Tools use your account permissions, not a desktop OS sandbox.
+
+The first desktop preview provides native DeepSeek key setup for local chat;
+additional local provider setup is planned. Hermes uses its host’s providers.
+Remote gateways require HTTPS; HTTP is reserved for literal loopback addresses.
+Authenticated gateway requests do not follow redirects.
+Remote gateway tokens and the AI image key are session-only on desktop. DSH
+provider keys use its owner-only credential file. Android retains Keystore storage.
+
+From the repository root, with Python 3.12+, Node for fixtures, and a JDK 17+:
+
+```sh
+python3 tools/prepare-desktop-runtime.py
+cd desktop
+./gradlew :core:test :test
+./gradlew run
+./gradlew packageDistributionForCurrentOS
+```
+
+Packaging uses the host platform (Linux `.deb`, macOS `.dmg`) and bundles a Java
+runtime, Node and the locked DSH dependency graph. Use Temurin or another supported
+JDK distribution for packaging. The first macOS preview requires macOS 13.5+ and is unsigned and unnotarized.
+Desktop CI runs native tests and packaging on both Linux and macOS; iOS CI is opt-in.
+
+CodeRabbit reviews new pull requests and incremental pushes using
+[repository guidance](.coderabbit.yaml). Automatic Greptile reviews are disabled.
+The 2.1 checks include 33 shared-core, 18 desktop and seven Android-specific JVM
+tests, 67 Node checks and 15 Python checks. Native installer checks run the
+packaged app and its private DSH API, and reject stale adapters.
+
+<img src="site/public/desktop-preview.png" width="760" alt="Niobium desktop wardrobe">
+
+## The mobile app
 
 Five tabs: **Home · Pixels · Engines · Activity · Settings**.
 
@@ -56,7 +102,7 @@ when the roster refreshes. An incomplete setup is reported without silently
 creating a second profile.
 
 Local creation writes reviewed DSH presets and keeps credentials in DSH app storage.
-Group rooms and routines require Hermes. See [the native provider](docs/DSH-PROVIDER.md)
+Local DSH supports attributed DMs and rooms. Scheduled routines require Hermes. See [the native provider](docs/DSH-PROVIDER.md)
 for the method mapping, execution limits and acceptance evidence.
 
 ## Characters and companions
@@ -65,7 +111,7 @@ Thirty-two adult fantasy/cyborg looks, with mature, non-explicit outfits and a
 playful edge. Every human Pixel is 18+; default templates are 28–40.
 
 Four art atlases provide exact **48×48** portraits with at most 32 colors per
-base cell and hard alpha. Both native clients use the same pixels, garment
+base cell and hard alpha. Android and desktop use the same Kotlin core and pixels; iOS keeps the same portable art, garment
 accents and cached renderers. Twelve transparent **16×16** creatures accompany
 any look. Automatic selection follows the brief; the wardrobe has style filters,
 search, surprise, color remix and undo. The first preview makes no model call.
@@ -145,11 +191,12 @@ node site/build.mjs
 node site/check.mjs
 ~~~
 
-The current source passes 50 iOS unit and six UI checks, 35 Android unit
+Beta.7 passed 50 iOS unit and six UI checks, 35 Android unit
 and sixteen ARM64 emulator checks, 61 Node and 15 Python checks. Sixty-four
 shared wardrobe fixtures verify both native renderers. All three CI jobs pass
 at source 8a988cf; final Codex review has no findings, with nine earlier review
-issues fixed and resolved. Greptile's trial quota prevents a fresh review.
+issues fixed and resolved. CodeRabbit now reviews new changes; historical
+release evidence records the reviewer used at the time.
 
 The full iOS build 15 simulator test opens local Rooms, preserves an unfinished
 model stream over backgrounding and restores actual DSH history after a cold
@@ -193,11 +240,10 @@ acceptance and actual delegation remain. Mobile gateway push delivery is not pro
 
 [niobium.sh](https://niobium.sh) uses the shared WCKD web design and is deployed
 with Cloudflare Workers Static Assets from this repository. The
-[2.0 beta release](https://github.com/wckdboy/niobium/releases/tag/v2.0.0-beta.7)
-includes the signed Android APK, corresponding runtime sources, metadata and
-checksums. Full iOS 2.0 (15), ai.wckd.niobium, is compiled and validated; its export
-and TestFlight upload await Apple account sign-in in Xcode. Build 14 is the latest
-accepted Apple upload. Tester availability remains unverified. The last stable release is
+[2.1 preview release](https://github.com/wckdboy/niobium/releases/tag/v2.1.0-beta.1)
+includes Linux x64 and macOS ARM64 desktop installers, a signed Android APK,
+corresponding runtime/OpenJDK sources, metadata and checksums. iOS sources remain
+available; iOS release work is parked. The last stable release is
 [1.1](https://github.com/wckdboy/niobium/releases/tag/v1.1.0).
 
 The Android UI is MIT; bundled PRoot/Alpine components retain their GPL/LGPL/BSD licenses. The iOS full build combines GPLv3 components. Niobium is

@@ -107,7 +107,7 @@ class AssetsTests(unittest.TestCase):
         for tool in ["tools/character_engine48.py","tools/character_engine.py","tools/sync-pixel-personas.py","tools/portrait_looks.py"]:
             subprocess.run([sys.executable,str(ROOT/tool),"--check"],cwd=ROOT,check=True,capture_output=True)
         fixture=(ROOT/"tests/fixtures/character-recipes.json").read_bytes()
-        for path in ["ios/NativeTests/Fixtures/character-recipes.json","android/app/src/test/resources/character-recipes.json",
+        for path in ["ios/NativeTests/Fixtures/character-recipes.json","core/src/test/resources/character-recipes.json",
                      "android/app/src/androidTest/assets/character-recipes.json"]:
             self.assertEqual(fixture,(ROOT/path).read_bytes(),path)
 

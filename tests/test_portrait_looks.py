@@ -19,7 +19,7 @@ class PortraitLookTests(unittest.TestCase):
         self.assertEqual((ROOT / "android/app/src/main/assets/portrait_looks.json").read_bytes(),
                          (ROOT / "ios/Resources/Assets.xcassets/PortraitLookCatalog.dataset/catalog.json").read_bytes())
         fixture = (ROOT / "tests/fixtures/portrait-looks.json").read_bytes()
-        for path in ["ios/NativeTests/Fixtures/portrait-looks.json", "android/app/src/test/resources/portrait-looks.json", "android/app/src/androidTest/assets/portrait-looks.json"]:
+        for path in ["ios/NativeTests/Fixtures/portrait-looks.json", "core/src/test/resources/portrait-looks.json", "android/app/src/androidTest/assets/portrait-looks.json"]:
             self.assertEqual(fixture, (ROOT / path).read_bytes())
 
     def test_original_look_matches_authored_pixels_and_remixes_keep_the_identity(self):

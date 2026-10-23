@@ -1,6 +1,6 @@
 # Niobium v2
 
-The goal is a complete native mobile surface for Hermes Bot Mode, with an
+The goal is a complete native desktop and mobile surface for Hermes Bot Mode, with an
 optional on-device DSH runtime, a professional pixel-art interface, and Pixels
 that feel like individual teammates.
 
@@ -8,9 +8,25 @@ Reference: [the supplied dashboard](docs/reference-dashboard.png).
 Ledger: [Plane](https://app.plane.so/wckd/projects/2fbcf987-20de-43dc-80ac-0a6bab7ec03a/issues/).
 Protocol audit: [HERMES-PARITY.md](docs/HERMES-PARITY.md).
 
+## Active focus: Linux, macOS and Android
+
+- Build and ship the Compose desktop preview alongside Android; retain iOS sources
+  and make its CI/signing work opt-in while desktop and Android are the priority.
+- Share Kotlin protocol, persona/spec validation and art reduction across Android
+  and desktop. Keep engine connection/session/prompt ownership separate.
+- Native desktop DSH: pinned private runtime, direct host process, authenticated
+  loopback API over a private DSH Unix socket, explicit lifecycle and safe shutdown.
+- Complete controlled model/room/restart acceptance, Linux and macOS packaging,
+  Android regressions, and public download verification before declaring a release.
+- Next desktop work: additional local provider setup, OS credential vaults, richer session/history controls, companion
+  task monitoring, skill/MCP/routine surfaces, accessibility and long-running work.
+- Continue real-account acceptance, physical Android/16 KB execution, cross-engine
+  rooms, Hermes replay and connector authorization. These remain unverified goals.
+
 ## Decisions
 
-- SwiftUI on iOS/iPadOS; Kotlin/Compose on Android. Keep platform UI native.
+- Kotlin/Compose on Android and Linux/macOS desktop, with a shared Kotlin core.
+  Existing SwiftUI iOS/iPadOS sources remain available.
 - Shared PixelSpec, bot-build skill, character recipes, palette and terminology.
 - 48×48 portrait output, cached and displayed without smoothing; smaller
   companion sprites. Original adult fantasy/cyborg cast, with mature outfits
@@ -555,3 +571,30 @@ questions, and preserve a checkpointed active-time budget across suspension and
 restart. Time awaiting a user answer does not spend the room execution budget.
 Both native clients confirm permanent room clearing; the real Android DSH test
 checks cancel preserves the room before confirming archival.
+
+## 2.1 desktop and Android cycle
+
+The active PR is [#11](https://github.com/wckdboy/niobium/pull/11). CodeRabbit
+is connected and automatic Greptile reviews/status/approval are disabled.
+Linux x64 DEB, macOS ARM64 DMG and signed Android 2.1/code13 are the release
+targets. iOS release/signing work remains parked. Native CI and final publication
+are the remaining release gates.
+
+Validated locally: 33 shared-core tests, 18 desktop tests, seven additional
+Android JVM tests, 67 Node checks, 15 Python checks and 64 exact wardrobe fixtures.
+The signed APK installs and cold-launches on the ARM64 Android 16 emulator.
+All 16 instrumented checks passed after extraction; the two affected DSH/transport
+checks were repeated after the shared transport fixes. macOS app-image and mounted
+DMG checks start real DSH through the packaged launcher and verify current runtime
+source hashes and executable permissions.
+
+Next acceptance work is tracked in Plane:
+
+- NIO-39: additional native desktop provider setup, with actual model activation,
+  streaming and restart fixtures. The first preview offers DeepSeek setup.
+- NIO-31: desktop OS credential vaults; gateway and image keys are session-only now.
+- NIO-32: keyboard/accessibility, desktop layout and long-running task soaks.
+- NIO-34/NIO-35: richer history, companion controls, skill/MCP/routine surfaces,
+  Hermes contracts and reconnect replay.
+- NIO-29/NIO-33/NIO-36: physical Android/16 KB execution, cross-engine rooms and
+  real-account model/image acceptance. Controlled fixtures do not establish these.

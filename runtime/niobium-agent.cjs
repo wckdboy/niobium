@@ -30,7 +30,7 @@ function transcript(entries) {
   });
 }
 
-function composition(spec, enabled, briefing) {
+function composition(spec, enabled, briefing, pluginPath = '/usr/local/lib/niobium-agent.cjs') {
   const access = spec.permissions || {};
   const allowed = new Set(enabled.filter(t => TOOLSETS.includes(t)));
   if (!access.network) allowed.delete('web');
@@ -54,12 +54,12 @@ function composition(spec, enabled, briefing) {
     add('subagent-control', 'dsh-tool-subagent-control');
     add('subagent-list', 'dsh-tool-subagent-control/list-agents');
   }
-  if (allowed.has('messaging')) rows.push({id: 'niobium-messaging', name: '/usr/local/lib/niobium-agent.cjs'});
+  if (allowed.has('messaging')) rows.push({id: 'niobium-messaging', name: pluginPath});
   // JSON is valid YAML. No model-generated YAML or plugin names are executed.
   return JSON.stringify(rows, null, 2) + '\n';
 }
 
-function createProvider({rpc, postResponse, home = '/root/.dsh', workspace = '/root/workspace'}) {
+function createProvider({rpc, postResponse, home = '/root/.dsh', workspace = '/root/workspace', pluginPath}) {
   const metadataPath = path.join(home, 'niobium-pixels.json');
   let edits = Promise.resolve();
   const pending = new Map();
@@ -200,7 +200,7 @@ function createProvider({rpc, postResponse, home = '/root/.dsh', workspace = '/r
           await fs.mkdir(stage, {mode: 0o700});
           try {
             const briefing = String(p.briefing || spec.soul) + '\nUse DSH subagent tools for real delegation. Local Pixels share the app workspace; requested scopes are operating rules, not an OS sandbox. Use @mentions inside Niobium rooms for attributed collaboration. If messaging is granted, message_agent sends real DMs or posts to a room; queued is not completed. Local scheduled jobs remain unavailable.';
-            await fs.writeFile(path.join(stage, 'agent.cordis.yml'), composition(spec, p.enabled_toolsets, briefing), {mode: 0o600});
+            await fs.writeFile(path.join(stage, 'agent.cordis.yml'), composition(spec, p.enabled_toolsets, briefing, pluginPath), {mode: 0o600});
             await fs.writeFile(path.join(stage, 'preset.yml'), JSON.stringify({name: spec.title, description: spec.role}), {mode: 0o600});
             const meta = await metadata();
             const previous = meta[spec.name];
@@ -433,7 +433,8 @@ function connectEventStream({connect, onOpen, onMessage, onFailure, onWaiting = 
 }
 
 function install() {
-  const WebSocket = require('/usr/local/lib/node_modules/ws');
+  const modules = process.env.NIOBIUM_DSH_MODULES || '/usr/local/lib/node_modules';
+  const WebSocket = require(path.join(modules, 'ws'));
   const port = Number(process.env.DSH_PORT || 3080);
   const key = process.env.NIOBIUM_AGENT_TOKEN;
   if (!key || key.length < 32) throw new Error('A private native provider token is required.');
@@ -463,7 +464,9 @@ function install() {
     if (!full.result?.ok) throw new Error(full.result?.error?.message || 'DSH rejected this request.');
     return full.result.value;
   };
-  const provider = createProvider({rpc, postResponse: body => post('respond', body)});
+  const provider = createProvider({rpc, postResponse: body => post('respond', body),
+    home: process.env.NIOBIUM_DSH_HOME || '/root/.dsh', workspace: process.env.NIOBIUM_WORKSPACE || '/root/workspace',
+    pluginPath: process.env.NIOBIUM_DSH_MODULES ? __filename : undefined});
   activeProvider = provider;
   const wss = new WebSocket.WebSocketServer({noServer: true, maxPayload: 12 * 1024 * 1024});
   function authorized(request, url) {
@@ -608,7 +611,7 @@ function directoryTool(defineTool, provider) {
 }
 async function apply(ctx) {
   if (!activeProvider) throw new Error('Local messaging is available through the Niobium on-device host.');
-  const {defineTool} = await import('/usr/local/lib/node_modules/@deepseek-ai/dsh-tools/lib/index.js');
+  const {defineTool} = await import(require('node:url').pathToFileURL(path.join(process.env.NIOBIUM_DSH_MODULES || '/usr/local/lib/node_modules', '@deepseek-ai/dsh-tools/lib/index.js')).href);
   ctx.tools.register(messagingTool(defineTool, activeProvider));
   ctx.tools.register(directoryTool(defineTool, activeProvider));
 }

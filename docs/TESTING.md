@@ -125,7 +125,7 @@ After inspection, remove only the temporary `ai.wckd.niobium.acceptance` app and
 acceptance remain pending until it reconnects.
 
 
-GitHub Actions runs shared, Android and iOS suites for pull requests and pushes.
+GitHub Actions runs shared, Android, Linux desktop and macOS desktop suites for pull requests and pushes. The parked iOS suite is opt-in through workflow_dispatch.
 The client suite pins macOS 15 ARM64 and Xcode 26.3, both listed in the
 [official runner image](https://github.com/actions/runner-images/blob/main/images/macos/macos-15-arm64-Readme.md).
 This keeps the client toolchain explicit as the latest image migrates. Full DSH
@@ -290,3 +290,88 @@ still removes that grant. A held-acceptance room test presses Stop before the
 receipt returns, verifies a second cancellation after acceptance, and proves no
 prompt is replayed. Explicit Stop also cancels known sessions with uncertain
 receipts.
+
+## Linux/macOS desktop preview
+
+`python3 tools/prepare-desktop-runtime.py` verifies the pinned official Node archive,
+installs only the locked DSH graph, restores the audited native helper permission,
+and checks WebSocket, Koffi and real PTY execution before staging the bundle.
+`cd desktop && ./gradlew :core:test :test` runs 30 shared Kotlin checks and the
+current desktop suite. UI tests capture the actual Compose wardrobe. Linux runs
+these UI checks under Xvfb, then creates its own native `.deb`; macOS builds `.dmg`.
+
+Desktop acceptance uses an isolated temporary DSH home and a local model fixture:
+real preset creation, reviewed messaging plugin exposure, streamed reply, native
+chat restoration, room creation, Stop/restart and persisted appearance/history.
+The fixture makes no external model request. Tests delete their temporary trees
+with NIO traversal that does not follow DSH's dependency symlinks.
+Additional checks exercise independent engine stores, stale connection work,
+proxy authentication/origin/host rules, private socket lifetime, durable room
+receipts, corrupt receipt preservation, single-instance ownership, exact shared
+RGBA fixtures and rejection of opaque generated-art backgrounds.
+
+Android regression checks after the shared-core extraction pass the JVM suite,
+debug build and lint, plus 16 ARM64 Android 16 emulator instrumented tests covering
+the renderer, Android Keystore, native DSH streaming, service lifecycle, private
+access and workspace preservation. Physical Android and actual 16 KB device
+execution remain separate acceptance tasks.
+
+## Review provider
+
+CodeRabbit is the selected reviewer. `.coderabbit.yaml` enables assertive reviews
+and incremental review of pushes, with specific protocol, ownership, runtime,
+packaging and Android instructions. It disables unsolicited chat replies and
+label/reviewer assignment. `.greptile/config.json` disables Greptile automatic
+reviews, status checks/comments and automatic approvals for this repository.
+Historical release evidence retains the reviewer that actually ran at the time.
+
+The CodeRabbit GitHub App is connected to `wckdboy/niobium` and has reviewed
+[PR #11](https://github.com/wckdboy/niobium/pull/11) using this configuration.
+Request a fresh complete review with `@coderabbitai full review`. Configuration
+reference: https://docs.coderabbit.ai/reference/configuration .
+
+The 2.1 desktop review adds forced early-handshake publication and slow-probe
+responsiveness regressions, strict canonical resume parameters, failed-tool
+status/capability checks, cold restart after app relocation and legacy messaging
+path migration. Runtime source inputs invalidate the Gradle test task.
+`tools/check-desktop-package.py` checks the actual packaged launcher and its
+private DSH API with global Java/Node removed from PATH. It verifies runtime
+hashes and every recorded executable mode; packaging restores those modes after
+jpackage copies resources. Desktop familiar sprites now use Android's authored
+source directly. CodeRabbit reviews the active PR using `.coderabbit.yaml`.
+
+The shutdown regression lets an owning DSH process finish delayed disposal of a
+detached child before escalation; Node coverage is now 67 checks. The race test
+uses a monitor checkpoint rather than a timing assumption. Linux verifies both
+the application image and the extracted DEB; generated DEB permissions are
+restored before upload. macOS verifies the application image and mounted DMG.
+
+The AI-art controller also verifies that an unusable completed image becomes a
+terminal failure, retains its receipt and starts another billable design only on
+an explicit request. Wardrobe selection opens the chosen look in the workshop.
+The desktop suite now has 16 tests, alongside 30 shared-core tests.
+
+Installer tasks also track the runtime source inputs, and package verification
+compares adapters and the dependency lock against the repository. This catches
+stale installed resources after an incremental runtime-only build.
+
+Android native package URLs use the dedicated `android-runtime-2026.10.22`
+release archive after Termux removed a pinned URL. Original upstream URLs,
+versions and checksums remain recorded in the lock. All mirrored download bytes
+were checked against the original SHA-256 values; corresponding sources accompany
+the archive. Fresh CI downloads verify the same bytes.
+
+The final CodeRabbit pass adds three shared transport checks: cleartext remote
+addresses fail before credentials are sent, and neither status probes nor socket
+handshakes follow redirects. HTTPS is required outside literal loopback addresses.
+Startup timeouts now report a retryable failure after owned process cleanup; a
+regression retries without restarting the app. Concurrent Stop callers share the
+same cleanup promise. Current suites: 33 shared-core, 18 desktop, seven Android-
+specific JVM tests, 67 Node and 15 Python checks.
+
+Gateway request deadlines report transport errors rather than masquerading as
+caller cancellation. External coroutine cancellation still propagates. A delayed
+WebSocket handshake also clears the desktop Connecting state with a retry action.
+
+The macOS package minimum is 13.5, matching the bundled Node Mach-O load command.
+Installer verification compares the app Info.plist against that binary minimum.

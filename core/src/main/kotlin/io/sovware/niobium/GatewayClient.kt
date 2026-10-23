@@ -1,7 +1,9 @@
 package io.sovware.niobium
 
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -16,7 +18,14 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class GatewayException(message: String) : IOException(message)
 
-class GatewayClient(private val listener: Listener) {
+private fun checkedGatewayUrl(baseUrl: String) =
+    baseUrl.trimEnd('/').toHttpUrlOrNull()?.also { url ->
+        if (url.scheme != "https" && !(url.scheme == "http" && url.host in setOf("127.0.0.1", "::1"))) {
+            throw GatewayException("Remote gateways must use HTTPS. HTTP is available only for literal loopback addresses.")
+        }
+    } ?: throw GatewayException("That gateway address isn’t valid.")
+
+class GatewayClient(private val listener: Listener, private val webSocketFactory: WebSocket.Factory? = null) {
     interface Listener {
         fun onReady(payload: JSONObject)
         fun onNotification(type: String, sessionId: String, payload: JSONObject)
@@ -29,32 +38,35 @@ class GatewayClient(private val listener: Listener) {
         .readTimeout(0, TimeUnit.MILLISECONDS)
         .pingInterval(20, TimeUnit.SECONDS)
         .retryOnConnectionFailure(true)
+        .followRedirects(false)
+        .followSslRedirects(false)
         .build()
     @Volatile private var socket: WebSocket? = null
     private val nextId = AtomicInteger(1)
     private val pending = ConcurrentHashMap<Int, CompletableDeferred<JSONObject>>()
     @Volatile private var closedByUs = false
 
-    var connected: Boolean = false
+    @Volatile var connected: Boolean = false
         private set
 
-    fun connect(baseUrl: String, token: String, cookie: String? = null) {
+    @Synchronized fun connect(baseUrl: String, token: String, cookie: String? = null) {
         disconnect(silent = true)
         closedByUs = false
-        val httpUrl = baseUrl.trimEnd('/').toHttpUrlOrNull() ?: throw GatewayException("That gateway address isn’t valid.")
+        val httpUrl = checkedGatewayUrl(baseUrl)
         val wsUrl = httpUrl.newBuilder()
             .addPathSegments("api/ws")
             .apply { if (token.isNotBlank()) addQueryParameter("token", token) }
             .build()
         val request = Request.Builder().url(wsUrl).apply { cookie?.let { header("Cookie", "niobium_session=" + it) } }.build()
-        socket = http.newWebSocket(request, object : WebSocketListener() {
+        // A loopback handshake can finish before newWebSocket returns. Publish
+        // its owner before callbacks inspect it, including the first ready frame.
+        socket = (webSocketFactory ?: http).newWebSocket(request, object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
-                if (socket === webSocket) connected = true
+                synchronized(this@GatewayClient) { if (socket === webSocket) connected = true }
             }
 
             override fun onMessage(webSocket: WebSocket, text: String) {
-                if (socket !== webSocket) return
-                handle(text)
+                synchronized(this@GatewayClient) { if (socket === webSocket) handle(text) }
             }
 
             override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
@@ -62,13 +74,16 @@ class GatewayClient(private val listener: Listener) {
             }
 
             override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+                synchronized(this@GatewayClient) {
                 if (socket !== webSocket) return
                 connected = false
                 failPending("Connection closed${if (reason.isNotBlank()) ": $reason" else ""}")
                 if (!closedByUs) listener.onClosed(reason.ifBlank { "Gateway closed the connection" })
+                }
             }
 
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+                synchronized(this@GatewayClient) {
                 if (socket !== webSocket) return
                 connected = false
                 val detail = when {
@@ -78,6 +93,7 @@ class GatewayClient(private val listener: Listener) {
                 }
                 failPending(detail)
                 if (!closedByUs) listener.onClosed(detail)
+                }
             }
         })
     }
@@ -134,7 +150,8 @@ class GatewayClient(private val listener: Listener) {
             throw GatewayException("Could not send that request to the gateway.")
         }
         return try {
-            withTimeout(timeoutMs) { deferred.await() }
+            withTimeoutOrNull(timeoutMs) { deferred.await() }
+                ?: throw GatewayException("The gateway request timed out. Check its status before retrying.")
         } finally {
             pending.remove(id)
         }
@@ -151,7 +168,7 @@ class GatewayClient(private val listener: Listener) {
             .put("error", JSONObject().put("code", code).put("message", message)).toString())
     }
 
-    fun disconnect(silent: Boolean = false) {
+    @Synchronized fun disconnect(silent: Boolean = false) {
         closedByUs = silent
         socket?.close(1000, "Niobium closed")
         socket = null
@@ -166,9 +183,8 @@ class GatewayClient(private val listener: Listener) {
     }
 
     companion object {
-        suspend fun probe(baseUrl: String, token: String, cookie: String? = null): JSONObject {
-            val url = baseUrl.trimEnd('/').toHttpUrlOrNull()?.newBuilder()?.addPathSegments("api/status")?.build()
-                ?: throw GatewayException("That gateway address isn’t valid.")
+        suspend fun probe(baseUrl: String, token: String, cookie: String? = null): JSONObject = withContext(Dispatchers.IO) {
+            val url = checkedGatewayUrl(baseUrl).newBuilder().addPathSegments("api/status").build()
             val request = Request.Builder().url(url)
                 .apply {
                     cookie?.let { header("Cookie", "niobium_session=" + it) }
@@ -177,11 +193,12 @@ class GatewayClient(private val listener: Listener) {
                         header("Authorization", "Bearer $token")
                     }
                 }.build()
-            val client = OkHttpClient.Builder().connectTimeout(12, TimeUnit.SECONDS).readTimeout(12, TimeUnit.SECONDS).build()
+            val client = OkHttpClient.Builder().connectTimeout(12, TimeUnit.SECONDS).readTimeout(12, TimeUnit.SECONDS)
+                .followRedirects(false).followSslRedirects(false).build()
             client.newCall(request).execute().use { response ->
                 if (response.code == 401 || response.code == 403) throw GatewayException("That access token was rejected.")
                 if (!response.isSuccessful) throw GatewayException("Gateway returned HTTP ${response.code}.")
-                return JSONObject(response.body.string())
+                JSONObject(response.body.string())
             }
         }
     }

@@ -34,3 +34,12 @@ upstream source archives. Android release assets include those sources,
 Termux build recipes/patches, and this repository's supervisor source.
 The PRoot fork is https://github.com/termux/proot; Termux packaging is
 https://github.com/termux/termux-packages. Neither requires the Termux app.
+
+Desktop distributions run DSH directly on Linux/macOS; they do not include or
+link iSH, PRoot, or Alpine. The desktop client and shared Kotlin core are MIT.
+Desktop packages bundle Eclipse Temurin/OpenJDK (GPLv2 with Classpath Exception),
+Node.js (MIT with bundled third-party notices), Compose/Skiko and dependencies,
+and the locked DSH npm dependency graph. Their notices and licenses are retained
+in the application/runtime resources and Java runtime legal directory. The exact
+Node archives and hashes are in config/desktop-runtime.json; DSH packages and
+integrity hashes are in desktop/runtime/package-lock.json.

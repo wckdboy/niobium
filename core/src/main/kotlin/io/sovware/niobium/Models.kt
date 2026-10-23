@@ -1,6 +1,5 @@
 package io.sovware.niobium
 
-import androidx.compose.ui.graphics.Color
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
@@ -52,7 +51,6 @@ data class BotProfile(
 ) {
     val castKey get() = if (origin == "dsh") "dsh:" + name else name
     val id get() = castKey
-    val accent: Color get() = Nb.colorFor(accentHex ?: name)
     val initials: String
         get() = title.split(" ").filter { it.isNotBlank() }.take(2).joinToString("") { it.take(1) }.uppercase().ifEmpty { name.take(2).uppercase() }
     val isLive: Boolean get() = workerActive && activityAt != null && System.currentTimeMillis() / 1000 - activityAt < 120
@@ -275,4 +273,16 @@ data class UsageStats(
 
 data class MCPServerRow(val name: String, val transport: String, val status: String, val connected: Boolean, val enabled: Boolean, val tools: Int, val source: String) {
     val id get() = name
+}
+
+fun formatRelative(epochSec: Long?): String {
+    if (epochSec == null || epochSec <= 0) return "ready"
+    val delta = (System.currentTimeMillis() / 1000) - epochSec
+    return when {
+        delta < 60 -> "now"
+        delta < 3600 -> "${delta / 60}m"
+        delta < 86400 -> "${delta / 3600}h"
+        delta < 604800 -> "${delta / 86400}d"
+        else -> "${delta / 604800}w"
+    }
 }

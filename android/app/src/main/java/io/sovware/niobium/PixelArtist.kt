@@ -35,53 +35,6 @@ import java.util.Base64
 import java.util.concurrent.TimeUnit
 import kotlin.math.sqrt
 
-data class PixelArtJob(val target: String, val phase: String, val responseId: String? = null, val candidate: PixelArt? = null, val message: String? = null) {
-    fun toJson() = JSONObject().put("target", target).put("phase", phase).put("response_id", responseId)
-        .put("candidate", candidate?.toJson()).put("message", message)
-    companion object {
-        fun parse(j: JSONObject) = PixelArtJob(j.getString("target"), j.getString("phase"), j.s("response_id"), j.o("candidate")?.let(PixelArt::parse), j.s("message"))
-    }
-}
-
-internal class ArtistHttpError(val code: Int) : Exception(when(code) {
-    401,403 -> "Check your OpenAI image key and model access."
-    404 -> "The saved design is unavailable or expired. Your current art is unchanged."
-    429 -> "The image provider reached its usage limit. Check the saved design later."
-    0 -> "The provider returned an unusable image design. Your current art is unchanged."
-    else -> "The image provider declined the request (HTTP $code). Check model access and usage."
-})
-
-internal class PixelArtistWire(private val http: OkHttpClient = OkHttpClient.Builder().retryOnConnectionFailure(false)
-    .followRedirects(false).followSslRedirects(false).callTimeout(60, TimeUnit.SECONDS).build(),
-    private val endpoint: String = "https://api.openai.com/v1/responses") {
-    suspend fun request(key: String, method: String, suffix: String, body: JSONObject? = null): JSONObject = withContext(Dispatchers.IO) {
-        require(key.isNotEmpty())
-        val request = Request.Builder().url(endpoint + suffix).header("Authorization", "Bearer $key")
-            .method(method, if (method == "GET") null else (body ?: JSONObject()).toString().toRequestBody("application/json".toMediaType())).build()
-        http.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) throw ArtistHttpError(response.code)
-            val source = response.body.source()
-            source.request(32L*1024*1024+1)
-            if (source.buffer.size > 32L*1024*1024) throw ArtistHttpError(0)
-            runCatching { JSONObject(source.buffer.readUtf8()) }.getOrElse { throw ArtistHttpError(0) }
-        }
-    }
-    companion object {
-        fun validId(id: String) = id.matches(Regex("^resp_[A-Za-z0-9_-]{1,160}$"))
-        fun body(prompt: String, target: String, referencePng: ByteArray?): JSONObject {
-            val subject = if (target == "companion") "Exactly one freaky adorable fantasy/cyborg companion creature, not a human; expressive eyes and a distinct silhouette. Design for a 16 by 16 logical-pixel sprite."
-                else "Exactly one unambiguously adult person age 28–45, mature face and adult proportions, waist-up. Attractive fantasy/cyborg design; bold skimpy opaque clothing, stylish cutouts, straps or cropped armor. Intimate areas fully covered; non-explicit, no nudity, sexual activity, youthful or school styling. Design for a 48 by 48 logical-pixel portrait."
-            val text = "Generate production game sprite art. $subject Match the reference identity when present; change only the requested clothing/style/features. Transparent background, fully contained with generous empty margins, centered; no text, watermark, frame, background, ground shadow, extra character or interface. Crisp intentional square pixel clusters, limited 24–32 colors, clear eyes and selective high-contrast shading, premium 16-bit RPG art; no smooth painting or blur. Owner’s design brief: $prompt"
-            val content = JSONArray().put(JSONObject().put("type", "input_text").put("text", text))
-            referencePng?.let { content.put(JSONObject().put("type", "input_image").put("image_url", "data:image/png;base64," + Base64.getEncoder().encodeToString(it))) }
-            return JSONObject().put("model", "gpt-6-astra").put("background", true).put("store", true)
-                .put("input", JSONArray().put(JSONObject().put("role", "user").put("content", content)))
-                .put("tools", JSONArray().put(JSONObject().put("type", "image_generation").put("model", "gpt-image-2.5-sunburst")
-                    .put("background", "transparent").put("output_format", "png").put("quality", "medium").put("size", "1024x1024")))
-        }
-    }
-}
-
 class PixelArtist private constructor(context: Context) {
     private val prefs = context.getSharedPreferences("niobium.artist", Context.MODE_PRIVATE)
     private val secure = SecurePrefs(context)
@@ -163,13 +116,18 @@ class PixelArtist private constructor(context: Context) {
         if (!PixelArtistWire.validId(id) || phase !in listOf("queued", "in_progress", "completed", "failed", "incomplete", "cancelled") || (job?.responseId != null && job?.responseId != id)) throw ArtistHttpError(0)
         job = job?.copy(responseId = id, phase = if (phase == "completed") "in_progress" else phase, message = null); persist()
         if (phase == "completed") {
-            val output = value.a("output") ?: throw ArtistHttpError(0)
-            val encoded = (0 until output.length()).mapNotNull { output.optJSONObject(it) }.firstOrNull { it.s("type") == "image_generation_call" }?.s("result") ?: throw ArtistHttpError(0)
-            if (encoded.length > 28*1024*1024) throw ArtistHttpError(0)
-            val size = if (job?.target == "companion") 16 else 48
-            val art = withContext(Dispatchers.Default) { PixelArtBaker.bake(Base64.getDecoder().decode(encoded), size) }
-            currentCoroutineContext().ensureActive()
-            job = job?.copy(phase = "completed", candidate = art); persist()
+            try {
+                val output = value.a("output") ?: throw ArtistHttpError(0)
+                val encoded = (0 until output.length()).mapNotNull { output.optJSONObject(it) }.firstOrNull { it.s("type") == "image_generation_call" }?.s("result") ?: throw ArtistHttpError(0)
+                if (encoded.length > 28*1024*1024) throw ArtistHttpError(0)
+                val size = if (job?.target == "companion") 16 else 48
+                val art = withContext(Dispatchers.Default) { PixelArtBaker.bake(Base64.getDecoder().decode(encoded), size) }
+                currentCoroutineContext().ensureActive()
+                job = job?.copy(phase = "completed", candidate = art); persist()
+            } catch (error: CancellationException) { throw error }
+            catch (_: Exception) {
+                job = job?.copy(phase = "failed", candidate = null, message = "The provider finished, but its image could not become a transparent sprite. Your current art is unchanged."); persist()
+            }
         } else if (phase in listOf("failed", "incomplete")) { job = job?.copy(message = "The provider couldn’t finish this design. Your current art is unchanged."); persist() }
     }
     companion object {
@@ -191,26 +149,7 @@ internal object PixelArtBaker {
         Canvas(small).drawBitmap(image, null, RectF((size-w)/2, (size-h)/2, (size+w)/2, (size+h)/2), Paint(Paint.FILTER_BITMAP_FLAG))
         image.recycle()
         val rgba = IntArray(size*size); small.getPixels(rgba,0,size,0,0,size,size); small.recycle()
-        val corners = listOf(size+1,size+size-2,(size-2)*size+1,(size-2)*size+size-2)
-        if (corners.count { (rgba[it] ushr 24) < 128 } < 2) throw ArtistHttpError(0)
-        val colors = rgba.mapIndexed { i,c -> if ((c ushr 24) < 128 || i%size == 0 || i%size == size-1 || i/size == 0 || i/size == size-1) null else c and 0xFFFFFF }
-        val histogram = colors.filterNotNull().groupingBy { it }.eachCount()
-        if (histogram.values.sum() < size*size/12) throw ArtistHttpError(0)
-        val samples = histogram.keys.sorted()
-        fun distance(a: Int, b: Int) = listOf(16,8,0).sumOf { val d = ((a shr it) and 255) - ((b shr it) and 255); d*d }
-        val palette = mutableListOf(samples.maxBy { histogram.getValue(it) })
-        fun nearest(c: Int) = palette.indices.minBy { distance(c,palette[it]) }
-        while (palette.size < minOf(32,samples.size)) {
-            val next = samples.maxBy { distance(it,palette[nearest(it)]) * sqrt(histogram.getValue(it).toDouble()) }
-            if (next in palette) break; palette.add(next)
-        }
-        repeat(4) {
-            val sums = Array(palette.size) { IntArray(4) }
-            samples.forEach { c -> val i = nearest(c); val n = histogram.getValue(c); sums[i][0] += ((c shr 16) and 255)*n; sums[i][1] += ((c shr 8) and 255)*n; sums[i][2] += (c and 255)*n; sums[i][3] += n }
-            palette.indices.filter { sums[it][3] > 0 }.forEach { val s = sums[it]; palette[it] = (s[0]/s[3] shl 16) or (s[1]/s[3] shl 8) or (s[2]/s[3]) }
-        }
-        return PixelArt(size, palette, Base64.getEncoder().encodeToString(ByteArray(colors.size) { colors[it]?.let { c -> nearest(c).toByte() } ?: 255.toByte() }))
-            .also { if (!it.valid) throw ArtistHttpError(0) }
+        return PixelArtQuantizer.bake(rgba, size)
     }
 }
 

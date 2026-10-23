@@ -15,8 +15,8 @@ android {
         applicationId = "io.sovware.niobium"
         minSdk = 28
         targetSdk = 37
-        versionCode = 12
-        versionName = "2.0"
+        versionCode = 13
+        versionName = "2.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk { abiFilters += "arm64-v8a" }
     }
@@ -85,6 +85,7 @@ val prepareGatewayTestAsset = tasks.register<Copy>("prepareGatewayTestAsset") {
 tasks.named("preBuild").configure { dependsOn(prepareLocalRuntime, prepareGatewayTestAsset) }
 
 dependencies {
+    implementation(project(":core"))
     androidTestImplementation("androidx.test:runner:1.7.0")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
     // Compose's transitive Espresso 3.5 uses an InputManager API removed in Android 16.

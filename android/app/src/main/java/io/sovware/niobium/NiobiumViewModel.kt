@@ -1253,7 +1253,7 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
 
     fun draftPixel(context: android.content.Context, prompt: String, onDraft: (PixelDraft) -> Unit, onError: (String) -> Unit): Job {
         return viewModelScope.launch {
-            try { onDraft(PixelBuilder.draft(context, if (state.demo) null else gateway, prompt)) }
+            try { onDraft(PixelBuilder.draft(context.assets.open("bot_build.md").bufferedReader().use { it.readText() }, if (state.demo) null else gateway, prompt)) }
             catch (e: kotlinx.coroutines.CancellationException) { throw e }
             catch (e: Exception) { onError(e.message ?: "Could not design Pixel.") }
         }
