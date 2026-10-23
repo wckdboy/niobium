@@ -49,19 +49,25 @@ def main():
             checks.append(op)
             return r.stdout
         daemon = None; before = None
+        def start_service():
+            service = subprocess.Popen(["gnome-keyring-daemon", "--foreground", "--components=secrets", "--control-directory=" + str(control_directory), "--unlock"], stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            service.stdin.write(MASTER); service.stdin.close()
+            # NameHasOwner does not auto-activate a competing keyring daemon.
+            for _ in range(100):
+                owner = subprocess.run(["gdbus", "call", "--session", "--dest", "org.freedesktop.DBus", "--object-path", "/org/freedesktop/DBus", "--method", "org.freedesktop.DBus.NameHasOwner", "org.freedesktop.secrets"], capture_output=True, timeout=2)
+                if b"true" in owner.stdout:
+                    r = subprocess.run([str(native), "status"], capture_output=True, timeout=2)
+                    if r.returncode == 0: return service
+                time.sleep(0.1)
+            service.terminate(); service.wait(timeout=5)
+            raise AssertionError("Isolated Secret Service did not initialize")
         try:
             if MAC:
                 before = subprocess.check_output(["/usr/bin/security", "list-keychains", "-d", "user"])
                 call("create", secret=MASTER)
             else:
                 control_directory = temporary / "control"; control_directory.mkdir(mode=0o700)
-                daemon = subprocess.Popen(["gnome-keyring-daemon", "--foreground", "--components=secrets", "--control-directory=" + str(control_directory), "--unlock"], stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                daemon.stdin.write(MASTER); daemon.stdin.close()
-                for _ in range(100):
-                    r = subprocess.run([str(native), "status"], capture_output=True, timeout=2)
-                    if r.returncode == 0: break
-                    time.sleep(0.1)
-                else: raise AssertionError("Isolated Secret Service did not initialize")
+                daemon = start_service()
             call("status")
             one = hashlib.sha256(b"one").hexdigest(); two = hashlib.sha256(b"two").hexdigest()
             call("get", "gateway", one, expected=10)
@@ -80,7 +86,8 @@ def main():
             call("delete", "gateway", one, expected=11)
             if MAC: call("unlock", secret=MASTER)
             else:
-                subprocess.run(["gnome-keyring-daemon", "--control-directory=" + str(control_directory), "--unlock"], input=MASTER, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True, timeout=10)
+                daemon.terminate(); daemon.wait(timeout=5)
+                daemon = start_service()
             assert call("get", "gateway", one) == FIRST
             call("put", "gateway", one, SECOND)
             assert call("get", "gateway", one) == SECOND
