@@ -309,14 +309,19 @@ class LocalRuntimeTest {
         val vmStore = androidx.lifecycle.ViewModelStore()
         val preferences = context.getSharedPreferences("niobium", android.content.Context.MODE_PRIVATE)
         val previousProvider = preferences.getString("agent-provider", null)
+        val hadEnabled = preferences.contains("dsh-enabled")
+        val wasEnabled = preferences.getBoolean("dsh-enabled",false)
         try {
             val until = System.nanoTime() + TimeUnit.SECONDS.toNanos(90)
             while (System.nanoTime() < until && process.isAlive && !LocalRuntimeProxy.ready(socket.path)) Thread.sleep(200)
             assertTrue("DSH was not ready", process.isAlive && LocalRuntimeProxy.ready(socket.path))
             GatewayClient.probe(proxy.origin + "/niobium", proxy.key, proxy.key)
             instrumentation.runOnMainSync {
-                vm = NiobiumViewModel(context.applicationContext as android.app.Application)
-                vmStore.put("native-provider", vm!!)
+                preferences.edit().putString("agent-provider","dsh").putBoolean("dsh-enabled",false).commit()
+                val hub = NiobiumEngineHub(context.applicationContext as android.app.Application)
+                vmStore.put("native-provider",hub)
+                hub.bootstrap(bot = "default")
+                vm = hub.local
                 vm!!.connect(proxy.origin + "/niobium", proxy.key, "On device · DSH", false, true, proxy.key)
             }
             suspend fun waitFor(label: String, predicate: () -> Boolean) {
@@ -325,6 +330,8 @@ class LocalRuntimeTest {
                 assertTrue(label + ": " + vm?.state?.error + "; turn=" + vm?.state?.turnActive + "; modelRequests=" + (1 - received.count), predicate())
             }
             waitFor("Native roster connected") { vm!!.state.connected && vm!!.state.bots.isNotEmpty() }
+            waitFor("The launch target opens in the selected DSH workspace") { vm!!.state.activeBot?.name == "default" }
+            instrumentation.runOnMainSync { vm!!.closeBot() }
             assertFalse(vm!!.state.needsConnection)
             assertEquals(AgentEngine.DSH, vm!!.state.engine)
             val tools = setOf("web", "file", "terminal", "todo", "skills", "delegation", "messaging")
@@ -391,7 +398,9 @@ class LocalRuntimeTest {
 
         } finally {
             instrumentation.runOnMainSync { vm?.disconnect(); vmStore.clear() }
-            preferences.edit().putString("agent-provider", previousProvider).apply()
+            preferences.edit().putString("agent-provider", previousProvider).apply {
+                if (hadEnabled) putBoolean("dsh-enabled",wasEnabled) else remove("dsh-enabled")
+            }.commit()
             proxy.close(); process.outputStream.close(); process.waitFor(20, TimeUnit.SECONDS)
             mock.close(); responder.join(1000); socket.delete()
             java.io.File(runtime.home, ".dsh/.agent-presets/" + profile).deleteRecursively()

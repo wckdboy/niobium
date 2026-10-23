@@ -12,12 +12,13 @@ async function fixture(options = {}) {
   const home = await mkdtemp(path.join(tmpdir(),'niobium-rooms-'));
   const sessions = [], prompts = [], cancelled = [], histories = new Map(), pending = new Map();
   let response = () => 'A real fixture reply.', accept = true, complete = true, grants = true, historyReads = 0;
+  let beforeCreate = async()=>{}, beforeRename = async()=>{}, archiveFailures = 0, archiveAttempts = 0;
   const presets = [{id:'standard',name:'Scout'},{id:'forge',name:'Forge',trust:'user'},{id:'constructor',name:'Constructor',trust:'user'}];
   const rpc = async (method,p) => {
     if (method === 'agentPreset.list') return {presets};
     if (method === 'session.list') return {items:sessions};
-    if (method === 'session.create') { const sessionId='session-'+sessions.length; sessions.push({sessionId,agentPreset:p.agentPreset}); histories.set(sessionId,[]); return {sessionId}; }
-    if (method === 'session.rename') return {};
+    if (method === 'session.create') { await beforeCreate(); const sessionId='session-'+sessions.length; sessions.push({sessionId,agentPreset:p.agentPreset}); histories.set(sessionId,[]); return {sessionId}; }
+    if (method === 'session.rename') { await beforeRename(); return {}; }
     if (method === 'session.prompt') {
       prompts.push(p); const rows=histories.get(p.sessionId), base=rows.length;
       const add = (type,data) => rows.push({event:{seq:rows.length,time:Date.now(),type,data}});
@@ -27,7 +28,7 @@ async function fixture(options = {}) {
       return {accepted:true};
     }
     if (method === 'session.history') { historyReads++; return {events:histories.get(p.sessionId)||[],hasMore:false}; }
-    if (method === 'workspace.archiveSession') { const index=sessions.findIndex(s=>s.sessionId===p.sessionId); if(index>=0)sessions.splice(index,1); return {}; }
+    if (method === 'workspace.archiveSession') { archiveAttempts++; if(archiveFailures-->0)throw new Error('Temporary archival failure'); const index=sessions.findIndex(s=>s.sessionId===p.sessionId); if(index>=0)sessions.splice(index,1); return {}; }
     if (method === 'session.cancel') { cancelled.push(p.sessionId); return {}; }
     throw new Error('Unexpected fixture method '+method);
   };
@@ -39,6 +40,7 @@ async function fixture(options = {}) {
   const idle=()=>until(async()=>Object.values((await state()).rooms).every(r=>r.deliveries.every(j=>['completed','failed','cancelled','uncertain'].includes(j.phase))));
   return {home,sessions,prompts,cancelled,histories,pending,rpc,create,send,state,idle,
     get historyReads(){return historyReads;},
+    get archiveAttempts(){return archiveAttempts;},set archiveFailures(v){archiveFailures=v;},set beforeCreate(fn){beforeCreate=fn;},set beforeRename(fn){beforeRename=fn;},
     get driver(){return driver;},set response(fn){response=fn;},set accept(v){accept=v;},set complete(v){complete=v;},set grants(v){grants=v;},
     async restart(){await driver.close();driver=make();},async close(){await driver.close();await rm(home,{recursive:true,force:true});}};
 }
@@ -157,6 +159,32 @@ test('stopping a room cancels accepted sessions and discards its queued followup
   await f.driver.request('groups.stop',{room_id:'room-one'});await f.idle();assert.equal(f.prompts.length,1);assert.equal(f.cancelled.length,1);
   assert((await f.state()).rooms['room-one'].deliveries.every(j=>j.phase==='cancelled'));
  }finally{await f.close();}
+});
+
+test('stop then clear during session creation cannot leak an unrelated personal chat',async()=>{
+ const f=await fixture();let release;const gate=new Promise(r=>release=r);let creating=false;try{
+  f.beforeCreate=async()=>{creating=true;await gate;};
+  await f.create();await f.send('@forge Work');await until(()=>creating);
+  await f.driver.request('groups.stop',{room_id:'room-one'});
+  await assert.rejects(f.driver.request('groups.clear',{room_id:'room-one'}),/settling/);
+  release();await until(()=>f.archiveAttempts>0);await until(()=>f.sessions.length===0);
+  assert.equal(f.prompts.length,0);
+  await until(async()=>{try{await f.driver.request('groups.clear',{room_id:'room-one'});return true;}catch{return false;}});
+  assert.equal((await f.driver.request('groups.list')).rooms.length,0);
+ }finally{release();await f.close();}
+});
+
+test('stopped session rename retains ownership until failed archival can be retried',async()=>{
+ const f=await fixture();let release;const gate=new Promise(r=>release=r);let renaming=false;try{
+  f.beforeRename=async()=>{renaming=true;await gate;};f.archiveFailures=1;
+  await f.create();await f.send('@forge Work');await until(()=>renaming);
+  const sid=f.sessions[0].sessionId;
+  assert((await f.driver.ownSessionIDs()).has(sid));
+  await f.driver.request('groups.stop',{room_id:'room-one'});release();await until(()=>f.archiveAttempts>0);
+  assert((await f.driver.ownSessionIDs()).has(sid));assert.equal(f.prompts.length,0);
+  await until(async()=>{try{await f.driver.request('groups.clear',{room_id:'room-one'});return true;}catch{return false;}});
+  assert.equal(f.sessions.length,0);assert.equal((await f.driver.ownSessionIDs()).size,0);
+ }finally{release();await f.close();}
 });
 
 test('pending room questions keep the actual request identity and owning session',async()=>{

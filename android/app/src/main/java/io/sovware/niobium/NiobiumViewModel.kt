@@ -291,7 +291,10 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
         }
     }
 
-    fun prepareStoppedLocal() { state = state.copy(needsConnection = false, engineStatus = "Stopped") }
+    fun prepareStoppedLocal(botName: String? = null) {
+        launchBotName = botName
+        state = state.copy(needsConnection = false, engineStatus = "Stopped")
+    }
 
     fun stopLocal() {
         engineHub?.let { hub -> if (this !== hub.local) { hub.local.stopLocal(); return } }
@@ -1563,9 +1566,9 @@ class NiobiumEngineHub(app: Application) : AndroidViewModel(app) {
         if (started) return; started = true
         val localSelected = prefs.getString("agent-provider", null) == "dsh" || prefs.getBoolean("local-mode", false)
         active = if (!demo && localSelected) local else hermes
-        hermes.bootstrap(demo, bot)
+        hermes.bootstrap(demo, if (demo || !localSelected) bot else null)
+        local.prepareStoppedLocal(if (!demo && localSelected) bot else null)
         if (!demo && prefs.getBoolean("dsh-enabled", localSelected)) local.useLocal()
-        else if (!demo && localSelected) local.prepareStoppedLocal()
     }
     fun activate(engine: AgentEngine) {
         active = if (engine == AgentEngine.DSH) local else hermes

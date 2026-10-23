@@ -271,3 +271,9 @@ budgets across restart and questions waiting for the user. Accepted work resumes
 through history without submitting another prompt. The actual Android DSH DM
 test also opens Clear room, cancels it while checking durable history remains,
 then explicitly confirms and verifies archival.
+
+Session-provisioning races are covered with held create/rename RPCs: stopping
+prevents a paid prompt, clearing waits for in-flight ownership to settle, and
+failed archival retains room ownership for a later retry. The real Android DSH
+test starts through the engine hub with a local Pixel launch target and verifies
+that its chat opens in the selected local workspace.
