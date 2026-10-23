@@ -90,7 +90,7 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
     private var chatEpoch = 0
     private var groupEpoch = 0
     private var groupSessionIds = emptySet<String>()
-    private var pendingRoomSend: Triple<String, String, String>? = null
+    private val roomReceipts = RoomReceiptBook(app)
     private val providerPrefs = app.getSharedPreferences("niobium", android.content.Context.MODE_PRIVATE)
     private var localToken: String? = null
 
@@ -1128,6 +1128,7 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
             }.onSuccess { result ->
                 if (groupEpoch != epoch || gateway !== client) return@onSuccess
                 state = state.copy(roomEvents = result.objects("events").mapNotNull(RoomEvent::parse))
+                roomReceipts.acknowledge(state.roomEvents.filter { it.kind == "message.user" }.map { it.eventId }.toSet())
                 if (state.engine == AgentEngine.DSH) {
                     groupSessionIds = result.a("session_ids")?.let { a -> (0 until a.length()).map { a.getString(it) }.toSet() } ?: emptySet()
                     val requests = result.objects("requests")
@@ -1176,16 +1177,16 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
         }
         val client = gateway ?: run { onSettled(); return }
         viewModelScope.launch {
-            val eventId = pendingRoomSend?.takeIf { it.first == room.roomId && it.second == value }?.third ?: UUID.randomUUID().toString()
-            pendingRoomSend = Triple(room.roomId, value, eventId)
             try {
+                val scope = if (state.engine == AgentEngine.DSH) "dsh" else "hermes|" + state.connection?.url.orEmpty() + "|" + state.connection?.token.orEmpty()
+                val eventId = roomReceipts.reserve(scope,room.roomId,value)
                 val receipt = client.request("groups.send", JSONObject()
                     .put("room_id", room.roomId)
                     .put("profile", state.activeBot?.name ?: state.bots.firstOrNull()?.name ?: "default")
                     .put("event_id", eventId)
                     .put("payload", JSONObject().put("text", value).put("thread_id", eventId)))
                 check(receipt.optBoolean("accepted",true)) { "The gateway did not accept that message." }
-                if (pendingRoomSend?.third == eventId) pendingRoomSend = null
+                roomReceipts.acknowledge(setOf(eventId))
                 onAccepted()
                 refreshGroup()
             } catch (e: Exception) {

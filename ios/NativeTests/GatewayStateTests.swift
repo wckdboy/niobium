@@ -87,6 +87,19 @@ final class GatewayStateTests: XCTestCase {
         store.closeGroup(); store.resolveApproval(approval, choice: "once")
         XCTAssertEqual(rpc.responses.count, 1)
     }
+    func testUncertainRoomReceiptsSurviveRecreationAndSeparateConversations() throws {
+        let name = "room-receipts-" + UUID().uuidString, defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+        let first = RoomReceiptBook(defaults: defaults)
+        let id = try first.reserve(scope: "dsh", room: "a", text: "Keep the draft")
+        let restored = RoomReceiptBook(defaults: defaults)
+        XCTAssertEqual(try restored.reserve(scope: "dsh", room: "a", text: "Keep the draft"), id)
+        XCTAssertNotEqual(try restored.reserve(scope: "hermes", room: "a", text: "Keep the draft"), id)
+        XCTAssertNotEqual(try restored.reserve(scope: "dsh", room: "b", text: "Keep the draft"), id)
+        restored.acknowledge([id])
+        XCTAssertNotEqual(try restored.reserve(scope: "dsh", room: "a", text: "Keep the draft"), id)
+        XCTAssertFalse(String(describing: defaults.dictionaryRepresentation()).contains("Keep the draft"))
+    }
     func testFailedRoomSendKeepsItsReceiptForAnExplicitRetry() async throws {
         let rpc = FixtureRPC(); rpc.failRoomSendOnce = true
         let store = AppStore(api: rpc, managedEngine: .dsh)

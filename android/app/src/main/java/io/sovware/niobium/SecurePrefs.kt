@@ -81,3 +81,35 @@ class SecurePrefs(private val context: Context, prefsName: String = "niobium.pre
         String(cipher.doFinal(body), Charsets.UTF_8)
     }.getOrNull()
 }
+
+/** Uncertain send IDs survive context changes and restarts; only digests are stored. */
+class RoomReceiptBook(context: Context, prefsName: String = "niobium.room.receipts") {
+    private val prefs = context.getSharedPreferences(prefsName, Context.MODE_PRIVATE)
+    private fun load(): org.json.JSONObject {
+        val raw = prefs.getString("receipts", null) ?: return org.json.JSONObject()
+        return runCatching { org.json.JSONObject(raw).also { rows ->
+            require(rows.keys().asSequence().all { key -> key.length == 64 && rows.get(key) is String && java.util.UUID.fromString(rows.getString(key)) != null })
+        } }.getOrElse { error("Saved room receipts need repair. Check existing deliveries before sending again.") }
+    }
+    fun reserve(scope: String, room: String, text: String): String = synchronized(lock) {
+        val raw = org.json.JSONArray(listOf(scope,room,text)).toString().toByteArray(Charsets.UTF_8)
+        val digest = java.security.MessageDigest.getInstance("SHA-256").digest(raw).joinToString("") { "%02x".format(it.toInt() and 255) }
+        val rows = load()
+        if (rows.has(digest)) {
+            check(prefs.edit().putString("receipts",rows.toString()).commit()) { "Could not retain a delivery receipt. No message was sent." }
+            return@synchronized rows.getString(digest)
+        }
+        check(rows.length() < 256) { "Check pending room deliveries before sending more messages." }
+        val id = java.util.UUID.randomUUID().toString(); rows.put(digest,id)
+        check(prefs.edit().putString("receipts",rows.toString()).commit()) { "Could not retain a delivery receipt. No message was sent." }
+        id
+    }
+    fun acknowledge(ids: Set<String>) = synchronized(lock) {
+        if (ids.isEmpty()) return@synchronized
+        val rows = runCatching { load() }.getOrNull() ?: return@synchronized
+        val matches = rows.keys().asSequence().filter { rows.getString(it).lowercase() in ids.map(String::lowercase) }.toList()
+        matches.forEach(rows::remove)
+        if (matches.isNotEmpty()) prefs.edit().putString("receipts",rows.toString()).commit()
+    }
+    companion object { private val lock = Any() }
+}

@@ -78,7 +78,7 @@ final class AppStore: ObservableObject {
     private var chatEpoch = 0
     private var groupEpoch = 0
     private var groupSessionIDs: Set<String> = []
-    private var pendingRoomSend: (room: String, text: String, id: String)?
+    private let roomReceipts = RoomReceiptBook.shared
     private var connectionEpoch = 0
     private var localBootTask: Task<Void, Never>?
     private var localProviderToken = UUID().uuidString + UUID().uuidString
@@ -1249,6 +1249,7 @@ final class AppStore: ObservableObject {
             ]) as? JSONObject
             guard groupEpoch == epoch, self.api === api else { return }
             roomEvents = result?.objects("events").compactMap(RoomEvent.parse) ?? []
+            roomReceipts.acknowledge(Set(roomEvents.filter { $0.kind == "message.user" }.map(\.eventID)))
             if engine == .dsh {
                 groupSessionIDs = Set((result?.array("session_ids") as? [String]) ?? [])
                 let requests = result?.objects("requests") ?? []
@@ -1280,9 +1281,9 @@ final class AppStore: ObservableObject {
             return true
         }
         guard let api else { return false }
-        let eventID = pendingRoomSend.flatMap { $0.room == room.roomID && $0.text == trimmed ? $0.id : nil } ?? UUID().uuidString
-        pendingRoomSend = (room.roomID, trimmed, eventID)
+        let scope = engine == .dsh ? "dsh" : connection.map { "hermes|" + $0.baseURL + "|" + ConnectionPrefs.token(for: $0) } ?? "hermes"
         do {
+            let eventID = try roomReceipts.reserve(scope: scope, room: room.roomID, text: trimmed)
             let result = try await api.request("groups.send", params: [
                 "room_id": room.roomID,
                 "profile": activeBot?.name ?? bots.first?.name ?? "default",
@@ -1293,7 +1294,7 @@ final class AppStore: ObservableObject {
             if let eventDict = result?.dict("event"), let event = RoomEvent.parse(eventDict) {
                 roomEvents.append(event)
             }
-            if pendingRoomSend?.id == eventID { pendingRoomSend = nil }
+            roomReceipts.acknowledge([eventID])
             await refreshGroup()
             return true
         } catch {

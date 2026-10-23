@@ -523,7 +523,7 @@ its code and artwork were not copied. Research source:
 https://github.com/milind-soni/OpenMausBot at
 30b62aaf18adc22099c24a7181abf5e9ddead980.
 
-Acceptance so far: 49 iOS unit + six UI checks, an isolated full iOS build 15
+Acceptance so far: 50 iOS unit + six UI checks, an isolated full iOS build 15
 background/cold-launch DSH model test (104.984 seconds), shared catalog hashes,
 and real Android DSH messaging through the registered tool and native Rooms.
 The current iPhone is reachable over Wi-Fi but locked. Build 14's physical
@@ -535,3 +535,8 @@ acceptance; explicit cross-engine conversation bridging; recovered room work
 when a delivery receipt is lost; longer-running delegation and native connector
 consent. Expand wardrobe collections and image-provider choices after measuring
 real usage. Full Hermes parity remains tracked separately.
+
+Uncertain native room-send IDs now survive workspace changes and cold launches.
+Only scoped digests and random receipt IDs are stored; message text and tokens
+are not retained in this receipt book. Android instrumented checks also verify
+the actual Keystore image key in an isolated namespace.

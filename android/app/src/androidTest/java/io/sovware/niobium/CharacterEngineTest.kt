@@ -74,6 +74,21 @@ class CharacterEngineTest {
             compose.onNodeWithTag("artist.generate").performScrollTo().assertIsNotEnabled()
         } finally { instrumentation.runOnMainSync { activity.finish() } }
     }
+    @Test fun uncertainRoomReceiptsSurviveRecreationWithoutStoringMessages() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val namespace = "room-receipts-tests-" + java.util.UUID.randomUUID()
+        try {
+            val first = RoomReceiptBook(context,namespace)
+            val id = first.reserve("dsh","a","Keep the draft")
+            val restored = RoomReceiptBook(context,namespace)
+            assertEquals(id,restored.reserve("dsh","a","Keep the draft"))
+            assertNotEquals(id,restored.reserve("hermes","a","Keep the draft"))
+            assertNotEquals(id,restored.reserve("dsh","b","Keep the draft"))
+            restored.acknowledge(setOf(id))
+            assertNotEquals(id,restored.reserve("dsh","a","Keep the draft"))
+            assertFalse(context.getSharedPreferences(namespace,android.content.Context.MODE_PRIVATE).all.toString().contains("Keep the draft"))
+        } finally { context.deleteSharedPreferences(namespace) }
+    }
     @Test fun imageProviderKeyUsesTheActualDeviceKeystore() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val namespace = "niobium.artist.tests." + java.util.UUID.randomUUID()
