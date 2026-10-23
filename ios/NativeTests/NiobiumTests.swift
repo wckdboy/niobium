@@ -217,11 +217,11 @@ final class NiobiumTests: XCTestCase {
     }
     func testPermissionsAndGatewayCatalogBothGateTools() {
         var spec = PixelSpec.fallback(for: "research")
-        spec.toolsets = ["web", "file", "terminal", "memory", "delegation", "unknown"]
+        spec.toolsets = ["web", "file", "terminal", "memory", "delegation", "messaging", "unknown"]
         spec.permissions = .init(approvalMode: "ask", network: false, filesystem: "none", shell: true)
-        XCTAssertEqual(spec.permittedToolsets, ["memory", "delegation"])
+        XCTAssertEqual(spec.permittedToolsets, ["memory", "delegation", "messaging"])
         spec.permissions.filesystem = "workspace"
-        XCTAssertEqual(spec.permittedToolsets, ["file", "terminal", "memory", "delegation"])
+        XCTAssertEqual(spec.permittedToolsets, ["file", "terminal", "memory", "delegation", "messaging"])
         let draft = PixelDraft(spec: spec, usedModel: false, availableToolsets: ["file", "memory"], availableSkills: [], notes: [])
         XCTAssertEqual(draft.enabledToolsets, ["file", "memory"])
     }

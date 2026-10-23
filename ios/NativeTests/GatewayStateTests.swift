@@ -250,13 +250,16 @@ final class GatewayStateTests: XCTestCase {
     }
     func testLocalPixelCreationUsesNativeDshPresetEndpoint() async throws {
         let rpc = FixtureRPC()
+        rpc.catalogTools.append("messaging")
         let subject = AppStore(api: rpc)
         subject.engine = .dsh
         let spec = PixelSpec.fallback(for: "Research interesting projects")
-        let draft = PixelDraft(spec: spec, usedModel: false, availableToolsets: ["web", "file", "delegation"], availableSkills: [], notes: [])
+        let draft = PixelDraft(spec: spec, usedModel: false, availableToolsets: ["web", "file", "delegation", "messaging"], availableSkills: [], notes: [])
         let bot = try await subject.buildPixel(draft: draft)
         XCTAssertEqual(bot.origin, "dsh")
         XCTAssertTrue(rpc.calls.contains { $0.0 == "pixel.create" })
+        let created = try XCTUnwrap(rpc.calls.first { $0.0 == "pixel.create" }?.1)
+        XCTAssertTrue((created["enabled_toolsets"] as? [String])?.contains("messaging") == true)
         XCTAssertFalse(rpc.calls.contains { $0.0 == "profiles.create" || $0.0 == "config.set" })
     }
 
@@ -407,8 +410,8 @@ final class GatewayStateTests: XCTestCase {
         let rpc = FixtureRPC(); rpc.catalogTools = ["web", "file"]
         let subject = AppStore(api: rpc)
         var spec = PixelSpec.fallback(for: "research"); spec.name = "fixture-catalog"
-        spec.toolsets = ["web", "file", "delegation"]
-        let draft = PixelDraft(spec: spec, usedModel: false, availableToolsets: ["file", "delegation"], availableSkills: [], notes: [])
+        spec.toolsets = ["web", "file", "delegation", "messaging"]
+        let draft = PixelDraft(spec: spec, usedModel: false, availableToolsets: ["file", "delegation", "messaging"], availableSkills: [], notes: [])
         _ = try await subject.buildPixel(draft: draft)
         XCTAssertEqual(rpc.calls.first?.0, "profiles.describe")
         let access = try XCTUnwrap(rpc.calls.first { $0.0 == "profiles.configure" }?.1)

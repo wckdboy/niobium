@@ -160,7 +160,7 @@ function createMessaging({rpc, home, workspace, metadata, pending, respond, fram
     if (method === 'groups.stop') {
       const sessions = await mutate(state => {
         const room = roomAt(state,p.room_id), sessions = [];
-        for (const job of room.deliveries) if (!terminal.has(job.phase)) { if (job.session) sessions.push(job.session); job.phase = 'cancelled'; }
+        for (const job of room.deliveries) if (!terminal.has(job.phase) || job.phase === 'uncertain') { if (job.session) sessions.push(job.session); job.phase = 'cancelled'; }
         append(room,'room.stop_requested',system(),{reason:'You stopped this room’s pending replies.'});
         return sessions;
       });
@@ -314,7 +314,8 @@ function createMessaging({rpc, home, workspace, metadata, pending, respond, fram
         promptAttempted = true;
         const receipt = await rpc('session.prompt',{sessionId,mode:'queue',content:[{type:'text',text:prompt}]});
         if (receipt.accepted !== true) throw new Error('The local engine did not accept the delivery.');
-        await mutate(state => { const r = roomAt(state,roomID), current = r.deliveries.find(j => j.id === job.id); if (current.phase === 'cancelled') return {ok:true}; current.phase='accepted'; append(r,'turn.started',system(),{status:'running',reason:member.display_name+' is replying.'}); return {ok:true}; });
+        const continued = await mutate(state => { const r = roomAt(state,roomID), current = r.deliveries.find(j => j.id === job.id); if (current.phase === 'cancelled') return false; current.phase='accepted'; append(r,'turn.started',system(),{status:'running',reason:member.display_name+' is replying.'}); return true; });
+        if (!continued) { await rpc('session.cancel',{sessionId}).catch(() => {}); return; }
       }
       lastTick = now();
       while (!stopped) {
@@ -354,6 +355,8 @@ function createMessaging({rpc, home, workspace, metadata, pending, respond, fram
       }
     } catch (error) {
       await retireNewSession();
+      const interrupted = (await read()).rooms[roomID]?.deliveries.find(j => j.id === job.id);
+      if (promptAttempted && interrupted?.phase === 'cancelled' && interrupted.session) await rpc('session.cancel',{sessionId:interrupted.session}).catch(() => {});
       await mutate(state => {
         const r = state.rooms[roomID], current = r?.deliveries.find(j => j.id === job.id);
         if (!current || terminal.has(current.phase)) return {ok:true};

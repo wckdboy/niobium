@@ -66,7 +66,7 @@ android {
         )
     }
     sourceSets["main"].assets.directories += layout.buildDirectory.dir("generated/runtime/assets").get().asFile.path
-    sourceSets["androidTest"].assets.directories += file("../tests/fixtures").path
+    sourceSets["androidTest"].assets.directories += layout.buildDirectory.dir("generated/gateway-test-assets").get().asFile.path
     sourceSets["main"].jniLibs.directories += layout.buildDirectory.dir("generated/runtime/jniLibs").get().asFile.path
     androidResources.noCompress += "image"
 }
@@ -78,7 +78,11 @@ val prepareLocalRuntime = tasks.register<Exec>("prepareLocalRuntime") {
         "../runtime/supervisor.c", "../runtime/niobium-local.cjs", "../../runtime/niobium-agent.cjs", "../../runtime/niobium-messaging.cjs")
     outputs.dir(layout.buildDirectory.dir("generated/runtime"))
 }
-tasks.named("preBuild").configure { dependsOn(prepareLocalRuntime) }
+val prepareGatewayTestAsset = tasks.register<Copy>("prepareGatewayTestAsset") {
+    from(rootProject.file("../tests/fixtures/gateway.mjs"))
+    into(layout.buildDirectory.dir("generated/gateway-test-assets"))
+}
+tasks.named("preBuild").configure { dependsOn(prepareLocalRuntime, prepareGatewayTestAsset) }
 
 dependencies {
     androidTestImplementation("androidx.test:runner:1.7.0")

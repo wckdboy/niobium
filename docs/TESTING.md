@@ -283,3 +283,10 @@ sandbox to prove explicit gateway launches override saved DSH selection and
 open the requested remote chat. Android reaches its real DSH DM through Pixels
 → Rooms before clearing it. The full iOS DSH lifecycle test also opens Rooms
 from Pixels, then returns to its model/history acceptance flow.
+
+iOS provisioning tests assert that reviewed messaging survives the native
+permission filter and reaches `pixel.create`, while an unavailable catalog entry
+still removes that grant. A held-acceptance room test presses Stop before the
+receipt returns, verifies a second cancellation after acceptance, and proves no
+prompt is replayed. Explicit Stop also cancels known sessions with uncertain
+receipts.

@@ -306,7 +306,7 @@ struct PixelSpec: Codable {
             if Self.networkTools.contains(tool) { return permissions.network }
             if tool == "file" { return permissions.filesystem != "none" }
             if ["terminal", "code_execution"].contains(tool) { return permissions.shell && permissions.filesystem != "none" }
-            return tool == "delegation"
+            return ["delegation", "messaging"].contains(tool)
         }
     }
     var policyBriefing: String {

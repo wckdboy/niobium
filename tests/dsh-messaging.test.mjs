@@ -12,7 +12,7 @@ async function fixture(options = {}) {
   const home = await mkdtemp(path.join(tmpdir(),'niobium-rooms-'));
   const sessions = [], prompts = [], cancelled = [], histories = new Map(), pending = new Map();
   let response = () => 'A real fixture reply.', accept = true, complete = true, grants = true, historyReads = 0;
-  let beforeCreate = async()=>{}, beforeRename = async()=>{}, archiveFailures = 0, archiveAttempts = 0;
+  let beforeCreate = async()=>{}, beforeRename = async()=>{}, beforeReceipt = async()=>{}, archiveFailures = 0, archiveAttempts = 0;
   const presets = [{id:'standard',name:'Scout'},{id:'forge',name:'Forge',trust:'user'},{id:'constructor',name:'Constructor',trust:'user'}];
   const rpc = async (method,p) => {
     if (method === 'agentPreset.list') return {presets};
@@ -24,6 +24,7 @@ async function fixture(options = {}) {
       const add = (type,data) => rows.push({event:{seq:rows.length,time:Date.now(),type,data}});
       add('user/message',{content:p.content}); add('turn/start',{});
       if (complete) { add('assistant/message',{message:{content:[{type:'text',text:response(p)}]}}); add('turn/end',{reason:{kind:'completed'}}); }
+      await beforeReceipt();
       if (!accept) throw new Error('Simulated receipt loss');
       return {accepted:true};
     }
@@ -40,7 +41,7 @@ async function fixture(options = {}) {
   const idle=()=>until(async()=>Object.values((await state()).rooms).every(r=>r.deliveries.every(j=>['completed','failed','cancelled','uncertain'].includes(j.phase))));
   return {home,sessions,prompts,cancelled,histories,pending,rpc,create,send,state,idle,
     get historyReads(){return historyReads;},
-    get archiveAttempts(){return archiveAttempts;},set archiveFailures(v){archiveFailures=v;},set beforeCreate(fn){beforeCreate=fn;},set beforeRename(fn){beforeRename=fn;},
+    get archiveAttempts(){return archiveAttempts;},set archiveFailures(v){archiveFailures=v;},set beforeCreate(fn){beforeCreate=fn;},set beforeRename(fn){beforeRename=fn;},set beforeReceipt(fn){beforeReceipt=fn;},
     get driver(){return driver;},set response(fn){response=fn;},set accept(v){accept=v;},set complete(v){complete=v;},set grants(v){grants=v;},
     async restart(){await driver.close();driver=make();},async close(){await driver.close();await rm(home,{recursive:true,force:true});}};
 }
@@ -74,6 +75,7 @@ test('ambiguous prompt acceptance never automatically submits it again',async()=
   f.accept=false;await f.create();await f.send('@forge Work');await f.idle();
   assert.equal(f.prompts.length,1);assert.equal((await f.state()).rooms['room-one'].deliveries[0].phase,'uncertain');
   await f.restart();await f.driver.request('groups.list');await new Promise(r=>setTimeout(r,20));assert.equal(f.prompts.length,1);
+  await f.driver.request('groups.stop',{room_id:'room-one'});assert.equal(f.cancelled.length,1);
  }finally{await f.close();}
 });
 
@@ -159,6 +161,17 @@ test('stopping a room cancels accepted sessions and discards its queued followup
   await f.driver.request('groups.stop',{room_id:'room-one'});await f.idle();assert.equal(f.prompts.length,1);assert.equal(f.cancelled.length,1);
   assert((await f.state()).rooms['room-one'].deliveries.every(j=>j.phase==='cancelled'));
  }finally{await f.close();}
+});
+
+test('stop re-cancels a prompt whose acceptance arrives after the first cancellation',async()=>{
+ const f=await fixture();let release;const gate=new Promise(r=>release=r);let submitting=false;try{
+  f.complete=false;f.beforeReceipt=async()=>{submitting=true;await gate;};
+  await f.create();await f.send('@forge Work');await until(()=>submitting);
+  await f.driver.request('groups.stop',{room_id:'room-one'});assert.equal(f.cancelled.length,1);
+  release();await until(()=>f.cancelled.length===2);
+  assert.equal((await f.state()).rooms['room-one'].deliveries[0].phase,'cancelled');
+  await f.restart();await f.driver.request('groups.list');assert.equal(f.prompts.length,1);
+ }finally{release();await f.close();}
 });
 
 test('stop then clear during session creation cannot leak an unrelated personal chat',async()=>{
