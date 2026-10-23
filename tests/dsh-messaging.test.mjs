@@ -153,3 +153,38 @@ test('clearing a completed room archives its provider sessions before removing o
   assert.equal((await f.driver.request('groups.list')).rooms.length,0);
  }finally{await f.close();}
 });
+
+test('acknowledged receipt history stays bounded while unconfirmed deliveries are retained',async()=>{
+ const f=await fixture();try{
+  await f.create();
+  for(let i=0;i<180;i++) {
+    const id='confirmed-'+i;
+    await f.send('@user A confirmed note '+i,id);
+    await f.driver.request('groups.ack',{room_id:'room-one',event_ids:[id]});
+  }
+  let room=(await f.state()).rooms['room-one'];
+  assert.equal(Object.keys(room.receipts).length,64);
+  await f.send('@user Keep this uncertain receipt','uncertain-receipt');
+  for(let i=180;i<270;i++) {
+    const id='confirmed-'+i;
+    await f.send('@user A confirmed note '+i,id);
+    await f.driver.request('groups.ack',{room_id:'room-one',event_ids:[id]});
+  }
+  room=(await f.state()).rooms['room-one'];
+  assert.equal(Object.keys(room.receipts).length,65);
+  assert(room.receipts['uncertain-receipt']);
+  assert.equal((await f.send('@user Keep this uncertain receipt','uncertain-receipt')).accepted,true);
+ }finally{await f.close();}
+});
+
+test('unconfirmed receipt saturation refuses new sends until the client synchronizes',async()=>{
+ const f=await fixture();try{
+  await f.create();
+  for(let i=0;i<128;i++) await f.send('@user Pending '+i,'pending-'+i);
+  await assert.rejects(f.send('@user One more','over-limit'),/confirm its pending deliveries/);
+  const log=await f.driver.request('groups.log',{room_id:'room-one'});
+  assert.equal(log.receipt_ids.length,128);
+  await f.driver.request('groups.ack',{room_id:'room-one',event_ids:log.receipt_ids});
+  assert.equal((await f.send('@user One more','over-limit')).accepted,true);
+ }finally{await f.close();}
+});

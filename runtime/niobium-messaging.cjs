@@ -9,6 +9,12 @@ const textOf = blocks => (blocks || []).filter(b => b.type === 'text').map(b => 
 const profileID = id => !id || id === 'standard' ? 'default' : id;
 const presetID = id => id === 'default' ? 'standard' : id;
 const clone = value => structuredClone(value);
+const ACKNOWLEDGED_RECEIPTS = 64;
+const UNCONFIRMED_RECEIPTS = 128;
+function compactReceipts(room) {
+  const known = Object.entries(room.receipts).filter(([,r]) => r.acknowledged).sort((a,b) => b[1].seq-a[1].seq);
+  for (const [id] of known.slice(ACKNOWLEDGED_RECEIPTS)) delete room.receipts[id];
+}
 
 function createMessaging({rpc, home, workspace, metadata, pending, respond, frames, now = Date.now,
   wait = ms => new Promise(resolve => setTimeout(resolve, ms)), pollMs = 750, turnTimeoutMs = 120000}) {
@@ -55,11 +61,12 @@ function createMessaging({rpc, home, workspace, metadata, pending, respond, fram
       for (const [id] of roots.slice(256)) if (!activeRoots.has(id)) delete state.roots[id];
       for (const [sid, root] of Object.entries(state.sessionRoots)) if (!state.roots[root]) delete state.sessionRoots[sid];
       for (const room of Object.values(state.rooms)) {
+        compactReceipts(room);
         const finished = room.deliveries.filter(j => terminal.has(j.phase)).slice(-16);
         room.deliveries = room.deliveries.filter(j => !terminal.has(j.phase)).concat(finished);
       }
       const raw = JSON.stringify(state);
-      if (raw.length > 4*1024*1024) throw new Error('Conversation storage is full. Stop pending work and clear an old room.');
+      if (Buffer.byteLength(raw, 'utf8') > 4*1024*1024) throw new Error('Conversation storage is full. Stop pending work and clear an old room.');
       await fs.mkdir(home, {recursive: true, mode: 0o700});
       const stage = file + '.' + crypto.randomUUID();
       try { await fs.writeFile(stage, raw, {mode: 0o600}); await fs.rename(stage, file); }
@@ -96,7 +103,7 @@ function createMessaging({rpc, home, workspace, metadata, pending, respond, fram
     return handles.includes('all') ? room.members : room.members.filter(m => handles.includes(m.handle.toLowerCase()) || handles.includes(m.profile));
   }
   async function request(method, p = {}) {
-    if (method === 'groups.capabilities') return {driver: true, methods: ['groups.list','groups.create','groups.log','groups.send','groups.stop','groups.clear']};
+    if (method === 'groups.capabilities') return {driver: true, methods: ['groups.list','groups.create','groups.log','groups.send','groups.stop','groups.clear','groups.ack']};
     if (method === 'groups.list') { const state = await read(); kick(); return {rooms: Object.values(state.rooms).filter(r => !r.disbanded_at).sort((a,b) => b.updated_at-a.updated_at).map(publicRoom)}; }
     if (method === 'groups.create') {
       if (typeof p.room_id !== 'string' || !/^[a-zA-Z0-9-]{1,80}$/.test(p.room_id) || typeof p.name !== 'string' || p.name.trim().length < 1 || p.name.length > 60 || !Array.isArray(p.members) || p.members.length < 2 || p.members.length > 6) throw new Error('Name a room and choose two to six local Pixels.');
@@ -116,7 +123,17 @@ function createMessaging({rpc, home, workspace, metadata, pending, respond, fram
       const state = await read(), room = roomAt(state, p.room_id); kick();
       const ids = Object.values(room.sessions);
       const requests = [...pending.values()].filter(e => ids.includes(e.payload.sessionId)).flatMap(e => frames(e, {}));
-      return {events: room.events.filter(e => e.seq > (Number(p.since_seq)||0)).slice(-Math.min(500,Math.max(1,Number(p.limit)||200))), session_ids: ids, requests};
+      return {receipt_ids: Object.keys(room.receipts), events: room.events.filter(e => e.seq > (Number(p.since_seq)||0)).slice(-Math.min(500,Math.max(1,Number(p.limit)||200))), session_ids: ids, requests};
+    }
+    if (method === 'groups.ack') {
+      if (!Array.isArray(p.event_ids) || p.event_ids.length > 256 || p.event_ids.some(id => typeof id !== 'string' || id.length > 80)) throw new Error('Choose valid delivery receipts.');
+      const current = roomAt(await read(),p.room_id);
+      if (!p.event_ids.some(id => Object.hasOwn(current.receipts,id) && !current.receipts[id].acknowledged)) return {ok:true};
+      return mutate(state => {
+        const room = roomAt(state,p.room_id);
+        for (const id of p.event_ids) if (Object.hasOwn(room.receipts,id)) room.receipts[id].acknowledged = true;
+        return {ok:true};
+      });
     }
     if (method === 'groups.send') {
       const text = p.payload?.text;
@@ -130,6 +147,7 @@ function createMessaging({rpc, home, workspace, metadata, pending, respond, fram
           const previous = room.events.find(e => e.event_id === p.event_id) || {seq:receipt.seq,room_id:room.room_id,event_id:p.event_id,kind:'message.user',actor:{kind:'user',id:'user',display_name:'You'},payload:{text:text.trim()},created_at:receipt.created};
           return {event:previous,accepted:true};
         }
+        if (Object.values(room.receipts).filter(r => !r.acknowledged).length >= UNCONFIRMED_RECEIPTS) throw new Error('Open this room to confirm its pending deliveries before sending more.');
         const recipients = mentions(room,text,true);
         const event = append(room,'message.user',{kind:'user',id:'user',display_name:'You'},{text:text.trim()},p.event_id);
         room.receipts[p.event_id] = {hash,seq:event.seq,created:event.created_at};

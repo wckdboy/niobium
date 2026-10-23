@@ -280,17 +280,21 @@ class LocalRuntimeTest {
                     val messages = payload?.optJSONArray("messages")
                     val hasToolReply = messages != null && (0 until messages.length()).any { messages.optJSONObject(it)?.optString("role") == "tool" }
                     val wantsDm = body.contains("Send a private note to Scout") && !hasToolReply
+                    val wantsQuestion = body.contains("Niobium delivery [") && body.contains(note) && !hasToolReply
                     val reply = if (first.contains("/models")) """{"object":"list","data":[{"id":"deepseek-chat","object":"model"}]}"""
                     else {
                         received.countDown()
-                        val delta = if (wantsDm) org.json.JSONObject().put("tool_calls", org.json.JSONArray().put(org.json.JSONObject()
-                            .put("index",0).put("id","niobium-dm-call").put("type","function").put("function",org.json.JSONObject().put("name","message_agent")
-                                .put("arguments",org.json.JSONObject().put("recipient","default").put("text",note).toString()))))
+                        val delta = if (wantsDm || wantsQuestion) org.json.JSONObject().put("tool_calls", org.json.JSONArray().put(org.json.JSONObject()
+                            .put("index",0).put("id","niobium-dm-call").put("type","function").put("function",org.json.JSONObject().put("name",if (wantsQuestion) "ask_user_question" else "message_agent")
+                                .put("arguments",if (wantsQuestion) org.json.JSONObject().put("questions",org.json.JSONArray().put(org.json.JSONObject()
+                                    .put("id","room-choice").put("question","Which accent should I use?")
+                                    .put("options",org.json.JSONArray().put(org.json.JSONObject().put("label","Violet")).put(org.json.JSONObject().put("label","Mint"))))).toString()
+                                    else org.json.JSONObject().put("recipient","default").put("text",note).toString()))))
                             else org.json.JSONObject().put("content", "NATIVE-DSH-REPLY")
                         val chunk = org.json.JSONObject().put("id", "niobium-fixture").put("object", "chat.completion.chunk")
                             .put("created", 1700000000).put("model", "deepseek-chat")
                             .put("choices", org.json.JSONArray().put(org.json.JSONObject().put("index", 0)
-                                .put("delta", delta).put("finish_reason", if (wantsDm) "tool_calls" else "stop")))
+                                .put("delta", delta).put("finish_reason", if (wantsDm || wantsQuestion) "tool_calls" else "stop")))
                         "data: " + chunk.toString() + "\n\ndata: [DONE]\n\n"
                     }
                     val bytes = reply.toByteArray()
@@ -348,14 +352,13 @@ class LocalRuntimeTest {
             assertTrue("The actual DSH model request omitted the reviewed messaging tool", sawMessaging.get())
             instrumentation.runOnMainSync { vm!!.send("Send a private note to Scout") }
             val conversations = java.io.File(runtime.home,".dsh/niobium-conversations.json")
-            waitFor("Real message_agent delivered a DM and Scout replied") {
+            waitFor("Real message_agent delivered an attributed DM") {
                 runCatching {
                     val rooms = org.json.JSONObject(conversations.readText()).getJSONObject("rooms")
                     rooms.keys().asSequence().map { rooms.getJSONObject(it) }.any { room ->
                         val events = room.getJSONArray("events")
                         val rows = (0 until events.length()).map { events.getJSONObject(it) }
-                        rows.any { it.optJSONObject("payload")?.optString("text") == note } &&
-                            rows.any { it.optString("kind") == "message.member" && it.optJSONObject("actor")?.optString("id") == "default" && it.optJSONObject("payload")?.optString("text") == "NATIVE-DSH-REPLY" }
+                        rows.any { it.optJSONObject("payload")?.optString("text") == note }
                     }
                 }.getOrDefault(false)
             }
@@ -364,6 +367,11 @@ class LocalRuntimeTest {
             val dm = vm!!.state.groups.first { it.members.any { m -> m.profile == profile } }
             instrumentation.runOnMainSync { vm!!.openGroup(dm) }
             waitFor("Native room transcript contains the actual DM") { vm!!.state.roomEvents.any { it.text == note } }
+            waitFor("Android admits the room-owned question") { vm!!.state.clarify?.sessionId != null }
+            assertTrue(vm!!.state.clarify!!.sessionId in org.json.JSONObject(conversations.readText()).getJSONObject("rooms").getJSONObject(dm.roomId)
+                .getJSONObject("sessions").let { map -> map.keys().asSequence().map { map.getString(it) }.toSet() })
+            instrumentation.runOnMainSync { vm!!.resolveClarify(mapOf("room-choice" to "Violet")) }
+            waitFor("The actual DSH room continues after its native answer") { vm!!.state.roomEvents.any { it.actorId == "default" && it.text == "NATIVE-DSH-REPLY" } }
             val roomState = org.json.JSONObject(conversations.readText()).getJSONObject("rooms").getJSONObject(dm.roomId)
             val sessionMap = roomState.getJSONObject("sessions")
             val ownedSessions = sessionMap.keys().asSequence().map { sessionMap.getString(it) }.toSet()

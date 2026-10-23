@@ -115,3 +115,10 @@ The Android integration fixture invokes the real registered tool and receives
 Scout's actual response through DSH. Full iOS build 15 also passed the isolated
 background/cold-launch model check. Real-account provider/delegation acceptance
 and physical Android/16 KB execution remain open. iOS may suspend local work.
+
+Receipt storage keeps the latest 64 client-confirmed sends and at most 128
+unconfirmed sends per room. Synchronizing the room confirms accepted IDs; it
+does not claim a model reply completed. Unconfirmed IDs are never pruned. A full
+unconfirmed window refuses new sends until synchronization. Confirmed IDs must
+not be reused after the retained window. Native clients persist uncertain IDs
+across rooms/restarts, using only scoped digests and random IDs.

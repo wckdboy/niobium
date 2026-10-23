@@ -953,7 +953,7 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
 
     private fun handleServerRequest(id: Any, method: String, params: JSONObject) {
         val sessionId = params.s("session_id") ?: ""
-        if (sessionId.isNotBlank() && sessionId != state.sessionId) {
+        if (sessionId.isNotBlank() && !showsSession(sessionId)) {
             if (declinesNotShown) gateway?.respondError(id, "This window does not show that session.", 4404)
             return
         }
@@ -1136,6 +1136,12 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
                     state = state.copy(approvals = state.approvals.filterNot { it.sessionId in groupSessionIds && it.rpcId.toString() !in ids },
                         clarify = state.clarify?.takeUnless { it.sessionId in groupSessionIds && it.rpcId.toString() !in ids })
                     requests.forEach { request -> request.o("params")?.let { handleServerRequest(request.get("id"), request.getString("method"), it) } }
+                    val receipts = result.a("receipt_ids")
+                    if (receipts != null) {
+                        val ids = (0 until receipts.length()).map { receipts.getString(it) }.toSet()
+                        roomReceipts.acknowledge(ids)
+                        if (ids.isNotEmpty()) runCatching { client.request("groups.ack", JSONObject().put("room_id",room.roomId).put("event_ids",receipts),6_000) }
+                    }
                 }
             }
         }

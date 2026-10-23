@@ -258,3 +258,10 @@ receipt for explicit retry and leave the UI draft intact. The isolated full
 build 15 simulator acceptance preserves a streamed reply over eight seconds in
 the background and restores history after a cold guest launch. Production
 build 14 remains the latest physical iPhone acceptance until the phone unlocks.
+
+The Android DSH integration also emits a real `ask_user_question` call inside
+the DM room, checks that the room-owned request reaches native state, submits
+its native answer, and verifies Scout continues. It then clears the room and
+checks DSH's archived session never becomes Scout's direct-message session.
+Receipt retention regressions cover hundreds of acknowledged sends, preserved
+unconfirmed IDs and synchronization after the unconfirmed window fills.
