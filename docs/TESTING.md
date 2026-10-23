@@ -360,3 +360,11 @@ release archive after Termux removed a pinned URL. Original upstream URLs,
 versions and checksums remain recorded in the lock. All mirrored download bytes
 were checked against the original SHA-256 values; corresponding sources accompany
 the archive. Fresh CI downloads verify the same bytes.
+
+The final CodeRabbit pass adds three shared transport checks: cleartext remote
+addresses fail before credentials are sent, and neither status probes nor socket
+handshakes follow redirects. HTTPS is required outside literal loopback addresses.
+Startup timeouts now report a retryable failure after owned process cleanup; a
+regression retries without restarting the app. Concurrent Stop callers share the
+same cleanup promise. Current suites: 33 shared-core, 17 desktop, seven Android-
+specific JVM tests, 67 Node and 15 Python checks.

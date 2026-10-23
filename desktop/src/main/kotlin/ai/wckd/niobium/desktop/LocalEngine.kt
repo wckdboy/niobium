@@ -34,7 +34,7 @@ data class LocalStatus(val phase: String = "Stopped", val error: String? = null)
 data class LocalEndpoint(val origin: String, val token: String)
 
 class LocalEngine(private val scope: CoroutineScope, private val home: Path = AppPaths.dsh, val workspace: Path = AppPaths.workspace,
-                  private val runtimeRoot: () -> Path = { AppPaths.runtime() }) {
+                  private val startupTimeoutMillis: Long = 50_000, private val runtimeRoot: () -> Path = { AppPaths.runtime() }) {
     private val mutable = MutableStateFlow(LocalStatus())
     val state = mutable.asStateFlow()
     private var process: Process? = null
@@ -48,6 +48,7 @@ class LocalEngine(private val scope: CoroutineScope, private val home: Path = Ap
         mutable.value = LocalStatus("Starting")
         startup = scope.launch {
             var owned: Process? = null
+            var startupFailure: String? = null
             try {
                 val root = runtimeRoot().toAbsolutePath().normalize()
                 withContext(Dispatchers.IO) { AppPaths.privateDirectory(home); AppPaths.privateDirectory(workspace) }
@@ -74,17 +75,20 @@ class LocalEngine(private val scope: CoroutineScope, private val home: Path = Ap
                     } catch (e: Exception) { ready.completeExceptionally(e) }
                 }
                 launch(Dispatchers.IO) { child.errorStream.bufferedReader().useLines { lines -> lines.forEach { /* No runtime credentials in app logs. */ } } }
-                val endpoint = withTimeout(50_000) { ready.await() }
+                val endpoint = withTimeout(startupTimeoutMillis) { ready.await() }
                 if (epoch != generation) return@launch
                 mutable.value = LocalStatus("Running")
                 onReady(endpoint)
                 runInterruptible(Dispatchers.IO) { child.waitFor() }
                 if (epoch == generation) mutable.value = LocalStatus("Stopped", "Local DSH stopped. Start it again to reconnect.")
+            } catch (_: TimeoutCancellationException) {
+                startupFailure = "Local DSH startup timed out. Start it again to retry."
             } catch (e: CancellationException) { throw e }
-            catch (e: Exception) { if (epoch == generation) mutable.value = LocalStatus("Stopped", e.message ?: "Local DSH could not start.") }
+            catch (e: Exception) { startupFailure = e.message ?: "Local DSH could not start." }
             finally {
                 withContext(NonCancellable + Dispatchers.IO) { owned?.let { terminate(it) } }
                 if (process === owned) process = null
+                if (epoch == generation && startupFailure != null) mutable.value = LocalStatus("Stopped", startupFailure)
             }
         }
     }

@@ -73,9 +73,12 @@ async function start({root, home, workspace, node = process.execPath, signal, on
   const modules = path.join(root, 'node_modules');
   const ownedSockets = new Set();
   let stopped = false, child;
-  let server;
-  async function stop() {
-    if (stopped) return;
+  let server, stopPromise;
+  function stop() {
+    if (!stopPromise) stopPromise = cleanup();
+    return stopPromise;
+  }
+  async function cleanup() {
     stopped = true;
     for (const socket of ownedSockets) socket.destroy();
     server?.close();

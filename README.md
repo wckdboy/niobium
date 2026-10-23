@@ -32,6 +32,8 @@ its host. Tools use your account permissions, not a desktop OS sandbox.
 
 The first desktop preview provides native DeepSeek key setup for local chat;
 additional local provider setup is planned. Hermes uses its host’s providers.
+Remote gateways require HTTPS; HTTP is reserved for literal loopback addresses.
+Authenticated gateway requests do not follow redirects.
 Remote gateway tokens and the AI image key are session-only on desktop. DSH
 provider keys use its owner-only credential file. Android retains Keystore storage.
 
@@ -52,7 +54,7 @@ Desktop CI runs native tests and packaging on both Linux and macOS; iOS CI is op
 
 CodeRabbit reviews new pull requests and incremental pushes using
 [repository guidance](.coderabbit.yaml). Automatic Greptile reviews are disabled.
-The 2.1 checks include 30 shared-core, 16 desktop and seven Android-specific JVM
+The 2.1 checks include 33 shared-core, 17 desktop and seven Android-specific JVM
 tests, 67 Node checks and 15 Python checks. Native installer checks run the
 packaged app and its private DSH API, and reject stale adapters.
 

@@ -13,6 +13,28 @@ import org.json.JSONObject
 import java.util.concurrent.atomic.AtomicBoolean
 
 class LocalEngineTest {
+    @Test fun aStartupTimeoutLeavesTheEngineStoppedAndRetryable() = runBlocking {
+        val directory = Files.createTempDirectory("niobium-startup-timeout-")
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+        val runtime = directory.resolve("runtime"); Files.createDirectory(runtime)
+        Files.createSymbolicLink(runtime.resolve("node"), AppPaths.runtime().toAbsolutePath().resolve("node"))
+        Files.writeString(runtime.resolve("desktop-host.cjs"), "process.stdin.resume(); process.stdin.on('end',()=>process.exit(0));")
+        val engine = LocalEngine(scope, directory.resolve("home"), directory.resolve("workspace"), startupTimeoutMillis = 200) { runtime }
+        try {
+            repeat(2) {
+                withContext(Dispatchers.Main) {
+                    engine.start { error("The fixture never reports readiness") }
+                    assertEquals("Starting", engine.state.value.phase)
+                }
+                val stopped = withTimeout(5000) { engine.state.first { it.phase == "Stopped" && it.error != null } }
+                assertTrue(stopped.error!!.contains("timed out"))
+            }
+        } finally {
+            withContext(Dispatchers.Main) { engine.close(); scope.cancel() }
+            Files.walk(directory).use { paths -> paths.sorted(Comparator.reverseOrder()).forEach { Files.deleteIfExists(it) } }
+        }
+    }
+
     @Test fun bundledEngineCreatesRealPixelsRestartsAndPreservesTheirAppearance() = runBlocking {
         val temporary = Files.createTempDirectory("niobium-desktop-test-")
         val sawMessaging = AtomicBoolean(false)

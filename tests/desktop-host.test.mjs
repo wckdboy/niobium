@@ -59,7 +59,9 @@ test('Stop leaves enough time for DSH to reap a detached task during disposal', 
   const f = await fixture(2600);
   const pid = Number(await readFile(path.join(f.directory,'home/owned-child.pid'),'utf8'));
   try {
-    await f.runtime.stop();
+    const first = f.runtime.stop(), second = f.runtime.stop();
+    assert.equal(first,second);
+    await Promise.all([first,second]);
     assert.equal(await readFile(path.join(f.directory,'home/cleanup-complete'),'utf8'),'done');
     assert.equal(f.runtime.child.exitCode,0);
     assert.throws(()=>process.kill(pid,0),{code:'ESRCH'});

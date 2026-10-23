@@ -18,6 +18,13 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class GatewayException(message: String) : IOException(message)
 
+private fun checkedGatewayUrl(baseUrl: String) =
+    baseUrl.trimEnd('/').toHttpUrlOrNull()?.also { url ->
+        if (url.scheme != "https" && !(url.scheme == "http" && url.host in setOf("127.0.0.1", "::1"))) {
+            throw GatewayException("Remote gateways must use HTTPS. HTTP is available only for literal loopback addresses.")
+        }
+    } ?: throw GatewayException("That gateway address isn’t valid.")
+
 class GatewayClient(private val listener: Listener, private val webSocketFactory: WebSocket.Factory? = null) {
     interface Listener {
         fun onReady(payload: JSONObject)
@@ -31,6 +38,8 @@ class GatewayClient(private val listener: Listener, private val webSocketFactory
         .readTimeout(0, TimeUnit.MILLISECONDS)
         .pingInterval(20, TimeUnit.SECONDS)
         .retryOnConnectionFailure(true)
+        .followRedirects(false)
+        .followSslRedirects(false)
         .build()
     @Volatile private var socket: WebSocket? = null
     private val nextId = AtomicInteger(1)
@@ -43,7 +52,7 @@ class GatewayClient(private val listener: Listener, private val webSocketFactory
     @Synchronized fun connect(baseUrl: String, token: String, cookie: String? = null) {
         disconnect(silent = true)
         closedByUs = false
-        val httpUrl = baseUrl.trimEnd('/').toHttpUrlOrNull() ?: throw GatewayException("That gateway address isn’t valid.")
+        val httpUrl = checkedGatewayUrl(baseUrl)
         val wsUrl = httpUrl.newBuilder()
             .addPathSegments("api/ws")
             .apply { if (token.isNotBlank()) addQueryParameter("token", token) }
@@ -174,8 +183,7 @@ class GatewayClient(private val listener: Listener, private val webSocketFactory
 
     companion object {
         suspend fun probe(baseUrl: String, token: String, cookie: String? = null): JSONObject = withContext(Dispatchers.IO) {
-            val url = baseUrl.trimEnd('/').toHttpUrlOrNull()?.newBuilder()?.addPathSegments("api/status")?.build()
-                ?: throw GatewayException("That gateway address isn’t valid.")
+            val url = checkedGatewayUrl(baseUrl).newBuilder().addPathSegments("api/status").build()
             val request = Request.Builder().url(url)
                 .apply {
                     cookie?.let { header("Cookie", "niobium_session=" + it) }
@@ -184,7 +192,8 @@ class GatewayClient(private val listener: Listener, private val webSocketFactory
                         header("Authorization", "Bearer $token")
                     }
                 }.build()
-            val client = OkHttpClient.Builder().connectTimeout(12, TimeUnit.SECONDS).readTimeout(12, TimeUnit.SECONDS).build()
+            val client = OkHttpClient.Builder().connectTimeout(12, TimeUnit.SECONDS).readTimeout(12, TimeUnit.SECONDS)
+                .followRedirects(false).followSslRedirects(false).build()
             client.newCall(request).execute().use { response ->
                 if (response.code == 401 || response.code == 403) throw GatewayException("That access token was rejected.")
                 if (!response.isSuccessful) throw GatewayException("Gateway returned HTTP ${response.code}.")
