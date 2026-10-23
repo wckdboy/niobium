@@ -653,3 +653,24 @@ sources are retained and Apple release work stays parked.
    surfaces and durable reconnect behavior while retaining engine/session
    ownership and unknown-delivery receipts. Real-account model/image and
    connector authorization acceptance remain separate open work.
+
+## Desktop vault cycle — NIO-31
+
+Branch `codex/desktop-credential-vaults`, desktop candidate 2.1.2. Named Hermes
+and image credentials can be saved explicitly in macOS Keychain or Linux Secret
+Service. Metadata contains names, canonical URLs and opaque IDs; keys stay out of
+files, argv, environment, shared status and diagnostics. Session-only use remains
+available. Local DSH's provider-key file remains a separate runtime integration.
+
+Native calls run in a small bundled C helper with bounded private pipes and a
+deadline. Locked/unavailable vaults and unknown write outcomes stay visible.
+Deletes require confirmation and clear a linked active session. Cancelling,
+disconnecting or clearing a session invalidates pending credential loads.
+Image receipts retain account scope, support explicit confirmation for rotated
+keys/legacy receipts, and preserve unknown acceptance without paid replay.
+
+Local acceptance: 42 desktop tests, 33 shared-core tests, 85 Node and 15 Python
+checks; 27 isolated native macOS vault operations. Native Linux acceptance,
+installed packages and CodeRabbit review remain release gates. Android remains
+2.1.1/code14 in this desktop-only cycle. NIO-31's live host-prompt acceptance and
+the DSH vault bridge remain open after desktop OS storage ships.

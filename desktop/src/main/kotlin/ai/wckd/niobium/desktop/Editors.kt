@@ -21,7 +21,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable fun PixelCreator(agent: DesktopAgent, artist: DesktopArtist, connected: Boolean, initialLook: PixelLook? = null, onClose: () -> Unit) {
+@Composable fun PixelCreator(agent: DesktopAgent, artist: DesktopArtist, credentials: DesktopCredentials, connected: Boolean, initialLook: PixelLook? = null, onClose: () -> Unit) {
     var brief by remember { mutableStateOf("A clever creative partner with a mischievous edge") }
     var draft by remember(agent, initialLook) { mutableStateOf(PixelBuilder.preview(brief).let { base ->
         if (initialLook == null) base else base.copy(spec = base.spec.copy(character = base.spec.character.copy(
@@ -114,7 +114,7 @@ import org.json.JSONObject
             }
         }
     }
-    atelier?.let { target -> AtelierDialog(artist, target, reference = if (target == "pixel") PixelImages.reference(look) else PixelImages.companionReference(spec.companion.kind, spec.companion.art), onClose = { atelier = null }) { art ->
+    atelier?.let { target -> AtelierDialog(artist, credentials, target, reference = if (target == "pixel") PixelImages.reference(look) else PixelImages.companionReference(spec.companion.kind, spec.companion.art), onClose = { atelier = null }) { art ->
         draft = if (target == "pixel") draft.copy(spec = spec.copy(character = spec.character.copy(look = look.copy(customArt = art))))
         else draft.copy(spec = spec.copy(companion = spec.companion.copy(art = art)))
         atelier = null
@@ -125,22 +125,21 @@ import org.json.JSONObject
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) { Text(label, color = Ink.Text, fontSize = 12.sp); Switch(checked, onChange, enabled = enabled) }
 }
 
-@Composable fun AtelierDialog(artist: DesktopArtist, target: String, reference: ByteArray, onClose: () -> Unit, onApply: (PixelArt) -> Unit) {
+@Composable fun AtelierDialog(artist: DesktopArtist, credentials: DesktopCredentials, target: String, reference: ByteArray, onClose: () -> Unit, onApply: (PixelArt) -> Unit) {
     val job by artist.state.collectAsState()
-    var key by remember { mutableStateOf("") }; var brief by remember { mutableStateOf("") }
-    var keyReady by remember { mutableStateOf(false) }; var error by remember { mutableStateOf<String?>(null) }
+    val auth by artist.credentials.collectAsState()
+    var brief by remember { mutableStateOf("") }; var error by remember { mutableStateOf<String?>(null) }
+    val keyReady = auth.ready
     AlertDialog(onDismissRequest = onClose, title = { Text(if (target == "companion") "A creature of your own." else "Something a little wicked.") }, text = {
         Column(Modifier.width(500.dp).heightIn(max = 550.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            if (!keyReady) {
-                OutlinedTextField(key, { key = it }, Modifier.fillMaxWidth(), label = { Text("OpenAI image API key") }, singleLine = true, visualTransformation = PasswordVisualTransformation())
-                TextButton(onClick = { try { artist.setKey(key); key = ""; keyReady = true; artist.resume() } catch (_: Exception) { error = "Enter a valid API key." } }, enabled = key.isNotBlank()) { Text("Use key for this session") }
-            }
+            ImageCredentials(artist, credentials)
             OutlinedTextField(brief, { brief = it.take(2000) }, Modifier.fillMaxWidth(), minLines = 3, maxLines = 5, label = { Text(if (target == "companion") "Describe your creature" else "New clothes, details, or style") })
             Text("Sends your brief and reference art to OpenAI. Provider charges apply. The provider stores the design so you can check it later; its receipt stays on this computer.", color = Ink.Muted, fontSize = 11.sp)
-            Text("The key stays in memory. Add it again after restarting to resume a saved design.", color = Ink.Muted, fontSize = 10.sp)
+            if (auth.ready && !auth.receiptMatches) Text(if (auth.legacyReceipt) "This saved design predates account tracking. Confirm the account before checking it." else "This key differs from the saved design’s key. Confirm its account before checking it.", color = Ink.Muted, fontSize = 11.sp)
+            if (auth.ready && !auth.receiptMatches && job?.responseId != null) TextButton(onClick = { artist.resume(confirmAccount = true) }) { Text("This is the design’s account · check status") }
             if (artist.busy) {
                 Text(if (job?.phase == "submitting") "Starting design…" else "Designing… You can close this window.", color = Ink.Violet, fontSize = 12.sp)
-                if (job?.responseId != null && keyReady) Row { TextButton(onClick = artist::resume) { Text("Check status") }; TextButton(onClick = artist::cancel) { Text("Cancel design") } }
+                if (job?.responseId != null && keyReady && auth.receiptMatches) Row { TextButton(onClick = { artist.resume() }) { Text("Check status") }; TextButton(onClick = artist::cancel) { Text("Cancel design") } }
             } else PixelButton("Generate design", icon = "spark", enabled = keyReady && brief.isNotBlank() && job?.phase != "unknown") {
                 try { artist.generate(brief, target, reference); error = null } catch (e: Exception) { error = e.message }
             }

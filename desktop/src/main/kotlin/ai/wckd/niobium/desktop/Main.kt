@@ -29,6 +29,7 @@ fun main(args: Array<String>) {
     val local = remember { LocalEngine(scope) }
     val hermes = remember { DesktopAgent(false, scope) }
     val dsh = remember { DesktopAgent(true, scope) }
+    val credentials = remember { DesktopCredentials(scope) }
     val runtime by local.state.collectAsState()
     val remoteState by hermes.state.collectAsState()
     val localState by dsh.state.collectAsState()
@@ -38,14 +39,14 @@ fun main(args: Array<String>) {
         if (quitting) return
         quitting = true
         hermes.disconnect(); dsh.disconnect()
-        scope.launch { local.close(); exitApplication() }
+        scope.launch { credentials.close(); local.close(); exitApplication() }
     }
     Window(onCloseRequest = {
         if (runtime.phase in listOf("Running", "Starting") || localState.working || remoteState.working) confirmQuit = true else quit()
     }, title = "Niobium", state = rememberWindowState(width = 1220.dp, height = 830.dp), icon = painterResource("niobium.png")) {
         LaunchedEffect(Unit) { window.minimumSize = Dimension(960, 650) }
         DesktopTheme {
-            NiobiumApp(hermes, dsh, local)
+            NiobiumApp(hermes, dsh, local, credentials)
             if (confirmQuit) AlertDialog(onDismissRequest = { confirmQuit = false }, title = { Text("Close Niobium?") },
                 text = { Text("Local DSH and its running tasks will stop. Hermes continues on its host.") },
                 confirmButton = { TextButton(onClick = ::quit, enabled = !quitting) { Text("Quit") } },

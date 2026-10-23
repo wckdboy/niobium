@@ -32,7 +32,7 @@ import org.json.JSONObject
     Image(if (art == null) PixelImages.companion(kind) else PixelImages.art(art), "$kind companion", Modifier.size(size.dp), contentScale = ContentScale.Fit, filterQuality = FilterQuality.None)
 }
 
-@Composable fun NiobiumApp(hermes: DesktopAgent, dsh: DesktopAgent, runtime: LocalEngine) {
+@Composable fun NiobiumApp(hermes: DesktopAgent, dsh: DesktopAgent, runtime: LocalEngine, credentials: DesktopCredentials) {
     val remote by hermes.state.collectAsState(); val local by dsh.state.collectAsState(); val status by runtime.state.collectAsState()
     var localSelected by remember { mutableStateOf(false) }
     var page by remember { mutableStateOf("Pixels") }
@@ -89,7 +89,7 @@ import org.json.JSONObject
                 TextButton(onClick = agent::dismissError) { Text("Dismiss") }
             } }
             when (page) {
-                "Engines" -> EnginesPanel(hermes, dsh, runtime, onLocal = { localSelected = true; page = "Pixels" })
+                "Engines" -> EnginesPanel(hermes, dsh, runtime, credentials, onLocal = { localSelected = true; page = "Pixels" })
                 "Wardrobe" -> Wardrobe { look -> initialLook = look; creating = true }
                 "Rooms" -> Row(Modifier.weight(1f)) {
                     Column(Modifier.width(255.dp).fillMaxHeight().padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -130,7 +130,7 @@ import org.json.JSONObject
             }
         }
     }
-    if (creating) PixelCreator(agent, artist, connected = state.connected, initialLook = initialLook, onClose = { creating = false; if (agent.state.value.bot != null) page = "Pixels" })
+    if (creating) PixelCreator(agent, artist, credentials, connected = state.connected, initialLook = initialLook, onClose = { creating = false; if (agent.state.value.bot != null) page = "Pixels" })
     if (createRoom) RoomCreator(agent, state.bots) { createRoom = false }
     // Each engine owns its dialog. Switching engines cannot answer the other one.
     state.prompts.firstOrNull()?.let { prompt -> PromptDialog(agent, prompt) }
@@ -162,22 +162,15 @@ import org.json.JSONObject
     }
 }
 
-@Composable private fun EnginesPanel(hermes: DesktopAgent, dsh: DesktopAgent, runtime: LocalEngine, onLocal: () -> Unit) {
+@Composable private fun EnginesPanel(hermes: DesktopAgent, dsh: DesktopAgent, runtime: LocalEngine, credentials: DesktopCredentials, onLocal: () -> Unit) {
     val remote by hermes.state.collectAsState(); val local by dsh.state.collectAsState(); val status by runtime.state.collectAsState()
-    var address by remember { mutableStateOf("") }; var token by remember { mutableStateOf("") }
     var stopConfirm by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(28.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
             Panel(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) { Glyph("engine", Ink.Violet); Text("Hermes", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Ink.Text); StatusDot(remote.connected) }
                 Text("Your agent on a PC or VPS.", color = Ink.Muted, fontSize = 12.sp)
-                OutlinedTextField(address, { address = it }, Modifier.fillMaxWidth().testTag("hermes.address"), label = { Text("Gateway URL") }, placeholder = { Text("https://hermes.example.com") }, singleLine = true)
-                OutlinedTextField(token, { token = it }, Modifier.fillMaxWidth(), label = { Text("Access token") }, singleLine = true, visualTransformation = PasswordVisualTransformation())
-                Text("Token stays in memory for this app session.", color = Ink.Muted, fontSize = 10.sp)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    PixelButton(if (remote.connecting) "Connecting…" else "Connect", enabled = address.isNotBlank() && !remote.connecting) { hermes.connect(address, token); token = "" }
-                    if (remote.connected) PixelButton("Disconnect", secondary = true, onClick = hermes::disconnect)
-                }
+                GatewayCredentials(hermes, credentials)
             }
             Panel(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) { Glyph("engine", Ink.Violet); Text("Local DSH", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Ink.Text); StatusDot(status.phase == "Running") }
