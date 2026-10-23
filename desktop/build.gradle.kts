@@ -53,7 +53,10 @@ val prepareDesktopRuntime = tasks.register<Exec>("prepareDesktopRuntime") {
     inputs.files(desktopRuntimeInputs)
     outputs.dir("runtime/bundle")
 }
-tasks.matching { it.name in setOf("prepareAppResources", "createDistributable") }.configureEach { dependsOn(prepareDesktopRuntime) }
+tasks.matching { it.name in setOf("prepareAppResources", "createDistributable", "packageDmg", "packageDeb") }.configureEach {
+    dependsOn(prepareDesktopRuntime)
+    inputs.files(desktopRuntimeInputs)
+}
 tasks.test { dependsOn(prepareDesktopRuntime); inputs.files(desktopRuntimeInputs) }
 
 // Share authored familiar sprites with Android instead of maintaining copies.

@@ -45,6 +45,13 @@ def digest(path):
 for name, expected in manifest["files"].items():
     if digest(resources / name) != expected:
         raise SystemExit("Packaged runtime checksum mismatch: " + name)
+source = Path(__file__).resolve().parents[1]
+for relative in ["desktop/runtime/desktop-host.cjs", "runtime/niobium-agent.cjs", "runtime/niobium-messaging.cjs", "android/runtime/niobium-local.cjs"]:
+    origin = source / relative
+    if digest(resources / origin.name) != digest(origin):
+        raise SystemExit("Packaged runtime is stale: " + origin.name)
+if digest(resources / "package-lock.json") != digest(source / "desktop/runtime/package-lock.json"):
+    raise SystemExit("Packaged DSH dependencies are stale.")
 if digest(resources / "node") != manifest["node_sha256"] or digest(resources / "package-lock.json") != manifest["lock_sha256"]:
     raise SystemExit("Packaged Node/DSH lock integrity check failed.")
 for relative, mode in manifest["executables"].items():

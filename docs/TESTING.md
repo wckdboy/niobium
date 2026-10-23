@@ -350,3 +350,7 @@ The AI-art controller also verifies that an unusable completed image becomes a
 terminal failure, retains its receipt and starts another billable design only on
 an explicit request. Wardrobe selection opens the chosen look in the workshop.
 The desktop suite now has 16 tests, alongside 30 shared-core tests.
+
+Installer tasks also track the runtime source inputs, and package verification
+compares adapters and the dependency lock against the repository. This catches
+stale installed resources after an incremental runtime-only build.
