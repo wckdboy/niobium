@@ -562,7 +562,7 @@ hardware, real accounts and longer battery/background acceptance remain open.
 See [release validation](evidence/beta221-release-validation.json).
 
 
-## Android inventory ownership candidate
+## Android 2.2.2 inventory ownership
 
 Toolsets, skills, MCP servers and routines use a captured gateway/chat/profile and
 a newest-request revision. Opening, closing or resuming a chat clears its previous
@@ -577,7 +577,7 @@ Native regression tests cover a failed-before/passed-after Pixel-switch race, ne
 refresh failures/partial MCP status, mutation deduplication/owner changes, and
 explicit refresh recovery after unconfirmed changes. Malformed catalogs retain
 loaded rows and report a failure rather than unlocking mutable controls.
-The candidate APK is 2.2.2/code17; publication requires final-head review and checks.
+Android 2.2.2/code17 is published after final-head CodeRabbit approval and checks.
 
 The routine editor constrains its scrollable fields to the space above the IME
 and keeps Create/Cancel in a fixed action row. A 320 dp-wide, 240 dp-high native
@@ -598,3 +598,23 @@ names before replacing any loaded inventory. Genuine empty catalogs remain valid
 The native recovery case checks a malformed nested category retains known skills
 and keeps Reload disabled until a valid explicit refresh. The dialog/IME test
 compares the action's full boundary and keyboard in screen coordinates.
+
+
+## Android 2.2.2 beta.1
+
+[CodeRabbit-approved PR #17](https://github.com/wckdboy/niobium/pull/17) is merged.
+All active [source CI jobs](https://github.com/wckdboy/niobium/actions/runs/40063782361)
+pass. Exact approved source: 57 Kotlin/JVM, 91 Node, 15 Python and all 44 native
+ARM64 Android 16 emulator cases. Inventory ownership fails before the fix and
+passes afterward; cases cover newest/malformed refreshes, partial MCP status,
+stale/repeated mutations and explicit valid recovery. UI cases include a 320 dp
+constrained form at 1.3 text scale and the real IME with screen-coordinate bounds.
+
+The signed upgrade sequence retains Dark appearance and original install time,
+including the final approved APK replacing an intermediate code17 candidate. Exact
+sources are recorded in metadata. Cold launch, runtime hashes and 16 KB packaging
+verify. All four complete public downloads match local hashes, and the downloaded
+APK certificate/source tag verify. All 20 public website files plus www Home and
+custom 404 match deployment cd05f1aa-73b8-4989-b6fd-09bb870ebc35.
+Physical hardware, real accounts, battery/Doze and extended background acceptance
+remain open. See [release validation](evidence/beta222-release-validation.json).

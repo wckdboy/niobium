@@ -59,7 +59,7 @@ Demo/build checks do not establish live provider, authorization or background
 behaviour.
 
 
-## Android inventory ownership candidate
+## Android 2.2.2 inventory ownership
 
 Toolsets, skills, MCP servers and routines use a captured gateway/chat/profile and
 a newest-request revision. Opening, closing or resuming a chat clears its previous
@@ -74,7 +74,7 @@ Native regression tests cover a failed-before/passed-after Pixel-switch race, ne
 refresh failures/partial MCP status, mutation deduplication/owner changes, and
 explicit refresh recovery after unconfirmed changes. Malformed catalogs retain
 loaded rows and report a failure rather than unlocking mutable controls.
-The candidate APK is 2.2.2/code17; publication requires final-head review and checks.
+Android 2.2.2/code17 is published after final-head CodeRabbit approval and checks.
 
 The routine editor constrains its scrollable fields to the space above the IME
 and keeps Create/Cancel in a fixed action row. A 320 dp-wide, 240 dp-high native

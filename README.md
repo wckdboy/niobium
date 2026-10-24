@@ -8,17 +8,22 @@ A pixel-art home for agents on Linux, macOS and Android: connect Hermes, run
 DSH locally, or keep both engines ready. Pixels have their own personas, tools
 and companions. The existing iOS client is retained; iOS release work is parked.
 
-**Desktop [2.1.3 beta.1](https://github.com/wckdboy/niobium/releases/tag/v2.1.3-beta.1) · Android [2.2.1/code16](https://github.com/wckdboy/niobium/releases/tag/v2.2.1-beta.1).** Full Hermes parity is the target;
+**Desktop [2.1.3 beta.1](https://github.com/wckdboy/niobium/releases/tag/v2.1.3-beta.1) · Android [2.2.2/code17](https://github.com/wckdboy/niobium/releases/tag/v2.2.2-beta.1).** Full Hermes parity is the target;
 it is not finished. The current scope is in [PLAN.md](PLAN.md), the implementation
 audit is in [docs/HERMES-PARITY.md](docs/HERMES-PARITY.md), and the work is tracked
 in [Plane](https://app.plane.so/wckd/projects/2fbcf987-20de-43dc-80ac-0a6bab7ec03a/issues/).
 
-<img src="docs/evidence/beta220-android-home.png" width="280" alt="Niobium Android 2.2.0: pixel roster and native navigation"> <img src="docs/evidence/clean-pixels-android-workshop.png" width="252" alt="Niobium v2 on Android">
+<img src="docs/evidence/beta222-android-tools.png" width="280" alt="Niobium Android 2.2.2: the signed APK’s pixel toolbox"> <img src="docs/evidence/clean-pixels-android-workshop.png" width="252" alt="Niobium v2 on Android">
 
-## Android APK: 2.2.1 beta.1
+## Android APK: 2.2.2 beta.1
 
-[Download the signed ARM64 APK](https://github.com/wckdboy/niobium/releases/download/v2.2.1-beta.1/Niobium-2.2.1-beta.1-android-arm64.apk) · [Release and checksums](https://github.com/wckdboy/niobium/releases/tag/v2.2.1-beta.1).
-Android 9+, version 2.2.1/code16, with the existing application identity and key.
+[Download the signed ARM64 APK](https://github.com/wckdboy/niobium/releases/download/v2.2.2-beta.1/Niobium-2.2.2-beta.1-android-arm64.apk) · [Release and checksums](https://github.com/wckdboy/niobium/releases/tag/v2.2.2-beta.1).
+Android 9+, version 2.2.2/code17, with the existing application identity and key.
+
+Tool, skill, MCP and routine inventories stay with their Pixel. Failed or malformed
+refreshes keep loaded rows. Shared guards reject stale/repeated changes and disable
+mutations while chat is loading. Explicit Refresh/Retry recovers inventory errors.
+Coherent pixel controls and the routine editor keep actions above the keyboard.
 
 Search loaded chat titles/models, filter Working chats and see your current
 conversation. Failed refreshes keep loaded rows; late responses cannot replace
@@ -30,20 +35,20 @@ bounded background preparation. DMs and rooms keep your reading position;
 Latest messages resumes following. Local session queues keep Pixels independent.
 Remote gateway/workspace entry and navigation require HTTPS.
 
-49 Kotlin/JVM, 91 Node, 15 Python and all 38 native ARM64 Android 16 emulator cases
+57 Kotlin/JVM, 91 Node, 15 Python and all 44 native ARM64 Android 16 emulator cases
 pass, including real DSH provider setup, chat/rooms, foreground lifecycle and
-workspace preservation. Lint, signing, direct published-APK upgrade/cold launch,
+workspace preservation. Lint, signing, installed signed upgrade sequence/cold launch,
 runtime hashes and 16 KB packaging verify. CodeRabbit approved
-[PR #16](https://github.com/wckdboy/niobium/pull/16), and every active
-[release CI job](https://github.com/wckdboy/niobium/actions/runs/40059127669) passes.
-See [release evidence](docs/evidence/beta221-release-validation.json).
+[PR #17](https://github.com/wckdboy/niobium/pull/17), and every active
+[release CI job](https://github.com/wckdboy/niobium/actions/runs/40063782361) passes.
+See [release evidence](docs/evidence/beta222-release-validation.json).
 
 Text/photo drafts do not persist across process death. After an uncertain send,
 check queued photos as well as the conversation. Physical Android/16 KB execution,
 real provider accounts and longer background/battery acceptance remain open.
-The next Android cycle isolates tool, skill, MCP and routine inventories and
-changes between Pixels, followed by encrypted draft recovery, accessibility and
-longer reconnect acceptance.
+The next Android cycle protects release startup from fixture intent overrides
+and collects longer controlled connection/DSH receipts. Encrypted draft recovery,
+accessibility and broader attachment/background acceptance follow.
 
 ## Desktop preview: Linux and macOS
 
@@ -116,7 +121,7 @@ descendants, excluding the UI JVM; they do not establish multi-hour performance.
 
 CodeRabbit [approved PR #14](https://github.com/wckdboy/niobium/pull/14); every active
 [release CI job](https://github.com/wckdboy/niobium/actions/runs/40023699121) and both native installer checks pass.
-Desktop 2.1.3 [release evidence](docs/evidence/beta213-release-validation.json) is retained; Android 2.2.1 has the separate checkpoint above.
+Desktop 2.1.3 [release evidence](docs/evidence/beta213-release-validation.json) is retained; Android 2.2.2 has the separate checkpoint above.
 
 <img src="site/public/desktop-preview.png" width="760" alt="Niobium desktop wardrobe">
 

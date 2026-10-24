@@ -13,10 +13,11 @@ Protocol audit: [HERMES-PARITY.md](docs/HERMES-PARITY.md).
 - Android APK quality is the current execution priority: delivery/draft safety,
   responsive photo preparation, reader-controlled streaming, then session
   browsing, isolated inventories, accessibility and longer local-engine acceptance.
-  Android 2.2.1/code16 is published; inventory ownership is the next candidate.
+  Android 2.2.2/code17 is published; trusted startup and controlled lifecycle
+  acceptance are the next candidate.
 - Build and ship the Compose desktop preview alongside Android; retain iOS sources
   and make its CI/signing work opt-in while desktop and Android are the priority.
-  The 2.1.3 beta.1 desktop preview and Android 2.2.1/code16 are published.
+  The 2.1.3 beta.1 desktop preview and Android 2.2.2/code17 are published.
 - Share Kotlin protocol, persona/spec validation and art reduction across Android
   and desktop. Keep engine connection/session/prompt ownership separate.
 - Native desktop DSH: pinned private runtime, direct host process, authenticated
@@ -27,6 +28,31 @@ Protocol audit: [HERMES-PARITY.md](docs/HERMES-PARITY.md).
   richer history and companion controls, and skill/MCP/routine surfaces.
 - Continue real-account acceptance, physical Android/16 KB execution, cross-engine
   rooms, Hermes replay and connector authorization. These remain unverified goals.
+
+## Shipped: Android 2.2.2 beta.1
+
+Keep tool, skill, MCP and routine replies with the captured gateway/Pixel/chat and
+newest request. Preserve loaded rows after failed or malformed refreshes. Guard
+mutable controls with shared UI/ViewModel eligibility, reject stale/repeated taps,
+and require explicit valid inventory recovery. Use coherent pixel panels/icons,
+labelled 48 dp controls and readable rows. Keep the toolbox visible behind sheets;
+keep routine actions above the actual keyboard while fields scroll independently.
+
+[Release](https://github.com/wckdboy/niobium/releases/tag/v2.2.2-beta.1),
+[CodeRabbit-approved PR #17](https://github.com/wckdboy/niobium/pull/17),
+[green source CI](https://github.com/wckdboy/niobium/actions/runs/40063782361).
+57 Kotlin/JVM, 91 Node, 15 Python and all 44 native ARM64 Android 16 emulator cases
+pass on the approved source. The ownership regression fails before the fix and
+passes afterward. Native cases cover malformed nested recovery, constrained form
+layout and an actual IME with the full action boundary measured on screen.
+Signed upgrade-sequence appearance/install retention, cold launch, runtime hashes,
+16 KB packaging, four complete public downloads/certificate/tag and all 20 website
+files plus www Home/custom 404 verify. Exact intermediate sources are in metadata.
+[Release evidence](docs/evidence/beta222-release-validation.json).
+
+Next: PR #18 restricts fixture startup overrides to debug and collects controlled
+connection/DSH lifecycle receipts. Encrypted draft recovery, notifications, richer
+attachments, physical devices, battery/Doze and real accounts remain open.
 
 ## Shipped: Android 2.2.1 beta.1
 
@@ -47,8 +73,8 @@ and original install time. All four complete public downloads, source tag,
 downloaded APK certificate, runtime hashes and 16 KB packaging verify.
 [Release evidence](docs/evidence/beta221-release-validation.json).
 
-Next: isolate tool/skill/MCP/routine inventories and mutable controls, then encrypted
-draft recovery, accessibility and longer background/reconnect acceptance. Physical
+Inventory ownership shipped in 2.2.2. Trusted startup and controlled lifecycle
+acceptance are next, followed by encrypted draft recovery and accessibility. Physical
 Android/16 KB, real provider accounts and battery acceptance remain open.
 
 ## Shipped: Android 2.2.0 beta.1
@@ -85,8 +111,8 @@ preference retention, cold launch, picker cancellation, runtime integrity and
 Evidence: [release validation](docs/evidence/beta220-release-validation.json).
 
 The searchable session browser shipped in 2.2.1. Inventory ownership and guarded
-mutations are next, followed by encrypted draft recovery, accessibility and longer
-task/room/background/reconnect acceptance.
+mutations shipped in 2.2.2; trusted startup and controlled lifecycle acceptance are
+next, followed by encrypted draft recovery and accessibility.
 Desktop remains 2.1.3; iOS release work stays parked.
 
 ## Decisions
@@ -795,7 +821,7 @@ Evidence: [release validation](docs/evidence/beta213-release-validation.json).
   refreshes and delayed responses after switching Pixels before publication.
 
 
-## Android next candidate: isolated inventories
+## Delivered in Android 2.2.2: isolated inventories
 
 Bind toolsets, skills, MCP and routines to the captured Pixel and newest request.
 Clear old inventories on chat changes, retain rows after failed refreshes, show
