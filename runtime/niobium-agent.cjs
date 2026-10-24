@@ -355,28 +355,37 @@ function createProvider({rpc, postResponse, home = '/root/.dsh', workspace = '/r
         return snapshot(p.session_id, p.omit_messages);
       }
       case 'image.attach_bytes': {
-        if (typeof p.data !== 'string' || p.data.length > 8 * 1024 * 1024 ||
-            !['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(p.mime)) throw new Error('Choose an image smaller than 6 MB.');
-        if (!attachments.has(p.session_id) && attachments.size >= 4) throw new Error('Send or discard the current images before attaching more.');
-        await summary(p.session_id);
-        const imagePath = 'niobium-image-' + crypto.randomUUID();
-        attachments.set(p.session_id, {path: imagePath, image: {type: 'image', mediaType: p.mime, data: p.data, name: p.filename || 'image'}});
-        return {attached: true, path: imagePath, count: 1};
+        const operation = edits.then(async () => {
+          if (typeof p.data !== 'string' || p.data.length > 8 * 1024 * 1024 ||
+              !['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(p.mime)) throw new Error('Choose an image smaller than 6 MB.');
+          if (!attachments.has(p.session_id) && attachments.size >= 4) throw new Error('Send or discard the current images before attaching more.');
+          await summary(p.session_id);
+          const imagePath = 'niobium-image-' + crypto.randomUUID();
+          attachments.set(p.session_id, {path: imagePath, image: {type: 'image', mediaType: p.mime, data: p.data, name: p.filename || 'image'}});
+          return {attached: true, path: imagePath, count: 1};
+        });
+        edits = operation.catch(() => {}); return operation;
       }
       case 'image.detach': {
         if (typeof p.path !== 'string' || !p.path.trim()) throw new Error('Image path is required.');
-        await summary(p.session_id);
-        const detached = attachments.get(p.session_id)?.path === p.path;
-        if (detached) attachments.delete(p.session_id);
-        return {detached, count: attachments.has(p.session_id) ? 1 : 0};
+        const operation = edits.then(async () => {
+          await summary(p.session_id);
+          const detached = attachments.get(p.session_id)?.path === p.path;
+          if (detached) attachments.delete(p.session_id);
+          return {detached, count: attachments.has(p.session_id) ? 1 : 0};
+        });
+        edits = operation.catch(() => {}); return operation;
       }
       case 'prompt.submit': {
-        const image = attachments.get(p.session_id)?.image;
-        attachments.delete(p.session_id);
-        const own = await summary(p.session_id);
-        if ((await metadata())[profileID(own.agentPreset)]?.enabled_toolsets?.includes('messaging')) await messaging.rememberUserPrompt(p.session_id);
-        const receipt = await rpc('session.prompt', {sessionId: p.session_id, mode: 'queue', content: [{type: 'text', text: p.text}, ...(image ? [image] : [])]});
-        return {accepted: receipt.accepted};
+        const operation = edits.then(async () => {
+          const image = attachments.get(p.session_id)?.image;
+          attachments.delete(p.session_id);
+          const own = await summary(p.session_id);
+          if ((await metadata())[profileID(own.agentPreset)]?.enabled_toolsets?.includes('messaging')) await messaging.rememberUserPrompt(p.session_id);
+          const receipt = await rpc('session.prompt', {sessionId: p.session_id, mode: 'queue', content: [{type: 'text', text: p.text}, ...(image ? [image] : [])]});
+          return {accepted: receipt.accepted};
+        });
+        edits = operation.catch(() => {}); return operation;
       }
       case 'session.history': {
         const h = await rpc('session.history', {sessionId: p.session_id, beforeSeq: p.before_seq, maxMessages: 250});

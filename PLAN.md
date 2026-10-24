@@ -39,6 +39,11 @@ Protocol audit: [HERMES-PARITY.md](docs/HERMES-PARITY.md).
   Hermes' audited image.detach contract and matching local DSH behavior. A stale
   upload handle cannot discard a replacement. Unknown delivery still needs review
   of the conversation and queued images; no automatic prompt retry runs.
+- Accept Hermes' optional pathless upload reply by completing its originally
+  authorized send against the captured session. Serialize local upload, detach
+  and submit edits to prevent cleanup racing a later prompt.
+- Enforce HTTPS for new and saved remote DSH web workspaces, including WebView
+  navigation. Android's network policy permits cleartext only on literal loopback.
 - Prepare photos on a serial background worker with input/output/pixel limits,
   EXIF orientation, transparency, downsampling and a small in-app preview.
 - Share a measured scrolling policy between DMs and rooms. Preserve older reading

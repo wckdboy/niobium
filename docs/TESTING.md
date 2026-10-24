@@ -42,6 +42,12 @@ sends, lost acceptance across client recreation, draft retention and leaving a
 chat during image upload. Native photo cases verify bounded preparation,
 orientation, alpha preservation and invalid input. Native Compose history cases
 cover older reading positions and tall streaming replies across width changes.
+Saved-state restoration proves reading stays paused through recreation. URL
+tests cover saved and entered endpoints; native network-policy checks verify
+that only literal loopback permits cleartext. Optional pathless Hermes uploads
+finish against their original session, while identified abandoned uploads detach.
+The local adapter's concurrent-detach regression fails before serialization and
+passes after it; stale upload handles cannot remove another image.
 Run `:app:connectedDebugAndroidTest` on ARM64 to execute these with the existing
 character and real DSH suites. Inspect the resulting XML test counts; a successful
 filtered invocation alone does not prove every intended class ran.

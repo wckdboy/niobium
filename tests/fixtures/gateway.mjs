@@ -43,12 +43,12 @@ server.on('upgrade', (request, socket) => {
         if (Object.keys(frame.params || {}).some(key=>!['session_id','profile','source','omit_messages'].includes(key))) { reject('Unexpected session.resume keys'); break; }
         result({session_id:androidMode ? frame.params.session_id : 'fixture-session',messages:androidMode ? androidHistory : [],revision:0}); break;
       case 'fixture.android':
-        if (typeof frame.params?.mode === 'string') androidMode = {mode:frame.params.mode,delay:frame.params.delay || 0,attachDelay:frame.params.attach_delay || 0};
+        if (typeof frame.params?.mode === 'string') androidMode = {mode:frame.params.mode,delay:frame.params.delay || 0,attachDelay:frame.params.attach_delay || 0,pathless:frame.params.pathless===true};
         result({requests:androidRequests,history:androidHistory,queued_images:androidImages.size}); break;
       case 'image.attach_bytes': {
         const path = 'fixture-image-' + randomUUID();androidImages.set(frame.params.session_id,path);
         androidRequests.push({method:frame.method,profile:frame.params.profile,session:frame.params.session_id});
-        setTimeout(()=>result({attached:true,path,count:1}),androidMode?.attachDelay || 0); break;
+        setTimeout(()=>result({attached:true,...(androidMode?.pathless?{}:{path}),count:1}),androidMode?.attachDelay || 0); break;
       }
       case 'image.detach': {
         const detached=androidImages.get(frame.params.session_id)===frame.params.path;

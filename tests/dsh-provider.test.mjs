@@ -206,6 +206,20 @@ test('an obsolete image path cannot discard a replacement or another session ima
   assert.equal(sent.get('a')[1].data,'replacement');assert.equal(sent.get('b')[1].data,'other');
 });
 
+test('an earlier detach settles before a concurrent prompt can consume its image', async () => {
+  let release, started, blocked=false, content;
+  const gate=new Promise(resolve=>{release=resolve});const entered=new Promise(resolve=>{started=resolve});
+  const p=createProvider({rpc:async (method,payload)=>{
+    if(method==='session.list') {if(blocked){started();await gate;}return {items:[{sessionId:'sid'}]};}
+    content=payload.content;return {accepted:true};
+  }});
+  const upload=await p.request('image.attach_bytes',{session_id:'sid',mime:'image/png',data:'abandoned'});
+  blocked=true;const removal=p.request('image.detach',{session_id:'sid',path:upload.path});await entered;
+  const send=p.request('prompt.submit',{session_id:'sid',text:'Text only'});release();
+  const [detached]=await Promise.all([removal,send]);assert.equal(detached.detached,true);
+  assert.deepEqual(content,[{type:'text',text:'Text only'}]);
+});
+
 test('older history requests preserve the upstream cursor and next-page state', async () => {
   let received;
   const p = createProvider({rpc: async (method, payload) => {

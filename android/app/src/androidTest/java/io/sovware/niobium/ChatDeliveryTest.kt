@@ -131,7 +131,8 @@ class ChatDeliveryTest {
         waitFor {controller.request("fixture.android").objects("requests").isNotEmpty()}
         val other=BotProfile.parse(JSONObject().put("name","other").put("canonical_session",JSONObject().put("id","other-session")))!!
         instrumentation.runOnMainSync {vm.openBot(other)}
-        waitFor {vm.state.activeBot?.name=="other"&&!vm.state.loadingChat};delay(1800)
+        waitFor {vm.state.activeBot?.name=="other"&&!vm.state.loadingChat}
+        waitFor {val row=controller.request("fixture.android");row.optInt("queued_images")==0&&row.objects("requests").any {it.s("method")=="image.detach"}}
         val state=controller.request("fixture.android")
         assertEquals(0,confirmed);assertEquals(0,state.objects("requests").count {it.s("method")=="prompt.submit"})
         assertEquals(1,state.objects("requests").count {it.s("method")=="image.detach"&&it.s("session")=="fixture-session"})
@@ -141,5 +142,17 @@ class ChatDeliveryTest {
         instrumentation.runOnMainSync {vm.send("A later text-only message")};waitFor {!vm.state.sendingChat}
         val prompt=controller.request("fixture.android").objects("requests").single {it.s("method")=="prompt.submit"}
         assertTrue(prompt.isNull("image"));assertEquals("fixture-session",prompt.s("session"))
+    }
+    @Test fun aPathlessUploadCompletesOnlyItsOriginallyAuthorizedConversation()=runBlocking {
+        controller.request("fixture.android",JSONObject().put("mode","confirm").put("attach_delay",500).put("pathless",true))
+        val vm=vm();var confirmed=0
+        instrumentation.runOnMainSync {vm.send("Original photo task","AAAA","image/png",onAccepted={confirmed++})}
+        waitFor {controller.request("fixture.android").objects("requests").any {it.s("method")=="image.attach_bytes"}}
+        val other=BotProfile.parse(JSONObject().put("name","other").put("canonical_session",JSONObject().put("id","other-session")))!!
+        instrumentation.runOnMainSync {vm.openBot(other)};waitFor {!vm.state.loadingChat}
+        waitFor {val row=controller.request("fixture.android");row.optInt("queued_images")==0&&row.objects("requests").any {it.s("method")=="prompt.submit"}}
+        val prompt=controller.request("fixture.android").objects("requests").single {it.s("method")=="prompt.submit"}
+        assertEquals("fixture-session",prompt.s("session"));assertEquals("remote-fixture",prompt.s("profile"))
+        assertFalse(prompt.isNull("image"));assertEquals(0,confirmed);assertEquals("other",vm.state.activeBot?.name)
     }
 }

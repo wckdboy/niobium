@@ -13,7 +13,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
@@ -574,7 +573,7 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
             suspend fun discardPhoto() {
                 val path = attachmentPath ?: return
                 val result = client.request("image.detach", JSONObject().put("session_id", session).put("profile", bot.name).put("path", path), 15_000)
-                check(result.has("detached")) { "The engine did not confirm photo removal." }
+                check(result.opt("detached") is Boolean) { "The engine did not confirm photo removal." }
                 attachmentPath = null
             }
             try {
@@ -583,15 +582,19 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
                 state = state.copy(messages = state.messages + message, turnActive = true, turnStatus = "")
                 attempted = true
                 if (imageBase64 != null) {
-                    val uploaded = client.request("image.attach_bytes", JSONObject().put("session_id", session).put("profile", bot.name)
+                    val uploaded = withContext(Dispatchers.IO) { client.request("image.attach_bytes", JSONObject().put("session_id", session).put("profile", bot.name)
                         .put("data", imageBase64).put("mime", mime).put("filename", "niobium-photo." + when (mime) { "image/png" -> "png"; "image/webp" -> "webp"; "image/gif" -> "gif"; else -> "jpg" }), 30_000)
+                    }
                     attachmentPath = uploaded.s("path")?.takeIf { it.isNotBlank() && it.length <= 8192 }
-                    check(attachmentPath != null) { "The engine did not confirm the uploaded photo." }
-                    if (!owns()) {
+                    check(uploaded.optBoolean("attached", uploaded.optBoolean("ok", false))) { "The engine did not confirm the uploaded photo." }
+                    if (!owns() && attachmentPath != null) {
                         discardPhoto()
                         withContext(Dispatchers.IO) { pendingChats.resolve(scope, receiptId) }
                         return@launch
                     }
+                    // Hermes permits a pathless acknowledgement. Complete the authorized
+                    // transaction against its captured origin rather than abandoning an
+                    // upload which that engine cannot identify for detachment.
                 }
                 val result = client.request("prompt.submit", JSONObject().put("session_id", session).put("profile", bot.name)
                     .put("text", displayed).put("submission_id", receiptId).put("clarify_batch", true), 30_000)
@@ -1542,16 +1545,7 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
     fun clearError() { state = state.copy(error = null) }
     fun clearToast() { state = state.copy(toast = null) }
 
-    private fun normalizeUrl(raw: String): String? {
-        var text = raw.trim()
-        if (text.isEmpty()) return null
-        if (!text.contains("://")) text = "https://$text"
-        val url = text.trimEnd('/').toHttpUrlOrNull() ?: return null
-        if (url.scheme != "http" && url.scheme != "https") return null
-        if (url.scheme == "http" && url.host !in setOf("127.0.0.1", "::1")) return null
-        if (url.username.isNotEmpty() || url.password.isNotEmpty()) return null
-        return url.newBuilder().query(null).fragment(null).build().toString().trimEnd('/')
-    }
+    private fun normalizeUrl(raw: String): String? = normalizeAppUrl(raw)
 
     // ── Demo ─────────────────────────────────────────────────────────────────
 

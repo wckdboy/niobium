@@ -105,7 +105,7 @@ fun OnboardingScreen(state: NbState, onConnect: (String, String, String) -> Unit
                 FieldLabel("GATEWAY URL")
                 OutlinedTextField(
                     value = gateway, onValueChange = { gateway = it },
-                    placeholder = { Text("http://192.168.1.20:9119", color = Nb.Tertiary, fontSize = 13.sp, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace) },
+                    placeholder = { Text("https://hermes.example.com", color = Nb.Tertiary, fontSize = 13.sp, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace) },
                     modifier = Modifier.fillMaxWidth(), singleLine = true,
                     textStyle = androidx.compose.ui.text.TextStyle(color = Nb.Text, fontSize = 13.sp, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),

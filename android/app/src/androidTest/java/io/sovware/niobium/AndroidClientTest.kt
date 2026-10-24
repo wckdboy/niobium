@@ -104,4 +104,10 @@ class AndroidClientTest {
             assertTrue(runCatching {PhotoAttachments.prepare(context.contentResolver,Uri.fromFile(file))}.isFailure)
         } finally {file.delete()}
     }
+    @Test fun platformCleartextPolicyAllowsOnlyTheLiteralLocalRuntime() {
+        val policy=android.security.NetworkSecurityPolicy.getInstance()
+        assertFalse(policy.isCleartextTrafficPermitted)
+        for(host in listOf("127.0.0.1","::1")) assertTrue(host,policy.isCleartextTrafficPermitted(host))
+        for(host in listOf("192.168.1.9","example.com","localhost","127.0.0.1.evil.example")) assertFalse(host,policy.isCleartextTrafficPermitted(host))
+    }
 }

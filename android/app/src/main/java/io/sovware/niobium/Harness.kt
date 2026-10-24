@@ -1,7 +1,6 @@
 package io.sovware.niobium
 
 import android.annotation.SuppressLint
-import android.net.Uri
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.foundation.background
@@ -47,8 +46,8 @@ fun RemoteHarnessScreen(onClose: () -> Unit) {
     val prefs = remember { SecurePrefs(context.applicationContext) }
     var url by remember { mutableStateOf(runCatching { prefs.loadHarnessUrl() }.getOrDefault("")) }
     var reloadID by remember { mutableStateOf(0) }
-    var active by remember { mutableStateOf(url.takeIf { it.isNotBlank() }) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var active by remember { mutableStateOf(normalizeAppUrl(url, keepRoute = true)) }
+    var error by remember { mutableStateOf(if (url.isNotBlank() && active == null) "This saved address needs HTTPS. Update it before connecting." else null) }
 
     Column(Modifier.fillMaxSize().background(Nb.Void).statusBarsPadding()) {
         Row(Modifier.fillMaxWidth().background(Nb.Ink.copy(alpha = 0.94f)).padding(horizontal = 14.dp, vertical = 10.dp),
@@ -70,11 +69,11 @@ fun RemoteHarnessScreen(onClose: () -> Unit) {
         if (active == null) {
             Column(Modifier.fillMaxSize().padding(22.dp).imePadding(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Text("Open the harness from your computer or VPS.", color = Nb.Text, style = NbTitle, fontSize = 24.sp)
-                Text("Run DSH with its web UI exposed, then enter its http(s) address. Use the full DSH web UI from your server.",
+                Text("Enter the HTTPS address of your DSH web workspace. HTTP is available only on literal loopback.",
                     color = Nb.Secondary, fontSize = 12.5.sp, lineHeight = 18.sp)
                 OutlinedTextField(
                     value = url, onValueChange = { url = it },
-                    placeholder = { Text("http://vps.local:3080", color = Nb.Tertiary) },
+                    placeholder = { Text("https://dsh.example.com", color = Nb.Tertiary) },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Nb.Text, unfocusedTextColor = Nb.Text,
@@ -86,14 +85,12 @@ fun RemoteHarnessScreen(onClose: () -> Unit) {
                 Box(Modifier.fillMaxWidth().clip(CircleShape)
                     .background(androidx.compose.ui.graphics.Brush.linearGradient(listOf(Nb.Ion, Nb.IonDeep)))
                     .clickable {
-                        var raw = url.trim()
-                        if (!raw.contains("://")) raw = "http://$raw"
-                        val parsed = runCatching { Uri.parse(raw) }.getOrNull()
-                        if (parsed == null || parsed.host.isNullOrBlank() || parsed.scheme !in listOf("http", "https") || parsed.userInfo != null) {
-                            error = "Enter a full http:// or https:// URL."
+                        val normalized = normalizeAppUrl(url, keepRoute = true)
+                        if (normalized == null) {
+                            error = "Use HTTPS, or HTTP on literal loopback."
                         } else {
-                            url = raw
-                            runCatching { prefs.saveHarnessUrl(raw) }.onSuccess { active = raw }.onFailure { error = "Could not save the harness address securely." }
+                            url = normalized
+                            runCatching { prefs.saveHarnessUrl(normalized) }.onSuccess { active = normalized; error = null }.onFailure { error = "Could not save the harness address securely." }
                         }
                     }.padding(vertical = 14.dp), contentAlignment = Alignment.Center) {
                     Text("Open harness", color = Nb.OnIon, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
@@ -120,7 +117,13 @@ fun RemoteHarnessScreen(onClose: () -> Unit) {
                         settings.domStorageEnabled = true
                         settings.allowFileAccess = false
                         settings.allowContentAccess = false
+                        settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
                         webViewClient = object : WebViewClient() {
+                            override fun shouldOverrideUrlLoading(view: WebView?, request: android.webkit.WebResourceRequest?): Boolean {
+                                if (normalizeAppUrl(request?.url?.toString().orEmpty(), keepRoute = true) != null) return false
+                                if (request?.isForMainFrame == true) error = "This navigation needs HTTPS."
+                                return true
+                            }
                             override fun onPageFinished(view: WebView?, url: String?) { error = null }
                             override fun onReceivedError(view: WebView?, request: android.webkit.WebResourceRequest?, failure: android.webkit.WebResourceError?) {
                                 if (request?.isForMainFrame == true) error = "Could not load harness: " + failure?.description
