@@ -44,6 +44,8 @@ data class NbState(
     val gatewayLatencyMs: Int? = null,
     val modelChoices: List<ModelChoice> = emptyList(),
     val sessions: List<SessionRow> = emptyList(),
+    val sessionsLoading: Boolean = false,
+    val sessionsError: String? = null,
     val usage: UsageStats? = null,
     val skills: Map<String, List<String>> = emptyMap(),
     val mcpServers: List<MCPServerRow> = emptyList(),
@@ -94,6 +96,8 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
     private var connectionEpoch = 0
     private var chatEpoch = 0
     private var groupEpoch = 0
+    private var sessionsEpoch = 0
+    private var sessionsLoad: Job? = null
     private var groupSessionIds = emptySet<String>()
     private val roomReceipts = RoomReceiptBook(app)
     private val providerPrefs = app.getSharedPreferences("niobium", android.content.Context.MODE_PRIVATE)
@@ -314,13 +318,15 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
 
     fun disconnect(forget: Boolean = false) {
         connectionEpoch++; chatEpoch++; groupEpoch++
+        sessionsEpoch++; sessionsLoad?.cancel()
         groupPoll?.cancel(); demoTurn?.cancel()
         gateway?.disconnect(silent = true)
         gateway = null
         state = state.copy(connected = false, activeBot = null, activeGroup = null,
             bots = emptyList(), groups = emptyList(), toolsets = emptyList(), messages = emptyList(),
             connecting = false, sessionId = null, modelChoices = emptyList(), approvals = emptyList(), clarify = null,
-            credentialRequests = emptyList(), turnActive = false, activities = emptyList(), routines = emptyList(), companionTasks = emptyList())
+            credentialRequests = emptyList(), turnActive = false, activities = emptyList(), routines = emptyList(), companionTasks = emptyList(),
+            sessions = emptyList(), sessionsLoading = false, sessionsError = null)
         if (forget) {
             if (state.engine == AgentEngine.HERMES) prefs.clear()
             providerPrefs.edit().remove("agent-provider").remove("local-mode").apply()
@@ -448,13 +454,15 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
     fun openBot(bot: BotProfile) {
         if (state.activeBot?.id == bot.id && state.loadingChat) return
         val epoch = ++chatEpoch
+        sessionsEpoch++; sessionsLoad?.cancel()
         demoTurn?.cancel()
         streamingId = null
         state.credentialRequests.forEach { gateway?.respond(it.rpcId, JSONObject().put("value", "")) }
         state = state.copy(activeBot = bot, messages = emptyList(), sessionId = null, companionTasks = emptyList(), companionError = null,
             sessionRevision = 0, sessionGeneration = null, sessionReasoning = null, modelChoices = emptyList(), usage = null, credentialRequests = emptyList(),
             loadingChat = true, sendingChat = false, deliveryUnconfirmed = false, deliveryAccepted = false, submissionMessageId = null, historyHasMore = false, historyBeforeSeq = null, loadingHistory = false,
-            approvals = emptyList(), clarify = null, turnActive = false, turnStatus = "")
+            approvals = emptyList(), clarify = null, turnActive = false, turnStatus = "",
+            sessions = emptyList(), sessionsLoading = false, sessionsError = null)
         viewModelScope.launch {
             if (state.demo) {
                 delay(260)
@@ -501,11 +509,13 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
 
     fun closeBot() {
         chatEpoch++
+        sessionsEpoch++; sessionsLoad?.cancel()
         demoTurn?.cancel()
         streamingId = null
         state.credentialRequests.forEach { gateway?.respond(it.rpcId, JSONObject().put("value", "")) }
         state = state.copy(activeBot = null, sessionId = null, credentialRequests = emptyList(), companionTasks = emptyList(), companionError = null, sessionRevision = 0, modelChoices = emptyList(),
-            usage = null, sendingChat = false, deliveryUnconfirmed = false, deliveryAccepted = false, submissionMessageId = null, messages = emptyList(), approvals = emptyList(), clarify = null, turnActive = false, loadingChat = false)
+            usage = null, sendingChat = false, deliveryUnconfirmed = false, deliveryAccepted = false, submissionMessageId = null, messages = emptyList(), approvals = emptyList(), clarify = null, turnActive = false, loadingChat = false,
+            sessions = emptyList(), sessionsLoading = false, sessionsError = null)
     }
 
     private fun restoreChat(snapshot: JSONObject, fallbackSessionId: String? = null) {
@@ -690,19 +700,31 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
     }
 
     fun loadSessions(bot: BotProfile) {
+        if (state.activeBot?.id != bot.id) return
+        if (state.demo) { state = state.copy(sessions = emptyList(), sessionsLoading = false, sessionsError = null); return }
         val client = gateway ?: return
-        if (state.demo) { state = state.copy(sessions = emptyList()); return }
-        viewModelScope.launch {
-            runCatching {
+        val context = chatContext
+        val request = ++sessionsEpoch
+        sessionsLoad?.cancel()
+        fun owns() = gateway === client && chatContext == context && sessionsEpoch == request
+        state = state.copy(sessionsLoading = true, sessionsError = null)
+        sessionsLoad = viewModelScope.launch {
+            try {
                 val result = client.request("session.list", JSONObject()
                     .put("profile", bot.name).put("scope", "stored").put("limit", 60), 20_000)
+                if (!owns()) return@launch
                 val arr = result.a("sessions") ?: JSONArray()
-                state = state.copy(sessions = (0 until arr.length()).mapNotNull { SessionRow.parse(arr.optJSONObject(it) ?: return@mapNotNull null) })
-            }.onFailure { state = state.copy(sessions = emptyList()) }
+                state = state.copy(sessions = (0 until arr.length()).mapNotNull { SessionRow.parse(arr.optJSONObject(it) ?: return@mapNotNull null) }.distinctBy { it.sessionId },
+                    sessionsLoading = false, sessionsError = null)
+            } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+            catch (_: Exception) { if (owns()) state = state.copy(sessionsLoading = false, sessionsError = "Chats couldn't be loaded. Try again.") }
         }
     }
 
-    fun resumeSession(row: SessionRow, bot: BotProfile) = resumeChat(row.sessionId, bot)
+    fun resumeSession(row: SessionRow, bot: BotProfile) {
+        if (state.activeBot?.id != bot.id || state.loadingChat || !state.connected) return
+        resumeChat(row.sessionId, bot)
+    }
     fun refreshChat() { val bot = state.activeBot ?: return; state.sessionId?.let { resumeChat(it, bot) } }
     private fun resumeChat(session: String, bot: BotProfile) {
         val client = gateway ?: return
