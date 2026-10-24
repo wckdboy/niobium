@@ -1,7 +1,16 @@
 package io.sovware.niobium
 
 import androidx.compose.animation.AnimatedVisibility
-import android.util.Base64
+import android.app.Activity
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.key
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -63,7 +72,14 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = {}) {
     val state = vm.state
-    var draft by remember { mutableStateOf("") }
+    val draftScope = vm.chatDraftScope
+    val draftKey = listOf(vm, bot.castKey, state.sessionId)
+    val chatContext = vm.chatContext
+    var draft by remember(vm, draftScope) { mutableStateOf(vm.draftText(draftScope)) }
+    fun editDraft(value: String) {
+        if (value.length > 32000) { vm.showToast("Messages have a 32,000-character limit."); return }
+        draft = value; vm.retainDraft(draftScope, value)
+    }
     var clarifyHidden by remember(state.clarify) { mutableStateOf(false) }
     var showCompanions by remember { mutableStateOf(false) }
     var showMentions by remember { mutableStateOf(false) }
@@ -72,31 +88,33 @@ fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = 
     var showChats by remember { mutableStateOf(false) }
     var showUsage by remember { mutableStateOf(false) }
     var showRoutines by remember { mutableStateOf(false) }
-    var attachment by remember { mutableStateOf<Pair<String, String>?>(null) }
+    var attachment by remember(draftKey) { mutableStateOf<PhotoAttachment?>(null) }
+    var preparingPhoto by remember(chatContext) { mutableStateOf(false) }
+    var photoError by remember(chatContext) { mutableStateOf<String?>(null) }
+    var reviewDelivery by remember(chatContext) { mutableStateOf(false) }
+    var photoTarget by remember { mutableStateOf<ChatContext?>(null) }
+    var dictationTarget by remember { mutableStateOf<ChatContext?>(null) }
+    var photoJob by remember { mutableStateOf<Job?>(null) }
+    var photoVersion by remember { androidx.compose.runtime.mutableLongStateOf(0L) }
+    val scope = rememberCoroutineScope()
+    DisposableEffect(chatContext) { onDispose { photoJob?.cancel(); photoJob = null } }
     val context = LocalContext.current
-    val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        uri ?: return@rememberLauncherForActivityResult
-        runCatching {
-            val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return@runCatching
-            val mime = context.contentResolver.getType(uri) ?: "image/jpeg"
-            attachment = Base64.encodeToString(bytes, Base64.NO_WRAP) to mime
+    val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        val target = photoTarget; photoTarget = null
+        if (uri != null && target == vm.chatContext) {
+            photoJob?.cancel(); val version = ++photoVersion; preparingPhoto = true; photoError = null
+            photoJob = scope.launch {
+                try { val prepared = PhotoAttachments.prepare(context.contentResolver, uri); if (vm.chatContext == target && photoVersion == version) attachment = prepared }
+                catch (e: CancellationException) { throw e }
+                catch (_: Exception) { if (vm.chatContext == target && photoVersion == version) photoError = "This photo could not be prepared. Try a smaller JPEG or PNG." }
+                finally { if (vm.chatContext == target && photoVersion == version) preparingPhoto = false }
+            }
         }
     }
     val dictation = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val target = dictationTarget; dictationTarget = null
         val spoken = result.data?.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
-        if (!spoken.isNullOrBlank()) draft = if (draft.isBlank()) spoken else "$draft $spoken"
-    }
-    val listState = rememberLazyListState()
-    var previousTail by remember { mutableStateOf<String?>(null) }
-    var previousCount by remember { mutableStateOf(0) }
-
-    LaunchedEffect(state.messages.size, state.messages.lastOrNull()?.text?.length) {
-        val tail = state.messages.lastOrNull()?.id
-        val prepended = previousCount > 0 && state.messages.size > previousCount && previousTail == tail
-        if (state.messages.isNotEmpty() && !prepended) {
-            listState.animateScrollToItem(state.messages.size - 1 + if (state.historyHasMore) 1 else 0)
-        }
-        previousTail = tail; previousCount = state.messages.size
+        if (result.resultCode == Activity.RESULT_OK && target == vm.chatContext && !spoken.isNullOrBlank()) editDraft(if (draft.isBlank()) spoken else "$draft $spoken")
     }
 
     Column(Modifier.fillMaxSize().background(Nb.Void).statusBarsPadding().imePadding()) {
@@ -116,14 +134,9 @@ fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = 
                     Text("Attaching to ${bot.title}…", color = Nb.Secondary, style = NbMono, fontSize = 10.sp)
                 }
             } else {
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(15.dp)
-                ) {
+                key(chatContext) { ConversationHistory(state.messages.lastOrNull()?.id to state.turnActive, state.messages.size, Modifier.fillMaxSize()) { pauseFollowing ->
                     if (state.historyHasMore) item {
-                        androidx.compose.material3.TextButton(onClick = vm::loadOlderMessages, enabled = !state.loadingHistory) {
+                        androidx.compose.material3.TextButton(onClick = { pauseFollowing(); vm.loadOlderMessages() }, enabled = !state.loadingHistory) {
                             Text(if (state.loadingHistory) "Loading earlier messages…" else "Load earlier messages", color = Nb.Ion, fontSize = 12.sp)
                         }
                     }
@@ -132,7 +145,10 @@ fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = 
                         item { StarterPrompts(bot) { vm.send(it) } }
                     }
                     items(state.messages, key = { it.id }) { message ->
-                        MessageRow(bot, message)
+                        Column {
+                            MessageRow(bot, message)
+                            if (state.submissionMessageId == message.id) Text(if (state.deliveryUnconfirmed) "Delivery unconfirmed" else "Sending…", color = Nb.Tertiary, fontSize = 10.sp, modifier = Modifier.align(Alignment.End))
+                        }
                     }
                     if (state.turnActive) {
                         item {
@@ -146,9 +162,21 @@ fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = 
                         }
                     }
                     item { Spacer(Modifier.height(4.dp)) }
-                }
+                } }
             }
         }
+        if (state.deliveryUnconfirmed) Column(Modifier.fillMaxWidth().background(Nb.Raised).padding(12.dp).testTag("chat.delivery-unconfirmed")) {
+            Text(if (state.deliveryAccepted) "Sent · local receipt needs review" else "Delivery unconfirmed · check before sending", color = Nb.Amber, fontSize = 12.sp)
+            Text(if (state.deliveryAccepted) "The engine accepted this message. Check device storage before clearing its receipt." else "It may already have arrived. Check the conversation before sending again.", color = Nb.Secondary, fontSize = 11.sp)
+            Row { androidx.compose.material3.TextButton(onClick = { if (state.connected) vm.refreshChat() else vm.reconnect() }, enabled = !state.loadingChat && !state.sendingChat) { Text(if (state.connected) "Refresh chat" else "Reconnect") }
+                androidx.compose.material3.TextButton(onClick = { reviewDelivery = true }, enabled = !state.sendingChat) { Text("Review delivery") } }
+        }
+        if (preparingPhoto) Text("Preparing photo…", color = Nb.Secondary, modifier = Modifier.padding(horizontal = 16.dp), fontSize = 12.sp)
+        photoError?.let { Text(it, color = Nb.Rose, modifier = Modifier.padding(horizontal = 16.dp), fontSize = 12.sp) }
+        attachment?.let { photo -> Row(Modifier.padding(horizontal = 16.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            Image(photo.preview.asImageBitmap(), "Selected photo", Modifier.size(56.dp).clip(PixelButtonShape))
+            Text("Photo · ${photo.width} × ${photo.height}", Modifier.padding(start = 10.dp), color = Nb.Secondary, fontSize = 11.sp)
+        } }
         AnimatedVisibility(visible = state.approvals.isNotEmpty()) {
             state.approvals.firstOrNull()?.let { approval ->
                 ApprovalCard(approval) { choice -> vm.resolveApproval(approval, choice) }
@@ -156,34 +184,42 @@ fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = 
         }
         Composer(
             value = draft,
-            ready = state.canSubmitChat,
-            onValueChange = { draft = it },
+            ready = state.canSubmitChat && !preparingPhoto,
+            editingEnabled = state.sessionId != null && !state.loadingChat,
+            attachmentBusy = preparingPhoto,
+            onValueChange = ::editDraft,
             placeholder = "Message ${bot.title}…",
             turnActive = state.turnActive,
             onSend = {
                 if (vm.state.canSubmitChat) {
                     val text = draft
                     val image = attachment
-                    draft = ""
-                    attachment = null
-                    vm.send(text, image?.first, image?.second ?: "image/jpeg")
+                    vm.send(text, image?.data, image?.mime ?: "image/jpeg", onAccepted = {
+                        if (draft == text) editDraft("")
+                        if (attachment === image) attachment = null
+                    })
                 }
             },
             onStop = { vm.stopTurn() },
-            onAttach = { photoPicker.launch("image/*") },
+            onAttach = { photoTarget = vm.chatContext; photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
             onDictate = {
                 val intent = android.content.Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                     putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL,
                         android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
                     putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT, "Speak to ${bot.title}")
                 }
-                runCatching { dictation.launch(intent) }
+                dictationTarget = vm.chatContext
+                runCatching { dictation.launch(intent) }.onFailure { dictationTarget = null; photoError = "No speech input is available on this device." }
             },
             hasAttachment = attachment != null,
-            onClearAttachment = { attachment = null }
+            onClearAttachment = { ++photoVersion; photoJob?.cancel(); preparingPhoto = false; attachment = null }
         )
     }
 
+    if (reviewDelivery) AlertDialog(onDismissRequest = { reviewDelivery = false },
+        title = { Text("Allow another send?") }, text = { Text("Check this conversation and your engine first. The previous message may already be running. No retry will run automatically.") },
+        confirmButton = { androidx.compose.material3.TextButton(onClick = { reviewDelivery = false; vm.acknowledgeUnconfirmedDelivery() }) { Text("I checked · allow sending") } },
+        dismissButton = { androidx.compose.material3.TextButton(onClick = { reviewDelivery = false }) { Text("Keep locked") } })
     state.clarify?.takeUnless { clarifyHidden }?.let { request ->
         ClarifyDialog(request, onSubmit = { answers, selected -> vm.resolveClarify(answers, selected); clarifyHidden = true },
             onCancel = { vm.cancelClarify(); clarifyHidden = true })
@@ -196,7 +232,7 @@ fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = 
                 items(state.bots.filter { it.name != bot.name }, key = { it.name }) { teammate ->
                     Text(teammate.title + "  @" + teammate.name, color = Nb.Secondary, fontSize = 13.sp,
                         modifier = Modifier.fillMaxWidth().clickable {
-                            draft += (if (draft.isBlank()) "" else " ") + "@" + teammate.name + " "; showMentions = false
+                            editDraft(draft + (if (draft.isBlank()) "" else " ") + "@" + teammate.name + " "); showMentions = false
                         }.padding(12.dp))
                 }
             } }, confirmButton = { androidx.compose.material3.TextButton(onClick = { showMentions = false }) { Text("Done") } })
@@ -428,6 +464,8 @@ fun Composer(
     hasAttachment: Boolean = false,
     onClearAttachment: () -> Unit = {},
     ready: Boolean = true,
+    editingEnabled: Boolean = true,
+    attachmentBusy: Boolean = false,
     mentionables: List<GroupMember> = emptyList()
 ) {
     var mentionsOpen by remember { mutableStateOf(false) }
@@ -457,13 +495,13 @@ fun Composer(
                 }
             } else if (onAttach != null) {
                 Box(Modifier.size(44.dp).clip(PixelButtonShape).background(Nb.FillSoft)
-                    .clickable { onAttach() }.semantics { contentDescription = "Attach a photo" }, contentAlignment = Alignment.Center) { Text("+", color = Nb.Secondary, fontSize = 20.sp) }
+                    .clickable(enabled = editingEnabled && !attachmentBusy) { onAttach() }.semantics { contentDescription = "Attach a photo" }, contentAlignment = Alignment.Center) { Text("+", color = Nb.Secondary, fontSize = 20.sp) }
             }
             Spacer(Modifier.width(6.dp))
             OutlinedTextField(
-                value = value, onValueChange = onValueChange,
+                value = value, onValueChange = onValueChange, enabled = editingEnabled,
                 placeholder = { Text(placeholder, color = Nb.Tertiary, fontSize = 15.sp) },
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).testTag("chat.input").semantics { contentDescription = placeholder },
                 textStyle = androidx.compose.ui.text.TextStyle(color = Nb.Text, fontSize = 15.sp),
                 maxLines = 5,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
@@ -475,7 +513,7 @@ fun Composer(
                 )
             )
             Spacer(Modifier.width(4.dp))
-            if (onDictate != null) Box(Modifier.size(44.dp).clip(PixelButtonShape).clickable { onDictate() }
+            if (onDictate != null) Box(Modifier.size(44.dp).clip(PixelButtonShape).clickable(enabled = editingEnabled) { onDictate() }
                 .semantics { contentDescription = "Dictate message" }, contentAlignment = Alignment.Center) { Text("◉", color = Nb.Secondary, fontSize = 16.sp) }
             Spacer(Modifier.width(4.dp))
             Box(
@@ -497,14 +535,10 @@ fun Composer(
 fun GroupChatScreen(vm: NiobiumViewModel, room: GroupRoom) {
     val state = vm.state
     var clarifyHidden by remember(state.clarify?.rpcId) { mutableStateOf(false) }
-    var draft by remember { mutableStateOf("") }
+    var draft by remember(vm, room.roomId) { mutableStateOf("") }
     var actionsOpen by remember { mutableStateOf(false) }
     var confirmClear by remember(room.roomId) { mutableStateOf(false) }
-    var sending by remember { mutableStateOf(false) }
-    val listState = rememberLazyListState()
-    LaunchedEffect(state.roomEvents.size) {
-        if (state.roomEvents.isNotEmpty()) listState.animateScrollToItem(state.roomEvents.size + 1)
-    }
+    var sending by remember(vm, room.roomId) { mutableStateOf(false) }
     if (confirmClear) AlertDialog(
         onDismissRequest = { confirmClear = false },
         title = { Text("Clear room?", color = Nb.Text) },
@@ -541,11 +575,7 @@ fun GroupChatScreen(vm: NiobiumViewModel, room: GroupRoom) {
             } else Box(Modifier.size(44.dp).clickable { vm.refreshGroup() }.semantics { contentDescription = "Refresh room" }, contentAlignment = Alignment.Center) { PixelIcon(PixelGlyph.ACTIVITY, Nb.Secondary, 18.dp) }
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(Nb.Line))
-        LazyColumn(
-            state = listState, modifier = Modifier.weight(1f),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(13.dp)
-        ) {
+        key(vm, room.roomId) { ConversationHistory(state.roomEvents.lastOrNull()?.id, state.roomEvents.size + state.approvals.size, Modifier.weight(1f)) { _ ->
             item {
                 Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                     GroupAvatar(room.members, 58)
@@ -569,7 +599,7 @@ fun GroupChatScreen(vm: NiobiumViewModel, room: GroupRoom) {
             items(state.approvals, key = { "approval:" + it.id }) { approval -> ApprovalCard(approval) { vm.resolveApproval(approval,it) } }
             if (state.clarify != null) item { PixelButton("A Pixel is waiting for your answer", PixelGlyph.SPARK, secondary = true) { clarifyHidden = false } }
             item { Spacer(Modifier.height(4.dp)) }
-        }
+        } }
         Composer(draft, { draft = it }, "Message the room…", false,
             ready = (state.connected || state.demo) && !sending && draft.length <= 4000,
             onSend = { val t = draft; sending = true; vm.sendGroup(t, onAccepted = { if (draft == t) draft = "" }, onSettled = { sending = false }) }, onStop = {}, accent = Nb.Violet, mentionables = room.members)
