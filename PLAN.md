@@ -12,11 +12,11 @@ Protocol audit: [HERMES-PARITY.md](docs/HERMES-PARITY.md).
 
 - Android APK quality is the current execution priority: delivery/draft safety,
   responsive photo preparation, reader-controlled streaming, then session
-  browsing, accessibility and longer local-engine acceptance. Android 2.2.0/code15
-  is published; searchable sessions are the next candidate.
+  browsing, isolated inventories, accessibility and longer local-engine acceptance.
+  Android 2.2.1/code16 is published; inventory ownership is the next candidate.
 - Build and ship the Compose desktop preview alongside Android; retain iOS sources
   and make its CI/signing work opt-in while desktop and Android are the priority.
-  The 2.1.3 beta.1 desktop preview and Android 2.2.0/code15 are published.
+  The 2.1.3 beta.1 desktop preview and Android 2.2.1/code16 are published.
 - Share Kotlin protocol, persona/spec validation and art reduction across Android
   and desktop. Keep engine connection/session/prompt ownership separate.
 - Native desktop DSH: pinned private runtime, direct host process, authenticated
@@ -27,6 +27,29 @@ Protocol audit: [HERMES-PARITY.md](docs/HERMES-PARITY.md).
   richer history and companion controls, and skill/MCP/routine surfaces.
 - Continue real-account acceptance, physical Android/16 KB execution, cross-engine
   rooms, Hermes replay and connector authorization. These remain unverified goals.
+
+## Shipped: Android 2.2.1 beta.1
+
+Search loaded titles/models, filter Working chats, mark current/working state and
+refresh with explicit loading/error/retry states. Failed refreshes retain loaded
+rows. Bind replies to the gateway, Pixel, chat and newest request so late lists
+cannot replace another Pixel's chats. Stable row identities support large lists;
+Hermes' current 60-row limit is visible as recent chats.
+
+[Release](https://github.com/wckdboy/niobium/releases/tag/v2.2.1-beta.1),
+[CodeRabbit-approved PR #16](https://github.com/wckdboy/niobium/pull/16) and
+[green release CI](https://github.com/wckdboy/niobium/actions/runs/40059127669).
+49 Kotlin/JVM, 91 Node, 15 Python and all 38 native ARM64 Android 16 emulator cases
+pass. The native suite includes 1,000-row search/filter, failed/out-of-order lists
+and a 45-second idle connection with two pings measured on the Pixel client before
+a confirmed send. Direct signed upgrade from the published 2.2.0 APK retains theme
+and original install time. All four complete public downloads, source tag,
+downloaded APK certificate, runtime hashes and 16 KB packaging verify.
+[Release evidence](docs/evidence/beta221-release-validation.json).
+
+Next: isolate tool/skill/MCP/routine inventories and mutable controls, then encrypted
+draft recovery, accessibility and longer background/reconnect acceptance. Physical
+Android/16 KB, real provider accounts and battery acceptance remain open.
 
 ## Shipped: Android 2.2.0 beta.1
 
@@ -61,9 +84,9 @@ preference retention, cold launch, picker cancellation, runtime integrity and
 16 KB packaging pass. Physical execution and real provider accounts remain open.
 Evidence: [release validation](docs/evidence/beta220-release-validation.json).
 
-Next Android implementation: complete draft PR #16's searchable session browser,
-loading/error states and Pixel/request ownership fences; then encrypted draft
-recovery, accessibility and longer task/room/background/reconnect acceptance.
+The searchable session browser shipped in 2.2.1. Inventory ownership and guarded
+mutations are next, followed by encrypted draft recovery, accessibility and longer
+task/room/background/reconnect acceptance.
 Desktop remains 2.1.3; iOS release work stays parked.
 
 ## Decisions

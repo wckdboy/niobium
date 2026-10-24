@@ -541,3 +541,22 @@ No matching signed Niobium fatal appears in the retained emulator crash buffer.
 All four canonical public assets and metadata/checksum bytes verify. Physical
 Android/16 KB, battery/multi-hour behavior and real provider accounts remain open.
 See [release validation](evidence/beta220-release-validation.json).
+
+
+## Android 2.2.1 beta.1
+
+[CodeRabbit-approved PR #16](https://github.com/wckdboy/niobium/pull/16) is merged.
+All active [release CI jobs](https://github.com/wckdboy/niobium/actions/runs/40059127669)
+pass on the exact reviewed source: 49 Kotlin/JVM, 91 Node and 15 Python checks.
+All 38 native ARM64 Android 16 emulator cases pass, including 1,000-row browser
+search/filter, failed/out-of-order refreshes and a 45-second idle connection.
+Heartbeat counts are per socket and observed through the Pixel client's own
+session-list request before confirmed delivery, excluding controller pings.
+
+The final signed APK upgrades directly from the public 2.2.0/code15 APK, retaining
+the selected Dark appearance and original install time; System appearance was
+restored afterward. Cold launch succeeds. All four complete public downloads match
+local hashes; the downloaded APK signature and source tag verify. Runtime hashes,
+16 KB packaging and all 20 site files plus www Home/custom 404 verify. Physical
+hardware, real accounts and longer battery/background acceptance remain open.
+See [release validation](evidence/beta221-release-validation.json).

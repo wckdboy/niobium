@@ -1,0 +1,405 @@
+{
+  "schema_version": 2,
+  "version": "2.2.1-beta.1",
+  "source_commit": "ee0fd29b446a535211dbe29e5ff3dab63797ea3d",
+  "source_tree": "cf77f8f4d920e739334ce629123310d7e161acd2",
+  "source_url": "https://github.com/wckdboy/niobium/tree/ee0fd29b446a535211dbe29e5ff3dab63797ea3d",
+  "generated_at": "2026-10-24T03:50:00.521395+00:00",
+  "review": {
+    "provider": "CodeRabbit",
+    "pr": "https://github.com/wckdboy/niobium/pull/16",
+    "state": "APPROVED",
+    "review_id": 5636708762,
+    "source_commit": "ee0fd29b446a535211dbe29e5ff3dab63797ea3d",
+    "author_override_used": false,
+    "greptile_automatic_reviews": false
+  },
+  "ci": {
+    "url": "https://github.com/wckdboy/niobium/actions/runs/40059127669",
+    "source_commit": "ee0fd29b446a535211dbe29e5ff3dab63797ea3d",
+    "status": "success"
+  },
+  "checks": {
+    "shared_kotlin_core": 33,
+    "android_specific_jvm": 16,
+    "android_total_jvm": 49,
+    "desktop_jvm_and_ui": 55,
+    "node": 91,
+    "python": 15,
+    "android_lint": "pass",
+    "android_native": {
+      "tests": 38,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "source_commit": "ee0fd29b446a535211dbe29e5ff3dab63797ea3d",
+      "device": "Niobium_Shared_Test ARM64 Android 16 emulator",
+      "verified_at": "2026-10-24T03:44:51.465987+00:00",
+      "suites": [
+        {
+          "name": "io.sovware.niobium.AndroidClientTest",
+          "tests": 9,
+          "seconds": 6.992,
+          "cases": [
+            "invalidPhotosFailWithoutProducingAnAttachment",
+            "platformCleartextPolicyAllowsOnlyTheLiteralLocalRuntime",
+            "photoPreparationHonorsExifRotationAndTransparency",
+            "chatBrowserSearchesLargeListsAndFiltersWorkingConversations",
+            "restoringSavedUiStateKeepsAnOlderReadingPositionAndFollowingPaused",
+            "tallRepliesStayAtTheirEndWhenTextGrowsOrWidthChanges",
+            "streamedMessagesPreserveOlderReadingAndLatestResumesFollowing",
+            "chatBrowserDistinguishesLoadingErrorsAndRetainsLoadedRows",
+            "photosAreResizedAndEncodedWithoutRetainingTheLargeBitmap"
+          ]
+        },
+        {
+          "name": "io.sovware.niobium.CharacterEngineTest",
+          "tests": 10,
+          "seconds": 11.657,
+          "cases": [
+            "familiarChoicePreservesAuthoredPixels",
+            "changingTheCastPreservesCustomCompanionArtWhenSaving",
+            "uncertainRoomReceiptsSurviveRecreationWithoutStoringMessages",
+            "workshopKeepsThePortraitThroughRemixUndoAndCreatureSelection",
+            "nativePixelsMatchTheSharedRgbaFixtures",
+            "disablingPreviewMotionImmediatelyRestoresTheOpenFrame",
+            "imageProviderKeyUsesTheActualDeviceKeystore",
+            "wardrobeFiltersNewLooksAndKeepsAiOptional",
+            "generatedArtRendersPortablePixelsAndBakerRejectsOpaqueBackgrounds",
+            "authoredLooksMatchSharedPixelsAndSurviveAppearanceRoundTrip"
+          ]
+        },
+        {
+          "name": "io.sovware.niobium.ChatDeliveryTest",
+          "tests": 12,
+          "seconds": 89.204,
+          "cases": [
+            "aPathlessUploadCompletesOnlyItsOriginallyAuthorizedConversation",
+            "aRejectedSendKeepsItsDraftAndRequiresReview",
+            "acceptingAnOlderSendPreservesANewerDraftInTheSameConversation",
+            "enteringACleartextRemoteGatewayLeavesTheCurrentConnectionUntouched",
+            "reopeningDuringASendCannotInvalidateItsAcknowledgement",
+            "delayedSessionListingsCannotOverwriteAnotherPixelsChats",
+            "theLatestListFailureKeepsLoadedChatsAndRejectsAnOlderRefresh",
+            "leavingAChatDuringImageUploadNeverPostsItsPromptIntoTheNewChat",
+            "lostReceiptsStayLockedAcrossViewModelRestartAndNeverReplay",
+            "doubleTapsSendOnceAndDraftAcknowledgementWaitsForAcceptance",
+            "idleConnectionsSurviveTwoHeartbeatIntervalsAndStillDeliver",
+            "rejectedPhotoPromptsDetachTheirOwnUploadBeforeAnotherSend"
+          ]
+        },
+        {
+          "name": "io.sovware.niobium.LocalRuntimeTest",
+          "tests": 7,
+          "seconds": 99.1,
+          "cases": [
+            "nativeProviderSetupActivatesModelRoutesAndKeepsKeysOutOfSettings",
+            "reinstallPreservesPixelWorkspace",
+            "explicitGatewayLaunchOverridesSavedLocalWithoutLosingThePixel",
+            "dshWebIsPrivateAndAuthenticated",
+            "foregroundServiceRunsBehindNativeAppAndAdvancedWebview",
+            "guestShellNodeAndDshRunInAppSandbox",
+            "nativeDshProviderCreatesPixelsAndStreamsThroughRealDsh"
+          ]
+        }
+      ]
+    },
+    "signed_upgrade": {
+      "source_commit": "ee0fd29b446a535211dbe29e5ff3dab63797ea3d",
+      "verified_at": "2026-10-24T03:46:56.557968+00:00",
+      "device": "Niobium_Shared_Test ARM64 Android 16 emulator",
+      "signed_upgrade": "pass",
+      "cold_launch": "pass",
+      "from_version": "published 2.2.0/code15",
+      "to_version": "2.2.1/code16",
+      "upgrade_sequence": "Direct signed upgrade from the published 2.2.0 APK to the final reviewed 2.2.1 source.",
+      "original_first_install_time": "2026-10-23 15:05:40",
+      "retained_theme": "Dark selected before upgrade and visually confirmed afterward; original System preference restored after the check.",
+      "apk_sha256": "12df8772226b033b8dcb7b084a73cca89d9cdb583b46b09be0ebe752f2670106",
+      "cold_launch_total_ms": 522,
+      "signed_app_crash_buffer": "No matching signed Niobium process fatal in retained emulator crash buffer",
+      "physical_device_tested": false
+    },
+    "android_runtime_hashes_and_16kb_alignment": "pass"
+  },
+  "android": {
+    "application_id": "io.sovware.niobium",
+    "version": "2.2.1",
+    "version_code": 16,
+    "abi": "arm64-v8a",
+    "min_sdk": 28,
+    "target_sdk": 37,
+    "certificate_sha256": "2f44d7e7316de46bf7d81a126bff456950a77df5c1e295afb753832aa1891b5d",
+    "build_source_commit": "ee0fd29b446a535211dbe29e5ff3dab63797ea3d",
+    "dependency_archive": "https://github.com/wckdboy/niobium/releases/tag/android-runtime-2026.10.22",
+    "physical_device_tested": false,
+    "physical_16kb_device_tested": false,
+    "photo_preparation": {
+      "input_limit_bytes": 16777216,
+      "encoded_limit_bytes": 4194304,
+      "long_edge_pixels": 2048,
+      "preview_long_edge_pixels": 160,
+      "background_worker": true,
+      "orientation_and_alpha": "native tests pass"
+    },
+    "chat_browser": {
+      "loaded_title_and_model_search": true,
+      "working_filter": true,
+      "stable_row_identity": true,
+      "gateway_profile_chat_and_latest_request_ownership": true,
+      "failed_refresh_retains_rows": true,
+      "hermes_recent_limit": 60
+    },
+    "idle_connection_test": "45 seconds, two keepalive pings counted on the Pixel client socket, then successful submission with unchanged chat owner.",
+    "drafts": "Bounded in-memory conversation text; cleared only after acceptance. No process-death draft persistence.",
+    "unknown_delivery": "Opaque per-account/session IDs persist before side effects; explicit user review unlocks, no automatic prompt replay."
+  },
+  "desktop": {
+    "rebuilt_in_this_release": false,
+    "version": "2.1.3",
+    "retained_release": "https://github.com/wckdboy/niobium/releases/tag/v2.1.3-beta.1"
+  },
+  "ios": {
+    "release_work": "parked by user request",
+    "new_build_in_this_release": false
+  },
+  "limitations": [
+    "Physical Android/16 KB execution, real-account model/image acceptance and battery/long-running background behavior remain open.",
+    "Text/photo drafts are not persisted across process death; only opaque pending-delivery metadata persists.",
+    "Full Hermes parity, server outbox/replay reconciliation, connector authorization, broad file attachments and native background completion notifications remain open.",
+    "Local DSH provider credentials remain in its owner-only file; the Android Keystore bridge remains follow-up work."
+  ],
+  "runtime_hashes": {
+    "runtime/niobium-agent.cjs": "c9f27ca74b9e383d229cf78de6a82c029ecac17ff9cd29bcd19846397ec6a7bb",
+    "runtime/niobium-messaging.cjs": "f04695ffd40a03f33f207d5b6b0d63f45dacb504085fe9af20a05ac3234b5e2e",
+    "android/runtime/niobium-local.cjs": "dd7391760bcb9195c2e6855ebadd634c7143a692ac81cec40004a2a5cce91f80",
+    "android/runtime/supervisor.c": "8600b6988eae12fecdd198688034e4a3a40ece181ce69868a48c964e2a5403bf",
+    "config/android-runtime.json": "fd3e9cf293438dfe8039ef43cfb71c0f29bf6de979f4a590a1192aa0f219c4e4"
+  },
+  "assets": [
+    {
+      "name": "Niobium-2.2.1-beta.1-android-arm64.apk",
+      "size": 90848470,
+      "sha256": "12df8772226b033b8dcb7b084a73cca89d9cdb583b46b09be0ebe752f2670106",
+      "download_url": "https://github.com/wckdboy/niobium/releases/download/v2.2.1-beta.1/Niobium-2.2.1-beta.1-android-arm64.apk"
+    },
+    {
+      "name": "Niobium-Android-runtime-sources.tar.gz",
+      "size": 1206468,
+      "sha256": "3c9777b5c2195ee80f99ab8ee19a25df1b0841571bbe049ed0c7156e31c3c8e7",
+      "download_url": "https://github.com/wckdboy/niobium/releases/download/v2.2.1-beta.1/Niobium-Android-runtime-sources.tar.gz"
+    }
+  ],
+  "release_url": "https://github.com/wckdboy/niobium/releases/tag/v2.2.1-beta.1",
+  "merge_commit": "91a057cbd9ff010c7fa28440e41a311ccbd23ad7",
+  "public_verification": {
+    "verified_at": "2026-10-24T03:53:02.785430+00:00",
+    "release_id": 422499519,
+    "release_url": "https://github.com/wckdboy/niobium/releases/tag/v2.2.1-beta.1",
+    "published_at": "2026-10-24T03:52:38Z",
+    "assets": [
+      {
+        "name": "Niobium-2.2.1-beta.1-android-arm64.apk",
+        "size": 90848470,
+        "sha256": "12df8772226b033b8dcb7b084a73cca89d9cdb583b46b09be0ebe752f2670106",
+        "public_http_status": 200,
+        "full_public_bytes_verified": true,
+        "url": "https://github.com/wckdboy/niobium/releases/download/v2.2.1-beta.1/Niobium-2.2.1-beta.1-android-arm64.apk"
+      },
+      {
+        "name": "Niobium-Android-runtime-sources.tar.gz",
+        "size": 1206468,
+        "sha256": "3c9777b5c2195ee80f99ab8ee19a25df1b0841571bbe049ed0c7156e31c3c8e7",
+        "public_http_status": 200,
+        "full_public_bytes_verified": true,
+        "url": "https://github.com/wckdboy/niobium/releases/download/v2.2.1-beta.1/Niobium-Android-runtime-sources.tar.gz"
+      },
+      {
+        "name": "release-metadata.json",
+        "size": 9138,
+        "sha256": "f6d61e1610a5e8869d1761d8db4573b70ecc29f80694355940973c9bf0ad3f38",
+        "public_http_status": 200,
+        "full_public_bytes_verified": true,
+        "url": "https://github.com/wckdboy/niobium/releases/download/v2.2.1-beta.1/release-metadata.json"
+      },
+      {
+        "name": "SHA256SUMS.txt",
+        "size": 298,
+        "sha256": "770328ddc9100d53d7b2c63f8b5d4662815ec7d69d08c7d9a4b6e1cce5d99f6b",
+        "public_http_status": 200,
+        "full_public_bytes_verified": true,
+        "url": "https://github.com/wckdboy/niobium/releases/download/v2.2.1-beta.1/SHA256SUMS.txt"
+      }
+    ],
+    "metadata_and_checksums_public_bytes_match": true,
+    "full_public_download_sha256_verified": [
+      "Niobium-2.2.1-beta.1-android-arm64.apk",
+      "Niobium-Android-runtime-sources.tar.gz",
+      "release-metadata.json",
+      "SHA256SUMS.txt"
+    ],
+    "downloaded_apk_certificate_verified": true,
+    "tag_commit": "ee0fd29b446a535211dbe29e5ff3dab63797ea3d"
+  },
+  "website_verification": {
+    "deployment_version": "f149f24d-d0f3-4d51-ac9e-5e09cb0d4b5d",
+    "verified_at": "2026-10-24T03:55:40.801174+00:00",
+    "public_files_verified": 20,
+    "files": [
+      {
+        "path": "bot-build.md",
+        "url": "https://niobium.sh/bot-build.md",
+        "status": 200,
+        "sha256": "aa0046f35bd5a99a5d53dc3f95d996d2008e912337532190984c2670a437d46f",
+        "size": 9184
+      },
+      {
+        "path": "build/index.html",
+        "url": "https://niobium.sh/build/",
+        "status": 200,
+        "sha256": "e5f2ee3dd24bd882ef2ab7d74d0202c75903f7d7316647c88901cb3b8dcb28cd",
+        "size": 5490
+      },
+      {
+        "path": "cast-strip.png",
+        "url": "https://niobium.sh/cast-strip.png",
+        "status": 200,
+        "sha256": "e76095833f0e1c8edc9cedf71866739c5de46f48b0eda057d5d6293e8167c165",
+        "size": 4248
+      },
+      {
+        "path": "desktop-preview.png",
+        "url": "https://niobium.sh/desktop-preview.png",
+        "status": 200,
+        "sha256": "23d4bfb79bf103dedcd56a0ba0dda3b0b52c4a7d5cebca77dfce488b1ac6fb45",
+        "size": 60511
+      },
+      {
+        "path": "favicon.svg",
+        "url": "https://niobium.sh/favicon.svg",
+        "status": 200,
+        "sha256": "be2ee73797c4ae40cefd46c0739b6c4f69ad3db6371abd957d07e3f10e19a1a2",
+        "size": 928
+      },
+      {
+        "path": "fonts/jetbrains-mono-latin.woff2",
+        "url": "https://niobium.sh/fonts/jetbrains-mono-latin.woff2",
+        "status": 200,
+        "sha256": "2c32b9b3ee358c119e210f6f5195f9bd34894d78a785ff2e95d60e718e400af4",
+        "size": 31340
+      },
+      {
+        "path": "index.html",
+        "url": "https://niobium.sh/",
+        "status": 200,
+        "sha256": "6bc4346a8abcf46dfb454beae293b3c3a0f6737b234b5ff13162dcccc654aa13",
+        "size": 7537
+      },
+      {
+        "path": "legal/index.html",
+        "url": "https://niobium.sh/legal/",
+        "status": 200,
+        "sha256": "5a3df29c5e408681df905fbba76a9764eb4264c23c2907a57d72d2757c293123",
+        "size": 5993
+      },
+      {
+        "path": "local/index.html",
+        "url": "https://niobium.sh/local/",
+        "status": 200,
+        "sha256": "5e11dd4f9111ad9edaf23280e32634bcb9b4d8f8f543e503d975d6462484aaae",
+        "size": 7873
+      },
+      {
+        "path": "og/icon.png",
+        "url": "https://niobium.sh/og/icon.png",
+        "status": 200,
+        "sha256": "74c70309fa9f5abeea610ebf613f93186db4d5fba7d7e21f75a2613c8756aacf",
+        "size": 7743
+      },
+      {
+        "path": "og/niobium.png",
+        "url": "https://niobium.sh/og/niobium.png",
+        "status": 200,
+        "sha256": "5f380e11d3f7a12d6c52c5f1393e856ce7854d30cfb9f5c58d6b0d392c834867",
+        "size": 13253
+      },
+      {
+        "path": "pixel-cast-atlas.png",
+        "url": "https://niobium.sh/pixel-cast-atlas.png",
+        "status": 200,
+        "sha256": "4c16507ca42f6332c601457691d63e43d858362b73c504242465f701eeadf93b",
+        "size": 28036
+      },
+      {
+        "path": "pixel-custom-atlas.png",
+        "url": "https://niobium.sh/pixel-custom-atlas.png",
+        "status": 200,
+        "sha256": "18c3a6a7b94d07092ea7b2c08cc59732075788bf8cdb707eb6182e985d4f362f",
+        "size": 48544
+      },
+      {
+        "path": "pixel-familiars.png",
+        "url": "https://niobium.sh/pixel-familiars.png",
+        "status": 200,
+        "sha256": "ef956c3bf74275c4b2a0f241cb802b263dbd0fbcd1f0090179f1b55e859badf1",
+        "size": 1198
+      },
+      {
+        "path": "pixel-wardrobe-v1.png",
+        "url": "https://niobium.sh/pixel-wardrobe-v1.png",
+        "status": 200,
+        "sha256": "91b0c71ba3d840047b8a99cc94cfb902333fed90d5426e7438d12ad3075fb7d0",
+        "size": 50958
+      },
+      {
+        "path": "releases/index.html",
+        "url": "https://niobium.sh/releases/",
+        "status": 200,
+        "sha256": "b0fcc0ff28c35def4869e84fe5d3bafd84f7559e6ccad3b9de3c1a7a8525c7b9",
+        "size": 8762
+      },
+      {
+        "path": "robots.txt",
+        "url": "https://niobium.sh/robots.txt",
+        "status": 200,
+        "sha256": "552d1e6069be74e21050173d4fa54ee1ba8520c95108b1f4d0255dcb61171763",
+        "size": 63
+      },
+      {
+        "path": "site.css",
+        "url": "https://niobium.sh/site.css",
+        "status": 200,
+        "sha256": "62c5d13d82a818b37f2c8b8f3c4c8346c757cf001a03d348f8c1038760ea6253",
+        "size": 16199
+      },
+      {
+        "path": "sitemap.xml",
+        "url": "https://niobium.sh/sitemap.xml",
+        "status": 200,
+        "sha256": "b1681b9159011e7ab8bb110505240ee4f083bdbacba5fbe022818a41ab9fcc9b",
+        "size": 396
+      },
+      {
+        "path": "system/index.html",
+        "url": "https://niobium.sh/system/",
+        "status": 200,
+        "sha256": "01bc530578ae671f36feaffd77c8ff52b63a227030834e12c9ee424041c59615",
+        "size": 6753
+      }
+    ],
+    "www_home_bytes_match": true,
+    "custom_404_bytes_match": true
+  },
+  "native_report_sha256": "139f5d24911cebf5d656e30bd06cc008a94d95cc5322ad20bec3fc085183611a",
+  "visual_checks": [
+    {
+      "surface": "Loaded recent-chat browser, 60 loopback fixture chats",
+      "path": "docs/evidence/beta221-android-chats.png"
+    },
+    {
+      "surface": "Dark appearance retained after direct published APK upgrade",
+      "path": "docs/evidence/beta221-android-settings-dark.png"
+    }
+  ],
+  "next_android_cycle": "Inventory ownership/error controls and guarded tool/skill/routine changes; then encrypted draft recovery, accessibility and longer lifecycle/reconnect acceptance."
+}
