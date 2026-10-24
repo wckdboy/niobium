@@ -516,3 +516,20 @@ The final downloaded macOS DMG also passes locally. See
 [release validation](evidence/beta213-release-validation.json),
 [macOS DSH baseline](evidence/beta213-soak-macos.json) and
 [Linux DSH baseline](evidence/beta213-soak-linux.json).
+
+## Android 2.2.0 beta.1
+
+[CodeRabbit-approved PR #15](https://github.com/wckdboy/niobium/pull/15) is merged.
+Every active [release CI job](https://github.com/wckdboy/niobium/actions/runs/40054925175)
+passes: 49 Kotlin/JVM, 91 Node and 15 Python checks. All 33 native ARM64 Android 16
+emulator cases pass, including the seven real DSH/runtime cases. The saved-state
+reading and independent-session regressions failed before their fixes and pass
+afterward. Lint, signing, runtime hashes and native 16 KB alignment pass.
+
+The signed APK's upgrade sequence retains the original install and selected theme;
+intermediate candidates are recorded in metadata. The final APK cold-launches,
+opens the system photo picker and keeps its unsent draft after cancellation.
+No matching signed Niobium fatal appears in the retained emulator crash buffer.
+All four canonical public assets and metadata/checksum bytes verify. Physical
+Android/16 KB, battery/multi-hour behavior and real provider accounts remain open.
+See [release validation](evidence/beta220-release-validation.json).

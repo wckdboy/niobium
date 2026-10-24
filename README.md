@@ -8,12 +8,37 @@ A pixel-art home for agents on Linux, macOS and Android: connect Hermes, run
 DSH locally, or keep both engines ready. Pixels have their own personas, tools
 and companions. The existing iOS client is retained; iOS release work is parked.
 
-**Desktop [2.1.3 beta.1](https://github.com/wckdboy/niobium/releases/tag/v2.1.3-beta.1) · Android [2.1.1/code14](https://github.com/wckdboy/niobium/releases/tag/v2.1.1-beta.1).** Full Hermes parity is the target;
+**Desktop [2.1.3 beta.1](https://github.com/wckdboy/niobium/releases/tag/v2.1.3-beta.1) · Android [2.2.0/code15](https://github.com/wckdboy/niobium/releases/tag/v2.2.0-beta.1).** Full Hermes parity is the target;
 it is not finished. The current scope is in [PLAN.md](PLAN.md), the implementation
 audit is in [docs/HERMES-PARITY.md](docs/HERMES-PARITY.md), and the work is tracked
 in [Plane](https://app.plane.so/wckd/projects/2fbcf987-20de-43dc-80ac-0a6bab7ec03a/issues/).
 
-<img src="docs/evidence/clean-pixels-ios-dashboard.png" width="280" alt="Niobium v2 on iPhone"> <img src="docs/evidence/clean-pixels-android-workshop.png" width="252" alt="Niobium v2 on Android">
+<img src="docs/evidence/beta220-android-home.png" width="280" alt="Niobium Android 2.2.0: pixel roster and native navigation"> <img src="docs/evidence/clean-pixels-android-workshop.png" width="252" alt="Niobium v2 on Android">
+
+## Android APK: 2.2.0 beta.1
+
+[Download the signed ARM64 APK](https://github.com/wckdboy/niobium/releases/download/v2.2.0-beta.1/Niobium-2.2.0-beta.1-android-arm64.apk) · [Release and checksums](https://github.com/wckdboy/niobium/releases/tag/v2.2.0-beta.1).
+Android 9+, version 2.2.0/code15, with the existing application identity and key.
+
+Drafts clear after acceptance. Opaque receipts survive restart and hold uncertain
+sends for review without automatic replay. Photos use the system picker and
+bounded background preparation. DMs and rooms keep your reading position;
+Latest messages resumes following. Local session queues keep Pixels independent.
+Remote gateway/workspace entry and navigation require HTTPS.
+
+49 Kotlin/JVM, 91 Node, 15 Python and all 33 native ARM64 Android 16 emulator cases
+pass, including real DSH provider setup, chat/rooms, foreground lifecycle and
+workspace preservation. Lint, signing, installed upgrade sequence/cold launch,
+runtime hashes and 16 KB packaging verify. CodeRabbit approved
+[PR #15](https://github.com/wckdboy/niobium/pull/15), and every active
+[release CI job](https://github.com/wckdboy/niobium/actions/runs/40054925175) passes.
+See [release evidence](docs/evidence/beta220-release-validation.json).
+
+Text/photo drafts do not persist across process death. After an uncertain send,
+check queued photos as well as the conversation. Physical Android/16 KB execution,
+real provider accounts and longer background/battery acceptance remain open.
+The next Android cycle adds searchable sessions, followed by encrypted draft
+recovery and longer reconnect acceptance.
 
 ## Desktop preview: Linux and macOS
 
@@ -86,7 +111,7 @@ descendants, excluding the UI JVM; they do not establish multi-hour performance.
 
 CodeRabbit [approved PR #14](https://github.com/wckdboy/niobium/pull/14); every active
 [release CI job](https://github.com/wckdboy/niobium/actions/runs/40023699121) and both native installer checks pass.
-Android remains 2.1.1/code14. See [release evidence](docs/evidence/beta213-release-validation.json).
+Desktop 2.1.3 [release evidence](docs/evidence/beta213-release-validation.json) is retained; Android 2.2.0 has the separate checkpoint above.
 
 <img src="site/public/desktop-preview.png" width="760" alt="Niobium desktop wardrobe">
 

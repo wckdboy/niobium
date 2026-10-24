@@ -8,15 +8,15 @@ Reference: [the supplied dashboard](docs/reference-dashboard.png).
 Ledger: [Plane](https://app.plane.so/wckd/projects/2fbcf987-20de-43dc-80ac-0a6bab7ec03a/issues/).
 Protocol audit: [HERMES-PARITY.md](docs/HERMES-PARITY.md).
 
-## Active focus: Linux, macOS and Android
+## Active focus: Android APK
 
 - Android APK quality is the current execution priority: delivery/draft safety,
   responsive photo preparation, reader-controlled streaming, then session
-  browsing, accessibility and longer local-engine acceptance. The 2.2.0/code15
-  candidate is in validation; the published Android release remains 2.1.1/code14.
+  browsing, accessibility and longer local-engine acceptance. Android 2.2.0/code15
+  is published; searchable sessions are the next candidate.
 - Build and ship the Compose desktop preview alongside Android; retain iOS sources
   and make its CI/signing work opt-in while desktop and Android are the priority.
-  The 2.1.3 beta.1 desktop preview and Android 2.1.1/code14 are published.
+  The 2.1.3 beta.1 desktop preview and Android 2.2.0/code15 are published.
 - Share Kotlin protocol, persona/spec validation and art reduction across Android
   and desktop. Keep engine connection/session/prompt ownership separate.
 - Native desktop DSH: pinned private runtime, direct host process, authenticated
@@ -28,7 +28,7 @@ Protocol audit: [HERMES-PARITY.md](docs/HERMES-PARITY.md).
 - Continue real-account acceptance, physical Android/16 KB execution, cross-engine
   rooms, Hermes replay and connector authorization. These remain unverified goals.
 
-## Android 2.2.0 candidate
+## Shipped: Android 2.2.0 beta.1
 
 - Keep text and photo drafts until the engine confirms acceptance. Guard rapid
   taps, persist opaque per-account/session receipts before sending, and retain
@@ -51,6 +51,20 @@ Protocol audit: [HERMES-PARITY.md](docs/HERMES-PARITY.md).
 - Validate JVM contracts, native UI/photo and delivery failures, real DSH provider
   and chat/room regressions, signing and an installed signed upgrade. Physical
   Android/16 KB and real paid-provider acceptance stay open.
+
+[Release](https://github.com/wckdboy/niobium/releases/tag/v2.2.0-beta.1),
+[CodeRabbit-approved PR #15](https://github.com/wckdboy/niobium/pull/15) and
+[green release CI](https://github.com/wckdboy/niobium/actions/runs/40054925175).
+49 Kotlin/JVM, 91 Node, 15 Python and all 33 native ARM64 Android 16 emulator
+cases pass. The signed APK and all four public assets verify. Upgrade-sequence
+preference retention, cold launch, picker cancellation, runtime integrity and
+16 KB packaging pass. Physical execution and real provider accounts remain open.
+Evidence: [release validation](docs/evidence/beta220-release-validation.json).
+
+Next Android implementation: complete draft PR #16's searchable session browser,
+loading/error states and Pixel/request ownership fences; then encrypted draft
+recovery, accessibility and longer task/room/background/reconnect acceptance.
+Desktop remains 2.1.3; iOS release work stays parked.
 
 ## Decisions
 
