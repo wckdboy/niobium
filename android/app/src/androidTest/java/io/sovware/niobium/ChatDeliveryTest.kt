@@ -129,6 +129,7 @@ class ChatDeliveryTest {
         configure("confirm",attach=1500);val vm=vm();var confirmed=0
         instrumentation.runOnMainSync {vm.send("Old photo task","AAAA","image/png",onAccepted={confirmed++})}
         waitFor {controller.request("fixture.android").objects("requests").isNotEmpty()}
+        assertFalse("An upload is not a running model response",vm.state.turnActive)
         val other=BotProfile.parse(JSONObject().put("name","other").put("canonical_session",JSONObject().put("id","other-session")))!!
         instrumentation.runOnMainSync {vm.openBot(other)}
         waitFor {vm.state.activeBot?.name=="other"&&!vm.state.loadingChat}

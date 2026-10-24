@@ -579,7 +579,7 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
             try {
                 receiptId = withContext(Dispatchers.IO) { pendingChats.reserve(scope) }
                 if (!owns()) { withContext(Dispatchers.IO) { pendingChats.resolve(scope, receiptId) }; return@launch }
-                state = state.copy(messages = state.messages + message, turnActive = true, turnStatus = "")
+                state = state.copy(messages = state.messages + message, turnStatus = "")
                 attempted = true
                 if (imageBase64 != null) {
                     val uploaded = withContext(Dispatchers.IO) { client.request("image.attach_bytes", JSONObject().put("session_id", session).put("profile", bot.name)
@@ -596,6 +596,7 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
                     // transaction against its captured origin rather than abandoning an
                     // upload which that engine cannot identify for detachment.
                 }
+                if (owns()) state = state.copy(turnActive = true)
                 val result = client.request("prompt.submit", JSONObject().put("session_id", session).put("profile", bot.name)
                     .put("text", displayed).put("submission_id", receiptId).put("clarify_batch", true), 30_000)
                 check(result.optBoolean("accepted", true)) { "The engine did not confirm acceptance." }
