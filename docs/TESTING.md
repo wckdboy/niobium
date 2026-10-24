@@ -662,8 +662,12 @@ the default dist/evidence path or an external directory. Acceptance gates remain
 active with optimized Python. Required local tool calls have deadlines, progress
 poll timeouts are advisory, APK hashing is streamed, and failed runs stop the
 debug app. Native cleanup attempts every resource and preserves the original
-scenario failure while attaching cleanup errors. Eight host regression cases
+scenario failure while attaching cleanup errors. Nine host regression cases
 cover optimized rejection, hashing, output policy, transient progress timeouts,
 missing SDK properties, malformed advisory samples and acceptance cleanup after
 report failures. Cleanup wraps
 validation and final receipt writing, independently of Gradle exit success.
+
+Each scenario removes prior generated test reports before starting Gradle. A host
+regression supplies matching stale XML/logs and a no-test successful Gradle process;
+the runner rejects the missing fresh report and stops the debug app.

@@ -145,6 +145,11 @@ def main():
                   args.dsh_turns * (args.dsh_pause_seconds + 100) + 600)]
     with acceptance_cleanup(device) as accept:
         for kind, suite, method, params, timeout in scenarios:
+            results = ROOT / 'android/app/build/outputs/androidTest-results/connected/debug'
+            if results.is_symlink():
+                results.unlink()
+            elif results.exists():
+                shutil.rmtree(results)
             command = ['./gradlew', ':app:connectedDebugAndroidTest', '--console=plain',
                        '-Pandroid.injected.device.serial=' + args.device,
                        '-Pandroid.testInstrumentationRunnerArguments.class=io.sovware.niobium.' + suite + '#' + method]
@@ -181,7 +186,6 @@ def main():
                             except ProcessLookupError:
                                 pass
                             process.wait(10)
-            results = ROOT / 'android/app/build/outputs/androidTest-results/connected/debug'
             xmls = list(results.glob('TEST-*.xml'))
             require(len(xmls) == 1, 'Expected one test-device report')
             root = ET.parse(xmls[0]).getroot()
