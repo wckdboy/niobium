@@ -167,7 +167,7 @@ fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = 
         }
         if (state.deliveryUnconfirmed) Column(Modifier.fillMaxWidth().background(Nb.Raised).padding(12.dp).testTag("chat.delivery-unconfirmed")) {
             Text(if (state.deliveryAccepted) "Sent · local receipt needs review" else "Delivery unconfirmed · check before sending", color = Nb.Amber, fontSize = 12.sp)
-            Text(if (state.deliveryAccepted) "The engine accepted this message. Check device storage before clearing its receipt." else "It may already have arrived. Check the conversation before sending again.", color = Nb.Secondary, fontSize = 11.sp)
+            Text(if (state.deliveryAccepted) "The engine accepted this message. Check device storage before clearing its receipt." else "It may already have arrived. Check the conversation and any queued photos before sending again.", color = Nb.Secondary, fontSize = 11.sp)
             Row { androidx.compose.material3.TextButton(onClick = { if (state.connected) vm.refreshChat() else vm.reconnect() }, enabled = !state.loadingChat && !state.sendingChat) { Text(if (state.connected) "Refresh chat" else "Reconnect") }
                 androidx.compose.material3.TextButton(onClick = { reviewDelivery = true }, enabled = !state.sendingChat) { Text("Review delivery") } }
         }
@@ -217,7 +217,7 @@ fun ChatScreen(vm: NiobiumViewModel, bot: BotProfile, onOpenTools: () -> Unit = 
     }
 
     if (reviewDelivery) AlertDialog(onDismissRequest = { reviewDelivery = false },
-        title = { Text("Allow another send?") }, text = { Text("Check this conversation and your engine first. The previous message may already be running. No retry will run automatically.") },
+        title = { Text("Allow another send?") }, text = { Text("Check this conversation and any queued photos in your engine first. The previous message may already be running. No retry will run automatically.") },
         confirmButton = { androidx.compose.material3.TextButton(onClick = { reviewDelivery = false; vm.acknowledgeUnconfirmedDelivery() }) { Text("I checked · allow sending") } },
         dismissButton = { androidx.compose.material3.TextButton(onClick = { reviewDelivery = false }) { Text("Keep locked") } })
     state.clarify?.takeUnless { clarifyHidden }?.let { request ->

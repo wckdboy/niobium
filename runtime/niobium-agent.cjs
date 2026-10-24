@@ -359,11 +359,19 @@ function createProvider({rpc, postResponse, home = '/root/.dsh', workspace = '/r
             !['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(p.mime)) throw new Error('Choose an image smaller than 6 MB.');
         if (!attachments.has(p.session_id) && attachments.size >= 4) throw new Error('Send or discard the current images before attaching more.');
         await summary(p.session_id);
-        attachments.set(p.session_id, {type: 'image', mediaType: p.mime, data: p.data, name: p.filename || 'image'});
-        return {ok: true};
+        const imagePath = 'niobium-image-' + crypto.randomUUID();
+        attachments.set(p.session_id, {path: imagePath, image: {type: 'image', mediaType: p.mime, data: p.data, name: p.filename || 'image'}});
+        return {attached: true, path: imagePath, count: 1};
+      }
+      case 'image.detach': {
+        if (typeof p.path !== 'string' || !p.path.trim()) throw new Error('Image path is required.');
+        await summary(p.session_id);
+        const detached = attachments.get(p.session_id)?.path === p.path;
+        if (detached) attachments.delete(p.session_id);
+        return {detached, count: attachments.has(p.session_id) ? 1 : 0};
       }
       case 'prompt.submit': {
-        const image = attachments.get(p.session_id);
+        const image = attachments.get(p.session_id)?.image;
         attachments.delete(p.session_id);
         const own = await summary(p.session_id);
         if ((await metadata())[profileID(own.agentPreset)]?.enabled_toolsets?.includes('messaging')) await messaging.rememberUserPrompt(p.session_id);

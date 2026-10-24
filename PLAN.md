@@ -35,6 +35,10 @@ Protocol audit: [HERMES-PARITY.md](docs/HERMES-PARITY.md).
   an explicit review lock after a lost receipt. Never replay paid prompts.
 - Fence photo-picker/dictation callbacks and image uploads by engine, client,
   connection and chat ownership. Keep a newer draft when an older send completes.
+- Detach the exact uploaded image when a send is abandoned or rejected, using
+  Hermes' audited image.detach contract and matching local DSH behavior. A stale
+  upload handle cannot discard a replacement. Unknown delivery still needs review
+  of the conversation and queued images; no automatic prompt retry runs.
 - Prepare photos on a serial background worker with input/output/pixel limits,
   EXIF orientation, transparency, downsampling and a small in-app preview.
 - Share a measured scrolling policy between DMs and rooms. Preserve older reading

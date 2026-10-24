@@ -73,6 +73,23 @@ class ChatDeliveryTest {
         assertEquals("fixture-session",vm.state.sessionId);assertEquals("Keep this draft",vm.draftText(key))
         assertTrue(vm.state.deliveryUnconfirmed)
     }
+    @Test fun rejectedPhotoPromptsDetachTheirOwnUploadBeforeAnotherSend()=runBlocking {
+        configure("reject");val vm=vm()
+        instrumentation.runOnMainSync {vm.send("Rejected photo","AAAA","image/png")}
+        waitFor {!vm.state.sendingChat};assertTrue(vm.state.deliveryUnconfirmed)
+        assertEquals(0,controller.request("fixture.android").optInt("queued_images"))
+        configure("confirm")
+        instrumentation.runOnMainSync {vm.acknowledgeUnconfirmedDelivery()};waitFor {vm.state.canSubmitChat}
+        instrumentation.runOnMainSync {vm.send("Text only")};waitFor {!vm.state.sendingChat}
+        val prompts=controller.request("fixture.android").objects("requests").filter {it.s("method")=="prompt.submit"}
+        assertEquals(2,prompts.size);assertTrue(prompts.last().isNull("image"))
+    }
+    @Test fun enteringACleartextRemoteGatewayLeavesTheCurrentConnectionUntouched()=runBlocking {
+        configure("confirm");val vm=vm();val previous=vm.state.connection
+        instrumentation.runOnMainSync {vm.connect("http://192.168.1.9:9119","must-not-leave-device","Unsafe",remember=false)}
+        assertEquals(previous,vm.state.connection);assertTrue(vm.state.connected)
+        assertTrue(vm.state.error!!.contains("HTTPS"))
+    }
     @Test fun acceptingAnOlderSendPreservesANewerDraftInTheSameConversation()=runBlocking {
         configure("delay",1000);val vm=vm();val key=vm.chatDraftScope
         instrumentation.runOnMainSync {
@@ -104,6 +121,14 @@ class ChatDeliveryTest {
         val other=BotProfile.parse(JSONObject().put("name","other").put("canonical_session",JSONObject().put("id","other-session")))!!
         instrumentation.runOnMainSync {vm.openBot(other)}
         waitFor {vm.state.activeBot?.name=="other"&&!vm.state.loadingChat};delay(1800)
-        assertEquals(0,confirmed);assertEquals(0,controller.request("fixture.android").objects("requests").count {it.s("method")=="prompt.submit"})
+        val state=controller.request("fixture.android")
+        assertEquals(0,confirmed);assertEquals(0,state.objects("requests").count {it.s("method")=="prompt.submit"})
+        assertEquals(1,state.objects("requests").count {it.s("method")=="image.detach"&&it.s("session")=="fixture-session"})
+        assertEquals(0,state.optInt("queued_images"))
+        instrumentation.runOnMainSync {vm.openBot(vm.state.bots.single())};waitFor {!vm.state.loadingChat}
+        assertFalse(vm.state.deliveryUnconfirmed)
+        instrumentation.runOnMainSync {vm.send("A later text-only message")};waitFor {!vm.state.sendingChat}
+        val prompt=controller.request("fixture.android").objects("requests").single {it.s("method")=="prompt.submit"}
+        assertTrue(prompt.isNull("image"));assertEquals("fixture-session",prompt.s("session"))
     }
 }

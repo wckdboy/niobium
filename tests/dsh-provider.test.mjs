@@ -177,6 +177,35 @@ test('a failed image send cannot silently attach its photo to the next message',
   assert.deepEqual(content, [{type: 'text', text: 'Text only'}]);
 });
 
+test('detaching an abandoned image prevents it joining a later text-only prompt', async () => {
+  let content;
+  const p = createProvider({rpc: async (method, payload) => {
+    if (method === 'session.list') return {items: [{sessionId: 'sid'}]};
+    content = payload.content;return {accepted:true};
+  }});
+  const upload = await p.request('image.attach_bytes', {session_id:'sid',mime:'image/png',data:'private-image'});
+  assert.equal(upload.attached,true);assert.equal(upload.count,1);assert(upload.path);
+  assert.deepEqual(await p.request('image.detach',{session_id:'sid',path:upload.path}),{detached:true,count:0});
+  assert.deepEqual(await p.request('image.detach',{session_id:'sid',path:upload.path}),{detached:false,count:0});
+  await p.request('prompt.submit',{session_id:'sid',text:'Text only'});
+  assert.deepEqual(content,[{type:'text',text:'Text only'}]);
+});
+
+test('an obsolete image path cannot discard a replacement or another session image', async () => {
+  const sent = new Map();
+  const p=createProvider({rpc:async (method,payload)=>{
+    if(method==='session.list')return {items:[{sessionId:'a'},{sessionId:'b'}]};
+    sent.set(payload.sessionId,payload.content);return {accepted:true};
+  }});
+  const old=await p.request('image.attach_bytes',{session_id:'a',mime:'image/png',data:'old'});
+  await p.request('image.attach_bytes',{session_id:'a',mime:'image/png',data:'replacement'});
+  await p.request('image.attach_bytes',{session_id:'b',mime:'image/png',data:'other'});
+  assert.deepEqual(await p.request('image.detach',{session_id:'a',path:old.path}),{detached:false,count:1});
+  await assert.rejects(p.request('image.detach',{session_id:'a'}),/path is required/);
+  await p.request('prompt.submit',{session_id:'a',text:'A'});await p.request('prompt.submit',{session_id:'b',text:'B'});
+  assert.equal(sent.get('a')[1].data,'replacement');assert.equal(sent.get('b')[1].data,'other');
+});
+
 test('older history requests preserve the upstream cursor and next-page state', async () => {
   let received;
   const p = createProvider({rpc: async (method, payload) => {

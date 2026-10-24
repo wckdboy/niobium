@@ -570,20 +570,34 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
             var receiptId: String? = null
             var attempted = false
             var accepted = false
+            var attachmentPath: String? = null
+            suspend fun discardPhoto() {
+                val path = attachmentPath ?: return
+                val result = client.request("image.detach", JSONObject().put("session_id", session).put("profile", bot.name).put("path", path), 15_000)
+                check(result.has("detached")) { "The engine did not confirm photo removal." }
+                attachmentPath = null
+            }
             try {
                 receiptId = withContext(Dispatchers.IO) { pendingChats.reserve(scope) }
                 if (!owns()) { withContext(Dispatchers.IO) { pendingChats.resolve(scope, receiptId) }; return@launch }
                 state = state.copy(messages = state.messages + message, turnActive = true, turnStatus = "")
                 attempted = true
                 if (imageBase64 != null) {
-                    client.request("image.attach_bytes", JSONObject().put("session_id", session).put("profile", bot.name)
+                    val uploaded = client.request("image.attach_bytes", JSONObject().put("session_id", session).put("profile", bot.name)
                         .put("data", imageBase64).put("mime", mime).put("filename", "niobium-photo." + when (mime) { "image/png" -> "png"; "image/webp" -> "webp"; "image/gif" -> "gif"; else -> "jpg" }), 30_000)
-                    if (!owns()) return@launch
+                    attachmentPath = uploaded.s("path")?.takeIf { it.isNotBlank() && it.length <= 8192 }
+                    check(attachmentPath != null) { "The engine did not confirm the uploaded photo." }
+                    if (!owns()) {
+                        discardPhoto()
+                        withContext(Dispatchers.IO) { pendingChats.resolve(scope, receiptId) }
+                        return@launch
+                    }
                 }
                 val result = client.request("prompt.submit", JSONObject().put("session_id", session).put("profile", bot.name)
                     .put("text", displayed).put("submission_id", receiptId).put("clarify_batch", true), 30_000)
                 check(result.optBoolean("accepted", true)) { "The engine did not confirm acceptance." }
                 accepted = true
+                attachmentPath = null
                 if (textDrafts[scope] == value) textDrafts.remove(scope)
                 if (owns()) {
                     if (result.has("execution_generation") && !result.isNull("execution_generation")) state = state.copy(sessionGeneration = result.optInt("execution_generation"))
@@ -594,8 +608,13 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
                 if (owns()) state = state.copy(deliveryUnconfirmed = false, deliveryAccepted = false)
             } catch (e: Exception) {
                 if (e is kotlinx.coroutines.CancellationException) throw e
+                // Detach only this upload. Never clear another client's queued images
+                // and never resubmit a prompt whose acceptance is uncertain.
+                if (!accepted && attachmentPath != null) try { discardPhoto() }
+                    catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+                    catch (_: Exception) { }
                 if (owns()) state = state.copy(turnActive = if (accepted) state.turnActive else false, deliveryAccepted = accepted, deliveryUnconfirmed = attempted || runCatching { pendingChats.pending(scope) }.getOrDefault(true),
-                    error = if (accepted) "Message accepted. A local receipt could not be cleared; sending stays locked." else if (attempted) "Delivery unconfirmed. Your draft is kept. Check this conversation before sending again." else e.message ?: "Message was not sent.")
+                    error = if (accepted) "Message accepted. A local receipt could not be cleared; sending stays locked." else if (attempted) "Delivery unconfirmed. Your draft is kept. Check this conversation and any queued photos before sending again." else e.message ?: "Message was not sent.")
             } finally { if (owns()) state = state.copy(sendingChat = false) }
         }
     }
@@ -1525,9 +1544,10 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
     private fun normalizeUrl(raw: String): String? {
         var text = raw.trim()
         if (text.isEmpty()) return null
-        if (!text.contains("://")) text = "http://$text"
+        if (!text.contains("://")) text = "https://$text"
         val url = text.trimEnd('/').toHttpUrlOrNull() ?: return null
         if (url.scheme != "http" && url.scheme != "https") return null
+        if (url.scheme == "http" && url.host !in setOf("127.0.0.1", "::1")) return null
         if (url.username.isNotEmpty() || url.password.isNotEmpty()) return null
         return url.newBuilder().query(null).fragment(null).build().toString().trimEnd('/')
     }

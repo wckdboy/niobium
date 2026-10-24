@@ -41,6 +41,9 @@ Direct-message drafts clear after engine acceptance. Opaque pending receipts
 survive app restart and block another send after uncertain delivery until the
 user reviews it; the app never automatically replays the prompt. Text drafts are
 bounded in-memory per conversation, not persisted across process death.
+Abandoned/rejected uploads are detached by their exact engine-returned handle.
+After a lost connection, review the engine's queued photos as well as the chat
+before unlocking an uncertain send.
 
 Use HTTPS for remote gateways. Cleartext HTTP is limited to literal loopback for
 the private local runtime; LAN hosts need HTTPS or a secure tunnel.
