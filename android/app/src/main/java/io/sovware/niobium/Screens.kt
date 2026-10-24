@@ -416,7 +416,7 @@ fun ToolsScreen(vm: NiobiumViewModel, state: NbState, onClose: (() -> Unit)? = n
         }
         items(filtered, key = { it.id }) { toolset ->
             Box(Modifier.padding(horizontal = 20.dp).padding(top = 9.dp)) {
-                ToolsetRow(toolset, canToggle = (state.demo || (state.connected && state.sessionId != null)) && !state.toolsLoad.loading && state.toolsLoad.error == null && !state.toolsUpdating) { vm.toggleToolset(toolset, owner) }
+                ToolsetRow(toolset, canToggle = state.canChangeTools) { vm.toggleToolset(toolset, owner) }
             }
         }
     }

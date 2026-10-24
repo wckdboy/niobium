@@ -34,12 +34,12 @@ fun SkillsSheet(vm: NiobiumViewModel, onDismiss: () -> Unit) {
             }
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    PixelButton("Refresh", PixelGlyph.REFRESH, Modifier.weight(1f), secondary = true, enabled = !load.loading && state.connected) { vm.loadSkills() }
+                    PixelButton("Refresh", PixelGlyph.REFRESH, Modifier.weight(1f), secondary = true, enabled = !load.loading && state.connected) { vm.refreshSkills() }
                     PixelButton("Reload", PixelGlyph.SPARK, Modifier.weight(1f), secondary = true,
-                        enabled = !load.loading && load.error == null && state.connected && !state.demo) { vm.reloadSkills(owner) }
+                        enabled = state.canReloadSkills) { vm.reloadSkills(owner) }
                 }
             }
-            item { InventoryFeedback(load, state.skills.isEmpty(), "No skills available.", vm::loadSkills) }
+            item { InventoryFeedback(load, state.skills.isEmpty(), "No skills available.", vm::refreshSkills) }
             state.skills.keys.sorted().forEach { category ->
                 item(key = "category:$category") { Text(category, color = Nb.Secondary, style = NbLabel, fontSize = 12.sp) }
                 items(state.skills[category].orEmpty(), key = { "skill:${category.length}:$category:$it" }) { skill ->

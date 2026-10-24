@@ -1,6 +1,7 @@
 package io.sovware.niobium
 
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.lifecycle.viewModelScope
 import io.sovware.niobium.runtime.RuntimeCommand
 import io.sovware.niobium.runtime.RuntimeInstaller
 import kotlinx.coroutines.*
@@ -162,8 +163,14 @@ class InventoryOwnershipTest {
         val callsBefore=controller.request("fixture.inventory").objects("requests").size
         instrumentation.runOnMainSync {vm.toggleToolset(tool);vm.reloadSkills();vm.deleteRoutine(routine,bot)}
         delay(100);assertEquals(callsBefore,controller.request("fixture.inventory").objects("requests").size)
+        instrumentation.runOnMainSync {
+            vm.refreshAllAsync(); vm.viewModelScope.launch { vm.loadToolsets() }; vm.loadSkills(); vm.loadRoutines(bot)
+        }
+        delay(100)
+        assertEquals(callsBefore,controller.request("fixture.inventory").objects("requests").size)
+        assertNotNull(vm.state.toolsLoad.error);assertNotNull(vm.state.skillsLoad.error);assertNotNull(vm.state.routinesLoad.error)
         inventory(script(false))
-        instrumentation.runOnMainSync {vm.refreshTools();vm.loadSkills();vm.loadRoutines(bot)};waitFor {idle(vm)}
+        instrumentation.runOnMainSync {vm.refreshTools();vm.refreshSkills();vm.refreshRoutines(bot)};waitFor {idle(vm)}
         assertNull(vm.state.toolsLoad.error);assertNull(vm.state.skillsLoad.error);assertNull(vm.state.routinesLoad.error)
         instrumentation.runOnMainSync {vm.toggleToolset(vm.state.toolsets.single());vm.reloadSkills();vm.deleteRoutine(vm.state.routines.single(),bot)}
         waitFor {controller.request("fixture.inventory").objects("requests").size==9 && idle(vm)}

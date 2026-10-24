@@ -30,7 +30,7 @@ fun RoutinesSheet(vm: NiobiumViewModel, bot: BotProfile, onDismiss: () -> Unit) 
     val owner = vm.chatContext
     val state = vm.state
     val load = state.routinesLoad.copy(loading = state.routinesLoad.loading || state.routinesUpdating)
-    val canChange = !load.loading && load.error == null && state.connected && state.activeBot?.id == bot.id
+    val canChange = state.canChangeRoutines && state.activeBot?.id == bot.id
     var creating by remember(owner) { mutableStateOf(false) }
     LaunchedEffect(vm, owner, bot.id) { vm.loadRoutines(bot) }
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Nb.Ink,
@@ -47,11 +47,11 @@ fun RoutinesSheet(vm: NiobiumViewModel, bot: BotProfile, onDismiss: () -> Unit) 
             }
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    PixelButton("Refresh", PixelGlyph.REFRESH, Modifier.weight(1f), secondary = true, enabled = !load.loading && state.connected) { vm.loadRoutines(bot) }
+                    PixelButton("Refresh", PixelGlyph.REFRESH, Modifier.weight(1f), secondary = true, enabled = !load.loading && state.connected) { vm.refreshRoutines(bot) }
                     PixelButton("New", PixelGlyph.SPARK, Modifier.weight(1f), enabled = canChange) { creating = true }
                 }
             }
-            item { InventoryFeedback(load, state.routines.isEmpty(), "No routines yet. Give your Pixel a rhythm.") { vm.loadRoutines(bot) } }
+            item { InventoryFeedback(load, state.routines.isEmpty(), "No routines yet. Give your Pixel a rhythm.") { vm.refreshRoutines(bot) } }
             items(state.routines, key = { it.id }) { routine ->
                 Column(Modifier.fillMaxWidth().clip(PixelButtonShape).background(Nb.FillSoft)
                     .border(1.dp, Nb.Line, PixelButtonShape).padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -76,7 +76,7 @@ fun RoutinesSheet(vm: NiobiumViewModel, bot: BotProfile, onDismiss: () -> Unit) 
 }
 
 @Composable
-private fun NewRoutineDialog(busy: Boolean, error: String?, canCreate: Boolean, onDismiss: () -> Unit, onCreate: (String, String, String) -> Unit) {
+internal fun NewRoutineDialog(busy: Boolean, error: String?, canCreate: Boolean, onDismiss: () -> Unit, onCreate: (String, String, String) -> Unit) {
     var panelBounds by remember { mutableStateOf<Rect?>(null) }
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         // Apply insets before constraining the form so its actions remain above the keyboard.

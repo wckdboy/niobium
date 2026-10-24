@@ -85,6 +85,13 @@ data class NbState(
     val toast: String? = null,
     val lastSync: Long? = null
 ) {
+    val canChangeTools: Boolean
+        get() = connected && !loadingChat && !toolsUpdating && !toolsLoad.loading && toolsLoad.error == null &&
+            (demo || (sessionId != null && activeBot != null))
+    val canReloadSkills: Boolean
+        get() = connected && !loadingChat && !demo && !skillsUpdating && !skillsLoad.loading && skillsLoad.error == null
+    val canChangeRoutines: Boolean
+        get() = connected && !loadingChat && !routinesUpdating && !routinesLoad.loading && routinesLoad.error == null && activeBot != null
     val canSubmitChat: Boolean
         get() = activeBot != null && !loadingChat && !sendingChat && !deliveryUnconfirmed && (demo || (connected && sessionId != null))
 }
@@ -464,8 +471,8 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
         }
     }
 
-    suspend fun loadToolsets() {
-        if (state.demo || state.toolsUpdating) return
+    suspend fun loadToolsets(recover: Boolean = false) {
+        if (state.demo || state.toolsUpdating || (!recover && state.toolsLoad.error != null)) return
         val request = toolsGate.begin() ?: return
         state = state.copy(toolsLoad = InventoryLoad(loading = true))
         try {
@@ -484,7 +491,7 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
             if (toolsGate.owns(request) && state.toolsLoad.loading) state = state.copy(toolsLoad = state.toolsLoad.copy(loading = false))
         }
     }
-    fun refreshTools() { viewModelScope.launch { loadToolsets() } }
+    fun refreshTools() { viewModelScope.launch { loadToolsets(recover = true) } }
 
     // ── Direct chats ─────────────────────────────────────────────────────────
 
@@ -706,8 +713,8 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
         }
     }
 
-    fun loadSkills() {
-        if (state.demo || state.skillsUpdating) return
+    fun loadSkills(recover: Boolean = false) {
+        if (state.demo || state.skillsUpdating || (!recover && state.skillsLoad.error != null)) return
         val request = skillsGate.begin() ?: return
         state = state.copy(skillsLoad = InventoryLoad(loading = true))
         viewModelScope.launch {
@@ -727,8 +734,10 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
         }
     }
 
+    fun refreshSkills() { loadSkills(recover = true) }
+
     fun reloadSkills(owner: ChatContext = chatContext) {
-        if (owner != chatContext || !state.connected || state.loadingChat || state.demo || state.skillsUpdating || state.skillsLoad.loading || state.skillsLoad.error != null) return
+        if (owner != chatContext || !state.canReloadSkills) return
         val target = inventoryTarget() ?: return
         skillsGate.invalidate()
         state = state.copy(skillsUpdating = true)
@@ -1502,8 +1511,8 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
         loadCompanions()
     }
 
-    fun loadRoutines(bot: BotProfile) {
-        if (state.activeBot?.id != bot.id || state.routinesUpdating) return
+    fun loadRoutines(bot: BotProfile, recover: Boolean = false) {
+        if (state.activeBot?.id != bot.id || state.routinesUpdating || (!recover && state.routinesLoad.error != null)) return
         if (state.demo) {
             state = state.copy(routines = DemoData.routines.filter { it.bot == bot.name || it.bot.isEmpty() }, routinesLoad = InventoryLoad())
             return
@@ -1523,6 +1532,8 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
         }
     }
 
+    fun refreshRoutines(bot: BotProfile) { loadRoutines(bot, recover = true) }
+
     fun createRoutine(name: String, schedule: String, prompt: String, bot: BotProfile, owner: ChatContext = chatContext, done: () -> Unit = {}) {
         if (!canChangeRoutines(bot, owner) || name.isBlank() || schedule.isBlank() || prompt.isBlank()) return
         if (state.demo) {
@@ -1538,8 +1549,7 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
         changeRoutine(bot, JSONObject().put("action", "remove").put("name", routine.id))
     }
 
-    private fun canChangeRoutines(bot: BotProfile, owner: ChatContext) = owner == chatContext && state.connected && !state.loadingChat && state.activeBot?.id == bot.id &&
-        !state.routinesUpdating && !state.routinesLoad.loading && state.routinesLoad.error == null
+    private fun canChangeRoutines(bot: BotProfile, owner: ChatContext) = owner == chatContext && state.activeBot?.id == bot.id && state.canChangeRoutines
 
     private fun changeRoutine(bot: BotProfile, params: JSONObject, done: () -> Unit = {}) {
         val target = inventoryTarget() ?: return
@@ -1558,7 +1568,7 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
     }
 
     fun toggleToolset(toolset: Toolset, owner: ChatContext = chatContext) {
-        if (owner != chatContext || !state.connected || state.loadingChat || state.toolsUpdating || state.toolsLoad.loading || state.toolsLoad.error != null || toolset !in state.toolsets) return
+        if (owner != chatContext || !state.canChangeTools || toolset !in state.toolsets) return
         if (state.demo) {
             state = state.copy(toolsets = state.toolsets.map { if (it.name == toolset.name) it.copy(enabled = !it.enabled) else it })
             return

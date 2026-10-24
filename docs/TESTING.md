@@ -585,3 +585,10 @@ form test at 1.3 text scale fills the fields and creates a routine through visib
 actions. The initial narrow-screen keyboard capture exposed hidden actions; the
 custom inset-aware editor replaces the unconstrained dialog. Action labels stay
 on one line, with text-only controls in the compact form.
+
+Automatic sheet initialization preserves an existing catalog error; the explicit
+Refresh/Retry paths recover it. Toolbox, skill reload and routine controls share
+the same eligibility predicates as their ViewModel mutations, including chat
+loading. Re-entry regressions verify automatic loads cannot unlock unconfirmed
+changes. A separate native dialog test opens the real IME, enters valid fields,
+checks that Create is above the keyboard and creates through the visible action.
