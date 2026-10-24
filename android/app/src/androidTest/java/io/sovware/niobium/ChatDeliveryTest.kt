@@ -129,15 +129,27 @@ class ChatDeliveryTest {
     }
     @Test fun idleConnectionsSurviveTwoHeartbeatIntervalsAndStillDeliver()=runBlocking {
         configure("confirm");val vm=vm();val owner=vm.chatContext
-        delay(45_000)
-        assertTrue(vm.state.connected);assertEquals(owner,vm.chatContext)
-        controller.request("fixture.sessions",JSONObject().put("replies",org.json.JSONArray().put(JSONObject())))
-        instrumentation.runOnMainSync {vm.loadSessions(vm.state.activeBot!!)};waitFor {!vm.state.sessionsLoading}
-        val peer=controller.request("fixture.sessions").objects("requests").single()
-        assertEquals(vm.state.activeBot!!.name,peer.s("profile"));assertTrue(peer.optInt("pings")>=2)
+        val seconds=soakArgument("niobium.idle_seconds",45,45,3600)
+        val trace=SoakTrace(context,"idle");val started=android.os.SystemClock.elapsedRealtime()
+        trace.record("running",JSONObject().put("requested_seconds",seconds))
+        controller.request("fixture.sessions",JSONObject().put("replies",org.json.JSONArray()))
+        var samples=0
+        do {
+            val remaining=seconds*1000-(android.os.SystemClock.elapsedRealtime()-started)
+            if (remaining>0) delay(minOf(60_000L,remaining))
+            assertTrue(vm.state.connected);assertEquals(owner,vm.chatContext)
+            instrumentation.runOnMainSync {vm.loadSessions(vm.state.activeBot!!)};waitFor {!vm.state.sessionsLoading}
+            val peers=controller.request("fixture.sessions").objects("requests")
+            assertEquals(++samples,peers.size)
+            val peer=peers.last();val elapsed=android.os.SystemClock.elapsedRealtime()-started
+            assertEquals(vm.state.activeBot!!.name,peer.s("profile"))
+            assertTrue("The Pixel connection missed its keepalives",peer.optLong("pings")>=maxOf(2L,elapsed/20_000-1))
+            trace.record("running",JSONObject().put("requested_seconds",seconds).put("client_pings",peer.optLong("pings")).put("owner_stable",true))
+        } while (android.os.SystemClock.elapsedRealtime()-started < seconds*1000)
         instrumentation.runOnMainSync {vm.send("Heartbeat check")};waitFor {!vm.state.sendingChat}
         assertFalse(vm.state.deliveryUnconfirmed)
         assertTrue(vm.state.messages.any {it.text=="Android confirmed reply"})
+        trace.record("scenario_passed",JSONObject().put("requested_seconds",seconds).put("owner_stable",true).put("confirmed_delivery",true))
     }
     @Test fun acceptingAnOlderSendPreservesANewerDraftInTheSameConversation()=runBlocking {
         configure("delay",1000);val vm=vm();val key=vm.chatDraftScope

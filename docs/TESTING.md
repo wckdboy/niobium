@@ -618,3 +618,30 @@ APK certificate/source tag verify. All 20 public website files plus www Home and
 custom 404 match deployment cd05f1aa-73b8-4989-b6fd-09bb870ebc35.
 Physical hardware, real accounts, battery/Doze and extended background acceptance
 remain open. See [release validation](evidence/beta222-release-validation.json).
+
+
+## Controlled Android lifecycle soak
+
+`tools/test-android-soak.py` runs a single-device transport hold and repeated real
+local DSH chat/history cycles, followed by the existing room/DM acceptance. Both
+providers are controlled fixtures. Set JDK 17 and ANDROID_HOME; connect only the
+requested test device. The runner installs/removes the debug application for each
+scenario and records exact source, APK hash, XML results and structured samples.
+
+```sh
+python3 tools/test-android-soak.py --device emulator-5554 \
+  --idle-seconds 1200 --dsh-turns 12 --dsh-pause-seconds 45 \
+  --production-ref <reviewed-source-commit>
+```
+
+A quick harness check uses 45 seconds, one DSH turn and zero pause. Default native
+tests keep the 45-second heartbeat case and skip extended DSH turns. Optional
+instrumentation keys are `niobium.idle_seconds` (45–3600), `niobium.dsh_turns`
+(0–60), and `niobium.dsh_pause_seconds` (0–300). Use a single class/method filter
+per Gradle invocation so the runner can verify exactly one executed test.
+
+PSS/heap samples describe the app and instrumentation process, excluding guest
+Node/DSH. Structured log entries contain counts and resource samples, with no
+prompts, endpoints or keys. Test presets are removed without following symlinks.
+These controlled instrumentation runs do not establish battery, Doze or real
+provider behavior. The host receipt identifies the actual device.
