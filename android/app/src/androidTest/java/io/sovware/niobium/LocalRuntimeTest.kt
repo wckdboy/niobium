@@ -332,7 +332,7 @@ class LocalRuntimeTest {
         }
     }
 
-    @Test fun nativeDshProviderCreatesPixelsAndStreamsThroughRealDsh() = kotlinx.coroutines.runBlocking {
+    @Test fun nativeDshProviderCreatesPixelsAndStreamsThroughRealDsh() = kotlinx.coroutines.runBlocking<Unit> {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
         val runtime = RuntimeInstaller(context).prepare()
@@ -402,6 +402,7 @@ class LocalRuntimeTest {
         val previousProvider = preferences.getString("agent-provider", null)
         val hadEnabled = preferences.contains("dsh-enabled")
         val wasEnabled = preferences.getBoolean("dsh-enabled",false)
+        var testFailure: Throwable? = null
         try {
             val until = System.nanoTime() + TimeUnit.SECONDS.toNanos(90)
             while (System.nanoTime() < until && process.isAlive && !LocalRuntimeProxy.ready(socket.path)) Thread.sleep(200)
@@ -440,6 +441,24 @@ class LocalRuntimeTest {
             val bot = vm!!.state.activeBot!!
             instrumentation.runOnMainSync { vm!!.closeBot(); vm!!.openBot(bot); vm!!.openBot(bot) }
             waitFor("Native chat history restored") { !vm!!.state.loadingChat && vm!!.state.messages.any { it.text.contains("NATIVE-DSH-REPLY") } }
+            val soakTurns=soakArgument("niobium.dsh_turns",0,0,60)
+            val pauseSeconds=soakArgument("niobium.dsh_pause_seconds",0,0,300)
+            require(pauseSeconds==0L || soakTurns>0) { "Set niobium.dsh_turns when requesting a pause" }
+            val trace=if (soakTurns>0) SoakTrace(context,"dsh") else null
+            val ownedChat=vm!!.state.sessionId
+            trace?.record("running",org.json.JSONObject().put("requested_turns",soakTurns).put("pause_seconds",pauseSeconds))
+            repeat(soakTurns.toInt()) { index ->
+                val before=vm!!.state.messages.count { it.role=="assistant" && it.text.contains("NATIVE-DSH-REPLY") }
+                instrumentation.runOnMainSync {vm!!.send("Lifecycle check " + (index+1))}
+                waitFor("Soak response " + (index+1)) { !vm!!.state.sendingChat && !vm!!.state.turnActive &&
+                    vm!!.state.messages.count {it.role=="assistant" && it.text.contains("NATIVE-DSH-REPLY")} > before }
+                instrumentation.runOnMainSync {vm!!.closeBot();vm!!.openBot(bot)}
+                waitFor("Soak history " + (index+1)) { !vm!!.state.loadingChat && vm!!.state.sessionId==ownedChat &&
+                    vm!!.state.messages.count {it.role=="assistant" && it.text.contains("NATIVE-DSH-REPLY")} > before }
+                kotlinx.coroutines.delay(pauseSeconds*1000)
+                assertTrue(vm!!.state.connected);assertEquals(ownedChat,vm!!.state.sessionId)
+                trace?.record("running",org.json.JSONObject().put("completed_turns",index+1).put("owner_stable",true))
+            }
             assertTrue("The actual DSH model request omitted the reviewed messaging tool", sawMessaging.get())
             instrumentation.runOnMainSync { vm!!.send("Send a private note to Scout") }
             val conversations = java.io.File(runtime.home,".dsh/niobium-conversations.json")
@@ -490,15 +509,40 @@ class LocalRuntimeTest {
             waitFor("Archived room sessions never become Scout's DM") {
                 vm!!.state.bots.firstOrNull { it.name == "default" }?.canonicalSessionId !in ownedSessions
             }
+            trace?.record("scenario_passed",org.json.JSONObject().put("completed_turns",soakTurns).put("owner_stable",true).put("rooms_verified",true))
 
+        } catch (failure: Throwable) {
+            testFailure = failure
+            throw failure
         } finally {
-            instrumentation.runOnMainSync { vm?.disconnect(); vmStore.clear() }
-            preferences.edit().putString("agent-provider", previousProvider).apply {
-                if (hadEnabled) putBoolean("dsh-enabled",wasEnabled) else remove("dsh-enabled")
-            }.commit()
-            proxy.close(); process.outputStream.close(); process.waitFor(20, TimeUnit.SECONDS)
-            mock.close(); responder.join(1000); socket.delete()
-            java.io.File(runtime.home, ".dsh/.agent-presets/" + profile).deleteRecursively()
+            val failures = mutableListOf<Throwable>()
+            fun cleanup(action: () -> Unit) { try { action() } catch (e: Exception) { failures.add(e) } }
+            cleanup { instrumentation.runOnMainSync { vm?.disconnect(); vmStore.clear() } }
+            cleanup {
+                preferences.edit().putString("agent-provider", previousProvider).apply {
+                    if (hadEnabled) putBoolean("dsh-enabled",wasEnabled) else remove("dsh-enabled")
+                }.commit()
+            }
+            cleanup { proxy.close() }
+            cleanup { process.outputStream.close() }
+            var stopped = false
+            cleanup { stopped = process.waitFor(20, TimeUnit.SECONDS) }
+            if (!stopped) cleanup { process.destroyForcibly(); stopped = process.waitFor(10,TimeUnit.SECONDS) }
+            cleanup { mock.close() }
+            cleanup { responder.join(1000) }
+            cleanup { socket.delete() }
+            cleanup {
+                val preset=java.io.File(runtime.home, ".dsh/.agent-presets/" + profile).toPath()
+                if (java.nio.file.Files.exists(preset,java.nio.file.LinkOption.NOFOLLOW_LINKS)) java.nio.file.Files.walk(preset).use { paths ->
+                    paths.sorted(Comparator.reverseOrder()).forEach {java.nio.file.Files.deleteIfExists(it)}
+                }
+            }
+            if (!stopped) failures.add(IllegalStateException("Test runtime did not stop"))
+            if (failures.isNotEmpty()) {
+                val original = testFailure
+                if (original != null) failures.forEach { original.addSuppressed(it) }
+                else throw failures.first().also { first -> failures.drop(1).forEach { first.addSuppressed(it) } }
+            }
         }
     }
 
