@@ -51,7 +51,7 @@ class InventoryOwnershipTest {
         instrumentation.runOnMainSync { vm=NiobiumViewModel(context.applicationContext as android.app.Application,AgentEngine.HERMES);models.add(vm);store.put("vm-${models.size}",vm);vm.connect(origin,"fixture-token+&?","Fixture",remember=false) }
         waitFor {vm.state.connected&&vm.state.bots.isNotEmpty()}
         instrumentation.runOnMainSync {vm.openBot(vm.state.bots.single())}
-        waitFor {vm.state.sessionId!=null&&!vm.state.loadingChat};return vm
+        waitFor {vm.state.sessionId!=null&&!vm.state.loadingChat&&!vm.state.toolsLoad.loading};return vm
     }
     private suspend fun waitFor(predicate:suspend ()->Boolean)=withTimeout(20000){while(!predicate())delay(25)}
     private fun other() = BotProfile.parse(JSONObject().put("name","other").put("canonical_session",JSONObject().put("id","other-session")))!!
@@ -94,7 +94,7 @@ class InventoryOwnershipTest {
         assertEquals("unknown",vm.state.mcpServers.single().status)
         val replies=JSONObject()
         for ((method,value) in listOf("tools.list" to rows("toolsets","late"), "skills.manage" to skill("late"), "mcp.servers.list" to rows("servers","late"), "cron.manage" to rows("jobs","late"))) {
-            replies.put(method,org.json.JSONArray().put(reply(value,700)).put(JSONObject().put("fail",true)))
+            replies.put(method,org.json.JSONArray().put(reply(value,700)).put(reply(JSONObject())))
         }
         replies.put("mcp.servers.status",org.json.JSONArray());inventory(replies)
         instrumentation.runOnMainSync {loadAll(vm)}
@@ -141,6 +141,35 @@ class InventoryOwnershipTest {
         assertEquals(1,calls.count {it.s("method")=="tools.configure"});assertEquals(1,calls.count {it.s("method")=="skills.reload"})
         val adds=calls.filter {it.s("method")=="cron.manage" && it.o("params")?.s("action")=="add"}
         assertEquals(1,adds.size);assertEquals(bot.name,adds.single().o("params")?.s("profile"))
+    }
+
+    @Test fun unconfirmedChangesRequireASuccessfulExplicitRefreshBeforeAnotherAttempt() = runBlocking {
+        configure("confirm");val vm=vm();val bot=vm.state.activeBot!!
+        fun script(failed: Boolean): JSONObject {
+            val ack=if (failed) JSONObject().put("fail",true) else reply(JSONObject())
+            return JSONObject().put("tools.list",org.json.JSONArray().put(reply(rows("toolsets","shell"))).put(reply(rows("toolsets","shell"))))
+                .put("tools.configure",org.json.JSONArray().put(ack))
+                .put("skills.manage",org.json.JSONArray().put(reply(skill("audit"))).put(reply(skill("audit"))))
+                .put("skills.reload",org.json.JSONArray().put(ack))
+                .put("cron.manage",org.json.JSONArray().put(reply(rows("jobs","daily"))).put(ack).put(reply(rows("jobs","daily"))))
+        }
+        inventory(script(true))
+        instrumentation.runOnMainSync {vm.refreshTools();vm.loadSkills();vm.loadRoutines(bot)};waitFor {idle(vm)}
+        val tool=vm.state.toolsets.single();val routine=vm.state.routines.single()
+        instrumentation.runOnMainSync {vm.toggleToolset(tool);vm.reloadSkills();vm.deleteRoutine(routine,bot)}
+        waitFor {vm.state.toolsLoad.error!=null && vm.state.skillsLoad.error!=null && vm.state.routinesLoad.error!=null}
+        assertFalse(vm.state.toolsUpdating);assertFalse(vm.state.skillsUpdating);assertFalse(vm.state.routinesUpdating)
+        val callsBefore=controller.request("fixture.inventory").objects("requests").size
+        instrumentation.runOnMainSync {vm.toggleToolset(tool);vm.reloadSkills();vm.deleteRoutine(routine,bot)}
+        delay(100);assertEquals(callsBefore,controller.request("fixture.inventory").objects("requests").size)
+        inventory(script(false))
+        instrumentation.runOnMainSync {vm.refreshTools();vm.loadSkills();vm.loadRoutines(bot)};waitFor {idle(vm)}
+        assertNull(vm.state.toolsLoad.error);assertNull(vm.state.skillsLoad.error);assertNull(vm.state.routinesLoad.error)
+        instrumentation.runOnMainSync {vm.toggleToolset(vm.state.toolsets.single());vm.reloadSkills();vm.deleteRoutine(vm.state.routines.single(),bot)}
+        waitFor {controller.request("fixture.inventory").objects("requests").size==9 && idle(vm)}
+        val calls=controller.request("fixture.inventory").objects("requests")
+        assertEquals(1,calls.count {it.s("method")=="tools.configure"});assertEquals(1,calls.count {it.s("method")=="skills.reload"})
+        assertEquals(1,calls.count {it.s("method")=="cron.manage" && it.o("params")?.s("action")=="remove"})
     }
 
 }

@@ -472,6 +472,7 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
             val params = JSONObject()
             request.target.owner.session?.let { params.put("session_id", it) }
             val result = request.target.client.request("tools.list", params)
+            check(result.a("toolsets") != null) { "Missing tool inventory" }
             if (!toolsGate.owns(request)) return
             state = state.copy(toolsets = result.objects("toolsets").mapNotNull { j ->
                 if (j.s("name").isNullOrBlank()) null else Toolset.parse(j)
@@ -679,9 +680,14 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
             try {
                 val params = JSONObject().put("profile", request.target.profile)
                 val listed = request.target.client.request("mcp.servers.list", params, 20_000)
+                check(listed.a("servers") != null) { "Missing MCP inventory" }
                 if (!mcpGate.owns(request)) return@launch
                 var statusUnavailable = false
-                val statuses = try { request.target.client.request("mcp.servers.status", params, 20_000).objects("servers") }
+                val statuses = try {
+                    val status = request.target.client.request("mcp.servers.status", params, 20_000)
+                    check(status.a("servers") != null) { "Missing MCP status" }
+                    status.objects("servers")
+                }
                     catch (e: kotlinx.coroutines.CancellationException) { throw e }
                     catch (_: Exception) { statusUnavailable = true; emptyList() }
                 if (!mcpGate.owns(request)) return@launch
@@ -708,13 +714,13 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
             try {
                 val result = request.target.client.request("skills.manage", JSONObject().put("action", "list").put("profile", request.target.profile), 20_000)
                 if (!skillsGate.owns(request)) return@launch
-                val obj = result.o("skills") ?: JSONObject()
+                val obj = result.o("skills") ?: error("Missing skills inventory")
                 val map = mutableMapOf<String, List<String>>()
                 obj.keys().forEach { key ->
                     val arr = obj.optJSONArray(key) ?: return@forEach
                     map[key] = (0 until arr.length()).mapNotNull { arr.optString(it).takeIf(String::isNotBlank) }.distinct()
                 }
-                state = state.copy(skills = map, skillsLoad = InventoryLoad())
+                state = state.copy(skills = map.filterValues { it.isNotEmpty() }, skillsLoad = InventoryLoad())
             } catch (e: kotlinx.coroutines.CancellationException) { throw e }
             catch (_: Exception) { if (skillsGate.owns(request)) state = state.copy(skillsLoad = InventoryLoad(error = "Skills couldn't be loaded. Try again.")) }
             finally { if (skillsGate.owns(request) && state.skillsLoad.loading) state = state.copy(skillsLoad = state.skillsLoad.copy(loading = false)) }
@@ -722,7 +728,7 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
     }
 
     fun reloadSkills(owner: ChatContext = chatContext) {
-        if (owner != chatContext || state.demo || state.skillsUpdating || state.skillsLoad.loading || state.skillsLoad.error != null) return
+        if (owner != chatContext || !state.connected || state.loadingChat || state.demo || state.skillsUpdating || state.skillsLoad.loading || state.skillsLoad.error != null) return
         val target = inventoryTarget() ?: return
         skillsGate.invalidate()
         state = state.copy(skillsUpdating = true)
@@ -1509,6 +1515,7 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
                 val result = request.target.client.request("cron.manage", JSONObject()
                     .put("action", "list").put("profile", request.target.profile).put("include_disabled", true), 20_000)
                 if (!routinesGate.owns(request)) return@launch
+                check(result.a("jobs") != null) { "Missing routine inventory" }
                 state = state.copy(routines = result.objects("jobs").mapNotNull { Routine.parse(it, bot.name) }.distinctBy { it.id }, routinesLoad = InventoryLoad())
             } catch (e: kotlinx.coroutines.CancellationException) { throw e }
             catch (_: Exception) { if (routinesGate.owns(request)) state = state.copy(routinesLoad = InventoryLoad(error = "Routines couldn't be loaded. Try again.")) }
@@ -1531,7 +1538,7 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
         changeRoutine(bot, JSONObject().put("action", "remove").put("name", routine.id))
     }
 
-    private fun canChangeRoutines(bot: BotProfile, owner: ChatContext) = owner == chatContext && state.activeBot?.id == bot.id &&
+    private fun canChangeRoutines(bot: BotProfile, owner: ChatContext) = owner == chatContext && state.connected && !state.loadingChat && state.activeBot?.id == bot.id &&
         !state.routinesUpdating && !state.routinesLoad.loading && state.routinesLoad.error == null
 
     private fun changeRoutine(bot: BotProfile, params: JSONObject, done: () -> Unit = {}) {
@@ -1551,7 +1558,7 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
     }
 
     fun toggleToolset(toolset: Toolset, owner: ChatContext = chatContext) {
-        if (owner != chatContext || state.toolsUpdating || state.toolsLoad.loading || state.toolsLoad.error != null || toolset !in state.toolsets) return
+        if (owner != chatContext || !state.connected || state.loadingChat || state.toolsUpdating || state.toolsLoad.loading || state.toolsLoad.error != null || toolset !in state.toolsets) return
         if (state.demo) {
             state = state.copy(toolsets = state.toolsets.map { if (it.name == toolset.name) it.copy(enabled = !it.enabled) else it })
             return

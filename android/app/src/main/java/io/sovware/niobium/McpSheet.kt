@@ -33,7 +33,7 @@ fun McpSheet(vm: NiobiumViewModel, onDismiss: () -> Unit) {
                     NbPill("${state.mcpServers.size}", Nb.Violet)
                 }
             }
-            item { PixelButton("Refresh", PixelGlyph.LINK, secondary = true, enabled = !state.mcpLoad.loading && state.connected) { vm.loadMCP() } }
+            item { PixelButton("Refresh", PixelGlyph.REFRESH, secondary = true, enabled = !state.mcpLoad.loading && state.connected) { vm.loadMCP() } }
             item { InventoryFeedback(state.mcpLoad, state.mcpServers.isEmpty(), "No MCP servers configured.", vm::loadMCP) }
             items(state.mcpServers, key = { it.name }) { server ->
                 Row(Modifier.fillMaxWidth().clip(PixelButtonShape).background(Nb.FillSoft)

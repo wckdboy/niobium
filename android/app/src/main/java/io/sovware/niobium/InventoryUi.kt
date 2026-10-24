@@ -19,7 +19,7 @@ internal fun InventoryFeedback(load: InventoryLoad, empty: Boolean, emptyText: S
         }
         load.error?.let {
             Text(it, color = Nb.Rose, fontSize = 13.sp)
-            PixelButton("Retry", PixelGlyph.LINK, secondary = true, enabled = !load.loading, onClick = onRetry)
+            PixelButton("Retry", PixelGlyph.REFRESH, secondary = true, enabled = !load.loading, onClick = onRetry)
         }
         load.warning?.let { Text(it, color = Nb.Amber, fontSize = 12.sp) }
         if (empty && !load.loading && load.error == null) Text(emptyText, color = Nb.Secondary, fontSize = 13.sp)

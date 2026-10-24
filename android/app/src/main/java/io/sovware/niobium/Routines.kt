@@ -2,6 +2,8 @@ package io.sovware.niobium
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -37,7 +39,7 @@ fun RoutinesSheet(vm: NiobiumViewModel, bot: BotProfile, onDismiss: () -> Unit) 
             }
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    PixelButton("Refresh", PixelGlyph.LINK, Modifier.weight(1f), secondary = true, enabled = !load.loading && state.connected) { vm.loadRoutines(bot) }
+                    PixelButton("Refresh", PixelGlyph.REFRESH, Modifier.weight(1f), secondary = true, enabled = !load.loading && state.connected) { vm.loadRoutines(bot) }
                     PixelButton("New", PixelGlyph.SPARK, Modifier.weight(1f), enabled = canChange) { creating = true }
                 }
             }
@@ -70,13 +72,13 @@ private fun NewRoutineDialog(busy: Boolean, error: String?, canCreate: Boolean, 
     var name by remember { mutableStateOf("") }
     var schedule by remember { mutableStateOf("Every day at 08:00") }
     var prompt by remember { mutableStateOf("") }
-    AlertDialog(onDismissRequest = onDismiss, containerColor = Nb.Raised,
+    AlertDialog(onDismissRequest = onDismiss, containerColor = Nb.Raised, shape = PixelButtonShape,
         title = { Text("New routine", color = Nb.Text) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedTextField(name, { name = it.take(120) }, label = { Text("Name") }, singleLine = true, enabled = !busy)
-                OutlinedTextField(schedule, { schedule = it.take(200) }, label = { Text("Schedule") }, singleLine = true, enabled = !busy)
-                OutlinedTextField(prompt, { prompt = it.take(32_000) }, label = { Text("Prompt") }, minLines = 2, maxLines = 5, enabled = !busy)
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedTextField(name, { name = it.take(120) }, label = { Text("Name") }, singleLine = true, enabled = !busy, shape = PixelButtonShape, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(schedule, { schedule = it.take(200) }, label = { Text("Schedule") }, singleLine = true, enabled = !busy, shape = PixelButtonShape, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(prompt, { prompt = it.take(32_000) }, label = { Text("Prompt") }, minLines = 2, maxLines = 5, enabled = !busy, shape = PixelButtonShape, modifier = Modifier.fillMaxWidth())
                 error?.let { Text(it, color = Nb.Rose, fontSize = 12.sp) }
             }
         },
@@ -84,5 +86,5 @@ private fun NewRoutineDialog(busy: Boolean, error: String?, canCreate: Boolean, 
             PixelButton(if (busy) "Creating…" else "Create", PixelGlyph.SPARK,
                 enabled = canCreate && name.isNotBlank() && schedule.isNotBlank() && prompt.isNotBlank()) { onCreate(name, schedule, prompt) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel", color = Nb.Secondary) } })
+        dismissButton = { TextButton(onClick = onDismiss) { Text(if (busy) "Close" else "Cancel", color = Nb.Secondary) } })
 }

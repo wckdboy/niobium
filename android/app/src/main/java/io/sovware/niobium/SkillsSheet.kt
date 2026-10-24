@@ -34,7 +34,7 @@ fun SkillsSheet(vm: NiobiumViewModel, onDismiss: () -> Unit) {
             }
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    PixelButton("Refresh", PixelGlyph.LINK, Modifier.weight(1f), secondary = true, enabled = !load.loading && state.connected) { vm.loadSkills() }
+                    PixelButton("Refresh", PixelGlyph.REFRESH, Modifier.weight(1f), secondary = true, enabled = !load.loading && state.connected) { vm.loadSkills() }
                     PixelButton("Reload", PixelGlyph.SPARK, Modifier.weight(1f), secondary = true,
                         enabled = !load.loading && load.error == null && state.connected && !state.demo) { vm.reloadSkills(owner) }
                 }
@@ -42,7 +42,7 @@ fun SkillsSheet(vm: NiobiumViewModel, onDismiss: () -> Unit) {
             item { InventoryFeedback(load, state.skills.isEmpty(), "No skills available.", vm::loadSkills) }
             state.skills.keys.sorted().forEach { category ->
                 item(key = "category:$category") { Text(category, color = Nb.Secondary, style = NbLabel, fontSize = 12.sp) }
-                items(state.skills[category].orEmpty(), key = { "skill:$category:$it" }) { skill ->
+                items(state.skills[category].orEmpty(), key = { "skill:${category.length}:$category:$it" }) { skill ->
                     Text(skill, color = Nb.Text, fontSize = 14.sp, modifier = Modifier.fillMaxWidth().clip(PixelButtonShape)
                         .background(Nb.FillSoft).padding(14.dp))
                 }

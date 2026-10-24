@@ -40,6 +40,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.rotate
@@ -347,11 +349,9 @@ fun ToolsScreen(vm: NiobiumViewModel, state: NbState, onClose: (() -> Unit)? = n
     var showMCP by remember { mutableStateOf(false) }
     if (showSkills) {
         SkillsSheet(vm) { showSkills = false }
-        return
     }
     if (showMCP) {
         McpSheet(vm) { showMCP = false }
-        return
     }
     var onlyEnabled by remember { mutableStateOf(false) }
     val filtered = state.toolsets.filter {
@@ -363,28 +363,22 @@ fun ToolsScreen(vm: NiobiumViewModel, state: NbState, onClose: (() -> Unit)? = n
         item {
             Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 20.dp).padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (onClose != null) {
-                    NbIconButton("‹", onClose, size = 36)
-                    Spacer(Modifier.width(10.dp))
-                }
-                Wordmark()
+                    PixelIconButton(PixelGlyph.BACK, "Close toolbox", onClick = onClose)
+                    Spacer(Modifier.width(8.dp))
+                    AtomicMark(size = 28.dp)
+                } else Wordmark()
                 Spacer(Modifier.weight(1f))
-                Box(Modifier.size(38.dp).clip(RoundedCornerShape(10.dp)).background(Nb.FillSoft)
-                    .border(1.dp, Nb.Line, RoundedCornerShape(10.dp)).clickable { showSkills = true },
-                    contentAlignment = Alignment.Center) { Text("✦", color = Nb.Ion, fontSize = 13.sp) }
+                PixelIconButton(PixelGlyph.SPARK, "Skills") { showSkills = true }
                 Spacer(Modifier.width(5.dp))
-                Box(Modifier.size(38.dp).clip(RoundedCornerShape(10.dp)).background(Nb.FillSoft)
-                    .border(1.dp, Nb.Line, RoundedCornerShape(10.dp)).clickable { showMCP = true },
-                    contentAlignment = Alignment.Center) { Text("◈", color = Nb.Violet, fontSize = 13.sp) }
-                Spacer(Modifier.width(7.dp))
-                NbIconButton("↻", vm::refreshTools, size = 38)
+                PixelIconButton(PixelGlyph.LINK, "MCP servers") { showMCP = true }
+                Spacer(Modifier.width(5.dp))
+                PixelIconButton(PixelGlyph.REFRESH, "Refresh tools", enabled = !state.toolsLoad.loading && !state.toolsUpdating && state.connected, onClick = vm::refreshTools)
             }
         }
         item { PageHeader(state.activeBot?.title ?: "Gateway tools", "Toolbox") }
         item {
-            Column(Modifier.padding(horizontal = 20.dp).padding(top = 10.dp)) {
-                Text("$totalTools", color = Nb.Text, style = NbDisplay, fontSize = 52.sp)
-                Text("tools across ${state.toolsets.size} toolsets on this gateway", color = Nb.Secondary, fontSize = 12.5.sp)
-            }
+            Text("$totalTools tools · ${state.toolsets.size} toolsets", color = Nb.Secondary, fontSize = 14.sp,
+                modifier = Modifier.padding(horizontal = 20.dp).padding(top = 8.dp))
         }
         if (!state.demo && state.sessionId == null) {
             item {
@@ -397,12 +391,12 @@ fun ToolsScreen(vm: NiobiumViewModel, state: NbState, onClose: (() -> Unit)? = n
         item {
             Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(top = 18.dp), verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(
-                    value = query, onValueChange = { query = it },
-                    placeholder = { Text("Search the toolbox", color = Nb.Tertiary, fontSize = 13.sp) },
+                    value = query, onValueChange = { query = it.take(200) },
+                    placeholder = { Text("Find tools", color = Nb.Tertiary, fontSize = 13.sp) },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
                     textStyle = androidx.compose.ui.text.TextStyle(color = Nb.Text, fontSize = 13.sp),
-                    shape = RoundedCornerShape(11.dp),
+                    shape = PixelButtonShape,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = Nb.Surface, unfocusedContainerColor = Nb.Surface,
                         focusedBorderColor = Nb.Ion.copy(alpha = 0.4f), unfocusedBorderColor = Nb.Line,
@@ -410,14 +404,11 @@ fun ToolsScreen(vm: NiobiumViewModel, state: NbState, onClose: (() -> Unit)? = n
                     )
                 )
                 Spacer(Modifier.width(8.dp))
-                Box(
-                    Modifier.size(48.dp).clip(RoundedCornerShape(11.dp)).background(Nb.Surface)
-                        .border(1.dp, if (onlyEnabled) Nb.Ion.copy(alpha = 0.4f) else Nb.Line, RoundedCornerShape(11.dp))
-                        .clickable { onlyEnabled = !onlyEnabled }, contentAlignment = Alignment.Center
-                ) { Text("≡", color = if (onlyEnabled) Nb.Ion else Nb.Tertiary, fontSize = 17.sp) }
+                PixelButton("Enabled", PixelGlyph.SHIELD, secondary = !onlyEnabled,
+                    modifier = Modifier.semantics { selected = onlyEnabled }) { onlyEnabled = !onlyEnabled }
             }
         }
-        item {
+        if (state.toolsLoad.loading || state.toolsUpdating || state.toolsLoad.error != null || filtered.isEmpty()) item {
             Box(Modifier.padding(horizontal = 20.dp, vertical = 14.dp)) {
                 InventoryFeedback(state.toolsLoad.copy(loading = state.toolsLoad.loading || state.toolsUpdating), filtered.isEmpty(),
                     if (state.toolsets.isEmpty()) "No tools available." else "No matching tools.", vm::refreshTools)
@@ -434,25 +425,25 @@ fun ToolsScreen(vm: NiobiumViewModel, state: NbState, onClose: (() -> Unit)? = n
 @Composable
 private fun ToolsetRow(toolset: Toolset, canToggle: Boolean, onToggle: () -> Unit) {
     Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(17.dp))
+        Modifier.fillMaxWidth().clip(PixelButtonShape)
             .background(if (toolset.enabled) Nb.Surface.copy(alpha = 0.8f) else Nb.Surface.copy(alpha = 0.4f))
-            .border(1.dp, if (toolset.enabled) Nb.Ion.copy(alpha = 0.14f) else Nb.Line, RoundedCornerShape(17.dp))
+            .border(1.dp, if (toolset.enabled) Nb.Ion.copy(alpha = 0.14f) else Nb.Line, PixelButtonShape)
             .padding(13.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(36.dp).clip(RoundedCornerShape(11.dp))
+            Box(Modifier.size(36.dp).clip(PixelButtonShape)
                 .background((if (toolset.enabled) Nb.Ion else Nb.Tertiary).copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
-                Text(toolGlyph(toolset.name), color = if (toolset.enabled) Nb.Ion else Nb.Tertiary, fontSize = 13.sp)
+                PixelIcon(toolGlyph(toolset.name), if (toolset.enabled) Nb.Ion else Nb.Tertiary, 20.dp)
             }
             Spacer(Modifier.width(11.dp))
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(toolset.name, color = Nb.Text, style = NbMono, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold)
+                    Text(toolset.name, color = Nb.Text, style = NbMono, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                     Spacer(Modifier.width(6.dp))
-                    Text("${toolset.tools.size}", color = Nb.Tertiary, style = NbMono, fontSize = 8.sp)
+                    Text("${toolset.tools.size}", color = Nb.Tertiary, style = NbMono, fontSize = 10.sp)
                 }
                 Spacer(Modifier.height(2.dp))
-                Text(toolset.description, color = Nb.Secondary, fontSize = 11.5.sp, lineHeight = 15.sp, maxLines = 2)
+                Text(toolset.description, color = Nb.Secondary, fontSize = 13.sp, lineHeight = 18.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
             Spacer(Modifier.width(8.dp))
             Box(Modifier.size(48.dp)
@@ -467,30 +458,21 @@ private fun ToolsetRow(toolset: Toolset, canToggle: Boolean, onToggle: () -> Uni
         }
         if (toolset.tools.isNotEmpty()) {
             Spacer(Modifier.height(9.dp))
-            Row(Modifier.padding(start = 47.dp), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                toolset.tools.take(4).forEach {
-                    Text(it, color = if (toolset.enabled) Nb.Secondary else Nb.Tertiary, style = NbMono, fontSize = 7.5.sp,
-                        modifier = Modifier.clip(CircleShape).background(Nb.FillSoft).padding(horizontal = 7.dp, vertical = 3.dp))
-                }
-                if (toolset.tools.size > 4) {
-                    Text("+${toolset.tools.size - 4}", color = Nb.Tertiary, style = NbMono, fontSize = 7.5.sp,
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 3.dp))
-                }
-            }
+            Text(toolset.tools.take(4).joinToString(" · ") + if (toolset.tools.size > 4) " · +${toolset.tools.size - 4}" else "",
+                color = Nb.Tertiary, style = NbMono, fontSize = 10.sp, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(start = 47.dp))
         }
     }
 }
 
-private fun toolGlyph(name: String): String = when (name) {
-    "terminal", "coding" -> ">_"
-    "web", "browser" -> "◎"
-    "memory", "skills" -> "✦"
-    "cronjob" -> "◷"
-    "delegation" -> "⑃"
-    "vision" -> "◉"
-    "image_gen" -> "✧"
-    "bot_room" -> "◎"
-    else -> "⚒"
+private fun toolGlyph(name: String): PixelGlyph = when (name) {
+    "terminal", "coding", "code_execution" -> PixelGlyph.TERMINAL
+    "web", "browser", "connections" -> PixelGlyph.LINK
+    "delegation", "bot_room" -> PixelGlyph.PIXELS
+    "memory", "file" -> PixelGlyph.PIN
+    "cronjob" -> PixelGlyph.ACTIVITY
+    "skills", "vision", "image_gen" -> PixelGlyph.SPARK
+    else -> PixelGlyph.SETTINGS
 }
 
 @Composable

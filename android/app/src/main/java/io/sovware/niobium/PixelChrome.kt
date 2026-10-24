@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.floor
 
-enum class PixelGlyph { HOME, PIXELS, TERMINAL, ACTIVITY, SETTINGS, PLAY, STOP, BACK, LINK, SPARK, SHIELD, PIN }
+enum class PixelGlyph { HOME, PIXELS, TERMINAL, ACTIVITY, SETTINGS, PLAY, STOP, BACK, LINK, SPARK, SHIELD, PIN, REFRESH }
 
 @Composable
 fun PixelIcon(glyph: PixelGlyph, tint: Color = Nb.Ion, size: Dp = 24.dp, description: String? = null) {
@@ -52,6 +52,8 @@ fun PixelIcon(glyph: PixelGlyph, tint: Color = Nb.Ion, size: Dp = 24.dp, descrip
         PixelGlyph.SPARK -> listOf(intArrayOf(7,1,2,4),intArrayOf(5,5,6,2),intArrayOf(1,7,14,2),
             intArrayOf(5,9,6,2),intArrayOf(7,11,2,4))
         PixelGlyph.PIN -> listOf(intArrayOf(4,1,8,2),intArrayOf(5,3,6,4),intArrayOf(3,7,10,2),intArrayOf(7,9,2,6))
+        PixelGlyph.REFRESH -> listOf(intArrayOf(5,1,6,2),intArrayOf(3,3,2,2),intArrayOf(11,3,2,4),
+            intArrayOf(9,5,6,2),intArrayOf(3,9,2,4),intArrayOf(1,9,6,2),intArrayOf(11,11,2,2),intArrayOf(5,13,6,2))
         PixelGlyph.SHIELD -> listOf(intArrayOf(6,1,4,2),intArrayOf(2,3,12,2),intArrayOf(2,5,2,5),
             intArrayOf(12,5,2,5),intArrayOf(4,10,2,2),intArrayOf(10,10,2,2),intArrayOf(6,12,4,2))
     }
@@ -91,5 +93,15 @@ fun PixelButton(label: String, glyph: PixelGlyph, modifier: Modifier = Modifier,
         PixelIcon(glyph, if (enabled) foreground else Nb.Tertiary, 20.dp)
         Spacer(Modifier.width(10.dp))
         Text(label, color = if (enabled) foreground else Nb.Tertiary, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+
+@Composable
+fun PixelIconButton(glyph: PixelGlyph, label: String, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
+    Box(modifier.size(48.dp).clip(PixelButtonShape).background(Nb.FillSoft)
+        .border(1.dp, Nb.Line, PixelButtonShape).semantics { contentDescription = label }
+        .clickable(enabled = enabled, role = Role.Button, onClick = onClick), contentAlignment = Alignment.Center) {
+        PixelIcon(glyph, if (enabled) Nb.Ion else Nb.Tertiary, 22.dp)
     }
 }

@@ -574,5 +574,7 @@ Tool, skill-reload and routine mutations capture the original owner, reject stal
 controls and repeated taps, and ignore acknowledgements after a Pixel switch. An
 unconfirmed change requires a successful explicit refresh before another change.
 Native regression tests cover a failed-before/passed-after Pixel-switch race, newest
-refresh failures/partial MCP status, and mutation deduplication/owner changes.
+refresh failures/partial MCP status, mutation deduplication/owner changes, and
+explicit refresh recovery after unconfirmed changes. Malformed catalogs retain
+loaded rows and report a failure rather than unlocking mutable controls.
 The candidate APK is 2.2.2/code17; publication requires final-head review and checks.
