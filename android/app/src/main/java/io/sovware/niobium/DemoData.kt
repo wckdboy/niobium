@@ -78,7 +78,7 @@ object DemoData {
                 ChatMessage("d3", "assistant", """
                     Three things need you today.
 
-                    **1 · Build is green.** Forge finished the clean build and the release notes are ready for review. The only open thread is the signing profile for the TestFlight build.
+                    **1 · Build is green.** Forge finished the Android checks and prepared the release handoff. The next check is native chat and the local engine on a test device.
 
                     **2 · Rook found a signal.** Two competitors shipped agent memory this week. I saved the teardown in *Research › Memory landscape* — the useful difference is their retrieval UI, not the storage layer.
 
@@ -86,23 +86,24 @@ object DemoData {
 
                     Say the word and I’ll open the release checklist.
                 """.trimIndent(), t - 480_000,
-                    reasoning = "Prioritising by consequence and time sensitivity. Signing is the only true blocker."),
+                    reasoning = "Prioritising by consequence and time sensitivity. Device acceptance is the remaining release check."),
                 ChatMessage("d4", "user", "Open the release checklist. Keep it tight.", t - 300_000)
             )
             "forge" -> listOf(
-                ChatMessage("f1", "user", "Clean build, then tell me what’s blocking TestFlight.", t - 900_000),
+                ChatMessage("f1", "user", "Run the Android checks and give me a short release handoff.", t - 900_000),
                 ChatMessage("f2", "tool", timestamp = t - 840_000, toolName = "terminal",
-                    toolArgs = "{\n  \"command\": \"./gradlew clean assembleRelease\"\n}",
+                    toolArgs = "{\n  \"command\": \"./gradlew :core:test :app:testDebugUnitTest :app:assembleRelease\"\n}",
                     toolResult = "BUILD SUCCESSFUL in 2m 08s\n42 actionable tasks",
                     toolStatus = ToolStatus.DONE, toolPreview = "BUILD SUCCESSFUL · 2m 08s", toolDuration = 128.2),
                 ChatMessage("f3", "assistant", """
-                    Build is green. **One blocker:** the iOS signing profile isn’t registered for the new bundle ID, so the archive validates but can’t be exported.
+                    **Ready for review.** The APK builds and the checks pass.
 
-                    Two ways forward:
-                    - Add `io.sovware.niobium` to the existing distribution profile.
-                    - Or create a fresh profile with the two devices we actually test on.
+                    Device handoff:
+                    - Install the signed APK over the previous version.
+                    - Open a chat, send a photo and check streaming.
+                    - Start local Pixels, switch engines and return to the same conversation.
 
-                    I’d take the second — cleaner and easier to rotate later. Want me to open the checklist?
+                    The checklist belongs with the APK, checksums and test receipt.
                 """.trimIndent(), t - 620_000)
             )
             else -> listOf(
@@ -132,7 +133,7 @@ object DemoData {
             RoomEvent(2, room.roomId, "g2", "message.member", "member", "orion", "Orion",
                 "Scope call: ship Pixels first, routines second. The roster is the habit; routines are the power feature. I’ll write the decision record.", t - 1600, null, null),
             RoomEvent(3, room.roomId, "g3", "message.member", "member", "forge", "Forge",
-                "Build is green. Signing profile is the only open thread. I can have TestFlight up today if we take the fresh profile.", t - 1450, null, null),
+                "The APK and checks are green. Next: review native chat and the local engine on a test device.", t - 1450, null, null),
             RoomEvent(4, room.roomId, "g4", "message.member", "member", "rook", "Rook",
                 "Competitor watch is clean. No launches in the last 24h. I’ll check the sources and flag anything that looks off.", t - 420, null, null),
             RoomEvent(5, room.roomId, "g5", "message.user", "user", "user", "You", "Good. Forge, ship it.", t - 360, null, null)
