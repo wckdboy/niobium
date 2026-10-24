@@ -110,4 +110,32 @@ class AndroidClientTest {
         for(host in listOf("127.0.0.1","::1")) assertTrue(host,policy.isCleartextTrafficPermitted(host))
         for(host in listOf("192.168.1.9","example.com","localhost","127.0.0.1.evil.example")) assertFalse(host,policy.isCleartextTrafficPermitted(host))
     }
+    @Test fun chatBrowserSearchesLargeListsAndFiltersWorkingConversations() {
+        val rows=(0 until 1000).map {SessionRow("s-$it","Thread $it",it,"DSH",null,it%2==0)}
+        val opened=mutableListOf<String>()
+        content {ChatBrowser("pixel","Pixel",true,rows,false,null,"s-777",true,{}, {opened.add(it.sessionId)},Modifier.fillMaxSize())}
+        compose.onNodeWithTag("sessions.search").performTextInput("Thread 777")
+        compose.onNodeWithTag("sessions.row.s-777").assertIsDisplayed()
+        compose.onNodeWithText("Current").assertIsDisplayed()
+        compose.onNodeWithTag("sessions.row.s-777").performClick();assertEquals(listOf("s-777"),opened)
+        compose.onNodeWithTag("sessions.working").performClick()
+        compose.onNodeWithText("No matching chats.").assertIsDisplayed()
+        compose.onNodeWithTag("sessions.search").performTextReplacement("Thread 778")
+        compose.onNodeWithTag("sessions.row.s-778").assertIsDisplayed()
+        compose.onNodeWithTag("sessions.row.s-777").assertDoesNotExist()
+    }
+    @Test fun chatBrowserDistinguishesLoadingErrorsAndRetainsLoadedRows() {
+        var rows by mutableStateOf(emptyList<SessionRow>())
+        var loading by mutableStateOf(true);var error by mutableStateOf<String?>(null);var refreshes=0
+        content {ChatBrowser("pixel","Pixel",false,rows,loading,error,null,false,{refreshes++},{},Modifier.fillMaxSize())}
+        compose.onNodeWithText("Loading chats…").assertIsDisplayed()
+        compose.onNodeWithText("Refresh").assertIsNotEnabled()
+        compose.runOnIdle {loading=false;error="Chats couldn't be loaded. Try again."}
+        compose.onNodeWithTag("sessions.error").assertIsDisplayed()
+        compose.onNodeWithText("Refresh").performClick();assertEquals(1,refreshes)
+        compose.runOnIdle {rows=listOf(SessionRow("stored","Saved conversation",4,"DSH",null,false))}
+        compose.onNodeWithText("Saved conversation").assertIsDisplayed().assertIsNotEnabled()
+        compose.onNodeWithTag("sessions.error").assertIsDisplayed()
+        compose.onNodeWithText("Your conversations will appear here.").assertDoesNotExist()
+    }
 }

@@ -4,12 +4,15 @@ const token = 'fixture-token+&?';
 let androidMode = null;
 const androidHistory = [], androidRequests = [];
 const androidImages = new Map();
+let sessionReplies = [];
+const sessionRequests = [];
 const server = createServer((request, response) => {
   const valid = request.url === '/proxy/api/status' && request.headers['x-hermes-session-token'] === token && request.headers.authorization === 'Bearer ' + token;
   response.writeHead(valid ? 200 : 401, { 'Content-Type': 'application/json' });
   response.end(valid ? '{"version":"fixture"}' : '{}');
 });
 server.on('upgrade', (request, socket) => {
+  let pingRequests = 0;
   const url = new URL(request.url, 'http://localhost');
   if (url.pathname !== '/proxy/api/ws' || url.searchParams.get('token') !== token) { socket.destroy(); return; }
   const accept = createHash('sha1').update(request.headers['sec-websocket-key'] + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11').digest('base64');
@@ -39,12 +42,20 @@ server.on('upgrade', (request, socket) => {
       case 'profiles.list': result({profiles:[{name:'remote-fixture',display_name:'Remote fixture',canonical_session:{id:'fixture-session'}}]}); break;
       case 'tools.list': result({toolsets:[]}); break;
       case 'model.options': result({providers:[]}); break;
+      case 'fixture.sessions':
+        if (Array.isArray(frame.params?.replies)) {sessionReplies=frame.params.replies;sessionRequests.length=0;}
+        result({requests:sessionRequests});break;
+      case 'session.list': {
+        sessionRequests.push({profile:frame.params.profile,pings:pingRequests});
+        const reply=sessionReplies.shift()||{sessions:[]};
+        setTimeout(()=>reply.fail?reject('Session list unavailable'):result({sessions:reply.sessions||[]}),reply.delay||0);break;
+      }
       case 'session.resume':
         if (Object.keys(frame.params || {}).some(key=>!['session_id','profile','source','omit_messages'].includes(key))) { reject('Unexpected session.resume keys'); break; }
         result({session_id:androidMode ? frame.params.session_id : 'fixture-session',messages:androidMode ? androidHistory : [],revision:0}); break;
       case 'fixture.android':
         if (typeof frame.params?.mode === 'string') androidMode = {mode:frame.params.mode,delay:frame.params.delay || 0,attachDelay:frame.params.attach_delay || 0,pathless:frame.params.pathless===true};
-        result({requests:androidRequests,history:androidHistory,queued_images:androidImages.size}); break;
+        result({requests:androidRequests,history:androidHistory,queued_images:androidImages.size,pings:pingRequests}); break;
       case 'image.attach_bytes': {
         const path = 'fixture-image-' + randomUUID();androidImages.set(frame.params.session_id,path);
         androidRequests.push({method:frame.method,profile:frame.params.profile,session:frame.params.session_id});
@@ -111,6 +122,12 @@ server.on('upgrade', (request, socket) => {
       if (mask) for (let i = 0; i < payload.length; i++) payload[i] ^= mask[i % 4];
       buffered = buffered.subarray(offset + size);
       if (opcode === 8) { socket.end(Buffer.from([0x88,0])); return; }
+      if (opcode === 9) {
+        if (payload.length > 125) { socket.destroy(); return; }
+        pingRequests++;
+        socket.write(Buffer.concat([Buffer.from([0x8a,payload.length]),payload]));
+        continue;
+      }
       if (opcode === 1) handle(JSON.parse(payload.toString()));
     }
   });

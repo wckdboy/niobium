@@ -48,6 +48,12 @@ before unlocking an uncertain send.
 Use HTTPS for remote gateways. Cleartext HTTP is limited to literal loopback for
 the private local runtime; LAN hosts need HTTPS or a secure tunnel.
 
+Chats searches the loaded titles and models, filters working conversations and
+marks the current chat. Hermes currently requests the 60 most recent stored rows;
+local DSH returns all visible chats. A failed refresh keeps the loaded rows and
+shows an explicit retry state. Replies from previous Pixels, clients or superseded
+refreshes cannot overwrite the current list.
+
 See [HERMES-PARITY.md](../docs/HERMES-PARITY.md) for evidence and remaining gaps.
 Demo/build checks do not establish live provider, authorization or background
 behaviour.

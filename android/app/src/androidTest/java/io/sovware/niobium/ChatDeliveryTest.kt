@@ -101,6 +101,44 @@ class ChatDeliveryTest {
         assertEquals(previous,vm.state.connection);assertTrue(vm.state.connected)
         assertTrue(vm.state.error!!.contains("HTTPS"))
     }
+    @Test fun delayedSessionListingsCannotOverwriteAnotherPixelsChats()=runBlocking {
+        configure("confirm");val vm=vm()
+        controller.request("fixture.sessions",JSONObject().put("replies",org.json.JSONArray()
+            .put(JSONObject().put("delay",700).put("sessions",org.json.JSONArray().put(JSONObject().put("id","old").put("title","Old profile"))))
+            .put(JSONObject().put("sessions",org.json.JSONArray().put(JSONObject().put("id","new").put("title","New profile"))))))
+        instrumentation.runOnMainSync {vm.loadSessions(vm.state.activeBot!!)}
+        waitFor {controller.request("fixture.sessions").objects("requests").size==1}
+        val other=BotProfile.parse(JSONObject().put("name","other").put("canonical_session",JSONObject().put("id","other-session")))!!
+        instrumentation.runOnMainSync {vm.openBot(other)};waitFor {!vm.state.loadingChat}
+        assertTrue(vm.state.sessions.isEmpty())
+        instrumentation.runOnMainSync {vm.loadSessions(other)};waitFor {!vm.state.sessionsLoading}
+        delay(900);assertEquals(listOf("new"),vm.state.sessions.map {it.sessionId});assertNull(vm.state.sessionsError)
+    }
+    @Test fun theLatestListFailureKeepsLoadedChatsAndRejectsAnOlderRefresh()=runBlocking {
+        configure("confirm");val vm=vm()
+        controller.request("fixture.sessions",JSONObject().put("replies",org.json.JSONArray()
+            .put(JSONObject().put("sessions",org.json.JSONArray().put(JSONObject().put("id","kept").put("title","Keep me"))))
+            .put(JSONObject().put("delay",700).put("sessions",org.json.JSONArray().put(JSONObject().put("id","late"))))
+            .put(JSONObject().put("fail",true))))
+        instrumentation.runOnMainSync {vm.loadSessions(vm.state.activeBot!!)};waitFor {!vm.state.sessionsLoading}
+        assertEquals("kept",vm.state.sessions.single().sessionId)
+        instrumentation.runOnMainSync {vm.loadSessions(vm.state.activeBot!!)}
+        waitFor {controller.request("fixture.sessions").objects("requests").size==2}
+        instrumentation.runOnMainSync {vm.loadSessions(vm.state.activeBot!!)};waitFor {!vm.state.sessionsLoading}
+        delay(900);assertNotNull(vm.state.sessionsError);assertEquals("kept",vm.state.sessions.single().sessionId)
+    }
+    @Test fun idleConnectionsSurviveTwoHeartbeatIntervalsAndStillDeliver()=runBlocking {
+        configure("confirm");val vm=vm();val owner=vm.chatContext
+        delay(45_000)
+        assertTrue(vm.state.connected);assertEquals(owner,vm.chatContext)
+        controller.request("fixture.sessions",JSONObject().put("replies",org.json.JSONArray().put(JSONObject())))
+        instrumentation.runOnMainSync {vm.loadSessions(vm.state.activeBot!!)};waitFor {!vm.state.sessionsLoading}
+        val peer=controller.request("fixture.sessions").objects("requests").single()
+        assertEquals(vm.state.activeBot!!.name,peer.s("profile"));assertTrue(peer.optInt("pings")>=2)
+        instrumentation.runOnMainSync {vm.send("Heartbeat check")};waitFor {!vm.state.sendingChat}
+        assertFalse(vm.state.deliveryUnconfirmed)
+        assertTrue(vm.state.messages.any {it.text=="Android confirmed reply"})
+    }
     @Test fun acceptingAnOlderSendPreservesANewerDraftInTheSameConversation()=runBlocking {
         configure("delay",1000);val vm=vm();val key=vm.chatDraftScope
         instrumentation.runOnMainSync {
