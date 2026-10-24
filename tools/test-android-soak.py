@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Run isolated Android transport and real local DSH acceptance with controlled providers."""
 from pathlib import Path
+from contextlib import contextmanager
 import argparse
 import datetime
 import hashlib
@@ -50,6 +51,34 @@ def read_progress(device, kind):
         return None
 
 
+def find_sdk(root=ROOT, environment=None):
+    environment = os.environ if environment is None else environment
+    sdk = environment.get('ANDROID_HOME') or environment.get('ANDROID_SDK_ROOT')
+    properties = root / 'android/local.properties'
+    if not sdk and properties.is_file():
+        sdk = next((line.split('=', 1)[1] for line in properties.read_text().splitlines()
+                    if line.startswith('sdk.dir=')), None)
+    return sdk
+
+
+@contextmanager
+def acceptance_cleanup(device):
+    accepted = False
+
+    def accept():
+        nonlocal accepted
+        accepted = True
+
+    try:
+        yield accept
+    finally:
+        if not accepted:
+            try:
+                device('shell', 'am', 'force-stop', 'io.sovware.niobium.debug', check=False)
+            except subprocess.TimeoutExpired:
+                print('Cleanup could not reach the debug application.', file=sys.stderr)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--device', default=os.environ.get('ANDROID_SERIAL', 'emulator-5554'))
@@ -80,10 +109,7 @@ def main():
                         'android/app/build.gradle.kts', 'android/build.gradle.kts', 'core', 'runtime',
                         'android/runtime', 'config', 'tools/prepare-android-runtime.py'],
                        cwd=ROOT, check=True, stdout=subprocess.DEVNULL, timeout=30)
-    sdk = os.environ.get('ANDROID_HOME') or os.environ.get('ANDROID_SDK_ROOT')
-    if not sdk:
-        sdk = next((s.split('=', 1)[1] for s in (ROOT / 'android/local.properties').read_text().splitlines()
-                    if s.startswith('sdk.dir=')), None)
+    sdk = find_sdk()
     if not sdk:
         parser.error('Set ANDROID_HOME to the Android SDK')
     adb = str(Path(sdk) / 'platform-tools/adb')
@@ -109,86 +135,81 @@ def main():
                  ('dsh', 'LocalRuntimeTest', 'nativeDshProviderCreatesPixelsAndStreamsThroughRealDsh',
                   {'niobium.dsh_turns': args.dsh_turns, 'niobium.dsh_pause_seconds': args.dsh_pause_seconds},
                   args.dsh_turns * (args.dsh_pause_seconds + 100) + 600)]
-    for kind, suite, method, params, timeout in scenarios:
-        command = ['./gradlew', ':app:connectedDebugAndroidTest', '--console=plain',
-                   '-Pandroid.injected.device.serial=' + args.device,
-                   '-Pandroid.testInstrumentationRunnerArguments.class=io.sovware.niobium.' + suite + '#' + method]
-        command += ['-Pandroid.testInstrumentationRunnerArguments.' + k + '=' + str(v) for k, v in params.items()]
-        print(f'Starting {kind}: {params}', flush=True)
-        with (stage / (kind + '.log')).open('w') as output:
-            process = subprocess.Popen(command, cwd=ROOT / 'android',
-                                       env=os.environ | {'ANDROID_HOME': sdk, 'ANDROID_SERIAL': args.device},
-                                       stdout=output, stderr=subprocess.STDOUT, start_new_session=True)
-            deadline = time.monotonic() + timeout
-            next_progress = 0
-            completed = False
-            try:
-                while process.poll() is None:
-                    if time.monotonic() > deadline:
-                        raise TimeoutError(kind + ' scenario exceeded its deadline')
-                    if time.monotonic() >= next_progress:
-                        sample = read_progress(device, kind)
-                        if sample is not None:
-                            print(f"{kind}: {sample['elapsed_ms'] // 1000}s, {sample['counts']}", flush=True)
-                        next_progress = time.monotonic() + 30
-                    time.sleep(2)
-                require(process.returncode == 0, f'{kind} failed; inspect {stage / (kind + ".log")}')
-                completed = True
-            finally:
-                if process.poll() is None:
-                    try:
-                        os.killpg(process.pid, signal.SIGTERM)
-                    except ProcessLookupError:
-                        pass
-                    try:
-                        process.wait(10)
-                    except subprocess.TimeoutExpired:
+    with acceptance_cleanup(device) as accept:
+        for kind, suite, method, params, timeout in scenarios:
+            command = ['./gradlew', ':app:connectedDebugAndroidTest', '--console=plain',
+                       '-Pandroid.injected.device.serial=' + args.device,
+                       '-Pandroid.testInstrumentationRunnerArguments.class=io.sovware.niobium.' + suite + '#' + method]
+            command += ['-Pandroid.testInstrumentationRunnerArguments.' + k + '=' + str(v) for k, v in params.items()]
+            print(f'Starting {kind}: {params}', flush=True)
+            with (stage / (kind + '.log')).open('w') as output:
+                process = subprocess.Popen(command, cwd=ROOT / 'android',
+                                           env=os.environ | {'ANDROID_HOME': sdk, 'ANDROID_SERIAL': args.device},
+                                           stdout=output, stderr=subprocess.STDOUT, start_new_session=True)
+                deadline = time.monotonic() + timeout
+                next_progress = 0
+                try:
+                    while process.poll() is None:
+                        if time.monotonic() > deadline:
+                            raise TimeoutError(kind + ' scenario exceeded its deadline')
+                        if time.monotonic() >= next_progress:
+                            sample = read_progress(device, kind)
+                            if sample is not None:
+                                print(f"{kind}: {sample['elapsed_ms'] // 1000}s, {sample['counts']}", flush=True)
+                            next_progress = time.monotonic() + 30
+                        time.sleep(2)
+                    require(process.returncode == 0, f'{kind} failed; inspect {stage / (kind + ".log")}')
+                finally:
+                    if process.poll() is None:
                         try:
-                            os.killpg(process.pid, signal.SIGKILL)
+                            os.killpg(process.pid, signal.SIGTERM)
                         except ProcessLookupError:
                             pass
-                        process.wait(10)
-                if not completed:
-                    try:
-                        device('shell', 'am', 'force-stop', 'io.sovware.niobium.debug', check=False)
-                    except subprocess.TimeoutExpired:
-                        print('Cleanup could not reach the debug application.', file=sys.stderr)
-        results = ROOT / 'android/app/build/outputs/androidTest-results/connected/debug'
-        xmls = list(results.glob('TEST-*.xml'))
-        require(len(xmls) == 1, 'Expected one test-device report')
-        root = ET.parse(xmls[0]).getroot()
-        require(int(root.attrib['tests']) == 1, 'Expected one executed scenario')
-        require(all(int(root.attrib.get(k, 0)) == 0 for k in ['failures', 'errors', 'skipped']),
-                'Scenario failed, errored or skipped')
-        require([c.attrib['name'] for c in root.iter('testcase')] == [method], 'Wrong scenario executed')
-        shutil.copy2(xmls[0], stage / (kind + '-native.xml'))
-        samples = []
-        for log in results.rglob('logcat-*' + method + '.txt'):
-            for line in log.read_text(errors='replace').splitlines():
-                if 'NiobiumSoak' in line and '{' in line:
-                    row = json.loads(line[line.index('{'):])
-                    if row.get('kind') == kind:
-                        samples.append(row)
-        require(samples and samples[-1]['phase'] == 'scenario_passed', 'Missing final structured acceptance receipt')
-        counts = samples[-1]['sample']['counts']
-        if kind == 'idle':
-            require(counts['confirmed_delivery'] and counts['owner_stable'], 'Idle delivery or ownership failed')
-            require(samples[-1]['sample']['elapsed_ms'] >= args.idle_seconds * 1000, 'Idle hold was too short')
-        else:
-            require(counts['completed_turns'] == args.dsh_turns and counts['rooms_verified'] and counts['owner_stable'],
-                    'DSH turns, rooms or ownership failed')
-            require(samples[-1]['sample']['elapsed_ms'] >= args.dsh_turns * args.dsh_pause_seconds * 1000,
-                    'Requested DSH pause duration was not observed')
-        (stage / (kind + '-samples.json')).write_text(json.dumps(samples, indent=2) + '\n')
-        apk = ROOT / 'android/app/build/outputs/apk/debug/app-debug.apk'
-        report['scenarios'].append({'kind': kind, 'status': 'pass', 'parameters': params, 'samples': samples,
-                                    'debug_apk_sha256': sha256_file(apk)})
+                        try:
+                            process.wait(10)
+                        except subprocess.TimeoutExpired:
+                            try:
+                                os.killpg(process.pid, signal.SIGKILL)
+                            except ProcessLookupError:
+                                pass
+                            process.wait(10)
+            results = ROOT / 'android/app/build/outputs/androidTest-results/connected/debug'
+            xmls = list(results.glob('TEST-*.xml'))
+            require(len(xmls) == 1, 'Expected one test-device report')
+            root = ET.parse(xmls[0]).getroot()
+            require(int(root.attrib['tests']) == 1, 'Expected one executed scenario')
+            require(all(int(root.attrib.get(k, 0)) == 0 for k in ['failures', 'errors', 'skipped']),
+                    'Scenario failed, errored or skipped')
+            require([c.attrib['name'] for c in root.iter('testcase')] == [method], 'Wrong scenario executed')
+            shutil.copy2(xmls[0], stage / (kind + '-native.xml'))
+            samples = []
+            for log in results.rglob('logcat-*' + method + '.txt'):
+                for line in log.read_text(errors='replace').splitlines():
+                    if 'NiobiumSoak' in line and '{' in line:
+                        row = json.loads(line[line.index('{'):])
+                        if row.get('kind') == kind:
+                            samples.append(row)
+            require(samples and samples[-1]['phase'] == 'scenario_passed', 'Missing final structured acceptance receipt')
+            counts = samples[-1]['sample']['counts']
+            if kind == 'idle':
+                require(counts['confirmed_delivery'] and counts['owner_stable'], 'Idle delivery or ownership failed')
+                require(samples[-1]['sample']['elapsed_ms'] >= args.idle_seconds * 1000, 'Idle hold was too short')
+            else:
+                require(counts['completed_turns'] == args.dsh_turns and counts['rooms_verified'] and counts['owner_stable'],
+                        'DSH turns, rooms or ownership failed')
+                require(samples[-1]['sample']['elapsed_ms'] >= args.dsh_turns * args.dsh_pause_seconds * 1000,
+                        'Requested DSH pause duration was not observed')
+            (stage / (kind + '-samples.json')).write_text(json.dumps(samples, indent=2) + '\n')
+            apk = ROOT / 'android/app/build/outputs/apk/debug/app-debug.apk'
+            report['scenarios'].append({'kind': kind, 'status': 'pass', 'parameters': params, 'samples': samples,
+                                        'debug_apk_sha256': sha256_file(apk)})
+            (stage / 'validation.json').write_text(json.dumps(report, indent=2) + '\n')
+        require(git('rev-parse', 'HEAD') == source and not git('status', '--porcelain'), 'Source changed during acceptance')
+        report.update(status='pass', completed_at=datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                      memory_scope='App and instrumentation only; guest DSH/Node excluded',
+                      limitations=['Controlled-provider instrumentation acceptance; does not establish battery, Doze or real-account behavior.'])
         (stage / 'validation.json').write_text(json.dumps(report, indent=2) + '\n')
-    require(git('rev-parse', 'HEAD') == source and not git('status', '--porcelain'), 'Source changed during acceptance')
-    report.update(status='pass', completed_at=datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                  memory_scope='App and instrumentation only; guest DSH/Node excluded',
-                  limitations=['Controlled-provider instrumentation acceptance; does not establish battery, Doze or real-account behavior.'])
-    (stage / 'validation.json').write_text(json.dumps(report, indent=2) + '\n')
+        accept()
     print('PASS: controlled Android soak receipts saved to ' + str(stage), flush=True)
 
 

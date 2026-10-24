@@ -17,7 +17,7 @@ class AndroidSoakRunnerTests(unittest.TestCase):
     def test_acceptance_rejection_remains_enabled_under_optimized_python(self):
         result = subprocess.run([sys.executable, '-O', '-c',
                                  "import runpy,sys; runpy.run_path(sys.argv[1])['require'](False, 'rejected receipt')",
-                                 str(SCRIPT)], text=True, capture_output=True, timeout=15)
+                                 str(SCRIPT)], text=True, capture_output=True, timeout=15, check=False)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('RuntimeError: rejected receipt', result.stderr)
 
@@ -38,6 +38,35 @@ class AndroidSoakRunnerTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, 'ignored output directory'):
                 runner.checked_output_path(root / 'results' / 'run', root)
             self.assertEqual(runner.checked_output_path(Path(directory) / 'outside', root), (Path(directory) / 'outside').resolve())
+
+    def test_missing_sdk_properties_leaves_configuration_unset(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.assertIsNone(runner.find_sdk(root, {}))
+            (root / 'android').mkdir()
+            (root / 'android/local.properties').write_text('sdk.dir=/test/sdk\n')
+            self.assertEqual(runner.find_sdk(root, {}), '/test/sdk')
+            self.assertEqual(runner.find_sdk(root, {'ANDROID_HOME': '/env/sdk'}), '/env/sdk')
+
+    def test_receipt_failure_stops_app_but_accepted_run_does_not(self):
+        calls = []
+        def device(*args, **kwargs):
+            calls.append((args, kwargs))
+        with self.assertRaisesRegex(RuntimeError, 'Invalid receipt'):
+            with runner.acceptance_cleanup(device):
+                raise RuntimeError('Invalid receipt')
+        self.assertEqual(calls, [(('shell', 'am', 'force-stop', 'io.sovware.niobium.debug'), {'check': False})])
+        calls.clear()
+        with runner.acceptance_cleanup(device) as accept:
+            accept()
+        self.assertEqual(calls, [])
+
+    def test_cleanup_timeout_preserves_original_validation_failure(self):
+        def device(*args, **kwargs):
+            raise subprocess.TimeoutExpired('adb', 15)
+        with self.assertRaisesRegex(RuntimeError, 'Original failure'):
+            with runner.acceptance_cleanup(device):
+                raise RuntimeError('Original failure')
 
     def test_progress_timeouts_are_non_authoritative(self):
         def timeout(*args, **kwargs):
