@@ -10,6 +10,10 @@ Protocol audit: [HERMES-PARITY.md](docs/HERMES-PARITY.md).
 
 ## Active focus: Linux, macOS and Android
 
+- Android APK quality is the current execution priority: delivery/draft safety,
+  responsive photo preparation, reader-controlled streaming, then session
+  browsing, accessibility and longer local-engine acceptance. The 2.2.0/code15
+  candidate is in validation; the published Android release remains 2.1.1/code14.
 - Build and ship the Compose desktop preview alongside Android; retain iOS sources
   and make its CI/signing work opt-in while desktop and Android are the priority.
   The 2.1.3 beta.1 desktop preview and Android 2.1.1/code14 are published.
@@ -23,6 +27,30 @@ Protocol audit: [HERMES-PARITY.md](docs/HERMES-PARITY.md).
   richer history and companion controls, and skill/MCP/routine surfaces.
 - Continue real-account acceptance, physical Android/16 KB execution, cross-engine
   rooms, Hermes replay and connector authorization. These remain unverified goals.
+
+## Android 2.2.0 candidate
+
+- Keep text and photo drafts until the engine confirms acceptance. Guard rapid
+  taps, persist opaque per-account/session receipts before sending, and retain
+  an explicit review lock after a lost receipt. Never replay paid prompts.
+- Fence photo-picker/dictation callbacks and image uploads by engine, client,
+  connection and chat ownership. Keep a newer draft when an older send completes.
+- Detach the exact uploaded image when a send is abandoned or rejected, using
+  Hermes' audited image.detach contract and matching local DSH behavior. A stale
+  upload handle cannot discard a replacement. Unknown delivery still needs review
+  of the conversation and queued images; no automatic prompt retry runs.
+- Accept Hermes' optional pathless upload reply by completing its originally
+  authorized send against the captured session. Serialize local upload, detach
+  and submit edits to prevent cleanup racing a later prompt.
+- Enforce HTTPS for new and saved remote DSH web workspaces, including WebView
+  navigation. Android's network policy permits cleartext only on literal loopback.
+- Prepare photos on a serial background worker with input/output/pixel limits,
+  EXIF orientation, transparency, downsampling and a small in-app preview.
+- Share a measured scrolling policy between DMs and rooms. Preserve older reading
+  while streaming and offer Latest messages, including tall replies and resizing.
+- Validate JVM contracts, native UI/photo and delivery failures, real DSH provider
+  and chat/room regressions, signing and an installed signed upgrade. Physical
+  Android/16 KB and real paid-provider acceptance stay open.
 
 ## Decisions
 

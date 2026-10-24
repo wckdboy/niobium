@@ -1,6 +1,9 @@
 import { createServer } from 'node:http';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 const token = 'fixture-token+&?';
+let androidMode = null;
+const androidHistory = [], androidRequests = [];
+const androidImages = new Map();
 const server = createServer((request, response) => {
   const valid = request.url === '/proxy/api/status' && request.headers['x-hermes-session-token'] === token && request.headers.authorization === 'Bearer ' + token;
   response.writeHead(valid ? 200 : 401, { 'Content-Type': 'application/json' });
@@ -38,8 +41,31 @@ server.on('upgrade', (request, socket) => {
       case 'model.options': result({providers:[]}); break;
       case 'session.resume':
         if (Object.keys(frame.params || {}).some(key=>!['session_id','profile','source','omit_messages'].includes(key))) { reject('Unexpected session.resume keys'); break; }
-        result({session_id:'fixture-session',messages:[],revision:0}); break;
+        result({session_id:androidMode ? frame.params.session_id : 'fixture-session',messages:androidMode ? androidHistory : [],revision:0}); break;
+      case 'fixture.android':
+        if (typeof frame.params?.mode === 'string') androidMode = {mode:frame.params.mode,delay:frame.params.delay || 0,attachDelay:frame.params.attach_delay || 0,pathless:frame.params.pathless===true};
+        result({requests:androidRequests,history:androidHistory,queued_images:androidImages.size}); break;
+      case 'image.attach_bytes': {
+        const path = 'fixture-image-' + randomUUID();androidImages.set(frame.params.session_id,path);
+        androidRequests.push({method:frame.method,profile:frame.params.profile,session:frame.params.session_id});
+        setTimeout(()=>result({attached:true,...(androidMode?.pathless?{}:{path}),count:1}),androidMode?.attachDelay || 0); break;
+      }
+      case 'image.detach': {
+        const detached=androidImages.get(frame.params.session_id)===frame.params.path;
+        if(detached)androidImages.delete(frame.params.session_id);
+        androidRequests.push({method:frame.method,profile:frame.params.profile,session:frame.params.session_id});
+        result({detached,count:androidImages.has(frame.params.session_id)?1:0});break;
+      }
       case 'prompt.submit':
+        if (androidMode) {
+          androidRequests.push({method:frame.method,text:frame.params.text,submission_id:frame.params.submission_id,profile:frame.params.profile,session:frame.params.session_id,image:androidImages.get(frame.params.session_id)||null});
+          if (androidMode.mode === 'reject') { result({accepted:false}); break; }
+          androidImages.delete(frame.params.session_id);
+          androidHistory.push({row_id:androidHistory.length+1,role:'user',text:frame.params.text});
+          if (androidMode.mode === 'drop') { socket.destroy(); break; }
+          setTimeout(()=>{ event('message.complete',{text:'Android confirmed reply'});result({accepted:true}); },androidMode.delay);
+          break;
+        }
         if (frame.params.text === 'fixture tool results') {
           for (const [id,payload] of [['local-failed',{is_error:true}],['remote-failed',{success:false}],['completed',{is_error:false}]]) {
             event('tool.start',{tool_id:id,name:'fixture'});

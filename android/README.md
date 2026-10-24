@@ -28,9 +28,25 @@ Add `--es tab pixel-review` or `--es tab workshop` for creation captures;
 `--es bot forge`, `--es room demo-launch`, `--es tab rooms` and
 `--es tab activity` select other demo surfaces.
 
-Photos, dictation and routine controls exist on both platforms. Android DSH is
-currently remote; an embedded Linux runtime remains a separate gate.
-Cleartext supports self-hosted LAN gateways; HTTPS/private networking also work.
+Hermes and embedded DSH have separate engine/session owners and can run side by
+side. DSH runs in the app-private ARM64 PRoot/Alpine runtime under a foreground
+service; its Pixels use the same native chat and room surfaces. Provider setup,
+model selection and preset creation are native. See [ANDROID-DSH.md](../docs/ANDROID-DSH.md)
+for runtime packaging and remaining physical-device acceptance.
+
+Photos use the system image picker, bounded background decoding, orientation
+correction, a small preview and resized uploads. DMs and rooms preserve older
+reading positions while replies stream; Latest messages resumes following.
+Direct-message drafts clear after engine acceptance. Opaque pending receipts
+survive app restart and block another send after uncertain delivery until the
+user reviews it; the app never automatically replays the prompt. Text drafts are
+bounded in-memory per conversation, not persisted across process death.
+Abandoned/rejected uploads are detached by their exact engine-returned handle.
+After a lost connection, review the engine's queued photos as well as the chat
+before unlocking an uncertain send.
+
+Use HTTPS for remote gateways. Cleartext HTTP is limited to literal loopback for
+the private local runtime; LAN hosts need HTTPS or a secure tunnel.
 
 See [HERMES-PARITY.md](../docs/HERMES-PARITY.md) for evidence and remaining gaps.
 Demo/build checks do not establish live provider, authorization or background

@@ -13,7 +13,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
@@ -22,6 +21,8 @@ import io.sovware.niobium.runtime.LocalRuntimeState
 import io.sovware.niobium.runtime.RuntimePhase
 
 enum class AgentEngine { HERMES, DSH }
+
+data class ChatContext(val owner: String, val connection: Int, val chat: Int, val engine: AgentEngine, val profile: String?, val session: String?)
 
 data class NbState(
     val engine: AgentEngine = AgentEngine.HERMES,
@@ -61,6 +62,10 @@ data class NbState(
     val clarify: ClarifyRequest? = null,
     val credentialRequests: List<CredentialRequest> = emptyList(),
     val loadingChat: Boolean = false,
+    val sendingChat: Boolean = false,
+    val deliveryUnconfirmed: Boolean = false,
+    val deliveryAccepted: Boolean = false,
+    val submissionMessageId: String? = null,
     val historyHasMore: Boolean = false,
     val historyBeforeSeq: Int? = null,
     val loadingHistory: Boolean = false,
@@ -70,7 +75,7 @@ data class NbState(
     val lastSync: Long? = null
 ) {
     val canSubmitChat: Boolean
-        get() = activeBot != null && !loadingChat && (demo || (connected && sessionId != null))
+        get() = activeBot != null && !loadingChat && !sendingChat && !deliveryUnconfirmed && (demo || (connected && sessionId != null))
 }
 
 class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine? = null) : AndroidViewModel(app) {
@@ -93,6 +98,37 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
     private val roomReceipts = RoomReceiptBook(app)
     private val providerPrefs = app.getSharedPreferences("niobium", android.content.Context.MODE_PRIVATE)
     private var localToken: String? = null
+    private val deliveryPrefs = app.getSharedPreferences("niobium.chat.deliveries", android.content.Context.MODE_PRIVATE)
+    private val pendingChats = PendingChatDeliveries({ deliveryPrefs.getString("pending", null) }, { deliveryPrefs.edit().putString("pending", it).commit() })
+    private val textDrafts = linkedMapOf<String,String>()
+    val chatDraftScope: String? get() = deliveryScope()
+    fun draftText(scope: String?): String = scope?.let { textDrafts[it] }.orEmpty()
+    fun retainDraft(scope: String?, value: String) {
+        if (scope == null) return
+        if (value.isEmpty()) textDrafts.remove(scope) else { textDrafts.remove(scope); textDrafts[scope] = value }
+        while (textDrafts.size > 64) textDrafts.remove(textDrafts.keys.first())
+    }
+    private val chatOwner = UUID.randomUUID().toString()
+    val chatContext: ChatContext get() = ChatContext(chatOwner, connectionEpoch, chatEpoch, state.engine, state.activeBot?.id, state.sessionId)
+    private fun deliveryScope(snapshot: NbState = state): String? {
+        val session = snapshot.sessionId ?: return null
+        val bot = snapshot.activeBot ?: return null
+        val connection = snapshot.connection ?: return null
+        return PendingChatDeliveries.scope(snapshot.engine == AgentEngine.DSH, connection.url, connection.token, bot.name, session)
+    }
+    fun acknowledgeUnconfirmedDelivery() {
+        if (state.sendingChat) return
+        val scope = deliveryScope() ?: return
+        val context = chatContext
+        state = state.copy(sendingChat = true)
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) { pendingChats.resolve(scope) }
+                if (chatContext == context) state = state.copy(deliveryUnconfirmed = false, deliveryAccepted = false, submissionMessageId = null)
+            } catch (e: Exception) { if (e is kotlinx.coroutines.CancellationException) throw e; if (chatContext == context) showError(e.message ?: "Delivery receipt could not be cleared.") }
+            finally { if (chatContext == context) state = state.copy(sendingChat = false) }
+        }
+    }
 
     var state by mutableStateOf(NbState(engine = managedEngine ?: AgentEngine.HERMES))
         private set
@@ -145,7 +181,7 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
         viewModelScope.launch {
             val normalized = normalizeUrl(rawUrl)
             if (normalized == null) {
-                state = state.copy(error = "Enter a full gateway address, like http://192.168.1.20:9119")
+                state = state.copy(error = "Enter a full HTTPS gateway address, or HTTP on literal loopback.")
                 return@launch
             }
             if (token.isBlank()) {
@@ -417,7 +453,7 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
         state.credentialRequests.forEach { gateway?.respond(it.rpcId, JSONObject().put("value", "")) }
         state = state.copy(activeBot = bot, messages = emptyList(), sessionId = null, companionTasks = emptyList(), companionError = null,
             sessionRevision = 0, sessionGeneration = null, sessionReasoning = null, modelChoices = emptyList(), usage = null, credentialRequests = emptyList(),
-            loadingChat = true, historyHasMore = false, historyBeforeSeq = null, loadingHistory = false,
+            loadingChat = true, sendingChat = false, deliveryUnconfirmed = false, deliveryAccepted = false, submissionMessageId = null, historyHasMore = false, historyBeforeSeq = null, loadingHistory = false,
             approvals = emptyList(), clarify = null, turnActive = false, turnStatus = "")
         viewModelScope.launch {
             if (state.demo) {
@@ -469,7 +505,7 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
         streamingId = null
         state.credentialRequests.forEach { gateway?.respond(it.rpcId, JSONObject().put("value", "")) }
         state = state.copy(activeBot = null, sessionId = null, credentialRequests = emptyList(), companionTasks = emptyList(), companionError = null, sessionRevision = 0, modelChoices = emptyList(),
-            usage = null, messages = emptyList(), approvals = emptyList(), clarify = null, turnActive = false, loadingChat = false)
+            usage = null, sendingChat = false, deliveryUnconfirmed = false, deliveryAccepted = false, submissionMessageId = null, messages = emptyList(), approvals = emptyList(), clarify = null, turnActive = false, loadingChat = false)
     }
 
     private fun restoreChat(snapshot: JSONObject, fallbackSessionId: String? = null) {
@@ -484,6 +520,8 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
             messages = restored + if (streaming || partial.isNotEmpty()) listOf(
                 ChatMessage("inflight", "assistant", partial, streaming = streaming)) else emptyList(),
             turnActive = snapshot.optBoolean("running", streaming), turnStatus = "")
+        val pending = if (state.demo) false else deliveryScope()?.let { scope -> runCatching { pendingChats.pending(scope) }.getOrElse { true } } ?: false
+        state = state.copy(sendingChat = false, deliveryUnconfirmed = pending, deliveryAccepted = false, submissionMessageId = null)
         state = state.copy(historyHasMore = snapshot.optBoolean("history_has_more"), historyBeforeSeq = snapshot.i("history_before_seq"), loadingHistory = false)
     }
 
@@ -506,47 +544,82 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
         }
     }
 
-    fun send(text: String, imageBase64: String? = null, mime: String = "image/jpeg") {
-        if (!state.canSubmitChat || (!state.demo && gateway == null)) {
-            showError("Wait for this chat to connect before sending.")
-            return
-        }
-        val value = text.trim()
-        if (value.isEmpty() && imageBase64 == null) return
-        if (!state.demo && state.sessionId == null) {
-            showError("This chat isn’t attached to a session yet.")
-            return
+    fun send(text: String, imageBase64: String? = null, mime: String = "image/jpeg", onAccepted: () -> Unit = {}) {
+        val snapshot = state
+        if (!snapshot.canSubmitChat || (!snapshot.demo && gateway == null)) { showError("Wait for this chat or review its pending delivery before sending."); return }
+        val value = text
+        if (value.isBlank() && imageBase64 == null) return
+        if (value.length > 32000 || imageBase64 != null && (imageBase64.length > 6 * 1024 * 1024 || mime !in listOf("image/jpeg", "image/png", "image/webp", "image/gif"))) {
+            showError("Use a shorter message or a smaller supported image."); return
         }
         val displayed = value.ifBlank { "Look at this image." }
-        state = state.copy(messages = state.messages + ChatMessage(UUID.randomUUID().toString(), "user", displayed),
-            turnActive = true, turnStatus = "")
-        if (state.demo) {
-            demoTurn?.cancel()
-            demoTurn = viewModelScope.launch { demoReply(displayed) }
-            return
+        val message = ChatMessage(UUID.randomUUID().toString(), "user", displayed)
+        if (snapshot.demo) {
+            state = snapshot.copy(messages = snapshot.messages + message, turnActive = true, turnStatus = "")
+            onAccepted(); demoTurn?.cancel(); demoTurn = viewModelScope.launch { demoReply(displayed) }; return
         }
         val client = gateway ?: return
-        val sessionId = state.sessionId ?: return
-        val bot = state.activeBot ?: return
+        val session = snapshot.sessionId ?: return
+        val bot = snapshot.activeBot ?: return
+        val scope = deliveryScope(snapshot) ?: return
+        val context = chatContext
+        fun owns() = gateway === client && chatContext == context
+        state = snapshot.copy(sendingChat = true, submissionMessageId = message.id)
         viewModelScope.launch {
+            var receiptId: String? = null
+            var attempted = false
+            var accepted = false
+            var attachmentPath: String? = null
+            suspend fun discardPhoto() {
+                val path = attachmentPath ?: return
+                val result = client.request("image.detach", JSONObject().put("session_id", session).put("profile", bot.name).put("path", path), 15_000)
+                check(result.opt("detached") is Boolean) { "The engine did not confirm photo removal." }
+                attachmentPath = null
+            }
             try {
+                receiptId = withContext(Dispatchers.IO) { pendingChats.reserve(scope) }
+                if (!owns()) { withContext(Dispatchers.IO) { pendingChats.resolve(scope, receiptId) }; return@launch }
+                state = state.copy(messages = state.messages + message, turnStatus = "")
+                attempted = true
                 if (imageBase64 != null) {
-                    client.request("image.attach_bytes", JSONObject()
-                        .put("session_id", sessionId).put("profile", bot.name)
-                        .put("data", imageBase64).put("mime", mime)
-                        .put("filename", "niobium-photo.jpg"), 30_000)
+                    val uploaded = withContext(Dispatchers.IO) { client.request("image.attach_bytes", JSONObject().put("session_id", session).put("profile", bot.name)
+                        .put("data", imageBase64).put("mime", mime).put("filename", "niobium-photo." + when (mime) { "image/png" -> "png"; "image/webp" -> "webp"; "image/gif" -> "gif"; else -> "jpg" }), 30_000)
+                    }
+                    attachmentPath = uploaded.s("path")?.takeIf { it.isNotBlank() && it.length <= 8192 }
+                    check(uploaded.optBoolean("attached", uploaded.optBoolean("ok", false))) { "The engine did not confirm the uploaded photo." }
+                    if (!owns() && attachmentPath != null) {
+                        discardPhoto()
+                        withContext(Dispatchers.IO) { pendingChats.resolve(scope, receiptId) }
+                        return@launch
+                    }
+                    // Hermes permits a pathless acknowledgement. Complete the authorized
+                    // transaction against its captured origin rather than abandoning an
+                    // upload which that engine cannot identify for detachment.
                 }
-                val receipt = client.request("prompt.submit", JSONObject()
-                    .put("session_id", sessionId).put("profile", bot.name).put("text", displayed)
-                    .put("submission_id", UUID.randomUUID().toString()).put("clarify_batch", true), 30_000)
-                if (state.sessionId == sessionId && receipt.has("execution_generation") && !receipt.isNull("execution_generation")) {
-                    state = state.copy(sessionGeneration = receipt.optInt("execution_generation"))
+                if (owns()) state = state.copy(turnActive = true)
+                val result = client.request("prompt.submit", JSONObject().put("session_id", session).put("profile", bot.name)
+                    .put("text", displayed).put("submission_id", receiptId).put("clarify_batch", true), 30_000)
+                check(result.optBoolean("accepted", true)) { "The engine did not confirm acceptance." }
+                accepted = true
+                attachmentPath = null
+                if (textDrafts[scope] == value) textDrafts.remove(scope)
+                if (owns()) {
+                    if (result.has("execution_generation") && !result.isNull("execution_generation")) state = state.copy(sessionGeneration = result.optInt("execution_generation"))
+                    state = state.copy(submissionMessageId = null, deliveryAccepted = true)
+                    onAccepted()
                 }
+                withContext(Dispatchers.IO) { pendingChats.resolve(scope, receiptId) }
+                if (owns()) state = state.copy(deliveryUnconfirmed = false, deliveryAccepted = false)
             } catch (e: Exception) {
                 if (e is kotlinx.coroutines.CancellationException) throw e
-                if (state.sessionId != sessionId || gateway !== client) return@launch
-                state = state.copy(turnActive = false, error = "Message failed. ${e.message}")
-            }
+                // Detach only this upload. Never clear another client's queued images
+                // and never resubmit a prompt whose acceptance is uncertain.
+                if (!accepted && attachmentPath != null) try { discardPhoto() }
+                    catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+                    catch (_: Exception) { }
+                if (owns()) state = state.copy(turnActive = if (accepted) state.turnActive else false, deliveryAccepted = accepted, deliveryUnconfirmed = attempted || runCatching { pendingChats.pending(scope) }.getOrDefault(true),
+                    error = if (accepted) "Message accepted. A local receipt could not be cleared; sending stays locked." else if (attempted) "Delivery unconfirmed. Your draft is kept. Check this conversation and any queued photos before sending again." else e.message ?: "Message was not sent.")
+            } finally { if (owns()) state = state.copy(sendingChat = false) }
         }
     }
 
@@ -629,19 +702,22 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
         }
     }
 
-    fun resumeSession(row: SessionRow, bot: BotProfile) {
+    fun resumeSession(row: SessionRow, bot: BotProfile) = resumeChat(row.sessionId, bot)
+    fun refreshChat() { val bot = state.activeBot ?: return; state.sessionId?.let { resumeChat(it, bot) } }
+    private fun resumeChat(session: String, bot: BotProfile) {
         val client = gateway ?: return
+        if (state.sendingChat) { showError("Wait for the current message to finish before reopening this chat."); return }
         val epoch = ++chatEpoch
-        state = state.copy(loadingChat = true)
+        state = state.copy(loadingChat = true, sendingChat = false, deliveryUnconfirmed = false, deliveryAccepted = false, submissionMessageId = null)
         viewModelScope.launch {
             runCatching {
                 val result = client.request("session.resume", JSONObject()
-                    .put("session_id", row.sessionId).put("profile", bot.name).put("source", chatSource), 90_000)
+                    .put("session_id", session).put("profile", bot.name).put("source", chatSource), 90_000)
                 if (chatEpoch != epoch || state.activeBot?.id != bot.id || gateway !== client) return@runCatching
-                restoreChat(result, row.sessionId)
+                restoreChat(result, session)
                 recoverPrompts(result)
                 if (state.engine == AgentEngine.DSH) client.request("local.attach", JSONObject().put("session_id", state.sessionId))
-                if (chatEpoch != epoch || gateway !== client || state.sessionId != row.sessionId) return@runCatching
+                if (chatEpoch != epoch || gateway !== client || state.sessionId != session) return@runCatching
                 state = state.copy(loadingChat = false)
                 loadModels(); loadToolsets()
             }.onFailure {
@@ -1470,15 +1546,7 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
     fun clearError() { state = state.copy(error = null) }
     fun clearToast() { state = state.copy(toast = null) }
 
-    private fun normalizeUrl(raw: String): String? {
-        var text = raw.trim()
-        if (text.isEmpty()) return null
-        if (!text.contains("://")) text = "http://$text"
-        val url = text.trimEnd('/').toHttpUrlOrNull() ?: return null
-        if (url.scheme != "http" && url.scheme != "https") return null
-        if (url.username.isNotEmpty() || url.password.isNotEmpty()) return null
-        return url.newBuilder().query(null).fragment(null).build().toString().trimEnd('/')
-    }
+    private fun normalizeUrl(raw: String): String? = normalizeAppUrl(raw)
 
     // ── Demo ─────────────────────────────────────────────────────────────────
 

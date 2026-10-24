@@ -10,6 +10,8 @@ class ChatReadinessTest {
         val attached = NbState(activeBot = bot, connected = true, sessionId = "session")
         assertTrue(attached.canSubmitChat)
         assertFalse(attached.copy(loadingChat = true).canSubmitChat)
+        assertFalse(attached.copy(sendingChat = true).canSubmitChat)
+        assertFalse(attached.copy(deliveryUnconfirmed = true).canSubmitChat)
         assertFalse(attached.copy(connected = false).canSubmitChat)
         assertFalse(attached.copy(sessionId = null).canSubmitChat)
         assertFalse(attached.copy(activeBot = null).canSubmitChat)

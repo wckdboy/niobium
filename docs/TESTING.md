@@ -27,7 +27,7 @@ cd android
 ./gradlew :app:assembleRelease
 ```
 
-Thirty Android JVM tests include real OkHttp HTTP/WebSocket exchanges with a local
+Shared-core and Android JVM tests include real OkHttp HTTP/WebSocket exchanges with a local
 Node fixture: reverse-proxy paths, token encoding/header authentication,
 out-of-order replies, server errors, timeout/cancellation recovery, typed
 server-request IDs, approval replies and disconnecting an in-flight request.
@@ -35,6 +35,25 @@ Provisioning tests verify the actual creation fields, reviewed tool and skill
 pins, disabled MCP servers, and failure after creation without retrying it.
 Schema tests cover permissions, adult age, malformed output and custom
 companion persistence through serialization. The fixture uses no model provider.
+
+Android delivery tests exercise persistent opaque receipts, account/session
+isolation, concurrent engine owners, corrupt/full storage, rapid taps, rejected
+sends, lost acceptance across client recreation, draft retention and leaving a
+chat during image upload. Native photo cases verify bounded preparation,
+orientation, alpha preservation and invalid input. Native Compose history cases
+cover older reading positions and tall streaming replies across width changes.
+Saved-state restoration proves reading stays paused through recreation. URL
+tests cover saved and entered endpoints; native network-policy checks verify
+that only literal loopback permits cleartext. Optional pathless Hermes uploads
+finish against their original session, while identified abandoned uploads detach.
+The local adapter's concurrent-detach regression fails before serialization and
+passes after it; stale upload handles cannot remove another image.
+Independent-session regressions hold one prompt open while another Pixel submits,
+preserve same-session ordering, enforce four concurrent image slots and release
+the bounded pending-operation budget after completion.
+Run `:app:connectedDebugAndroidTest` on ARM64 to execute these with the existing
+character and real DSH suites. Inspect the resulting XML test counts; a successful
+filtered invocation alone does not prove every intended class ran.
 
 iOS, with XcodeGen and an available iPhone simulator:
 
