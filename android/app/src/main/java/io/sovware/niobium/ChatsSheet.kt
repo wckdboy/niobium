@@ -68,7 +68,7 @@ internal fun ChatBrowser(owner: String, title: String, local: Boolean, rows: Lis
         Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
             PixelButton("Working",PixelGlyph.ACTIVITY,Modifier.weight(1f).testTag("sessions.working").semantics {selected=running},
                 secondary=!running) {running=!running}
-            PixelButton("Refresh",PixelGlyph.LINK,Modifier.weight(1f),secondary=true,enabled=!loading,onClick=onRefresh)
+            PixelButton("Refresh",PixelGlyph.REFRESH,Modifier.weight(1f),secondary=true,enabled=!loading,onClick=onRefresh)
         }
         if(loading) LinearProgressIndicator(Modifier.fillMaxWidth().height(2.dp),color=Nb.Ion)
         error?.let {Text(it,color=Nb.Rose,fontSize=12.sp,modifier=Modifier.testTag("sessions.error"))}

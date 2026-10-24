@@ -24,6 +24,8 @@ enum class AgentEngine { HERMES, DSH }
 
 data class ChatContext(val owner: String, val connection: Int, val chat: Int, val engine: AgentEngine, val profile: String?, val session: String?)
 
+data class InventoryLoad(val loading: Boolean = false, val error: String? = null, val warning: String? = null)
+
 data class NbState(
     val engine: AgentEngine = AgentEngine.HERMES,
     val engineStatus: String = "",
@@ -38,6 +40,13 @@ data class NbState(
     val groupsHaveDriver: Boolean = false,
     val toolsets: List<Toolset> = emptyList(),
     val routines: List<Routine> = emptyList(),
+    val toolsLoad: InventoryLoad = InventoryLoad(),
+    val skillsLoad: InventoryLoad = InventoryLoad(),
+    val mcpLoad: InventoryLoad = InventoryLoad(),
+    val routinesLoad: InventoryLoad = InventoryLoad(),
+    val toolsUpdating: Boolean = false,
+    val skillsUpdating: Boolean = false,
+    val routinesUpdating: Boolean = false,
     val companionTasks: List<CompanionTask> = emptyList(),
     val companionError: String? = null,
     val companionsLoading: Boolean = false,
@@ -76,6 +85,13 @@ data class NbState(
     val toast: String? = null,
     val lastSync: Long? = null
 ) {
+    val canChangeTools: Boolean
+        get() = connected && !loadingChat && !toolsUpdating && !toolsLoad.loading && toolsLoad.error == null &&
+            (demo || (sessionId != null && activeBot != null))
+    val canReloadSkills: Boolean
+        get() = connected && !loadingChat && !demo && !skillsUpdating && !skillsLoad.loading && skillsLoad.error == null
+    val canChangeRoutines: Boolean
+        get() = connected && !loadingChat && !routinesUpdating && !routinesLoad.loading && routinesLoad.error == null && activeBot != null
     val canSubmitChat: Boolean
         get() = activeBot != null && !loadingChat && !sendingChat && !deliveryUnconfirmed && (demo || (connected && sessionId != null))
 }
@@ -99,6 +115,26 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
     private var sessionsEpoch = 0
     private var sessionsLoad: Job? = null
     private var groupSessionIds = emptySet<String>()
+    private data class InventoryTarget(val client: GatewayClient, val owner: ChatContext, val profile: String)
+    private data class InventoryRequest(val target: InventoryTarget, val revision: Long)
+    private inner class InventoryGate {
+        private var revision = 0L
+        fun invalidate() { revision++ }
+        fun begin(): InventoryRequest? = inventoryTarget()?.let { InventoryRequest(it, ++revision) }
+        fun owns(request: InventoryRequest) = request.revision == revision && ownsTarget(request.target)
+    }
+    private fun inventoryTarget() = gateway?.let { InventoryTarget(it, chatContext, state.activeBot?.name ?: "default") }
+    private fun ownsTarget(target: InventoryTarget) = gateway === target.client && chatContext == target.owner
+    private val toolsGate = InventoryGate()
+    private val skillsGate = InventoryGate()
+    private val mcpGate = InventoryGate()
+    private val routinesGate = InventoryGate()
+    private fun clearInventories() {
+        toolsGate.invalidate(); skillsGate.invalidate(); mcpGate.invalidate(); routinesGate.invalidate()
+        state = state.copy(toolsets = if (state.demo) DemoData.toolsets else emptyList(), skills = emptyMap(), mcpServers = emptyList(), routines = emptyList(),
+            toolsLoad = InventoryLoad(), skillsLoad = InventoryLoad(), mcpLoad = InventoryLoad(), routinesLoad = InventoryLoad(),
+            toolsUpdating = false, skillsUpdating = false, routinesUpdating = false)
+    }
     private val roomReceipts = RoomReceiptBook(app)
     private val providerPrefs = app.getSharedPreferences("niobium", android.content.Context.MODE_PRIVATE)
     private var localToken: String? = null
@@ -318,6 +354,7 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
 
     fun disconnect(forget: Boolean = false) {
         connectionEpoch++; chatEpoch++; groupEpoch++
+        clearInventories()
         sessionsEpoch++; sessionsLoad?.cancel()
         groupPoll?.cancel(); demoTurn?.cancel()
         gateway?.disconnect(silent = true)
@@ -434,26 +471,35 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
         }
     }
 
-    suspend fun loadToolsets() {
-        val client = gateway ?: return
-        val session = state.sessionId
+    suspend fun loadToolsets(recover: Boolean = false) {
+        if (state.demo || state.toolsUpdating || (!recover && state.toolsLoad.error != null)) return
+        val request = toolsGate.begin() ?: return
+        state = state.copy(toolsLoad = InventoryLoad(loading = true))
         try {
             val params = JSONObject()
-            session?.let { params.put("session_id", it) }
-            val result = client.request("tools.list", params)
-            if (gateway !== client || state.sessionId != session) return
-            state = state.copy(toolsets = result.objects("toolsets").mapNotNull { j ->
-                if (j.s("name").isNullOrBlank()) null else Toolset.parse(j)
-            })
-        } catch (_: Exception) {
+            request.target.owner.session?.let { params.put("session_id", it) }
+            val result = request.target.client.request("tools.list", params)
+            if (!toolsGate.owns(request)) return
+            val toolsets = InventoryCatalogs.objects(result, "toolsets").map { j ->
+                check(!j.s("name").isNullOrBlank()) { "Invalid toolset name" }
+                Toolset.parse(j)
+            }.distinctBy { it.name }
+            state = state.copy(toolsets = toolsets, toolsLoad = InventoryLoad())
+        } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+        catch (_: Exception) {
+            if (toolsGate.owns(request)) state = state.copy(toolsLoad = InventoryLoad(error = "Tools couldn't be loaded. Try again."))
+        } finally {
+            if (toolsGate.owns(request) && state.toolsLoad.loading) state = state.copy(toolsLoad = state.toolsLoad.copy(loading = false))
         }
     }
+    fun refreshTools() { viewModelScope.launch { loadToolsets(recover = true) } }
 
     // ── Direct chats ─────────────────────────────────────────────────────────
 
     fun openBot(bot: BotProfile) {
         if (state.activeBot?.id == bot.id && state.loadingChat) return
         val epoch = ++chatEpoch
+        clearInventories()
         sessionsEpoch++; sessionsLoad?.cancel()
         demoTurn?.cancel()
         streamingId = null
@@ -509,6 +555,7 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
 
     fun closeBot() {
         chatEpoch++
+        clearInventories()
         sessionsEpoch++; sessionsLoad?.cancel()
         demoTurn?.cancel()
         streamingId = null
@@ -634,55 +681,69 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
     }
 
     fun loadMCP() {
-        val client = gateway ?: return
-        if (state.demo) { state = state.copy(mcpServers = emptyList()); return }
+        if (state.demo) return
+        val request = mcpGate.begin() ?: return
+        state = state.copy(mcpLoad = InventoryLoad(loading = true))
         viewModelScope.launch {
-            runCatching {
-                val profile = state.activeBot?.name ?: "default"
-                val listed = client.request("mcp.servers.list", JSONObject().put("profile", profile), 20_000)
-                val statuses = runCatching { client.request("mcp.servers.status", JSONObject().put("profile", profile), 20_000) }
-                    .getOrNull()?.a("servers")?.let { arr -> (0 until arr.length()).mapNotNull { arr.optJSONObject(it) } } ?: emptyList()
-                val byName = statuses.associateBy { it.s("name") ?: "" }
-                val arr = listed.a("servers") ?: JSONArray()
-                val rows = (0 until arr.length()).mapNotNull { i ->
-                    val j = arr.optJSONObject(i) ?: return@mapNotNull null
-                    val name = j.s("name") ?: return@mapNotNull null
+            try {
+                val params = JSONObject().put("profile", request.target.profile)
+                val listed = request.target.client.request("mcp.servers.list", params, 20_000)
+                if (!mcpGate.owns(request)) return@launch
+                val configured = InventoryCatalogs.objects(listed, "servers")
+                var statusUnavailable = false
+                val statuses = try {
+                    val status = request.target.client.request("mcp.servers.status", params, 20_000)
+                    InventoryCatalogs.objects(status, "servers")
+                }
+                    catch (e: kotlinx.coroutines.CancellationException) { throw e }
+                    catch (_: Exception) { statusUnavailable = true; emptyList() }
+                if (!mcpGate.owns(request)) return@launch
+                val byName = statuses.associateBy { it.s("name") }
+                val rows = configured.map { j ->
+                    val name = j.s("name")?.takeIf { it.isNotBlank() } ?: error("Invalid MCP name")
                     val st = byName[name]
-                    MCPServerRow(name, j.s("transport") ?: "stdio", st?.s("status") ?: if (j.optBoolean("enabled", true)) "configured" else "disabled",
+                    MCPServerRow(name, j.s("transport") ?: "stdio", st?.s("status") ?: if (j.optBoolean("enabled", true)) "unknown" else "disabled",
                         st?.optBoolean("connected", false) ?: false, j.optBoolean("enabled", true),
                         st?.optInt("tools", 0) ?: 0, j.s("source") ?: "")
-                }
-                state = state.copy(mcpServers = rows)
-            }
+                }.distinctBy { it.name }
+                state = state.copy(mcpServers = rows, mcpLoad = InventoryLoad(warning = if (statusUnavailable) "Status unavailable. Configuration is shown." else null))
+            } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+            catch (_: Exception) { if (mcpGate.owns(request)) state = state.copy(mcpLoad = InventoryLoad(error = "MCP servers couldn't be loaded. Try again.")) }
+            finally { if (mcpGate.owns(request) && state.mcpLoad.loading) state = state.copy(mcpLoad = state.mcpLoad.copy(loading = false)) }
         }
     }
 
-    fun loadSkills() {
-        val client = gateway ?: return
-        if (state.demo) { state = state.copy(skills = emptyMap()); return }
+    fun loadSkills(recover: Boolean = false) {
+        if (state.demo || state.skillsUpdating || (!recover && state.skillsLoad.error != null)) return
+        val request = skillsGate.begin() ?: return
+        state = state.copy(skillsLoad = InventoryLoad(loading = true))
         viewModelScope.launch {
-            runCatching {
-                val result = client.request("skills.manage", JSONObject()
-                    .put("action", "list").put("profile", state.activeBot?.name ?: "default"), 20_000)
-                val obj = result.o("skills") ?: JSONObject()
-                val map = mutableMapOf<String, List<String>>()
-                obj.keys().forEach { key ->
-                    val arr = obj.optJSONArray(key) ?: return@forEach
-                    map[key] = (0 until arr.length()).map { arr.optString(it) }
-                }
-                state = state.copy(skills = map)
-            }
+            try {
+                val result = request.target.client.request("skills.manage", JSONObject().put("action", "list").put("profile", request.target.profile), 20_000)
+                if (!skillsGate.owns(request)) return@launch
+                state = state.copy(skills = InventoryCatalogs.skills(result), skillsLoad = InventoryLoad())
+            } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+            catch (_: Exception) { if (skillsGate.owns(request)) state = state.copy(skillsLoad = InventoryLoad(error = "Skills couldn't be loaded. Try again.")) }
+            finally { if (skillsGate.owns(request) && state.skillsLoad.loading) state = state.copy(skillsLoad = state.skillsLoad.copy(loading = false)) }
         }
     }
 
-    fun reloadSkills() {
-        val client = gateway ?: return
+    fun refreshSkills() { loadSkills(recover = true) }
+
+    fun reloadSkills(owner: ChatContext = chatContext) {
+        if (owner != chatContext || !state.canReloadSkills) return
+        val target = inventoryTarget() ?: return
+        skillsGate.invalidate()
+        state = state.copy(skillsUpdating = true)
         viewModelScope.launch {
-            runCatching {
-                client.request("skills.reload", JSONObject().put("profile", state.activeBot?.name ?: "default"), 30_000)
-                loadSkills()
-                showToast("Skills reloaded")
-            }
+            try {
+                target.client.request("skills.reload", JSONObject().put("profile", target.profile), 30_000)
+                if (!ownsTarget(target)) return@launch
+                state = state.copy(skillsUpdating = false)
+                loadSkills(); showToast("Skills reloaded")
+            } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+            catch (_: Exception) { if (ownsTarget(target)) state = state.copy(skillsLoad = InventoryLoad(error = "Reload unconfirmed. Refresh skills before trying again.")) }
+            finally { if (ownsTarget(target)) state = state.copy(skillsUpdating = false) }
         }
     }
 
@@ -730,6 +791,7 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
         val client = gateway ?: return
         if (state.sendingChat) { showError("Wait for the current message to finish before reopening this chat."); return }
         val epoch = ++chatEpoch
+        clearInventories()
         state = state.copy(loadingChat = true, sendingChat = false, deliveryUnconfirmed = false, deliveryAccepted = false, submissionMessageId = null)
         viewModelScope.launch {
             runCatching {
@@ -1443,78 +1505,85 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
         loadCompanions()
     }
 
-    fun loadRoutines(bot: BotProfile) {
+    fun loadRoutines(bot: BotProfile, recover: Boolean = false) {
+        if (state.activeBot?.id != bot.id || state.routinesUpdating || (!recover && state.routinesLoad.error != null)) return
         if (state.demo) {
-            state = state.copy(routines = DemoData.routines.filter { it.bot == bot.name || it.bot.isEmpty() })
+            state = state.copy(routines = DemoData.routines.filter { it.bot == bot.name || it.bot.isEmpty() }, routinesLoad = InventoryLoad())
             return
         }
-        val client = gateway ?: return
-        viewModelScope.launch {
-            runCatching {
-                val result = client.request("cron.manage", JSONObject()
-                    .put("action", "list").put("profile", bot.name).put("include_disabled", true), 20_000)
-                val jobs = result.a("jobs")?.let { arr -> (0 until arr.length()).mapNotNull { arr.optJSONObject(it) } } ?: emptyList()
-                state = state.copy(routines = jobs.mapNotNull { Routine.parse(it, bot.name) })
-            }.onFailure { state = state.copy(routines = emptyList()) }
-        }
-    }
-
-    fun createRoutine(name: String, schedule: String, prompt: String, bot: BotProfile, done: () -> Unit = {}) {
-        if (state.demo) {
-            state = state.copy(routines = state.routines + Routine(name, name, schedule, prompt, true, "Tomorrow, 08:00", bot.name))
-            done(); return
-        }
-        val client = gateway ?: return
-        viewModelScope.launch {
-            runCatching {
-                client.request("cron.manage", JSONObject().put("action", "add").put("name", name)
-                    .put("schedule", schedule).put("prompt", prompt).put("profile", bot.name), 20_000)
-                loadRoutines(bot)
-                done()
-            }.onFailure { showError("Could not create routine. ${it.message}") }
-        }
-    }
-
-    fun deleteRoutine(routine: Routine, bot: BotProfile) {
-        if (state.demo) {
-            state = state.copy(routines = state.routines.filterNot { it.id == routine.id })
-            return
-        }
-        val client = gateway ?: return
-        viewModelScope.launch {
-            runCatching {
-                client.request("cron.manage", JSONObject().put("action", "remove")
-                    .put("name", routine.id).put("profile", bot.name), 20_000)
-                loadRoutines(bot)
-            }
-        }
-    }
-
-    fun toggleToolset(toolset: Toolset) {
-        if (state.demo) {
-            state = state.copy(toolsets = state.toolsets.map {
-                if (it.name == toolset.name) it.copy(enabled = !it.enabled) else it
-            })
-            return
-        }
-        val client = gateway ?: return
-        val sessionId = state.sessionId
-        if (sessionId == null) {
-            showError("Open a pixel chat first — toolsets are toggled per live session.")
-            return
-        }
-        val bot = state.activeBot ?: return
+        val request = routinesGate.begin() ?: return
+        state = state.copy(routinesLoad = InventoryLoad(loading = true))
         viewModelScope.launch {
             try {
-                client.request("tools.configure", JSONObject()
-                    .put("session_id", sessionId).put("profile", bot.name)
-                    .put("action", if (toolset.enabled) "disable" else "enable")
-                    .put("names", JSONArray().put(toolset.name)))
+                val result = request.target.client.request("cron.manage", JSONObject()
+                    .put("action", "list").put("profile", request.target.profile).put("include_disabled", true), 20_000)
+                if (!routinesGate.owns(request)) return@launch
+                val routines = InventoryCatalogs.objects(result, "jobs").map { row ->
+                    Routine.parse(row, bot.name)?.takeIf { it.id.isNotBlank() } ?: error("Invalid routine")
+                }.distinctBy { it.id }
+                state = state.copy(routines = routines, routinesLoad = InventoryLoad())
+            } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+            catch (_: Exception) { if (routinesGate.owns(request)) state = state.copy(routinesLoad = InventoryLoad(error = "Routines couldn't be loaded. Try again.")) }
+            finally { if (routinesGate.owns(request) && state.routinesLoad.loading) state = state.copy(routinesLoad = state.routinesLoad.copy(loading = false)) }
+        }
+    }
+
+    fun refreshRoutines(bot: BotProfile) { loadRoutines(bot, recover = true) }
+
+    fun createRoutine(name: String, schedule: String, prompt: String, bot: BotProfile, owner: ChatContext = chatContext, done: () -> Unit = {}) {
+        if (!canChangeRoutines(bot, owner) || name.isBlank() || schedule.isBlank() || prompt.isBlank()) return
+        if (state.demo) {
+            state = state.copy(routines = state.routines + Routine(UUID.randomUUID().toString(), name.trim(), schedule.trim(), prompt.trim(), true, "Tomorrow, 08:00", bot.name))
+            done(); return
+        }
+        changeRoutine(bot, JSONObject().put("action", "add").put("name", name.trim()).put("schedule", schedule.trim()).put("prompt", prompt.trim()), done)
+    }
+
+    fun deleteRoutine(routine: Routine, bot: BotProfile, owner: ChatContext = chatContext) {
+        if (!canChangeRoutines(bot, owner) || routine.bot != bot.name || routine !in state.routines) return
+        if (state.demo) { state = state.copy(routines = state.routines.filterNot { it.id == routine.id }); return }
+        changeRoutine(bot, JSONObject().put("action", "remove").put("name", routine.id))
+    }
+
+    private fun canChangeRoutines(bot: BotProfile, owner: ChatContext) = owner == chatContext && state.activeBot?.id == bot.id && state.canChangeRoutines
+
+    private fun changeRoutine(bot: BotProfile, params: JSONObject, done: () -> Unit = {}) {
+        val target = inventoryTarget() ?: return
+        routinesGate.invalidate()
+        state = state.copy(routinesUpdating = true)
+        viewModelScope.launch {
+            try {
+                target.client.request("cron.manage", params.put("profile", target.profile), 20_000)
+                if (!ownsTarget(target)) return@launch
+                state = state.copy(routinesUpdating = false)
+                loadRoutines(bot); done()
+            } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+            catch (_: Exception) { if (ownsTarget(target)) state = state.copy(routinesLoad = InventoryLoad(error = "Routine change unconfirmed. Refresh before trying again.")) }
+            finally { if (ownsTarget(target)) state = state.copy(routinesUpdating = false) }
+        }
+    }
+
+    fun toggleToolset(toolset: Toolset, owner: ChatContext = chatContext) {
+        if (owner != chatContext || !state.canChangeTools || toolset !in state.toolsets) return
+        if (state.demo) {
+            state = state.copy(toolsets = state.toolsets.map { if (it.name == toolset.name) it.copy(enabled = !it.enabled) else it })
+            return
+        }
+        val target = inventoryTarget() ?: return
+        val sessionId = target.owner.session ?: return
+        if (state.activeBot == null) return
+        toolsGate.invalidate()
+        state = state.copy(toolsUpdating = true)
+        viewModelScope.launch {
+            try {
+                target.client.request("tools.configure", JSONObject().put("session_id", sessionId).put("profile", target.profile)
+                    .put("action", if (toolset.enabled) "disable" else "enable").put("names", JSONArray().put(toolset.name)))
+                if (!ownsTarget(target)) return@launch
+                state = state.copy(toolsUpdating = false)
                 loadToolsets()
-                showToast("${toolset.name} ${if (toolset.enabled) "disabled" else "enabled"} for ${bot.title}")
-            } catch (e: Exception) {
-                state = state.copy(error = "Could not update tools. ${e.message}")
-            }
+            } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+            catch (_: Exception) { if (ownsTarget(target)) state = state.copy(toolsLoad = InventoryLoad(error = "Tool change unconfirmed. Refresh before trying again.")) }
+            finally { if (ownsTarget(target)) state = state.copy(toolsUpdating = false) }
         }
     }
 

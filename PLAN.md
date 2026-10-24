@@ -793,3 +793,14 @@ Evidence: [release validation](docs/evidence/beta213-release-validation.json).
   Refresh Android demo conversations to match APK development and device handoff.
 - Validate 1,000-row search/filter UI, failed refresh with retained rows, out-of-order
   refreshes and delayed responses after switching Pixels before publication.
+
+
+## Android next candidate: isolated inventories
+
+Bind toolsets, skills, MCP and routines to the captured Pixel and newest request.
+Clear old inventories on chat changes, retain rows after failed refreshes, show
+loading/error/retry controls and distinguish missing MCP status from configuration.
+Fence mutable controls by their UI owner and serialize repeated taps; never replay
+an unconfirmed tool/routine/reload operation. Use coherent pixel panels, readable
+type and 48 dp toggle targets. Validate the race before and after the fix, then
+run native runtime/chat regressions and CodeRabbit before release.

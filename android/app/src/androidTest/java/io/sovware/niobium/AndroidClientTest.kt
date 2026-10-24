@@ -138,4 +138,47 @@ class AndroidClientTest {
         compose.onNodeWithTag("sessions.error").assertIsDisplayed()
         compose.onNodeWithText("Your conversations will appear here.").assertDoesNotExist()
     }
+    @Test fun routineEditorKeepsActionsReachableWhenTheKeyboardLeavesLittleSpace() {
+        val created=mutableListOf<List<String>>()
+        content {
+            val density=androidx.compose.ui.platform.LocalDensity.current
+            CompositionLocalProvider(androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(density.density,1.3f)) {
+                Box(Modifier.width(320.dp).height(240.dp).padding(horizontal = 20.dp)) {
+                    RoutineEditorPanel(false,null,true,{}, {name,schedule,prompt -> created.add(listOf(name,schedule,prompt))})
+                }
+            }
+        }
+        compose.onNodeWithTag("routine.create").assertIsDisplayed().assertIsNotEnabled()
+        assertTrue("Compact form actions must stay on one line",compose.onNodeWithTag("routine.create").fetchSemanticsNode().boundsInRoot.height <= 64 * context.resources.displayMetrics.density)
+        compose.onNodeWithTag("routine.name").performScrollTo().performTextInput("Nightly review")
+        compose.onNodeWithTag("routine.prompt").performScrollTo().performTextInput("Check the workspace")
+        compose.onNodeWithTag("routine.create").assertIsDisplayed().assertIsEnabled().performClick()
+        assertEquals(listOf(listOf("Nightly review","Every day at 08:00","Check the workspace")),created)
+    }
+
+    @androidx.test.filters.SdkSuppress(minSdkVersion = 29)
+    @Test fun routineDialogKeepsCreateAboveTheActualKeyboard() {
+        val automation=instrumentation.uiAutomation
+        val originalFlags=automation.serviceInfo.flags
+        automation.serviceInfo=automation.serviceInfo.apply { flags=flags or android.accessibilityservice.AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS }
+        val created=mutableListOf<List<String>>()
+        try {
+            content { NewRoutineDialog(false,null,true,{}, {name,schedule,prompt -> created.add(listOf(name,schedule,prompt))}) }
+            compose.onNodeWithTag("routine.name").performClick().performTextInput("Daily review")
+            compose.onNodeWithTag("routine.prompt").performScrollTo().performClick().performTextInput("Check the workspace")
+            instrumentation.runOnMainSync {
+                val focused=android.view.inspector.WindowInspector.getGlobalWindowViews().lastOrNull {it.hasWindowFocus()}?.findFocus()
+                if (focused!=null) (context.getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager)
+                    .showSoftInput(focused,android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+            }
+            compose.waitUntil(5000) { automation.windows.any {it.type==android.view.accessibility.AccessibilityWindowInfo.TYPE_INPUT_METHOD} }
+            val keyboard=android.graphics.Rect()
+            automation.windows.first {it.type==android.view.accessibility.AccessibilityWindowInfo.TYPE_INPUT_METHOD}.getBoundsInScreen(keyboard)
+            val action=compose.onNodeWithTag("routine.create").assertIsDisplayed().assertIsEnabled()
+            assertTrue("Create must remain above the real IME",action.fetchSemanticsNode().let {it.positionOnScreen.y+it.size.height}<=keyboard.top)
+            action.performClick()
+            assertEquals(listOf(listOf("Daily review","Every day at 08:00","Check the workspace")),created)
+        } finally { automation.serviceInfo=automation.serviceInfo.apply {flags=originalFlags} }
+    }
+
 }
