@@ -46,8 +46,16 @@ def read_progress(device, kind):
     try:
         result = device('exec-out', 'run-as', 'io.sovware.niobium.debug', 'cat',
                         'cache/niobium-soak-' + kind + '.json', check=False)
-        return json.loads(result)['samples'][-1]
-    except (ValueError, KeyError, IndexError, subprocess.TimeoutExpired):
+        receipt = json.loads(result)
+        samples = receipt.get('samples') if isinstance(receipt, dict) else None
+        if not isinstance(samples, list) or not samples:
+            return None
+        sample = samples[-1]
+        if (not isinstance(sample, dict) or type(sample.get('elapsed_ms')) is not int
+                or sample['elapsed_ms'] < 0 or not isinstance(sample.get('counts'), dict)):
+            return None
+        return sample
+    except (ValueError, subprocess.TimeoutExpired, OSError):
         return None
 
 

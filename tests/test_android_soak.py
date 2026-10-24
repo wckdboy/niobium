@@ -68,6 +68,18 @@ class AndroidSoakRunnerTests(unittest.TestCase):
             with runner.acceptance_cleanup(device):
                 raise RuntimeError('Original failure')
 
+    def test_malformed_advisory_samples_are_ignored(self):
+        invalid = [None, [], {}, {'samples': None}, {'samples': {}}, {'samples': []},
+                   {'samples': [None]}, {'samples': [{}]},
+                   {'samples': [{'elapsed_ms': 1000}]}, {'samples': [{'counts': {}}]},
+                   {'samples': [{'elapsed_ms': '1000', 'counts': {}}]},
+                   {'samples': [{'elapsed_ms': True, 'counts': {}}]},
+                   {'samples': [{'elapsed_ms': -1, 'counts': {}}]},
+                   {'samples': [{'elapsed_ms': 1000, 'counts': []}]}]
+        for receipt in invalid:
+            with self.subTest(receipt=receipt):
+                self.assertIsNone(runner.read_progress(lambda *a, **k: json.dumps(receipt), 'idle'))
+
     def test_progress_timeouts_are_non_authoritative(self):
         def timeout(*args, **kwargs):
             raise subprocess.TimeoutExpired('adb', 15)
