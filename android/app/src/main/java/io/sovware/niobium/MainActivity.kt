@@ -28,18 +28,13 @@ class MainActivity : ComponentActivity() {
         android.webkit.WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
         Nb.appearance = getSharedPreferences("niobium", MODE_PRIVATE)
             .getString("niobium.appearance", "system") ?: "system"
-        val demo = intent.getBooleanExtra("demo", false) || intent.getBooleanExtra("NIOBIUM_DEMO", false)
-        val bot = intent.getStringExtra("bot")
-        val tab = intent.getStringExtra("tab")
-        val gateway = intent.getStringExtra("gateway")
-        val token = intent.getStringExtra("token")
-        val explicit = if (!demo && !gateway.isNullOrBlank() && !token.isNullOrBlank()) Connection("Live test",gateway,token) else null
-        hub.bootstrap(demo, bot, explicit)
+        val launch = DebugLaunchOptions.read(BuildConfig.DEBUG, intent::getStringExtra) { intent.getBooleanExtra(it, false) }
+        hub.bootstrap(launch.demo, launch.bot, launch.connection)
         val vm = hub.active
-        intent.getStringExtra("room")?.let { roomName ->
+        launch.room?.let { roomName ->
             vm.state.groups.firstOrNull { it.roomId == roomName || it.name == roomName }?.let(vm::openGroup)
         }
-        if (demo && intent.getBooleanExtra("demoTool", false)) {
+        if (launch.demoAction) {
             vm.runDemoAction()
         }
         setContent {
@@ -50,7 +45,7 @@ class MainActivity : ComponentActivity() {
                 controller.isAppearanceLightNavigationBars = Nb.light
             }
             NiobiumTheme {
-                NiobiumApp(hub.active, tab, intent.getBooleanExtra("tools", false))
+                NiobiumApp(hub.active, launch.tab, launch.tools)
             }
         }
     }

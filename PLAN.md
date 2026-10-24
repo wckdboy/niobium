@@ -830,3 +830,15 @@ Fence mutable controls by their UI owner and serialize repeated taps; never repl
 an unconfirmed tool/routine/reload operation. Use coherent pixel panels, readable
 type and 48 dp toggle targets. Validate the race before and after the fix, then
 run native runtime/chat regressions and CodeRabbit before release.
+
+
+## Next Android candidate: trusted startup and lifecycle acceptance
+
+Restrict fixture gateway/demo/navigation intent overrides to the debug APK. The
+release restores the saved workspace without reading untrusted launch extras.
+Keep test shortcuts for native acceptance and redact launch diagnostics. Run the
+complete native suite, verify the signed APK ignores fixture intents, and collect
+controlled connection/DSH soak receipts with exact source and build hashes.
+The runner holds one connection, measures its own pings, then repeats real local
+DSH chat/reopen cycles and room/DM checks. Memory samples exclude guest Node/DSH;
+real accounts, physical devices, battery and Doze remain separate acceptance.

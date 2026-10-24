@@ -95,3 +95,13 @@ names before replacing any loaded inventory. Genuine empty catalogs remain valid
 The native recovery case checks a malformed nested category retains known skills
 and keeps Reload disabled until a valid explicit refresh. The dialog/IME test
 compares the action's full boundary and keyboard in screen coordinates.
+
+
+## Production startup candidate
+
+Release startup restores the saved workspace and ignores external fixture/demo
+launch arguments. It does not inspect these extras, including connection tokens.
+The debug APK retains the documented gateway, demo and navigation overrides used
+by native acceptance. Pure policy tests cover ignored release extras, debug
+fixtures, demo precedence, incomplete connections and redacted diagnostics.
+The next APK candidate is 2.2.3/code18.

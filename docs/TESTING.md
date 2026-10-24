@@ -645,3 +645,14 @@ Node/DSH. Structured log entries contain counts and resource samples, with no
 prompts, endpoints or keys. Test presets are removed without following symlinks.
 These controlled instrumentation runs do not establish battery, Doze or real
 provider behavior. The host receipt identifies the actual device.
+
+
+## Android production launch policy candidate
+
+The release APK does not read fixture/demo launch extras. DebugLaunchOptions
+returns defaults before invoking either extra reader, and MainActivity uses this
+policy for every fixture gateway/demo/navigation path. Four JVM cases cover
+release readers that throw, preserved debug routing, demo alias precedence,
+incomplete connections and diagnostics without credentials. Together with the
+existing catalog, delivery and runtime cases, 61 Kotlin/JVM checks pass. Native
+startup/runtime regression and signed release-intent acceptance remain pending.
