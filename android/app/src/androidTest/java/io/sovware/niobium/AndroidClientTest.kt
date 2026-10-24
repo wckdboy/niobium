@@ -53,6 +53,26 @@ class AndroidClientTest {
         bottom();compose.runOnIdle {text += " A new sentence at the very end."};bottom()
         compose.runOnIdle {width=350.dp};bottom();compose.onNodeWithTag("conversation.latest").assertDoesNotExist()
     }
+    @Test fun restoringSavedUiStateKeepsAnOlderReadingPositionAndFollowingPaused() {
+        var shown by mutableStateOf(true)
+        var registry by mutableStateOf(androidx.compose.runtime.saveable.SaveableStateRegistry(null) {true})
+        content {
+            if (shown) CompositionLocalProvider(androidx.compose.runtime.saveable.LocalSaveableStateRegistry provides registry) {
+                ConversationHistory(499,500,Modifier.fillMaxSize()) { _ ->
+                    items((0 until 500).toList(),key={it}) {Text("Saved history $it",Modifier.padding(20.dp),color=Nb.Text)}
+                }
+            }
+        }
+        compose.onNodeWithTag("conversation.history").performScrollToIndex(100)
+        compose.onNodeWithTag("conversation.latest").assertIsDisplayed()
+        val saved=compose.runOnIdle {registry.performSave()}
+        compose.runOnIdle {shown=false}
+        compose.runOnIdle {registry=androidx.compose.runtime.saveable.SaveableStateRegistry(saved) {true};shown=true}
+        compose.onNodeWithText("Saved history 100").assertIsDisplayed()
+        compose.onNodeWithTag("conversation.latest").assertIsDisplayed()
+        compose.onNodeWithTag("conversation.latest").performClick()
+        compose.onNodeWithText("Saved history 499").assertIsDisplayed()
+    }
     @Test fun photosAreResizedAndEncodedWithoutRetainingTheLargeBitmap() = runBlocking {
         val file=File(context.cacheDir,"prepared-photo.jpg")
         try {

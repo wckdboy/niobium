@@ -702,6 +702,7 @@ class NiobiumViewModel(app: Application, private val managedEngine: AgentEngine?
     fun refreshChat() { val bot = state.activeBot ?: return; state.sessionId?.let { resumeChat(it, bot) } }
     private fun resumeChat(session: String, bot: BotProfile) {
         val client = gateway ?: return
+        if (state.sendingChat) { showError("Wait for the current message to finish before reopening this chat."); return }
         val epoch = ++chatEpoch
         state = state.copy(loadingChat = true, sendingChat = false, deliveryUnconfirmed = false, deliveryAccepted = false, submissionMessageId = null)
         viewModelScope.launch {

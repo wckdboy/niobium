@@ -73,6 +73,17 @@ class ChatDeliveryTest {
         assertEquals("fixture-session",vm.state.sessionId);assertEquals("Keep this draft",vm.draftText(key))
         assertTrue(vm.state.deliveryUnconfirmed)
     }
+    @Test fun reopeningDuringASendCannotInvalidateItsAcknowledgement()=runBlocking {
+        configure("delay",1000);val vm=vm();val original=vm.chatContext;var confirmed=0
+        instrumentation.runOnMainSync {
+            vm.send("Keep this acknowledgement",onAccepted={confirmed++})
+            vm.refreshChat()
+            vm.resumeSession(SessionRow("fixture-session","Same chat",0,"",null,false),vm.state.activeBot!!)
+        }
+        assertEquals(original,vm.chatContext);assertTrue(vm.state.sendingChat)
+        waitFor {!vm.state.sendingChat}
+        assertEquals(1,confirmed);assertFalse(vm.state.deliveryUnconfirmed);assertTrue(vm.state.canSubmitChat)
+    }
     @Test fun rejectedPhotoPromptsDetachTheirOwnUploadBeforeAnotherSend()=runBlocking {
         configure("reject");val vm=vm()
         instrumentation.runOnMainSync {vm.send("Rejected photo","AAAA","image/png")}
