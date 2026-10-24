@@ -127,6 +127,15 @@ class ChatDeliveryTest {
         instrumentation.runOnMainSync {vm.loadSessions(vm.state.activeBot!!)};waitFor {!vm.state.sessionsLoading}
         delay(900);assertNotNull(vm.state.sessionsError);assertEquals("kept",vm.state.sessions.single().sessionId)
     }
+    @Test fun idleConnectionsSurviveTwoHeartbeatIntervalsAndStillDeliver()=runBlocking {
+        configure("confirm");val vm=vm();val owner=vm.chatContext
+        delay(45_000)
+        assertTrue(vm.state.connected);assertEquals(owner,vm.chatContext)
+        assertTrue(controller.request("fixture.android").optInt("pings")>=2)
+        instrumentation.runOnMainSync {vm.send("Heartbeat check")};waitFor {!vm.state.sendingChat}
+        assertFalse(vm.state.deliveryUnconfirmed)
+        assertTrue(vm.state.messages.any {it.text=="Android confirmed reply"})
+    }
     @Test fun acceptingAnOlderSendPreservesANewerDraftInTheSameConversation()=runBlocking {
         configure("delay",1000);val vm=vm();val key=vm.chatDraftScope
         instrumentation.runOnMainSync {

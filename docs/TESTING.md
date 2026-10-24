@@ -59,6 +59,9 @@ Session-browser regressions search/filter 1,000 native rows, distinguish loading
 from empty/error states, and retain loaded rows after refresh failure. Controlled
 WebSocket replies test Pixel switches and out-of-order refreshes; both success
 and failure paths reject stale ownership.
+A native idle-connection case crosses two keepalive intervals, verifies actual
+WebSocket pings and delivers a new prompt on the same conversation owner. The
+controlled gateway fixture replies to Ping with Pong for long-lived acceptance.
 
 iOS, with XcodeGen and an available iPhone simulator:
 

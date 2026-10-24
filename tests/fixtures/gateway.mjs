@@ -6,6 +6,7 @@ const androidHistory = [], androidRequests = [];
 const androidImages = new Map();
 let sessionReplies = [];
 const sessionRequests = [];
+let pingRequests = 0;
 const server = createServer((request, response) => {
   const valid = request.url === '/proxy/api/status' && request.headers['x-hermes-session-token'] === token && request.headers.authorization === 'Bearer ' + token;
   response.writeHead(valid ? 200 : 401, { 'Content-Type': 'application/json' });
@@ -54,7 +55,7 @@ server.on('upgrade', (request, socket) => {
         result({session_id:androidMode ? frame.params.session_id : 'fixture-session',messages:androidMode ? androidHistory : [],revision:0}); break;
       case 'fixture.android':
         if (typeof frame.params?.mode === 'string') androidMode = {mode:frame.params.mode,delay:frame.params.delay || 0,attachDelay:frame.params.attach_delay || 0,pathless:frame.params.pathless===true};
-        result({requests:androidRequests,history:androidHistory,queued_images:androidImages.size}); break;
+        result({requests:androidRequests,history:androidHistory,queued_images:androidImages.size,pings:pingRequests}); break;
       case 'image.attach_bytes': {
         const path = 'fixture-image-' + randomUUID();androidImages.set(frame.params.session_id,path);
         androidRequests.push({method:frame.method,profile:frame.params.profile,session:frame.params.session_id});
@@ -121,6 +122,12 @@ server.on('upgrade', (request, socket) => {
       if (mask) for (let i = 0; i < payload.length; i++) payload[i] ^= mask[i % 4];
       buffered = buffered.subarray(offset + size);
       if (opcode === 8) { socket.end(Buffer.from([0x88,0])); return; }
+      if (opcode === 9) {
+        if (payload.length > 125) { socket.destroy(); return; }
+        pingRequests++;
+        socket.write(Buffer.concat([Buffer.from([0x8a,payload.length]),payload]));
+        continue;
+      }
       if (opcode === 1) handle(JSON.parse(payload.toString()));
     }
   });
