@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,6 +29,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -338,7 +340,9 @@ private fun ActivityRow(item: ActivityItem) {
 @Composable
 fun ToolsScreen(vm: NiobiumViewModel, state: NbState, onClose: (() -> Unit)? = null) {
     if (state.engine == AgentEngine.DSH) { LocalToolsScreen(state, onClose); return }
-    var query by remember { mutableStateOf("") }
+    val owner = vm.chatContext
+    LaunchedEffect(vm, owner) { vm.loadToolsets() }
+    var query by remember(owner) { mutableStateOf("") }
     var showSkills by remember { mutableStateOf(false) }
     var showMCP by remember { mutableStateOf(false) }
     if (showSkills) {
@@ -372,10 +376,10 @@ fun ToolsScreen(vm: NiobiumViewModel, state: NbState, onClose: (() -> Unit)? = n
                     .border(1.dp, Nb.Line, RoundedCornerShape(10.dp)).clickable { showMCP = true },
                     contentAlignment = Alignment.Center) { Text("◈", color = Nb.Violet, fontSize = 13.sp) }
                 Spacer(Modifier.width(7.dp))
-                NbIconButton("↻", { vm.refreshAllAsync() }, size = 38)
+                NbIconButton("↻", vm::refreshTools, size = 38)
             }
         }
-        item { PageHeader("Everything the agent can touch", "Toolbox") }
+        item { PageHeader(state.activeBot?.title ?: "Gateway tools", "Toolbox") }
         item {
             Column(Modifier.padding(horizontal = 20.dp).padding(top = 10.dp)) {
                 Text("$totalTools", color = Nb.Text, style = NbDisplay, fontSize = 52.sp)
@@ -413,16 +417,22 @@ fun ToolsScreen(vm: NiobiumViewModel, state: NbState, onClose: (() -> Unit)? = n
                 ) { Text("≡", color = if (onlyEnabled) Nb.Ion else Nb.Tertiary, fontSize = 17.sp) }
             }
         }
+        item {
+            Box(Modifier.padding(horizontal = 20.dp, vertical = 14.dp)) {
+                InventoryFeedback(state.toolsLoad.copy(loading = state.toolsLoad.loading || state.toolsUpdating), filtered.isEmpty(),
+                    if (state.toolsets.isEmpty()) "No tools available." else "No matching tools.", vm::refreshTools)
+            }
+        }
         items(filtered, key = { it.id }) { toolset ->
             Box(Modifier.padding(horizontal = 20.dp).padding(top = 9.dp)) {
-                ToolsetRow(toolset) { vm.toggleToolset(toolset) }
+                ToolsetRow(toolset, canToggle = (state.demo || (state.connected && state.sessionId != null)) && !state.toolsLoad.loading && state.toolsLoad.error == null && !state.toolsUpdating) { vm.toggleToolset(toolset, owner) }
             }
         }
     }
 }
 
 @Composable
-private fun ToolsetRow(toolset: Toolset, onToggle: () -> Unit) {
+private fun ToolsetRow(toolset: Toolset, canToggle: Boolean, onToggle: () -> Unit) {
     Column(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(17.dp))
             .background(if (toolset.enabled) Nb.Surface.copy(alpha = 0.8f) else Nb.Surface.copy(alpha = 0.4f))
@@ -445,14 +455,14 @@ private fun ToolsetRow(toolset: Toolset, onToggle: () -> Unit) {
                 Text(toolset.description, color = Nb.Secondary, fontSize = 11.5.sp, lineHeight = 15.sp, maxLines = 2)
             }
             Spacer(Modifier.width(8.dp))
-            Box(
-                Modifier.width(38.dp).height(22.dp).clip(CircleShape)
-                    .background(if (toolset.enabled) Nb.Ion else Nb.FillStrong)
-                    .clickable { onToggle() },
-                contentAlignment = if (toolset.enabled) Alignment.CenterEnd else Alignment.CenterStart
-            ) {
-                Box(Modifier.padding(horizontal = 2.5.dp).size(17.dp).clip(CircleShape)
-                    .background(if (toolset.enabled) Color(0xFF0A0D14) else Nb.Tertiary))
+            Box(Modifier.size(48.dp)
+                .toggleable(value = toolset.enabled, enabled = canToggle, role = androidx.compose.ui.semantics.Role.Switch) { onToggle() }
+                .then(Modifier.semantics { contentDescription = toolset.name }), contentAlignment = Alignment.Center) {
+                Box(Modifier.width(36.dp).height(24.dp).clip(PixelButtonShape)
+                    .background(if (toolset.enabled && canToggle) Nb.Ion else Nb.FillStrong),
+                    contentAlignment = if (toolset.enabled) Alignment.CenterEnd else Alignment.CenterStart) {
+                    Box(Modifier.padding(horizontal = 4.dp).size(12.dp).background(if (canToggle) Nb.Text else Nb.Tertiary))
+                }
             }
         }
         if (toolset.tools.isNotEmpty()) {

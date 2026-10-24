@@ -560,3 +560,19 @@ local hashes; the downloaded APK signature and source tag verify. Runtime hashes
 16 KB packaging and all 20 site files plus www Home/custom 404 verify. Physical
 hardware, real accounts and longer battery/background acceptance remain open.
 See [release validation](evidence/beta221-release-validation.json).
+
+
+## Android inventory ownership candidate
+
+Toolsets, skills, MCP servers and routines use a captured gateway/chat/profile and
+a newest-request revision. Opening, closing or resuming a chat clears its previous
+inventory. Late replies cannot write into another Pixel or overwrite a newer
+refresh. Failed refreshes retain loaded rows with retry controls. MCP configuration
+stays visible if status is unavailable, explicitly marked unknown.
+
+Tool, skill-reload and routine mutations capture the original owner, reject stale
+controls and repeated taps, and ignore acknowledgements after a Pixel switch. An
+unconfirmed change requires a successful explicit refresh before another change.
+Native regression tests cover a failed-before/passed-after Pixel-switch race, newest
+refresh failures/partial MCP status, and mutation deduplication/owner changes.
+The candidate APK is 2.2.2/code17; publication requires final-head review and checks.

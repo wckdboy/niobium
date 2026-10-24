@@ -6,6 +6,8 @@ const androidHistory = [], androidRequests = [];
 const androidImages = new Map();
 let sessionReplies = [];
 const sessionRequests = [];
+let inventoryReplies = {};
+const inventoryRequests = [];
 const server = createServer((request, response) => {
   const valid = request.url === '/proxy/api/status' && request.headers['x-hermes-session-token'] === token && request.headers.authorization === 'Bearer ' + token;
   response.writeHead(valid ? 200 : 401, { 'Content-Type': 'application/json' });
@@ -32,6 +34,11 @@ server.on('upgrade', (request, socket) => {
     if (!frame.method) { event('approval.answer', frame.result); return; }
     if (!frame.method.startsWith('fixture.')) calls.push({ method: frame.method, params: frame.params });
     if (frame.method === failMethod) { reject('Fixture setup failure'); return; }
+    if (Object.hasOwn(inventoryReplies, frame.method)) {
+      inventoryRequests.push({method:frame.method,params:frame.params});
+      const reply=inventoryReplies[frame.method].shift()||{result:{}};
+      setTimeout(()=>reply.fail?reject('Inventory unavailable'):result(reply.result||{}),reply.delay||0);return;
+    }
     switch (frame.method) {
       case 'client.capabilities': result({declines_not_shown:false}); break;
       case 'runtime.describe': result({session_create:{sources:['gui']}}); break;
@@ -42,6 +49,9 @@ server.on('upgrade', (request, socket) => {
       case 'profiles.list': result({profiles:[{name:'remote-fixture',display_name:'Remote fixture',canonical_session:{id:'fixture-session'}}]}); break;
       case 'tools.list': result({toolsets:[]}); break;
       case 'model.options': result({providers:[]}); break;
+      case 'fixture.inventory':
+        if (frame.params?.replies) {inventoryReplies=frame.params.replies;inventoryRequests.length=0;}
+        result({requests:inventoryRequests});break;
       case 'fixture.sessions':
         if (Array.isArray(frame.params?.replies)) {sessionReplies=frame.params.replies;sessionRequests.length=0;}
         result({requests:sessionRequests});break;

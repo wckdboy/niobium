@@ -2,36 +2,14 @@ package io.sovware.niobium
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -39,109 +17,72 @@ import androidx.compose.ui.unit.sp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RoutinesSheet(vm: NiobiumViewModel, bot: BotProfile, onDismiss: () -> Unit) {
-    var creating by remember { mutableStateOf(false) }
-    LaunchedEffect(bot.name) { vm.loadRoutines(bot) }
+    val owner = vm.chatContext
+    val state = vm.state
+    val load = state.routinesLoad.copy(loading = state.routinesLoad.loading || state.routinesUpdating)
+    val canChange = !load.loading && load.error == null && state.connected && state.activeBot?.id == bot.id
+    var creating by remember(owner) { mutableStateOf(false) }
+    LaunchedEffect(vm, owner, bot.id) { vm.loadRoutines(bot) }
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Nb.Ink,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-        LazyColumn(contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text("Routines", color = Nb.Text, style = NbTitle, fontSize = 22.sp)
-                        Text("Recurring work that lands in ${bot.title}'s chat.", color = Nb.Secondary, fontSize = 12.sp)
+                        Text("Routines", color = Nb.Text, style = NbTitle, fontSize = 26.sp)
+                        Text(bot.title, color = Nb.Secondary, fontSize = 12.sp)
                     }
-                    Box(Modifier.clip(CircleShape).background(Nb.Ion.copy(alpha = 0.12f))
-                        .clickable { creating = true }.padding(horizontal = 12.dp, vertical = 8.dp)) {
-                        Text("+ New", color = Nb.Ion, fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                    }
+                    NbPill("${state.routines.size}", Nb.Violet)
                 }
             }
-            if (vm.state.routines.isEmpty()) {
-                item {
-                    Column(Modifier.fillMaxWidth().padding(top = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("◷", color = Nb.Ion, fontSize = 28.sp)
-                        Spacer(Modifier.height(10.dp))
-                        Text("No routines yet", color = Nb.Text, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
-                        Text("A morning brief, a nightly sweep, a weekly review. Give ${bot.title} a rhythm.",
-                            color = Nb.Tertiary, fontSize = 11.5.sp, lineHeight = 17.sp,
-                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp))
-                    }
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    PixelButton("Refresh", PixelGlyph.LINK, Modifier.weight(1f), secondary = true, enabled = !load.loading && state.connected) { vm.loadRoutines(bot) }
+                    PixelButton("New", PixelGlyph.SPARK, Modifier.weight(1f), enabled = canChange) { creating = true }
                 }
-            } else {
-                items(vm.state.routines.size) { index ->
-                    val routine = vm.state.routines[index]
-                    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Nb.Surface.copy(alpha = 0.7f))
-                        .border(1.dp, Nb.Line, RoundedCornerShape(18.dp)).padding(14.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(routine.name, color = Nb.Text, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                            Spacer(Modifier.weight(1f))
-                            Text(if (routine.enabled) "ON" else "PAUSED", color = if (routine.enabled) Nb.Mint else Nb.Tertiary,
-                                style = NbMono, fontSize = 8.sp, fontWeight = FontWeight.SemiBold)
-                        }
-                        Spacer(Modifier.height(5.dp))
-                        Text(routine.prompt, color = Nb.Secondary, fontSize = 12.sp, maxLines = 2)
-                        Spacer(Modifier.height(8.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("↻ ${routine.schedule}", color = Nb.Tertiary, style = NbMono, fontSize = 8.5.sp)
-                            Spacer(Modifier.weight(1f))
-                            if (routine.nextRun.isNotBlank()) {
-                                Text("next · ${routine.nextRun}", color = Nb.Tertiary, style = NbMono, fontSize = 8.sp)
-                                Spacer(Modifier.width(8.dp))
-                            }
-                            Text("Delete", color = Nb.Rose.copy(alpha = 0.8f), fontSize = 10.sp,
-                                modifier = Modifier.clickable { vm.deleteRoutine(routine, bot) })
-                        }
+            }
+            item { InventoryFeedback(load, state.routines.isEmpty(), "No routines yet. Give your Pixel a rhythm.") { vm.loadRoutines(bot) } }
+            items(state.routines, key = { it.id }) { routine ->
+                Column(Modifier.fillMaxWidth().clip(PixelButtonShape).background(Nb.FillSoft)
+                    .border(1.dp, Nb.Line, PixelButtonShape).padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(routine.name, color = Nb.Text, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.weight(1f))
+                        Spacer(Modifier.width(8.dp))
+                        NbPill(if (routine.enabled) "On" else "Paused", if (routine.enabled) Nb.Mint else Nb.Tertiary)
                     }
+                    Text(routine.prompt, color = Nb.Secondary, fontSize = 13.sp, maxLines = 3)
+                    Text(routine.schedule, color = Nb.Secondary, fontSize = 12.sp)
+                    if (routine.nextRun.isNotBlank()) Text("Next · ${routine.nextRun}", color = Nb.Tertiary, fontSize = 11.sp)
+                    PixelButton("Delete", PixelGlyph.STOP, secondary = true, destructive = true, enabled = canChange) { vm.deleteRoutine(routine, bot, owner) }
                 }
             }
             item { Spacer(Modifier.height(20.dp)) }
         }
     }
-    if (creating) {
-        NewRoutineDialog(bot, onDismiss = { creating = false }) { name, schedule, prompt ->
-            vm.createRoutine(name, schedule, prompt, bot) { creating = false }
-        }
+    if (creating) NewRoutineDialog(state.routinesUpdating, state.routinesLoad.error, canChange,
+        onDismiss = { creating = false }) { name, schedule, prompt ->
+        vm.createRoutine(name, schedule, prompt, bot, owner) { creating = false }
     }
 }
 
 @Composable
-private fun NewRoutineDialog(bot: BotProfile, onDismiss: () -> Unit, onCreate: (String, String, String) -> Unit) {
+private fun NewRoutineDialog(busy: Boolean, error: String?, canCreate: Boolean, onDismiss: () -> Unit, onCreate: (String, String, String) -> Unit) {
     var name by remember { mutableStateOf("") }
     var schedule by remember { mutableStateOf("Every day at 08:00") }
     var prompt by remember { mutableStateOf("") }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Nb.Raised,
+    AlertDialog(onDismissRequest = onDismiss, containerColor = Nb.Raised,
         title = { Text("New routine", color = Nb.Text) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                routineField("Name", name) { name = it }
-                routineField("Schedule", schedule) { schedule = it }
-                routineField("Prompt", prompt) { prompt = it }
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedTextField(name, { name = it.take(120) }, label = { Text("Name") }, singleLine = true, enabled = !busy)
+                OutlinedTextField(schedule, { schedule = it.take(200) }, label = { Text("Schedule") }, singleLine = true, enabled = !busy)
+                OutlinedTextField(prompt, { prompt = it.take(32_000) }, label = { Text("Prompt") }, minLines = 2, maxLines = 5, enabled = !busy)
+                error?.let { Text(it, color = Nb.Rose, fontSize = 12.sp) }
             }
         },
         confirmButton = {
-            Text("Create", color = Nb.Ion, modifier = Modifier.clickable {
-                if (name.isNotBlank() && prompt.isNotBlank()) onCreate(name, schedule, prompt)
-            }.padding(8.dp))
+            PixelButton(if (busy) "Creating…" else "Create", PixelGlyph.SPARK,
+                enabled = canCreate && name.isNotBlank() && schedule.isNotBlank() && prompt.isNotBlank()) { onCreate(name, schedule, prompt) }
         },
-        dismissButton = { Text("Cancel", color = Nb.Secondary, modifier = Modifier.clickable { onDismiss() }.padding(8.dp)) }
-    )
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel", color = Nb.Secondary) } })
 }
-
-@Composable
-private fun routineField(label: String, value: String, onChange: (String) -> Unit) {
-    OutlinedTextField(
-        value = value, onValueChange = onChange, label = { Text(label) }, singleLine = true,
-        colors = fieldColors(), modifier = Modifier.fillMaxWidth()
-    )
-}
-
-@Composable
-private fun fieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedTextColor = Nb.Text, unfocusedTextColor = Nb.Text,
-    focusedBorderColor = Nb.Ion, unfocusedBorderColor = Nb.LineStrong,
-    focusedLabelColor = Nb.Ion, unfocusedLabelColor = Nb.Tertiary,
-    focusedContainerColor = Nb.FillSoft, unfocusedContainerColor = Nb.FillSoft
-)
