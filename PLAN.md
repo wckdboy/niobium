@@ -10,14 +10,12 @@ Protocol audit: [HERMES-PARITY.md](docs/HERMES-PARITY.md).
 
 ## Active focus: Android APK
 
-- Android APK quality is the current execution priority: delivery/draft safety,
-  responsive photo preparation, reader-controlled streaming, then session
-  browsing, isolated inventories, accessibility and longer local-engine acceptance.
-  Android 2.2.2/code17 is published; trusted startup and controlled lifecycle
-  acceptance are the next candidate.
-- Build and ship the Compose desktop preview alongside Android; retain iOS sources
-  and make its CI/signing work opt-in while desktop and Android are the priority.
-  The 2.1.3 beta.1 desktop preview and Android 2.2.2/code17 are published.
+- Android APK work is the priority: encrypted draft recovery, native completion
+  notifications, richer attachments, accessibility and physical-device/resource
+  acceptance. Browsing, isolated inventories and delivery guards are shipped.
+  Android 2.2.3/code18 is published; encrypted draft recovery is next.
+- Keep the 2.1.3 desktop preview available and healthy through shared-core CI while
+  prioritizing the APK. Retain iOS sources with opt-in CI/signing work.
 - Share Kotlin protocol, persona/spec validation and art reduction across Android
   and desktop. Keep engine connection/session/prompt ownership separate.
 - Native desktop DSH: pinned private runtime, direct host process, authenticated
@@ -28,6 +26,37 @@ Protocol audit: [HERMES-PARITY.md](docs/HERMES-PARITY.md).
   richer history and companion controls, and skill/MCP/routine surfaces.
 - Continue real-account acceptance, physical Android/16 KB execution, cross-engine
   rooms, Hermes replay and connector authorization. These remain unverified goals.
+
+## Shipped: Android 2.2.3 beta.1
+
+Release startup restores the saved workspace without reading fixture gateway,
+token, demo or navigation extras. Debug builds retain explicit test routes.
+A direct signed upgrade from public 2.2.2/code17 retains the controlled saved
+gateway, Dark appearance and original installation. Two external launch attempts
+restore the trusted workspace; the second controlled gateway gains no connections.
+
+[Release](https://github.com/wckdboy/niobium/releases/tag/v2.2.3-beta.1),
+[CodeRabbit-approved PR #18](https://github.com/wckdboy/niobium/pull/18),
+[green source CI](https://github.com/wckdboy/niobium/actions/runs/40069909335).
+61 Kotlin/JVM, 91 Node, 24 Python and all 44 default native ARM64 Android 16
+emulator cases pass. Extended controlled acceptance holds the client connection
+for 20 minutes with measured keepalives and confirmed delivery, then completes
+12 real local DSH chat/history reopen turns with 45-second pauses and DM/room
+checks. Reports preserve executed source; Git object equality verifies the entire
+Android app/instrumentation, core and runtime trees against the final release.
+A final-source smoke run verifies the revised host runner. Acceptance cleanup
+covers report failures, and gates stay active under optimized Python.
+
+All four complete public downloads, downloaded APK certificate/source tag,
+runtime hashes/16 KB packaging, signed upgrade/cold launch and all 20 website
+files plus www Home/custom 404 verify. Memory samples are controlled baselines:
+app/instrumentation PSS excludes guests; UID RSS includes guests and double-counts
+shared pages. Neither proves battery, Doze, real-account or production behavior.
+[Release evidence](docs/evidence/beta223-release-validation.json).
+
+The Hermes watch was refreshed successfully; its existing issue tracks observed
+upstream 5894e750c3dba980d43b25aa29e3958149ba2c61 / v0.22.5. The comparison is
+truncated, the audited baseline stays pinned, and full compatibility remains open.
 
 ## Shipped: Android 2.2.2 beta.1
 
@@ -50,9 +79,9 @@ Signed upgrade-sequence appearance/install retention, cold launch, runtime hashe
 files plus www Home/custom 404 verify. Exact intermediate sources are in metadata.
 [Release evidence](docs/evidence/beta222-release-validation.json).
 
-Next: PR #18 restricts fixture startup overrides to debug and collects controlled
-connection/DSH lifecycle receipts. Encrypted draft recovery, notifications, richer
-attachments, physical devices, battery/Doze and real accounts remain open.
+Trusted startup and controlled lifecycle acceptance shipped in 2.2.3. Encrypted
+draft recovery, notifications, richer attachments, physical devices, battery/Doze
+and real accounts remain open.
 
 ## Shipped: Android 2.2.1 beta.1
 
@@ -832,7 +861,7 @@ type and 48 dp toggle targets. Validate the race before and after the fix, then
 run native runtime/chat regressions and CodeRabbit before release.
 
 
-## Next Android candidate: trusted startup and lifecycle acceptance
+## Delivered in Android 2.2.3: trusted startup and lifecycle acceptance
 
 Restrict fixture gateway/demo/navigation intent overrides to the debug APK. The
 release restores the saved workspace without reading untrusted launch extras.
@@ -842,3 +871,23 @@ controlled connection/DSH soak receipts with exact source and build hashes.
 The runner holds one connection, measures its own pings, then repeats real local
 DSH chat/reopen cycles and room/DM checks. Memory samples exclude guest Node/DSH;
 real accounts, physical devices, battery and Doze remain separate acceptance.
+
+
+## Next Android cycle
+
+1. Preserve unsent text after process death in bounded, Keystore-encrypted,
+   backup-excluded storage. Keep account/engine/Pixel/session ownership; serialize
+   background writes and clear only the accepted draft. Validate cold restoration,
+   newer edits during a send, failed writes, unavailable keys and account changes.
+   Photos need a separate persisted-URI/file lifecycle; they remain in memory.
+2. Add native completion notifications tied to the correct engine and chat.
+   Validate permission denial, taps after restart, duplicate events and explicit
+   DSH Stop. Remote work belongs to Hermes; do not promise an Android process
+   stays alive indefinitely.
+3. Extend attachments with clear size/type limits, progress, cancellation and
+   exact upload ownership. Preserve the existing unknown-delivery review guard.
+4. Audit the complete Hermes change history from the pinned baseline before
+   advancing it. Exercise changed-wire fixtures, Bot Mode, rooms, approvals,
+   credentials and companions against a real account when available.
+5. Run physical Android/16 KB, TalkBack/tablet, screen-off, Doze and battery tests.
+   The current emulator and controlled-provider receipts do not close these gates.

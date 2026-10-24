@@ -1,0 +1,1322 @@
+{
+  "schema_version": 2,
+  "version": "2.2.3-beta.1",
+  "source_commit": "89b5901f5ed0751dc48ae4d066af9f307d5f9dc7",
+  "source_tree": "215b346c20c8d80c636590cc8acd5255790d702e",
+  "source_url": "https://github.com/wckdboy/niobium/tree/89b5901f5ed0751dc48ae4d066af9f307d5f9dc7",
+  "generated_at": "2026-10-24T06:37:11.824380+00:00",
+  "review": {
+    "provider": "CodeRabbit",
+    "pr": "https://github.com/wckdboy/niobium/pull/18",
+    "state": "APPROVED",
+    "review_id": 5637160937,
+    "source_commit": "89b5901f5ed0751dc48ae4d066af9f307d5f9dc7",
+    "author_override_used": false,
+    "greptile_automatic_reviews": false
+  },
+  "ci": {
+    "url": "https://github.com/wckdboy/niobium/actions/runs/40069909335",
+    "source_commit": "89b5901f5ed0751dc48ae4d066af9f307d5f9dc7",
+    "status": "success"
+  },
+  "checks": {
+    "shared_kotlin_core": 33,
+    "android_specific_jvm": 28,
+    "android_total_jvm": 61,
+    "desktop_jvm_and_ui": 55,
+    "node": 91,
+    "python": 24,
+    "android_lint": "pass",
+    "android_native": {
+      "tests": 44,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "source_commit": "348e12f7a79ffd3cf17bf1be2f39f515db61f707",
+      "device": "Niobium_Shared_Test ARM64 Android 16 emulator",
+      "verified_at": "2026-10-24T05:45:45.872073+00:00",
+      "suites": [
+        {
+          "name": "io.sovware.niobium.AndroidClientTest",
+          "tests": 11,
+          "seconds": 11.007,
+          "cases": [
+            "invalidPhotosFailWithoutProducingAnAttachment",
+            "routineEditorKeepsActionsReachableWhenTheKeyboardLeavesLittleSpace",
+            "routineDialogKeepsCreateAboveTheActualKeyboard",
+            "platformCleartextPolicyAllowsOnlyTheLiteralLocalRuntime",
+            "photoPreparationHonorsExifRotationAndTransparency",
+            "chatBrowserSearchesLargeListsAndFiltersWorkingConversations",
+            "restoringSavedUiStateKeepsAnOlderReadingPositionAndFollowingPaused",
+            "tallRepliesStayAtTheirEndWhenTextGrowsOrWidthChanges",
+            "streamedMessagesPreserveOlderReadingAndLatestResumesFollowing",
+            "chatBrowserDistinguishesLoadingErrorsAndRetainsLoadedRows",
+            "photosAreResizedAndEncodedWithoutRetainingTheLargeBitmap"
+          ]
+        },
+        {
+          "name": "io.sovware.niobium.CharacterEngineTest",
+          "tests": 10,
+          "seconds": 11.45,
+          "cases": [
+            "familiarChoicePreservesAuthoredPixels",
+            "changingTheCastPreservesCustomCompanionArtWhenSaving",
+            "uncertainRoomReceiptsSurviveRecreationWithoutStoringMessages",
+            "workshopKeepsThePortraitThroughRemixUndoAndCreatureSelection",
+            "nativePixelsMatchTheSharedRgbaFixtures",
+            "disablingPreviewMotionImmediatelyRestoresTheOpenFrame",
+            "imageProviderKeyUsesTheActualDeviceKeystore",
+            "wardrobeFiltersNewLooksAndKeepsAiOptional",
+            "generatedArtRendersPortablePixelsAndBakerRejectsOpaqueBackgrounds",
+            "authoredLooksMatchSharedPixelsAndSurviveAppearanceRoundTrip"
+          ]
+        },
+        {
+          "name": "io.sovware.niobium.ChatDeliveryTest",
+          "tests": 12,
+          "seconds": 89.227,
+          "cases": [
+            "aPathlessUploadCompletesOnlyItsOriginallyAuthorizedConversation",
+            "aRejectedSendKeepsItsDraftAndRequiresReview",
+            "acceptingAnOlderSendPreservesANewerDraftInTheSameConversation",
+            "enteringACleartextRemoteGatewayLeavesTheCurrentConnectionUntouched",
+            "reopeningDuringASendCannotInvalidateItsAcknowledgement",
+            "delayedSessionListingsCannotOverwriteAnotherPixelsChats",
+            "theLatestListFailureKeepsLoadedChatsAndRejectsAnOlderRefresh",
+            "leavingAChatDuringImageUploadNeverPostsItsPromptIntoTheNewChat",
+            "lostReceiptsStayLockedAcrossViewModelRestartAndNeverReplay",
+            "doubleTapsSendOnceAndDraftAcknowledgementWaitsForAcceptance",
+            "idleConnectionsSurviveTwoHeartbeatIntervalsAndStillDeliver",
+            "rejectedPhotoPromptsDetachTheirOwnUploadBeforeAnotherSend"
+          ]
+        },
+        {
+          "name": "io.sovware.niobium.InventoryOwnershipTest",
+          "tests": 4,
+          "seconds": 12.975,
+          "cases": [
+            "failedNewestRefreshesKeepRowsAndPartialMcpStatusStaysVisible",
+            "repeatedMutationsSendOnceAndTheirAcknowledgementsCannotChangeAnotherPixel",
+            "inventoriesCannotFollowTheirPreviousPixelIntoAnotherChat",
+            "unconfirmedChangesRequireASuccessfulExplicitRefreshBeforeAnotherAttempt"
+          ]
+        },
+        {
+          "name": "io.sovware.niobium.LocalRuntimeTest",
+          "tests": 7,
+          "seconds": 99.985,
+          "cases": [
+            "nativeProviderSetupActivatesModelRoutesAndKeepsKeysOutOfSettings",
+            "reinstallPreservesPixelWorkspace",
+            "explicitGatewayLaunchOverridesSavedLocalWithoutLosingThePixel",
+            "dshWebIsPrivateAndAuthenticated",
+            "foregroundServiceRunsBehindNativeAppAndAdvancedWebview",
+            "guestShellNodeAndDshRunInAppSandbox",
+            "nativeDshProviderCreatesPixelsAndStreamsThroughRealDsh"
+          ]
+        }
+      ],
+      "apk_hashes": {
+        "app-debug.apk": "fc38835a6519cd276f73a0ca937c0f9478e5c1de01c553b0ecc684c66ed058df",
+        "app-debug-androidTest.apk": "4a159695580063365d31428fbc08ece43fdfc2060363438c2fb03bf5d1e6d9db"
+      }
+    },
+    "signed_upgrade": {
+      "source_commit": "89b5901f5ed0751dc48ae4d066af9f307d5f9dc7",
+      "verified_at": "2026-10-24T06:28:59.972181+00:00",
+      "device": "Niobium_Shared_Test ARM64 Android 16 emulator",
+      "signed_upgrade": "pass",
+      "cold_launch": "pass",
+      "from_version": "Published 2.2.2/code17 source 7803c4ca47cbd324a4f4d43d9afdcebbffc907f5",
+      "to_version": "2.2.3/code18",
+      "upgrade_sequence": "Direct signed upgrade from the final public 2.2.2 APK to the reviewed 2.2.3 candidate.",
+      "original_first_install_time": "2026-10-23 15:05:40",
+      "retained_connection": "Controlled My Hermes gateway restored and connected before and after the direct upgrade.",
+      "retained_theme": "Dark selected before the direct upgrade and visually confirmed afterward. Original System preference restored after the check.",
+      "apk_sha256": "560e87c1ed2c09fe568257bab630b8ac9ffa4439bc13a38b16efd625629a8680",
+      "signed_app_crash_buffer": "No matching signed Niobium process fatal in retained emulator crash buffer",
+      "physical_device_tested": false,
+      "installed_apk_sha256": "560e87c1ed2c09fe568257bab630b8ac9ffa4439bc13a38b16efd625629a8680",
+      "installed_apk_bytes_match_candidate": true,
+      "theme_visual_verification": "Dark is selected in the signed upgraded Settings screen, with the controlled My Hermes gateway connected.",
+      "cold_launch_total_ms": 456,
+      "original_preferences_restored": "System appearance restored through Settings; the controlled gateway was forgotten through its confirmation, and cold launch returns to onboarding with an empty token."
+    },
+    "release_launch_policy": {
+      "source_commit": "89b5901f5ed0751dc48ae4d066af9f307d5f9dc7",
+      "status": "pass",
+      "verified_at": "2026-10-24T06:28:59.972181+00:00",
+      "device": "Niobium_Shared_Test ARM64 Android 16 emulator",
+      "real_provider_account": false,
+      "untrusted_gateway_connections_added": 0,
+      "scenarios": [
+        {
+          "scenario": "direct-upgrade-home",
+          "saved_workspace_restored": true,
+          "original_first_install_capture": "upgrade-home.xml/png",
+          "note": "The first UI assertion expected a Settings-only label on Home. Continued from the original signed upgrade; no second installation."
+        },
+        {
+          "scenario": "upgrade-restart-home",
+          "trusted_connections_before": 4,
+          "trusted_connections_after": 5,
+          "untrusted_connections_before": 1,
+          "untrusted_connections_after": 1,
+          "saved_workspace_restored": true,
+          "home_selected": true,
+          "activity_start": "Stopping: io.sovware.niobium\nStarting: Intent { cmp=io.sovware.niobium/.MainActivity }\nStatus: ok\nLaunchState: COLD\nActivity: io.sovware.niobium/.MainActivity\nTotalTime: 456\nWaitTime: 457\nComplete"
+        },
+        {
+          "scenario": "external-gateway-extras",
+          "trusted_connections_before": 5,
+          "trusted_connections_after": 6,
+          "untrusted_connections_before": 1,
+          "untrusted_connections_after": 1,
+          "saved_workspace_restored": true,
+          "home_selected": true,
+          "activity_start": "Stopping: io.sovware.niobium\nStarting: Intent { cmp=io.sovware.niobium/.MainActivity (has extras) }\nStatus: ok\nLaunchState: COLD\nActivity: io.sovware.niobium/.MainActivity\nTotalTime: 545\nWaitTime: 551\nComplete"
+        },
+        {
+          "scenario": "external-demo-extras",
+          "trusted_connections_before": 6,
+          "trusted_connections_after": 7,
+          "untrusted_connections_before": 1,
+          "untrusted_connections_after": 1,
+          "saved_workspace_restored": true,
+          "home_selected": true,
+          "activity_start": "Stopping: io.sovware.niobium\nStarting: Intent { cmp=io.sovware.niobium/.MainActivity (has extras) }\nStatus: ok\nLaunchState: COLD\nActivity: io.sovware.niobium/.MainActivity\nTotalTime: 416\nWaitTime: 418\nComplete"
+        }
+      ],
+      "fixture_credentials": "Public controlled test credential; no paid or personal account used."
+    },
+    "controlled_android_soak": {
+      "schema_version": 1,
+      "source_commit": "348e12f7a79ffd3cf17bf1be2f39f515db61f707",
+      "production_reference": null,
+      "device": "emulator-5554",
+      "abi": "arm64-v8a",
+      "android_api": "36",
+      "emulator": true,
+      "real_provider_account": false,
+      "started_at": "2026-10-24T05:48:34.905938+00:00",
+      "scenarios": [
+        {
+          "kind": "idle",
+          "status": "pass",
+          "parameters": {
+            "niobium.idle_seconds": 1200
+          },
+          "samples": [
+            {
+              "kind": "idle",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 8,
+                "java_heap_used_bytes": 2784800,
+                "native_heap_allocated_bytes": 6041168,
+                "app_and_instrumentation_pss_kb": 63764,
+                "counts": {
+                  "requested_seconds": 1200
+                }
+              }
+            },
+            {
+              "kind": "idle",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 60075,
+                "java_heap_used_bytes": 2956864,
+                "native_heap_allocated_bytes": 6035488,
+                "app_and_instrumentation_pss_kb": 63683,
+                "counts": {
+                  "requested_seconds": 1200,
+                  "client_pings": 3,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "idle",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 120135,
+                "java_heap_used_bytes": 2989632,
+                "native_heap_allocated_bytes": 6035728,
+                "app_and_instrumentation_pss_kb": 63707,
+                "counts": {
+                  "requested_seconds": 1200,
+                  "client_pings": 6,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "idle",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 180194,
+                "java_heap_used_bytes": 2989632,
+                "native_heap_allocated_bytes": 6035776,
+                "app_and_instrumentation_pss_kb": 63731,
+                "counts": {
+                  "requested_seconds": 1200,
+                  "client_pings": 9,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "idle",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 240263,
+                "java_heap_used_bytes": 2989632,
+                "native_heap_allocated_bytes": 6035824,
+                "app_and_instrumentation_pss_kb": 63751,
+                "counts": {
+                  "requested_seconds": 1200,
+                  "client_pings": 12,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "idle",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 300313,
+                "java_heap_used_bytes": 3055264,
+                "native_heap_allocated_bytes": 6045536,
+                "app_and_instrumentation_pss_kb": 63843,
+                "counts": {
+                  "requested_seconds": 1200,
+                  "client_pings": 15,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "idle",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 360370,
+                "java_heap_used_bytes": 3088032,
+                "native_heap_allocated_bytes": 6038080,
+                "app_and_instrumentation_pss_kb": 63859,
+                "counts": {
+                  "requested_seconds": 1200,
+                  "client_pings": 18,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "idle",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 420425,
+                "java_heap_used_bytes": 3088032,
+                "native_heap_allocated_bytes": 6038128,
+                "app_and_instrumentation_pss_kb": 63887,
+                "counts": {
+                  "requested_seconds": 1200,
+                  "client_pings": 21,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "idle",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 480492,
+                "java_heap_used_bytes": 3120800,
+                "native_heap_allocated_bytes": 6038176,
+                "app_and_instrumentation_pss_kb": 63915,
+                "counts": {
+                  "requested_seconds": 1200,
+                  "client_pings": 24,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "idle",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 540553,
+                "java_heap_used_bytes": 3186336,
+                "native_heap_allocated_bytes": 6038224,
+                "app_and_instrumentation_pss_kb": 63951,
+                "counts": {
+                  "requested_seconds": 1200,
+                  "client_pings": 27,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "idle",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 600616,
+                "java_heap_used_bytes": 3186336,
+                "native_heap_allocated_bytes": 6038272,
+                "app_and_instrumentation_pss_kb": 63983,
+                "counts": {
+                  "requested_seconds": 1200,
+                  "client_pings": 30,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "idle",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 660680,
+                "java_heap_used_bytes": 2870816,
+                "native_heap_allocated_bytes": 6037648,
+                "app_and_instrumentation_pss_kb": 63603,
+                "counts": {
+                  "requested_seconds": 1200,
+                  "client_pings": 33,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "idle",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 720735,
+                "java_heap_used_bytes": 2903584,
+                "native_heap_allocated_bytes": 6037696,
+                "app_and_instrumentation_pss_kb": 63641,
+                "counts": {
+                  "requested_seconds": 1200,
+                  "client_pings": 36,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "idle",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 780795,
+                "java_heap_used_bytes": 2903584,
+                "native_heap_allocated_bytes": 6037744,
+                "app_and_instrumentation_pss_kb": 63670,
+                "counts": {
+                  "requested_seconds": 1200,
+                  "client_pings": 39,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "idle",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 840857,
+                "java_heap_used_bytes": 2936352,
+                "native_heap_allocated_bytes": 6037792,
+                "app_and_instrumentation_pss_kb": 63710,
+                "counts": {
+                  "requested_seconds": 1200,
+                  "client_pings": 42,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "idle",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 900912,
+                "java_heap_used_bytes": 2969120,
+                "native_heap_allocated_bytes": 6037840,
+                "app_and_instrumentation_pss_kb": 63754,
+                "counts": {
+                  "requested_seconds": 1200,
+                  "client_pings": 45,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "idle",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 960975,
+                "java_heap_used_bytes": 3034656,
+                "native_heap_allocated_bytes": 6037888,
+                "app_and_instrumentation_pss_kb": 63806,
+                "counts": {
+                  "requested_seconds": 1200,
+                  "client_pings": 48,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "idle",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 1021034,
+                "java_heap_used_bytes": 3067424,
+                "native_heap_allocated_bytes": 6037936,
+                "app_and_instrumentation_pss_kb": 63846,
+                "counts": {
+                  "requested_seconds": 1200,
+                  "client_pings": 51,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "idle",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 1081093,
+                "java_heap_used_bytes": 3100192,
+                "native_heap_allocated_bytes": 6037984,
+                "app_and_instrumentation_pss_kb": 63890,
+                "counts": {
+                  "requested_seconds": 1200,
+                  "client_pings": 54,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "idle",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 1141158,
+                "java_heap_used_bytes": 3165824,
+                "native_heap_allocated_bytes": 6045792,
+                "app_and_instrumentation_pss_kb": 64042,
+                "counts": {
+                  "requested_seconds": 1200,
+                  "client_pings": 57,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "idle",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 1200059,
+                "java_heap_used_bytes": 3296896,
+                "native_heap_allocated_bytes": 6045840,
+                "app_and_instrumentation_pss_kb": 64098,
+                "counts": {
+                  "requested_seconds": 1200,
+                  "client_pings": 59,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "idle",
+              "phase": "scenario_passed",
+              "sample": {
+                "elapsed_ms": 1200106,
+                "java_heap_used_bytes": 2866752,
+                "native_heap_allocated_bytes": 6050656,
+                "app_and_instrumentation_pss_kb": 63842,
+                "counts": {
+                  "requested_seconds": 1200,
+                  "owner_stable": true,
+                  "confirmed_delivery": true
+                }
+              }
+            }
+          ],
+          "debug_apk_sha256": "fc38835a6519cd276f73a0ca937c0f9478e5c1de01c553b0ecc684c66ed058df"
+        },
+        {
+          "kind": "dsh",
+          "status": "pass",
+          "parameters": {
+            "niobium.dsh_turns": 12,
+            "niobium.dsh_pause_seconds": 45
+          },
+          "samples": [
+            {
+              "kind": "dsh",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 9,
+                "java_heap_used_bytes": 3786528,
+                "native_heap_allocated_bytes": 6195392,
+                "app_and_instrumentation_pss_kb": 65727,
+                "counts": {
+                  "requested_turns": 12,
+                  "pause_seconds": 45
+                }
+              }
+            },
+            {
+              "kind": "dsh",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 45627,
+                "java_heap_used_bytes": 3507968,
+                "native_heap_allocated_bytes": 6182800,
+                "app_and_instrumentation_pss_kb": 65332,
+                "counts": {
+                  "completed_turns": 1,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "dsh",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 91349,
+                "java_heap_used_bytes": 3618560,
+                "native_heap_allocated_bytes": 6182864,
+                "app_and_instrumentation_pss_kb": 65604,
+                "counts": {
+                  "completed_turns": 2,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "dsh",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 136778,
+                "java_heap_used_bytes": 3544832,
+                "native_heap_allocated_bytes": 6182848,
+                "app_and_instrumentation_pss_kb": 65352,
+                "counts": {
+                  "completed_turns": 3,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "dsh",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 182316,
+                "java_heap_used_bytes": 3659520,
+                "native_heap_allocated_bytes": 6182832,
+                "app_and_instrumentation_pss_kb": 65620,
+                "counts": {
+                  "completed_turns": 4,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "dsh",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 227846,
+                "java_heap_used_bytes": 3553024,
+                "native_heap_allocated_bytes": 6183472,
+                "app_and_instrumentation_pss_kb": 65440,
+                "counts": {
+                  "completed_turns": 5,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "dsh",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 273381,
+                "java_heap_used_bytes": 3667712,
+                "native_heap_allocated_bytes": 6183664,
+                "app_and_instrumentation_pss_kb": 65707,
+                "counts": {
+                  "completed_turns": 6,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "dsh",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 318906,
+                "java_heap_used_bytes": 3561216,
+                "native_heap_allocated_bytes": 6183600,
+                "app_and_instrumentation_pss_kb": 65451,
+                "counts": {
+                  "completed_turns": 7,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "dsh",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 364443,
+                "java_heap_used_bytes": 3671808,
+                "native_heap_allocated_bytes": 6183600,
+                "app_and_instrumentation_pss_kb": 65715,
+                "counts": {
+                  "completed_turns": 8,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "dsh",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 409877,
+                "java_heap_used_bytes": 3565312,
+                "native_heap_allocated_bytes": 6183520,
+                "app_and_instrumentation_pss_kb": 65459,
+                "counts": {
+                  "completed_turns": 9,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "dsh",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 455310,
+                "java_heap_used_bytes": 3675904,
+                "native_heap_allocated_bytes": 6183536,
+                "app_and_instrumentation_pss_kb": 65719,
+                "counts": {
+                  "completed_turns": 10,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "dsh",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 500740,
+                "java_heap_used_bytes": 3569408,
+                "native_heap_allocated_bytes": 6183472,
+                "app_and_instrumentation_pss_kb": 65471,
+                "counts": {
+                  "completed_turns": 11,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "dsh",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 546176,
+                "java_heap_used_bytes": 3684096,
+                "native_heap_allocated_bytes": 6183712,
+                "app_and_instrumentation_pss_kb": 65743,
+                "counts": {
+                  "completed_turns": 12,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "dsh",
+              "phase": "scenario_passed",
+              "sample": {
+                "elapsed_ms": 556578,
+                "java_heap_used_bytes": 8801056,
+                "native_heap_allocated_bytes": 22310640,
+                "app_and_instrumentation_pss_kb": 137804,
+                "counts": {
+                  "completed_turns": 12,
+                  "owner_stable": true,
+                  "rooms_verified": true
+                }
+              }
+            }
+          ],
+          "debug_apk_sha256": "fc38835a6519cd276f73a0ca937c0f9478e5c1de01c553b0ecc684c66ed058df"
+        }
+      ],
+      "status": "pass",
+      "completed_at": "2026-10-24T06:18:39.430884+00:00",
+      "memory_scope": "App and instrumentation only; guest DSH/Node excluded",
+      "limitations": [
+        "Controlled-provider instrumentation acceptance; does not establish battery, Doze or real-account behavior."
+      ]
+    },
+    "final_host_runner_smoke": {
+      "schema_version": 1,
+      "source_commit": "89b5901f5ed0751dc48ae4d066af9f307d5f9dc7",
+      "production_reference": "348e12f7a79ffd3cf17bf1be2f39f515db61f707",
+      "device": "emulator-5554",
+      "abi": "arm64-v8a",
+      "android_api": "36",
+      "emulator": true,
+      "real_provider_account": false,
+      "started_at": "2026-10-24T06:21:49.409909+00:00",
+      "scenarios": [
+        {
+          "kind": "idle",
+          "status": "pass",
+          "parameters": {
+            "niobium.idle_seconds": 45
+          },
+          "samples": [
+            {
+              "kind": "idle",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 8,
+                "java_heap_used_bytes": 2874928,
+                "native_heap_allocated_bytes": 6040816,
+                "app_and_instrumentation_pss_kb": 63795,
+                "counts": {
+                  "requested_seconds": 45
+                }
+              }
+            },
+            {
+              "kind": "idle",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 45057,
+                "java_heap_used_bytes": 3014224,
+                "native_heap_allocated_bytes": 6034976,
+                "app_and_instrumentation_pss_kb": 63674,
+                "counts": {
+                  "requested_seconds": 45,
+                  "client_pings": 2,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "idle",
+              "phase": "scenario_passed",
+              "sample": {
+                "elapsed_ms": 45099,
+                "java_heap_used_bytes": 3358352,
+                "native_heap_allocated_bytes": 6040944,
+                "app_and_instrumentation_pss_kb": 63850,
+                "counts": {
+                  "requested_seconds": 45,
+                  "owner_stable": true,
+                  "confirmed_delivery": true
+                }
+              }
+            }
+          ],
+          "debug_apk_sha256": "fc38835a6519cd276f73a0ca937c0f9478e5c1de01c553b0ecc684c66ed058df"
+        },
+        {
+          "kind": "dsh",
+          "status": "pass",
+          "parameters": {
+            "niobium.dsh_turns": 1,
+            "niobium.dsh_pause_seconds": 1
+          },
+          "samples": [
+            {
+              "kind": "dsh",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 11,
+                "java_heap_used_bytes": 3364608,
+                "native_heap_allocated_bytes": 6182176,
+                "app_and_instrumentation_pss_kb": 65376,
+                "counts": {
+                  "requested_turns": 1,
+                  "pause_seconds": 1
+                }
+              }
+            },
+            {
+              "kind": "dsh",
+              "phase": "running",
+              "sample": {
+                "elapsed_ms": 1645,
+                "java_heap_used_bytes": 3507968,
+                "native_heap_allocated_bytes": 6181856,
+                "app_and_instrumentation_pss_kb": 65522,
+                "counts": {
+                  "completed_turns": 1,
+                  "owner_stable": true
+                }
+              }
+            },
+            {
+              "kind": "dsh",
+              "phase": "scenario_passed",
+              "sample": {
+                "elapsed_ms": 12504,
+                "java_heap_used_bytes": 8805184,
+                "native_heap_allocated_bytes": 22243856,
+                "app_and_instrumentation_pss_kb": 137192,
+                "counts": {
+                  "completed_turns": 1,
+                  "owner_stable": true,
+                  "rooms_verified": true
+                }
+              }
+            }
+          ],
+          "debug_apk_sha256": "fc38835a6519cd276f73a0ca937c0f9478e5c1de01c553b0ecc684c66ed058df"
+        }
+      ],
+      "status": "pass",
+      "completed_at": "2026-10-24T06:23:34.099982+00:00",
+      "memory_scope": "App and instrumentation only; guest DSH/Node excluded",
+      "limitations": [
+        "Controlled-provider instrumentation acceptance; does not establish battery, Doze or real-account behavior."
+      ]
+    },
+    "android_test_source_equivalence": [
+      {
+        "executed_source_commit": "348e12f7a79ffd3cf17bf1be2f39f515db61f707",
+        "release_source_commit": "89b5901f5ed0751dc48ae4d066af9f307d5f9dc7",
+        "identical_paths_and_git_objects": {
+          "android": "445cfaf90162bbaa8899a1712761fc0b00634578",
+          "core": "d566f67b4077b76567dbc9d725466f9c68952c03",
+          "runtime": "e7ca438b669d50ee76c44cf801b2c5b85d30e729",
+          "config": "c4bf865cb005fb522a7fd59774c0ca8be1bcb78a",
+          "tests/fixtures": "474144771bac314fb6c7138ce7f9f8e92da8727d",
+          "tools/prepare-android-runtime.py": "cfdf53b85b0ca7d9a73211f96b0c71c7d78ffe13",
+          "tools/check-android-runtime.py": "94d933c1bc76a0dddc7d7bf9bb9ed5de00fa797b"
+        },
+        "scope": "Entire Android app and instrumentation, shared core, runtimes, configuration and Android runtime preparation/checks. Later commits change only host acceptance tooling/tests/docs."
+      }
+    ],
+    "debug_owned_process_cleanup": {
+      "source_commit": "348e12f7a79ffd3cf17bf1be2f39f515db61f707",
+      "verified_at": "2026-10-24T06:19:26.908047+00:00",
+      "device": "emulator-5554",
+      "debug_uid": 10297,
+      "remaining_debug_uid_processes": 0,
+      "remaining_node_or_niobium_native_processes": []
+    },
+    "extended_native_report_freshness": {
+      "source_commit": "348e12f7a79ffd3cf17bf1be2f39f515db61f707",
+      "checked_at": "2026-10-24T06:24:42.889578+00:00",
+      "both_native_xml_reports_written_within_observed_run": true,
+      "reports": [
+        {
+          "scenario": "idle",
+          "xml_modified_at": "2026-10-24T06:08:51.246411+00:00",
+          "utp_report_timestamp": "2026-10-24T06:08:50",
+          "case": {
+            "name": "idleConnectionsSurviveTwoHeartbeatIntervalsAndStillDeliver",
+            "classname": "io.sovware.niobium.ChatDeliveryTest",
+            "time": "1211.542"
+          }
+        },
+        {
+          "scenario": "dsh",
+          "xml_modified_at": "2026-10-24T06:18:38.208349+00:00",
+          "utp_report_timestamp": "2026-10-24T06:18:37",
+          "case": {
+            "name": "nativeDshProviderCreatesPixelsAndStreamsThroughRealDsh",
+            "classname": "io.sovware.niobium.LocalRuntimeTest",
+            "time": "581.467"
+          }
+        }
+      ],
+      "started_at": "2026-10-24T05:48:34.905938+00:00",
+      "completed_at": "2026-10-24T06:18:39.430884+00:00"
+    },
+    "android_test_binary_equivalence": {
+      "native_report_source": "348e12f7a79ffd3cf17bf1be2f39f515db61f707",
+      "final_smoke_source": "89b5901f5ed0751dc48ae4d066af9f307d5f9dc7",
+      "native_apks": {
+        "app-debug.apk": "fc38835a6519cd276f73a0ca937c0f9478e5c1de01c553b0ecc684c66ed058df",
+        "app-debug-androidTest.apk": "4a159695580063365d31428fbc08ece43fdfc2060363438c2fb03bf5d1e6d9db"
+      },
+      "final_apks": {
+        "app-debug.apk": "fc38835a6519cd276f73a0ca937c0f9478e5c1de01c553b0ecc684c66ed058df",
+        "app-debug-androidTest.apk": "b3047fb1bfff6062d0ac962276beac16c9ec620c3f05975ee7e5a6c9055b9e68"
+      },
+      "same_debug_app_and_test_apks": false,
+      "same_debug_app_apk": true,
+      "android_test_zip_entry_bytes_identical": true,
+      "android_test_entry_hashes": {
+        "AndroidManifest.xml": "39112de9d21cf4282a0655c8c9c669d509e20083e3ec24ddd302f4dd293e7cf3",
+        "LICENSE-junit.txt": "9648bb2891b9813970bddb68d4be8a5e6ec8280d0180a53dfb29236b579c55bb",
+        "META-INF/services/kotlinx.coroutines.CoroutineExceptionHandler": "1b8e1a088e38c9bc8dd36517de1202651f06a9ca9eb0e6adad7305392289a94c",
+        "META-INF/services/kotlinx.coroutines.internal.MainDispatcherFactory": "90d3bc46060b2a33332bd2bc8122d5b03dd1a507718db830d5e809cc62c4490d",
+        "assets/character-recipes.json": "ca5dae45e85e8d474aab1f2f8ce2d3f98396c6e47e71bd136d381abc585a57d5",
+        "assets/custom-art.json": "796052d9d47b2a11c49c10084e7b94d81bbba147ee3b9ceff0a1fa1c0d37cd1b",
+        "assets/gateway.mjs": "4f8bc8ee062c78d1e9fc2131243639ffe36301ed95b49a54862ece1d47458000",
+        "assets/portrait-looks.json": "ca6cf0bb69b12de40e52986bad4842ad2f152a71d77f8fce61bf2a2a3d46f048",
+        "classes.dex": "72aa56d4f4e5fd87ff0dca47a587d4f70a7e9fa57bd5f78273851c205f1edf93",
+        "classes2.dex": "a1519069fd77735e31b0a4d530a090bd88596b40551544d0fb57b7d6f7a5a3b4",
+        "classes3.dex": "e6d5d512dabd4b88663dbdff9ae56efa3f75bdf493258df8b491a1feae0c23a8",
+        "classes4.dex": "979d5d0a71e7270c2c100644bb536d8fde928aaf81af91ca02fef00b27da3991",
+        "classes5.dex": "0ce55decdd808715cc6339313aa9a037a8eb11bba1ca9f7c4478946f40957497",
+        "junit/runner/logo.gif": "345b5e2207a524e0019779d13f0f8ae51359f894a230479467761331e3d1ca16",
+        "junit/runner/smalllogo.gif": "b4819008f181bf3e0b47254f72149c62a556a56fc0358d3143e405b191de2081",
+        "res/color/vector_tint_color.xml": "4bbb4ef3e0e3db260a05d794047a1765e420d699ee5673e90b57ff682a2fe34e",
+        "res/color/vector_tint_theme_color.xml": "cf34dc5bdb4a6d1568143e115ac4e34448383ac772862ef0fdbb7fe8936c6dd3",
+        "res/drawable-hdpi-v4/notification_bg_low_normal.9.png": "21f0b55280be10b187ceff8edef4a5a7047683e6e9fcf47de410aa3839f41094",
+        "res/drawable-hdpi-v4/notification_bg_low_pressed.9.png": "42aee0b03883e94df5e543348a397d1302c1b8221895871a83b81899f5a9647b",
+        "res/drawable-hdpi-v4/notification_bg_normal.9.png": "0c6328c7b2420570a7ec38b3beb3bac9a29d895ac1ab7239315aba7266418593",
+        "res/drawable-hdpi-v4/notification_bg_normal_pressed.9.png": "18b328d8017e677d5aad3dbd66bae356b5cac978c6f0670938ea648e51d0eb66",
+        "res/drawable-hdpi-v4/notification_oversize_large_icon_bg.png": "aa00088d0d9fd97bd92ed9ffd29b54bb69a48a984aa73448ce553fb9d812be41",
+        "res/drawable-hdpi-v4/notify_panel_notification_icon_bg.png": "8430ec003e003f3f2ba2f78d48fd150e25407667e530e82e87a7d4841c0fd676",
+        "res/drawable-mdpi-v4/notification_bg_low_normal.9.png": "2f7fbda0ba6e53e9a47e2fc0e24e32c447c613a5808c2d6285dc651e83a07ad7",
+        "res/drawable-mdpi-v4/notification_bg_low_pressed.9.png": "e17761ed280edd93d7141bd504b70f9e9e15a8652288d9e6333bf4ce964ef844",
+        "res/drawable-mdpi-v4/notification_bg_normal.9.png": "a8676a1793ac8310ffb12986232df66df092d29c242aeedc2b73556c010d38dc",
+        "res/drawable-mdpi-v4/notification_bg_normal_pressed.9.png": "99c14d6855b8be296d58017d3751b8dc849c47b6d1d80ab614ff9075080e461b",
+        "res/drawable-mdpi-v4/notify_panel_notification_icon_bg.png": "0d773e62c756422313262846c787e58f67e0ee87e45e1ae9942002e816c4cb9e",
+        "res/drawable-xhdpi-v4/notification_bg_low_normal.9.png": "3e09afa21c45372c035598c017c8fb405a6d678e6cb84dc857581cb3b40e482d",
+        "res/drawable-xhdpi-v4/notification_bg_low_pressed.9.png": "20343222f9f79dd565c3a2248494d452e70820ac1c437173c38badd45f962afd",
+        "res/drawable-xhdpi-v4/notification_bg_normal.9.png": "559bf783d765c02338e97952bdc9c6689c7ff99090b8c9813369118da8b080f0",
+        "res/drawable-xhdpi-v4/notification_bg_normal_pressed.9.png": "d27af435101ca4cbec0c840bd30687918cd39eb83aab1487420855623a45998b",
+        "res/drawable-xhdpi-v4/notify_panel_notification_icon_bg.png": "b44eeda34d7a529c2fe55719eb098fa29707caa91d18de06a7a775d6e6bcf973",
+        "res/drawable/ic_call_answer.xml": "161406bf79846bcd45f13f7f9ac46bf835db983d086c43a754f15b8a574cf831",
+        "res/drawable/ic_call_answer_low.xml": "8f9acacabaf2dfb4bb53dab7ce7bec9c1451ce0a0219ffaa41760ea82da3d2d6",
+        "res/drawable/ic_call_answer_video.xml": "e5d8029b22d3bcd3496b387bd4c775fe3ca0de342981ebf95b54a1f7ec09c462",
+        "res/drawable/ic_call_answer_video_low.xml": "4a959580080ebb1d822a2459a4234d2abf0dd0b65d9c28bda8c258dafc888c51",
+        "res/drawable/ic_call_decline.xml": "9869baa89df07463c9905927155f79b63b38f70933b475de6d01aa14d22bc6df",
+        "res/drawable/ic_call_decline_low.xml": "c8321364802409baf4d76e2a84e303871585bdc95b0395040c5ecea0e2051105",
+        "res/drawable/notification_action_background.xml": "2f768c089cefa18cf7f1fde7f602410bf38998de5f9073a15ea83106c25e3c30",
+        "res/drawable/notification_bg.xml": "20a1a2e83aa9806faeb234fc0a1094bc079adf5a25ef4cfef1491c5ca3b3c745",
+        "res/drawable/notification_bg_low.xml": "49041ec87bb2ec2a8bc23685c8eb2c2d5297aa39f1412dc7aa6639aeec12ee49",
+        "res/drawable/notification_icon_background.xml": "b143ee7fcbba209f17607a720502d755f085ec75380ad6fbd6f99de6583f0a40",
+        "res/drawable/notification_tile_bg.xml": "fb5d113d15ff98da0eab3cb9e178e909ad5e261f30a24add0267e2827b4c7774",
+        "res/layout/custom_dialog.xml": "1225c70e4f60c16a48584db22f2a56d3ba1ede77e5015b6175e855294509c50a",
+        "res/layout/ime_base_split_test_activity.xml": "37ff040591f96786bfaf9d3d937fedf2f2f97e218c06beb3e7fe8a2442a181a8",
+        "res/layout/ime_secondary_split_test_activity.xml": "f9d2c9f0c2c7523f871d1042ba51301c533b9d5579fa4029e5e41db9c3bce64a",
+        "res/layout/notification_action.xml": "be4e4bcbcf57aebd10dd49a81fc5fdb9320d871c25d10346d4141681587cabb9",
+        "res/layout/notification_action_tombstone.xml": "22fa60bd009290a9a5bcfd404410bc14197f6380dcef9af047938367795254a3",
+        "res/layout/notification_template_custom_big.xml": "1851faa448852a4a329c73b2170c864f2f51a73067f40b4cbe6e6c849024bc84",
+        "res/layout/notification_template_icon_group.xml": "8f1da5cddcb4af6c90500e728ccb7320b65337040cf7dfe3c68d3ea8ff8b137d",
+        "res/layout/notification_template_part_chronometer.xml": "7ef3ac870f5a2d299b96f26876c0ff9271e5a92c995435e83ab5d7d3c68a9af3",
+        "res/layout/notification_template_part_time.xml": "e41f827433c7f994d9c2fc33d9d4aaf4631f369756e8956adfa952ff55412eed",
+        "resources.arsc": "86a38d25970bfe34e8be558855f2b917d6e250b3604a78d14aabc382ed1a34c1"
+      },
+      "note": "The debug app APK bytes are identical. Instrumentation APK archive bytes differ; all named ZIP entries have identical bytes, including test code, manifest and assets."
+    },
+    "android_runtime_hashes_and_16kb_alignment": "pass"
+  },
+  "android": {
+    "application_id": "io.sovware.niobium",
+    "version": "2.2.3",
+    "version_code": 18,
+    "abi": "arm64-v8a",
+    "min_sdk": 28,
+    "target_sdk": 37,
+    "certificate_sha256": "2f44d7e7316de46bf7d81a126bff456950a77df5c1e295afb753832aa1891b5d",
+    "build_source_commit": "89b5901f5ed0751dc48ae4d066af9f307d5f9dc7",
+    "dependency_archive": "https://github.com/wckdboy/niobium/releases/tag/android-runtime-2026.10.22",
+    "physical_device_tested": false,
+    "physical_16kb_device_tested": false,
+    "photo_preparation": {
+      "input_limit_bytes": 16777216,
+      "encoded_limit_bytes": 4194304,
+      "long_edge_pixels": 2048,
+      "preview_long_edge_pixels": 160,
+      "background_worker": true,
+      "orientation_and_alpha": "native tests pass"
+    },
+    "inventories": {
+      "captured_gateway_profile_chat_and_latest_request": true,
+      "failed_or_malformed_refresh_retains_rows": true,
+      "partial_mcp_status_explicit": true,
+      "stale_mutation_controls_rejected": true,
+      "repeated_mutations_guarded": true,
+      "unconfirmed_changes_require_explicit_successful_refresh": true
+    },
+    "routine_editor": {
+      "ime_insets": true,
+      "fixed_actions_with_scrollable_fields": true,
+      "single_line_compact_actions": true,
+      "narrow_ui_check": "320 dp, 1.3 text scale, actual keyboard; native 240 dp high form regression"
+    },
+    "chat_browser": {
+      "loaded_title_and_model_search": true,
+      "working_filter": true,
+      "stable_row_identity": true,
+      "gateway_profile_chat_and_latest_request_ownership": true,
+      "failed_refresh_retains_rows": true,
+      "hermes_recent_limit": 60
+    },
+    "release_startup": {
+      "fixture_extras_ignored": true,
+      "saved_gateway_restored": true,
+      "debug_fixture_routing_retained": true
+    },
+    "idle_connection_test": "20-minute controlled hold, measured Pixel-client keepalives, unchanged owner and confirmed delivery. Additional real DSH acceptance completes 12 chat/reopen turns with 45-second pauses, then DM/room checks.",
+    "drafts": "Bounded in-memory conversation text; cleared only after acceptance. No process-death draft persistence.",
+    "unknown_delivery": "Opaque per-account/session IDs persist before side effects; explicit user review unlocks, no automatic prompt replay."
+  },
+  "desktop": {
+    "rebuilt_in_this_release": false,
+    "version": "2.1.3",
+    "retained_release": "https://github.com/wckdboy/niobium/releases/tag/v2.1.3-beta.1"
+  },
+  "ios": {
+    "release_work": "parked by user request",
+    "new_build_in_this_release": false
+  },
+  "limitations": [
+    "Physical Android/16 KB execution, real-account model/image acceptance and battery/long-running background behavior remain open.",
+    "Text/photo drafts are not persisted across process death; only opaque pending-delivery metadata persists.",
+    "Full Hermes parity, server outbox/replay reconciliation, connector authorization, broad file attachments and native background completion notifications remain open.",
+    "Local DSH provider credentials remain in its owner-only file; the Android Keystore bridge remains follow-up work."
+  ],
+  "runtime_hashes": {
+    "runtime/niobium-agent.cjs": "c9f27ca74b9e383d229cf78de6a82c029ecac17ff9cd29bcd19846397ec6a7bb",
+    "runtime/niobium-messaging.cjs": "f04695ffd40a03f33f207d5b6b0d63f45dacb504085fe9af20a05ac3234b5e2e",
+    "android/runtime/niobium-local.cjs": "dd7391760bcb9195c2e6855ebadd634c7143a692ac81cec40004a2a5cce91f80",
+    "android/runtime/supervisor.c": "8600b6988eae12fecdd198688034e4a3a40ece181ce69868a48c964e2a5403bf",
+    "config/android-runtime.json": "fd3e9cf293438dfe8039ef43cfb71c0f29bf6de979f4a590a1192aa0f219c4e4"
+  },
+  "assets": [
+    {
+      "name": "Niobium-2.2.3-beta.1-android-arm64.apk",
+      "size": 90873938,
+      "sha256": "560e87c1ed2c09fe568257bab630b8ac9ffa4439bc13a38b16efd625629a8680",
+      "download_url": "https://github.com/wckdboy/niobium/releases/download/v2.2.3-beta.1/Niobium-2.2.3-beta.1-android-arm64.apk"
+    },
+    {
+      "name": "Niobium-Android-runtime-sources.tar.gz",
+      "size": 1206468,
+      "sha256": "7dde6756dbdefe7cac8a20a1327688bf76aa2f8944ecb1186045d6ef08f50b43",
+      "download_url": "https://github.com/wckdboy/niobium/releases/download/v2.2.3-beta.1/Niobium-Android-runtime-sources.tar.gz"
+    }
+  ],
+  "release_url": "https://github.com/wckdboy/niobium/releases/tag/v2.2.3-beta.1",
+  "merge_commit": "ccd9181d0a4215a3805527b4facf592ad15c503a",
+  "public_verification": {
+    "verified_at": "2026-10-24T06:40:07.877422+00:00",
+    "release_id": 422563592,
+    "release_url": "https://github.com/wckdboy/niobium/releases/tag/v2.2.3-beta.1",
+    "published_at": "2026-10-24T06:39:52Z",
+    "assets": [
+      {
+        "name": "Niobium-2.2.3-beta.1-android-arm64.apk",
+        "size": 90873938,
+        "sha256": "560e87c1ed2c09fe568257bab630b8ac9ffa4439bc13a38b16efd625629a8680",
+        "public_http_status": 200,
+        "full_public_bytes_verified": true,
+        "url": "https://github.com/wckdboy/niobium/releases/download/v2.2.3-beta.1/Niobium-2.2.3-beta.1-android-arm64.apk"
+      },
+      {
+        "name": "Niobium-Android-runtime-sources.tar.gz",
+        "size": 1206468,
+        "sha256": "7dde6756dbdefe7cac8a20a1327688bf76aa2f8944ecb1186045d6ef08f50b43",
+        "public_http_status": 200,
+        "full_public_bytes_verified": true,
+        "url": "https://github.com/wckdboy/niobium/releases/download/v2.2.3-beta.1/Niobium-Android-runtime-sources.tar.gz"
+      },
+      {
+        "name": "release-metadata.json",
+        "size": 46918,
+        "sha256": "c8b3c5f96acf54b1ae9111462298ad65c541a1f667991ca3fcc9b4dbe42e7807",
+        "public_http_status": 200,
+        "full_public_bytes_verified": true,
+        "url": "https://github.com/wckdboy/niobium/releases/download/v2.2.3-beta.1/release-metadata.json"
+      },
+      {
+        "name": "SHA256SUMS.txt",
+        "size": 298,
+        "sha256": "9eadcbcc252e3f8c575ee08816d06c3df85faa502f1e62d88bfd77bb2a420a0a",
+        "public_http_status": 200,
+        "full_public_bytes_verified": true,
+        "url": "https://github.com/wckdboy/niobium/releases/download/v2.2.3-beta.1/SHA256SUMS.txt"
+      }
+    ],
+    "metadata_and_checksums_public_bytes_match": true,
+    "full_public_download_sha256_verified": [
+      "Niobium-2.2.3-beta.1-android-arm64.apk",
+      "Niobium-Android-runtime-sources.tar.gz",
+      "release-metadata.json",
+      "SHA256SUMS.txt"
+    ],
+    "downloaded_apk_certificate_verified": true,
+    "tag_commit": "89b5901f5ed0751dc48ae4d066af9f307d5f9dc7"
+  },
+  "website_verification": {
+    "deployment_version": "26bfb6d2-46f1-4b97-8410-52c1c1af3db2",
+    "verified_at": "2026-10-24T06:43:08.574244+00:00",
+    "public_files_verified": 20,
+    "files": [
+      {
+        "path": "bot-build.md",
+        "url": "https://niobium.sh/bot-build.md",
+        "status": 200,
+        "sha256": "aa0046f35bd5a99a5d53dc3f95d996d2008e912337532190984c2670a437d46f",
+        "size": 9184
+      },
+      {
+        "path": "build/index.html",
+        "url": "https://niobium.sh/build/",
+        "status": 200,
+        "sha256": "e5f2ee3dd24bd882ef2ab7d74d0202c75903f7d7316647c88901cb3b8dcb28cd",
+        "size": 5490
+      },
+      {
+        "path": "cast-strip.png",
+        "url": "https://niobium.sh/cast-strip.png",
+        "status": 200,
+        "sha256": "e76095833f0e1c8edc9cedf71866739c5de46f48b0eda057d5d6293e8167c165",
+        "size": 4248
+      },
+      {
+        "path": "desktop-preview.png",
+        "url": "https://niobium.sh/desktop-preview.png",
+        "status": 200,
+        "sha256": "23d4bfb79bf103dedcd56a0ba0dda3b0b52c4a7d5cebca77dfce488b1ac6fb45",
+        "size": 60511
+      },
+      {
+        "path": "favicon.svg",
+        "url": "https://niobium.sh/favicon.svg",
+        "status": 200,
+        "sha256": "be2ee73797c4ae40cefd46c0739b6c4f69ad3db6371abd957d07e3f10e19a1a2",
+        "size": 928
+      },
+      {
+        "path": "fonts/jetbrains-mono-latin.woff2",
+        "url": "https://niobium.sh/fonts/jetbrains-mono-latin.woff2",
+        "status": 200,
+        "sha256": "2c32b9b3ee358c119e210f6f5195f9bd34894d78a785ff2e95d60e718e400af4",
+        "size": 31340
+      },
+      {
+        "path": "index.html",
+        "url": "https://niobium.sh/",
+        "status": 200,
+        "sha256": "c62920379a497b098c158d2f20c34cbc5fa7336081eb5d79371f9be7795ecbc8",
+        "size": 7714
+      },
+      {
+        "path": "legal/index.html",
+        "url": "https://niobium.sh/legal/",
+        "status": 200,
+        "sha256": "5a3df29c5e408681df905fbba76a9764eb4264c23c2907a57d72d2757c293123",
+        "size": 5993
+      },
+      {
+        "path": "local/index.html",
+        "url": "https://niobium.sh/local/",
+        "status": 200,
+        "sha256": "5e11dd4f9111ad9edaf23280e32634bcb9b4d8f8f543e503d975d6462484aaae",
+        "size": 7873
+      },
+      {
+        "path": "og/icon.png",
+        "url": "https://niobium.sh/og/icon.png",
+        "status": 200,
+        "sha256": "74c70309fa9f5abeea610ebf613f93186db4d5fba7d7e21f75a2613c8756aacf",
+        "size": 7743
+      },
+      {
+        "path": "og/niobium.png",
+        "url": "https://niobium.sh/og/niobium.png",
+        "status": 200,
+        "sha256": "5f380e11d3f7a12d6c52c5f1393e856ce7854d30cfb9f5c58d6b0d392c834867",
+        "size": 13253
+      },
+      {
+        "path": "pixel-cast-atlas.png",
+        "url": "https://niobium.sh/pixel-cast-atlas.png",
+        "status": 200,
+        "sha256": "4c16507ca42f6332c601457691d63e43d858362b73c504242465f701eeadf93b",
+        "size": 28036
+      },
+      {
+        "path": "pixel-custom-atlas.png",
+        "url": "https://niobium.sh/pixel-custom-atlas.png",
+        "status": 200,
+        "sha256": "18c3a6a7b94d07092ea7b2c08cc59732075788bf8cdb707eb6182e985d4f362f",
+        "size": 48544
+      },
+      {
+        "path": "pixel-familiars.png",
+        "url": "https://niobium.sh/pixel-familiars.png",
+        "status": 200,
+        "sha256": "ef956c3bf74275c4b2a0f241cb802b263dbd0fbcd1f0090179f1b55e859badf1",
+        "size": 1198
+      },
+      {
+        "path": "pixel-wardrobe-v1.png",
+        "url": "https://niobium.sh/pixel-wardrobe-v1.png",
+        "status": 200,
+        "sha256": "91b0c71ba3d840047b8a99cc94cfb902333fed90d5426e7438d12ad3075fb7d0",
+        "size": 50958
+      },
+      {
+        "path": "releases/index.html",
+        "url": "https://niobium.sh/releases/",
+        "status": 200,
+        "sha256": "0c90a3c612db6de0ce75dc33f59e33a3464283998831be996fb14da185a96203",
+        "size": 10120
+      },
+      {
+        "path": "robots.txt",
+        "url": "https://niobium.sh/robots.txt",
+        "status": 200,
+        "sha256": "552d1e6069be74e21050173d4fa54ee1ba8520c95108b1f4d0255dcb61171763",
+        "size": 63
+      },
+      {
+        "path": "site.css",
+        "url": "https://niobium.sh/site.css",
+        "status": 200,
+        "sha256": "62c5d13d82a818b37f2c8b8f3c4c8346c757cf001a03d348f8c1038760ea6253",
+        "size": 16199
+      },
+      {
+        "path": "sitemap.xml",
+        "url": "https://niobium.sh/sitemap.xml",
+        "status": 200,
+        "sha256": "b1681b9159011e7ab8bb110505240ee4f083bdbacba5fbe022818a41ab9fcc9b",
+        "size": 396
+      },
+      {
+        "path": "system/index.html",
+        "url": "https://niobium.sh/system/",
+        "status": 200,
+        "sha256": "01bc530578ae671f36feaffd77c8ff52b63a227030834e12c9ee424041c59615",
+        "size": 6753
+      }
+    ],
+    "www_home_bytes_match": true,
+    "custom_404_bytes_match": true
+  },
+  "native_report_sha256": "a5a7e30b8c2a52037f831c51cfbee658a7eed76c2ed195f549be78eabbd89de7",
+  "visual_checks": [
+    {
+      "surface": "Signed 2.2.3 demo home reached through the normal onboarding action",
+      "source_commit": "89b5901f5ed0751dc48ae4d066af9f307d5f9dc7",
+      "path": "docs/evidence/beta223-android-home.png"
+    },
+    {
+      "surface": "Signed direct upgrade retains the saved gateway and Dark appearance",
+      "source_commit": "89b5901f5ed0751dc48ae4d066af9f307d5f9dc7",
+      "path": "docs/evidence/beta223-android-settings-dark.png"
+    }
+  ],
+  "hermes_update_watch": {
+    "workflow": "https://github.com/wckdboy/niobium/actions/runs/40068271559",
+    "status": "success",
+    "tracking_issue": "https://github.com/wckdboy/niobium/issues/2",
+    "audited_baseline_unchanged": "1186b6bd5330185ba61c4f80fbfc073f7febbf0e",
+    "observed_upstream": "5894e750c3dba980d43b25aa29e3958149ba2c61",
+    "observed_release": "v0.22.5",
+    "comparison_truncated": true,
+    "compatibility_not_established": true
+  },
+  "next_android_cycle": "Encrypted text drafts after process death, then native completion notifications, broader attachments and the DSH credential-vault bridge. Physical devices, battery/Doze and real accounts remain open.",
+  "controlled_dsh_uid_rss_baseline": "docs/evidence/beta223-android-process-baseline.json"
+}

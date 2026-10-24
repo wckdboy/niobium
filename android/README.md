@@ -97,11 +97,15 @@ and keeps Reload disabled until a valid explicit refresh. The dialog/IME test
 compares the action's full boundary and keyboard in screen coordinates.
 
 
-## Production startup candidate
+## Android 2.2.3 production startup
 
 Release startup restores the saved workspace and ignores external fixture/demo
 launch arguments. It does not inspect these extras, including connection tokens.
 The debug APK retains the documented gateway, demo and navigation overrides used
 by native acceptance. Pure policy tests cover ignored release extras, debug
 fixtures, demo precedence, incomplete connections and redacted diagnostics.
-The next APK candidate is 2.2.3/code18.
+Android 2.2.3/code18 is published after CodeRabbit approval and green source CI.
+The direct signed upgrade, saved gateway/appearance retention and external-launch
+checks pass. Controlled acceptance adds a 20-minute connection hold and 12 real
+DSH chat/reopen turns with pauses, followed by DM/room checks.
+See [release evidence](../docs/evidence/beta223-release-validation.json).

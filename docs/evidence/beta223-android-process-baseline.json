@@ -1,0 +1,605 @@
+{
+  "schema_version": 1,
+  "source_commit": "348e12f7a79ffd3cf17bf1be2f39f515db61f707",
+  "device": "emulator-5554",
+  "emulator": true,
+  "instrumentation_overhead": true,
+  "scope": "All process RSS values reported by Android ps for the current debug application UID, including guest Node/DSH and instrumentation. Names only; no command lines or environments.",
+  "limitations": [
+    "Sum of RSS double-counts shared pages and is not PSS or physical memory use.",
+    "Controlled test workload; not a production, battery, CPU or long-term leak acceptance."
+  ],
+  "samples": [
+    {
+      "at": "2026-10-24T06:09:23.322218+00:00",
+      "uid": 10297,
+      "rss_sum_kb": 373000,
+      "processes": [
+        {
+          "pid": 28759,
+          "parent_pid": 520,
+          "rss_kb": 193468,
+          "name": "io.sovware.niobium.debug"
+        },
+        {
+          "pid": 28781,
+          "parent_pid": 28759,
+          "rss_kb": 3344,
+          "name": "libniobium_supervisor.so"
+        },
+        {
+          "pid": 28785,
+          "parent_pid": 28781,
+          "rss_kb": 3696,
+          "name": "libniobium_proot.so"
+        },
+        {
+          "pid": 28787,
+          "parent_pid": 28785,
+          "rss_kb": 172492,
+          "name": "node"
+        }
+      ]
+    },
+    {
+      "at": "2026-10-24T06:09:53.398874+00:00",
+      "uid": 10297,
+      "rss_sum_kb": 373268,
+      "processes": [
+        {
+          "pid": 28759,
+          "parent_pid": 520,
+          "rss_kb": 193500,
+          "name": "io.sovware.niobium.debug"
+        },
+        {
+          "pid": 28781,
+          "parent_pid": 28759,
+          "rss_kb": 3344,
+          "name": "libniobium_supervisor.so"
+        },
+        {
+          "pid": 28785,
+          "parent_pid": 28781,
+          "rss_kb": 3696,
+          "name": "libniobium_proot.so"
+        },
+        {
+          "pid": 28787,
+          "parent_pid": 28785,
+          "rss_kb": 172728,
+          "name": "node"
+        }
+      ]
+    },
+    {
+      "at": "2026-10-24T06:10:23.468931+00:00",
+      "uid": 10297,
+      "rss_sum_kb": 336772,
+      "processes": [
+        {
+          "pid": 28759,
+          "parent_pid": 520,
+          "rss_kb": 193528,
+          "name": "io.sovware.niobium.debug"
+        },
+        {
+          "pid": 28781,
+          "parent_pid": 28759,
+          "rss_kb": 3344,
+          "name": "libniobium_supervisor.so"
+        },
+        {
+          "pid": 28785,
+          "parent_pid": 28781,
+          "rss_kb": 3696,
+          "name": "libniobium_proot.so"
+        },
+        {
+          "pid": 28787,
+          "parent_pid": 28785,
+          "rss_kb": 136204,
+          "name": "node"
+        }
+      ]
+    },
+    {
+      "at": "2026-10-24T06:10:53.552818+00:00",
+      "uid": 10297,
+      "rss_sum_kb": 336544,
+      "processes": [
+        {
+          "pid": 28759,
+          "parent_pid": 520,
+          "rss_kb": 193136,
+          "name": "io.sovware.niobium.debug"
+        },
+        {
+          "pid": 28781,
+          "parent_pid": 28759,
+          "rss_kb": 3344,
+          "name": "libniobium_supervisor.so"
+        },
+        {
+          "pid": 28785,
+          "parent_pid": 28781,
+          "rss_kb": 3696,
+          "name": "libniobium_proot.so"
+        },
+        {
+          "pid": 28787,
+          "parent_pid": 28785,
+          "rss_kb": 136368,
+          "name": "node"
+        }
+      ]
+    },
+    {
+      "at": "2026-10-24T06:11:23.629877+00:00",
+      "uid": 10297,
+      "rss_sum_kb": 336544,
+      "processes": [
+        {
+          "pid": 28759,
+          "parent_pid": 520,
+          "rss_kb": 193136,
+          "name": "io.sovware.niobium.debug"
+        },
+        {
+          "pid": 28781,
+          "parent_pid": 28759,
+          "rss_kb": 3344,
+          "name": "libniobium_supervisor.so"
+        },
+        {
+          "pid": 28785,
+          "parent_pid": 28781,
+          "rss_kb": 3696,
+          "name": "libniobium_proot.so"
+        },
+        {
+          "pid": 28787,
+          "parent_pid": 28785,
+          "rss_kb": 136368,
+          "name": "node"
+        }
+      ]
+    },
+    {
+      "at": "2026-10-24T06:11:53.708341+00:00",
+      "uid": 10297,
+      "rss_sum_kb": 337264,
+      "processes": [
+        {
+          "pid": 28759,
+          "parent_pid": 520,
+          "rss_kb": 193488,
+          "name": "io.sovware.niobium.debug"
+        },
+        {
+          "pid": 28781,
+          "parent_pid": 28759,
+          "rss_kb": 3344,
+          "name": "libniobium_supervisor.so"
+        },
+        {
+          "pid": 28785,
+          "parent_pid": 28781,
+          "rss_kb": 3696,
+          "name": "libniobium_proot.so"
+        },
+        {
+          "pid": 28787,
+          "parent_pid": 28785,
+          "rss_kb": 136736,
+          "name": "node"
+        }
+      ]
+    },
+    {
+      "at": "2026-10-24T06:12:23.775105+00:00",
+      "uid": 10297,
+      "rss_sum_kb": 337052,
+      "processes": [
+        {
+          "pid": 28759,
+          "parent_pid": 520,
+          "rss_kb": 193364,
+          "name": "io.sovware.niobium.debug"
+        },
+        {
+          "pid": 28781,
+          "parent_pid": 28759,
+          "rss_kb": 3344,
+          "name": "libniobium_supervisor.so"
+        },
+        {
+          "pid": 28785,
+          "parent_pid": 28781,
+          "rss_kb": 3696,
+          "name": "libniobium_proot.so"
+        },
+        {
+          "pid": 28787,
+          "parent_pid": 28785,
+          "rss_kb": 136648,
+          "name": "node"
+        }
+      ]
+    },
+    {
+      "at": "2026-10-24T06:12:53.830730+00:00",
+      "uid": 10297,
+      "rss_sum_kb": 337304,
+      "processes": [
+        {
+          "pid": 28759,
+          "parent_pid": 520,
+          "rss_kb": 193364,
+          "name": "io.sovware.niobium.debug"
+        },
+        {
+          "pid": 28781,
+          "parent_pid": 28759,
+          "rss_kb": 3344,
+          "name": "libniobium_supervisor.so"
+        },
+        {
+          "pid": 28785,
+          "parent_pid": 28781,
+          "rss_kb": 3696,
+          "name": "libniobium_proot.so"
+        },
+        {
+          "pid": 28787,
+          "parent_pid": 28785,
+          "rss_kb": 136900,
+          "name": "node"
+        }
+      ]
+    },
+    {
+      "at": "2026-10-24T06:13:23.904935+00:00",
+      "uid": 10297,
+      "rss_sum_kb": 337848,
+      "processes": [
+        {
+          "pid": 28759,
+          "parent_pid": 520,
+          "rss_kb": 193568,
+          "name": "io.sovware.niobium.debug"
+        },
+        {
+          "pid": 28781,
+          "parent_pid": 28759,
+          "rss_kb": 3344,
+          "name": "libniobium_supervisor.so"
+        },
+        {
+          "pid": 28785,
+          "parent_pid": 28781,
+          "rss_kb": 3696,
+          "name": "libniobium_proot.so"
+        },
+        {
+          "pid": 28787,
+          "parent_pid": 28785,
+          "rss_kb": 137240,
+          "name": "node"
+        }
+      ]
+    },
+    {
+      "at": "2026-10-24T06:13:53.987273+00:00",
+      "uid": 10297,
+      "rss_sum_kb": 337728,
+      "processes": [
+        {
+          "pid": 28759,
+          "parent_pid": 520,
+          "rss_kb": 193212,
+          "name": "io.sovware.niobium.debug"
+        },
+        {
+          "pid": 28781,
+          "parent_pid": 28759,
+          "rss_kb": 3344,
+          "name": "libniobium_supervisor.so"
+        },
+        {
+          "pid": 28785,
+          "parent_pid": 28781,
+          "rss_kb": 3696,
+          "name": "libniobium_proot.so"
+        },
+        {
+          "pid": 28787,
+          "parent_pid": 28785,
+          "rss_kb": 137476,
+          "name": "node"
+        }
+      ]
+    },
+    {
+      "at": "2026-10-24T06:14:24.070235+00:00",
+      "uid": 10297,
+      "rss_sum_kb": 337596,
+      "processes": [
+        {
+          "pid": 28759,
+          "parent_pid": 520,
+          "rss_kb": 193212,
+          "name": "io.sovware.niobium.debug"
+        },
+        {
+          "pid": 28781,
+          "parent_pid": 28759,
+          "rss_kb": 3344,
+          "name": "libniobium_supervisor.so"
+        },
+        {
+          "pid": 28785,
+          "parent_pid": 28781,
+          "rss_kb": 3696,
+          "name": "libniobium_proot.so"
+        },
+        {
+          "pid": 28787,
+          "parent_pid": 28785,
+          "rss_kb": 137344,
+          "name": "node"
+        }
+      ]
+    },
+    {
+      "at": "2026-10-24T06:14:54.156930+00:00",
+      "uid": 10297,
+      "rss_sum_kb": 338536,
+      "processes": [
+        {
+          "pid": 28759,
+          "parent_pid": 520,
+          "rss_kb": 193596,
+          "name": "io.sovware.niobium.debug"
+        },
+        {
+          "pid": 28781,
+          "parent_pid": 28759,
+          "rss_kb": 3344,
+          "name": "libniobium_supervisor.so"
+        },
+        {
+          "pid": 28785,
+          "parent_pid": 28781,
+          "rss_kb": 3696,
+          "name": "libniobium_proot.so"
+        },
+        {
+          "pid": 28787,
+          "parent_pid": 28785,
+          "rss_kb": 137900,
+          "name": "node"
+        }
+      ]
+    },
+    {
+      "at": "2026-10-24T06:15:24.223744+00:00",
+      "uid": 10297,
+      "rss_sum_kb": 338232,
+      "processes": [
+        {
+          "pid": 28759,
+          "parent_pid": 520,
+          "rss_kb": 193172,
+          "name": "io.sovware.niobium.debug"
+        },
+        {
+          "pid": 28781,
+          "parent_pid": 28759,
+          "rss_kb": 3344,
+          "name": "libniobium_supervisor.so"
+        },
+        {
+          "pid": 28785,
+          "parent_pid": 28781,
+          "rss_kb": 3696,
+          "name": "libniobium_proot.so"
+        },
+        {
+          "pid": 28787,
+          "parent_pid": 28785,
+          "rss_kb": 138020,
+          "name": "node"
+        }
+      ]
+    },
+    {
+      "at": "2026-10-24T06:15:54.306170+00:00",
+      "uid": 10297,
+      "rss_sum_kb": 338368,
+      "processes": [
+        {
+          "pid": 28759,
+          "parent_pid": 520,
+          "rss_kb": 193300,
+          "name": "io.sovware.niobium.debug"
+        },
+        {
+          "pid": 28781,
+          "parent_pid": 28759,
+          "rss_kb": 3344,
+          "name": "libniobium_supervisor.so"
+        },
+        {
+          "pid": 28785,
+          "parent_pid": 28781,
+          "rss_kb": 3696,
+          "name": "libniobium_proot.so"
+        },
+        {
+          "pid": 28787,
+          "parent_pid": 28785,
+          "rss_kb": 138028,
+          "name": "node"
+        }
+      ]
+    },
+    {
+      "at": "2026-10-24T06:16:24.382008+00:00",
+      "uid": 10297,
+      "rss_sum_kb": 338820,
+      "processes": [
+        {
+          "pid": 28759,
+          "parent_pid": 520,
+          "rss_kb": 193620,
+          "name": "io.sovware.niobium.debug"
+        },
+        {
+          "pid": 28781,
+          "parent_pid": 28759,
+          "rss_kb": 3344,
+          "name": "libniobium_supervisor.so"
+        },
+        {
+          "pid": 28785,
+          "parent_pid": 28781,
+          "rss_kb": 3696,
+          "name": "libniobium_proot.so"
+        },
+        {
+          "pid": 28787,
+          "parent_pid": 28785,
+          "rss_kb": 138160,
+          "name": "node"
+        }
+      ]
+    },
+    {
+      "at": "2026-10-24T06:16:54.456515+00:00",
+      "uid": 10297,
+      "rss_sum_kb": 338820,
+      "processes": [
+        {
+          "pid": 28759,
+          "parent_pid": 520,
+          "rss_kb": 193620,
+          "name": "io.sovware.niobium.debug"
+        },
+        {
+          "pid": 28781,
+          "parent_pid": 28759,
+          "rss_kb": 3344,
+          "name": "libniobium_supervisor.so"
+        },
+        {
+          "pid": 28785,
+          "parent_pid": 28781,
+          "rss_kb": 3696,
+          "name": "libniobium_proot.so"
+        },
+        {
+          "pid": 28787,
+          "parent_pid": 28785,
+          "rss_kb": 138160,
+          "name": "node"
+        }
+      ]
+    },
+    {
+      "at": "2026-10-24T06:17:24.543230+00:00",
+      "uid": 10297,
+      "rss_sum_kb": 338684,
+      "processes": [
+        {
+          "pid": 28759,
+          "parent_pid": 520,
+          "rss_kb": 193272,
+          "name": "io.sovware.niobium.debug"
+        },
+        {
+          "pid": 28781,
+          "parent_pid": 28759,
+          "rss_kb": 3344,
+          "name": "libniobium_supervisor.so"
+        },
+        {
+          "pid": 28785,
+          "parent_pid": 28781,
+          "rss_kb": 3696,
+          "name": "libniobium_proot.so"
+        },
+        {
+          "pid": 28787,
+          "parent_pid": 28785,
+          "rss_kb": 138372,
+          "name": "node"
+        }
+      ]
+    },
+    {
+      "at": "2026-10-24T06:17:54.624556+00:00",
+      "uid": 10297,
+      "rss_sum_kb": 339280,
+      "processes": [
+        {
+          "pid": 28759,
+          "parent_pid": 520,
+          "rss_kb": 193868,
+          "name": "io.sovware.niobium.debug"
+        },
+        {
+          "pid": 28781,
+          "parent_pid": 28759,
+          "rss_kb": 3344,
+          "name": "libniobium_supervisor.so"
+        },
+        {
+          "pid": 28785,
+          "parent_pid": 28781,
+          "rss_kb": 3696,
+          "name": "libniobium_proot.so"
+        },
+        {
+          "pid": 28787,
+          "parent_pid": 28785,
+          "rss_kb": 138372,
+          "name": "node"
+        }
+      ]
+    },
+    {
+      "at": "2026-10-24T06:18:24.697685+00:00",
+      "uid": 10297,
+      "rss_sum_kb": 339408,
+      "processes": [
+        {
+          "pid": 28759,
+          "parent_pid": 520,
+          "rss_kb": 193868,
+          "name": "io.sovware.niobium.debug"
+        },
+        {
+          "pid": 28781,
+          "parent_pid": 28759,
+          "rss_kb": 3344,
+          "name": "libniobium_supervisor.so"
+        },
+        {
+          "pid": 28785,
+          "parent_pid": 28781,
+          "rss_kb": 3696,
+          "name": "libniobium_proot.so"
+        },
+        {
+          "pid": 28787,
+          "parent_pid": 28785,
+          "rss_kb": 138500,
+          "name": "node"
+        }
+      ]
+    }
+  ],
+  "completed_at": "2026-10-24T06:18:54.748100+00:00",
+  "soak_receipt_status": "pass"
+}

@@ -655,7 +655,8 @@ policy for every fixture gateway/demo/navigation path. Four JVM cases cover
 release readers that throw, preserved debug routing, demo alias precedence,
 incomplete connections and diagnostics without credentials. Together with the
 existing catalog, delivery and runtime cases, 61 Kotlin/JVM checks pass. Native
-startup/runtime regression and signed release-intent acceptance remain pending.
+startup/runtime regression and signed release-intent acceptance are recorded in
+the published 2.2.3 checkpoint below.
 
 The runner rejects output paths inside the checkout unless Git ignores them; use
 the default dist/evidence path or an external directory. Acceptance gates remain
@@ -665,9 +666,38 @@ debug app. Native cleanup attempts every resource and preserves the original
 scenario failure while attaching cleanup errors. Nine host regression cases
 cover optimized rejection, hashing, output policy, transient progress timeouts,
 missing SDK properties, malformed advisory samples and acceptance cleanup after
-report failures. Cleanup wraps
-validation and final receipt writing, independently of Gradle exit success.
+report failures. Cleanup wraps validation and final receipt writing, independently
+of Gradle exit success.
 
 Each scenario removes prior generated test reports before starting Gradle. A host
 regression supplies matching stale XML/logs and a no-test successful Gradle process;
 the runner rejects the missing fresh report and stops the debug app.
+
+
+## Android 2.2.3 beta.1
+
+[CodeRabbit-approved PR #18](https://github.com/wckdboy/niobium/pull/18) is merged;
+all active [source CI jobs](https://github.com/wckdboy/niobium/actions/runs/40069909335) pass. 61 Kotlin/JVM, 91 Node, 24 Python and all
+44 default ARM64 Android 16 native cases pass. The extended controlled run holds
+the client connection for 20 minutes, measures its own keepalives and confirms
+delivery with the same chat owner. Real local DSH completes 12 chat/history
+reopen turns with 45-second pauses followed by DM and room acceptance.
+
+Native/extended reports retain the commit that ran. Git object equality verifies
+identical Android app/instrumentation, core and runtime trees in the final source;
+a short final-source run exercises the host runner after its cleanup/SDK fixes.
+The runner validates one exact executed case per scenario and final structured
+receipts, including with optimized Python. Cleanup encloses validation and report
+writing rather than treating Gradle success as acceptance.
+
+The direct signed upgrade from public 2.2.2 retains its controlled saved gateway,
+Dark appearance and original install time. Two external launch cases restore the
+trusted workspace and add zero connections to the second gateway. Runtime image
+and native hashes, 16 KB packaging, cold launch, all four complete public downloads,
+downloaded APK signature/source tag and all 20 website files plus www/custom 404
+verify. Full details: [release validation](evidence/beta223-release-validation.json).
+
+App/instrumentation PSS excludes guest Node/DSH. The separate UID RSS baseline
+includes guest processes but double-counts shared pages. These are controlled
+emulator samples, not production resource budgets, battery/Doze, physical-device
+or real-account acceptance. Unsent text/photo drafts remain in memory.
