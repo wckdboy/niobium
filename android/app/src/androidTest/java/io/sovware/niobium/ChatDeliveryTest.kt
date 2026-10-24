@@ -131,7 +131,10 @@ class ChatDeliveryTest {
         configure("confirm");val vm=vm();val owner=vm.chatContext
         delay(45_000)
         assertTrue(vm.state.connected);assertEquals(owner,vm.chatContext)
-        assertTrue(controller.request("fixture.android").optInt("pings")>=2)
+        controller.request("fixture.sessions",JSONObject().put("replies",org.json.JSONArray().put(JSONObject())))
+        instrumentation.runOnMainSync {vm.loadSessions(vm.state.activeBot!!)};waitFor {!vm.state.sessionsLoading}
+        val peer=controller.request("fixture.sessions").objects("requests").single()
+        assertEquals(vm.state.activeBot!!.name,peer.s("profile"));assertTrue(peer.optInt("pings")>=2)
         instrumentation.runOnMainSync {vm.send("Heartbeat check")};waitFor {!vm.state.sendingChat}
         assertFalse(vm.state.deliveryUnconfirmed)
         assertTrue(vm.state.messages.any {it.text=="Android confirmed reply"})

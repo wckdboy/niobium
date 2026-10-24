@@ -6,13 +6,13 @@ const androidHistory = [], androidRequests = [];
 const androidImages = new Map();
 let sessionReplies = [];
 const sessionRequests = [];
-let pingRequests = 0;
 const server = createServer((request, response) => {
   const valid = request.url === '/proxy/api/status' && request.headers['x-hermes-session-token'] === token && request.headers.authorization === 'Bearer ' + token;
   response.writeHead(valid ? 200 : 401, { 'Content-Type': 'application/json' });
   response.end(valid ? '{"version":"fixture"}' : '{}');
 });
 server.on('upgrade', (request, socket) => {
+  let pingRequests = 0;
   const url = new URL(request.url, 'http://localhost');
   if (url.pathname !== '/proxy/api/ws' || url.searchParams.get('token') !== token) { socket.destroy(); return; }
   const accept = createHash('sha1').update(request.headers['sec-websocket-key'] + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11').digest('base64');
@@ -46,7 +46,7 @@ server.on('upgrade', (request, socket) => {
         if (Array.isArray(frame.params?.replies)) {sessionReplies=frame.params.replies;sessionRequests.length=0;}
         result({requests:sessionRequests});break;
       case 'session.list': {
-        sessionRequests.push({profile:frame.params.profile});
+        sessionRequests.push({profile:frame.params.profile,pings:pingRequests});
         const reply=sessionReplies.shift()||{sessions:[]};
         setTimeout(()=>reply.fail?reject('Session list unavailable'):result({sessions:reply.sessions||[]}),reply.delay||0);break;
       }
