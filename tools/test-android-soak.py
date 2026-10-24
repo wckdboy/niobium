@@ -52,7 +52,7 @@ def main():
         print(f'Starting {kind}: {params}', flush=True)
         with (stage/(kind+'.log')).open('w') as output:
             process = subprocess.Popen(command, cwd=ROOT/'android', env=os.environ|{'ANDROID_HOME':sdk,'ANDROID_SERIAL':args.device}, stdout=output, stderr=subprocess.STDOUT, start_new_session=True)
-            deadline = time.monotonic()+timeout; next_progress = 0
+            deadline = time.monotonic()+timeout; next_progress = 0; completed = False
             try:
                 while process.poll() is None:
                     if time.monotonic() > deadline: raise TimeoutError(kind+' scenario exceeded its deadline')
@@ -65,12 +65,13 @@ def main():
                         next_progress = time.monotonic()+30
                     time.sleep(2)
                 if process.returncode: raise RuntimeError(f'{kind} failed; inspect {stage/(kind+".log")}')
+                completed = True
             finally:
                 if process.poll() is None:
                     os.killpg(process.pid, signal.SIGTERM)
                     try: process.wait(10)
                     except subprocess.TimeoutExpired: os.killpg(process.pid, signal.SIGKILL); process.wait()
-                    device('shell', 'am', 'force-stop', 'io.sovware.niobium.debug', check=False)
+                if not completed: device('shell', 'am', 'force-stop', 'io.sovware.niobium.debug', check=False)
         results = ROOT/'android/app/build/outputs/androidTest-results/connected/debug'
         xmls = list(results.glob('TEST-*.xml'))
         assert len(xmls) == 1, 'Expected one test-device report'
@@ -88,7 +89,9 @@ def main():
         counts = samples[-1]['sample']['counts']
         if kind == 'idle':
             assert counts['confirmed_delivery'] and counts['owner_stable'] and samples[-1]['sample']['elapsed_ms'] >= args.idle_seconds*1000
-        else: assert counts['completed_turns'] == args.dsh_turns and counts['rooms_verified'] and counts['owner_stable']
+        else:
+            assert counts['completed_turns'] == args.dsh_turns and counts['rooms_verified'] and counts['owner_stable']
+            assert samples[-1]['sample']['elapsed_ms'] >= args.dsh_turns*args.dsh_pause_seconds*1000
         (stage/(kind+'-samples.json')).write_text(json.dumps(samples,indent=2)+'\n')
         apk = ROOT/'android/app/build/outputs/apk/debug/app-debug.apk'
         report['scenarios'].append({'kind':kind,'status':'pass','parameters':params,'samples':samples,
