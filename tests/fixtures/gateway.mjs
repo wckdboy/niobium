@@ -4,6 +4,8 @@ const token = 'fixture-token+&?';
 let androidMode = null;
 const androidHistory = [], androidRequests = [];
 const androidImages = new Map();
+let sessionReplies = [];
+const sessionRequests = [];
 const server = createServer((request, response) => {
   const valid = request.url === '/proxy/api/status' && request.headers['x-hermes-session-token'] === token && request.headers.authorization === 'Bearer ' + token;
   response.writeHead(valid ? 200 : 401, { 'Content-Type': 'application/json' });
@@ -39,6 +41,14 @@ server.on('upgrade', (request, socket) => {
       case 'profiles.list': result({profiles:[{name:'remote-fixture',display_name:'Remote fixture',canonical_session:{id:'fixture-session'}}]}); break;
       case 'tools.list': result({toolsets:[]}); break;
       case 'model.options': result({providers:[]}); break;
+      case 'fixture.sessions':
+        if (Array.isArray(frame.params?.replies)) {sessionReplies=frame.params.replies;sessionRequests.length=0;}
+        result({requests:sessionRequests});break;
+      case 'session.list': {
+        sessionRequests.push({profile:frame.params.profile});
+        const reply=sessionReplies.shift()||{sessions:[]};
+        setTimeout(()=>reply.fail?reject('Session list unavailable'):result({sessions:reply.sessions||[]}),reply.delay||0);break;
+      }
       case 'session.resume':
         if (Object.keys(frame.params || {}).some(key=>!['session_id','profile','source','omit_messages'].includes(key))) { reject('Unexpected session.resume keys'); break; }
         result({session_id:androidMode ? frame.params.session_id : 'fixture-session',messages:androidMode ? androidHistory : [],revision:0}); break;
