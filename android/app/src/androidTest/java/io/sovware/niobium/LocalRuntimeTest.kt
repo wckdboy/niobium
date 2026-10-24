@@ -402,6 +402,7 @@ class LocalRuntimeTest {
         val previousProvider = preferences.getString("agent-provider", null)
         val hadEnabled = preferences.contains("dsh-enabled")
         val wasEnabled = preferences.getBoolean("dsh-enabled",false)
+        var testFailure: Throwable? = null
         try {
             val until = System.nanoTime() + TimeUnit.SECONDS.toNanos(90)
             while (System.nanoTime() < until && process.isAlive && !LocalRuntimeProxy.ready(socket.path)) Thread.sleep(200)
@@ -510,17 +511,37 @@ class LocalRuntimeTest {
             }
             trace?.record("scenario_passed",org.json.JSONObject().put("completed_turns",soakTurns).put("owner_stable",true).put("rooms_verified",true))
 
+        } catch (failure: Throwable) {
+            testFailure = failure
+            throw failure
         } finally {
-            instrumentation.runOnMainSync { vm?.disconnect(); vmStore.clear() }
-            preferences.edit().putString("agent-provider", previousProvider).apply {
-                if (hadEnabled) putBoolean("dsh-enabled",wasEnabled) else remove("dsh-enabled")
-            }.commit()
-            proxy.close(); process.outputStream.close()
-            if (!process.waitFor(20, TimeUnit.SECONDS)) { process.destroyForcibly(); check(process.waitFor(10,TimeUnit.SECONDS)) { "Test runtime did not stop" } }
-            mock.close(); responder.join(1000); socket.delete()
-            val preset=java.io.File(runtime.home, ".dsh/.agent-presets/" + profile).toPath()
-            if (java.nio.file.Files.exists(preset,java.nio.file.LinkOption.NOFOLLOW_LINKS)) java.nio.file.Files.walk(preset).use { paths ->
-                paths.sorted(Comparator.reverseOrder()).forEach {java.nio.file.Files.deleteIfExists(it)}
+            val failures = mutableListOf<Throwable>()
+            fun cleanup(action: () -> Unit) { try { action() } catch (e: Exception) { failures.add(e) } }
+            cleanup { instrumentation.runOnMainSync { vm?.disconnect(); vmStore.clear() } }
+            cleanup {
+                preferences.edit().putString("agent-provider", previousProvider).apply {
+                    if (hadEnabled) putBoolean("dsh-enabled",wasEnabled) else remove("dsh-enabled")
+                }.commit()
+            }
+            cleanup { proxy.close() }
+            cleanup { process.outputStream.close() }
+            var stopped = false
+            cleanup { stopped = process.waitFor(20, TimeUnit.SECONDS) }
+            if (!stopped) cleanup { process.destroyForcibly(); stopped = process.waitFor(10,TimeUnit.SECONDS) }
+            cleanup { mock.close() }
+            cleanup { responder.join(1000) }
+            cleanup { socket.delete() }
+            cleanup {
+                val preset=java.io.File(runtime.home, ".dsh/.agent-presets/" + profile).toPath()
+                if (java.nio.file.Files.exists(preset,java.nio.file.LinkOption.NOFOLLOW_LINKS)) java.nio.file.Files.walk(preset).use { paths ->
+                    paths.sorted(Comparator.reverseOrder()).forEach {java.nio.file.Files.deleteIfExists(it)}
+                }
+            }
+            if (!stopped) failures.add(IllegalStateException("Test runtime did not stop"))
+            if (failures.isNotEmpty()) {
+                val original = testFailure
+                if (original != null) failures.forEach { original.addSuppressed(it) }
+                else throw failures.first().also { first -> failures.drop(1).forEach { first.addSuppressed(it) } }
             }
         }
     }

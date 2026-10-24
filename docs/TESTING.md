@@ -624,7 +624,7 @@ remain open. See [release validation](evidence/beta222-release-validation.json).
 
 `tools/test-android-soak.py` runs a single-device transport hold and repeated real
 local DSH chat/history cycles, followed by the existing room/DM acceptance. Both
-providers are controlled fixtures. Set JDK 17 and ANDROID_HOME; connect only the
+providers are controlled fixtures. Use Python 3.9+ on Linux/macOS with JDK 17 and ANDROID_HOME; connect only the
 requested test device. The runner installs/removes the debug application for each
 scenario and records exact source, APK hash, XML results and structured samples.
 
@@ -656,3 +656,11 @@ release readers that throw, preserved debug routing, demo alias precedence,
 incomplete connections and diagnostics without credentials. Together with the
 existing catalog, delivery and runtime cases, 61 Kotlin/JVM checks pass. Native
 startup/runtime regression and signed release-intent acceptance remain pending.
+
+The runner rejects output paths inside the checkout unless Git ignores them; use
+the default dist/evidence path or an external directory. Acceptance gates remain
+active with optimized Python. Required local tool calls have deadlines, progress
+poll timeouts are advisory, APK hashing is streamed, and failed runs stop the
+debug app. Native cleanup attempts every resource and preserves the original
+scenario failure while attaching cleanup errors. Four host regression cases
+cover optimized rejection, hashing, output policy and transient progress timeouts.
