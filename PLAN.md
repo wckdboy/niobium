@@ -757,3 +757,16 @@ release work stays parked. Full Hermes parity and real provider accounts remain
 open acceptance work.
 
 Evidence: [release validation](docs/evidence/beta213-release-validation.json).
+
+## Android 2.2.1 candidate — session browsing
+
+- Search loaded chat titles/models and filter working conversations. Show current
+  and working state with native pixel controls and stable row identities.
+- Keep loaded chats during refresh failures. Distinguish loading, an empty list,
+  no search matches and an actual error; retain a visible Refresh action.
+- Cancel/fence list replies by client, Pixel, chat and request. Clearing or switching
+  the conversation removes the previous Pixel's rows immediately.
+- Block resume actions during a send; retain the 2.2.0 receipt and upload behavior.
+  Refresh Android demo conversations to match APK development and device handoff.
+- Validate 1,000-row search/filter UI, failed refresh with retained rows, out-of-order
+  refreshes and delayed responses after switching Pixels before publication.

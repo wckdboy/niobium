@@ -55,6 +55,11 @@ Run `:app:connectedDebugAndroidTest` on ARM64 to execute these with the existing
 character and real DSH suites. Inspect the resulting XML test counts; a successful
 filtered invocation alone does not prove every intended class ran.
 
+Session-browser regressions search/filter 1,000 native rows, distinguish loading
+from empty/error states, and retain loaded rows after refresh failure. Controlled
+WebSocket replies test Pixel switches and out-of-order refreshes; both success
+and failure paths reject stale ownership.
+
 iOS, with XcodeGen and an available iPhone simulator:
 
 ```sh
