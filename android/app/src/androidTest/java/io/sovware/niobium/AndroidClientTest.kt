@@ -115,14 +115,14 @@ class AndroidClientTest {
         val opened=mutableListOf<String>()
         content {ChatBrowser("pixel","Pixel",true,rows,false,null,"s-777",true,{}, {opened.add(it.sessionId)},Modifier.fillMaxSize())}
         compose.onNodeWithTag("sessions.search").performTextInput("Thread 777")
-        compose.onNodeWithText("Thread 777").assertIsDisplayed()
+        compose.onNodeWithTag("sessions.row.s-777").assertIsDisplayed()
         compose.onNodeWithText("Current").assertIsDisplayed()
-        compose.onNodeWithText("Thread 777").performClick();assertEquals(listOf("s-777"),opened)
+        compose.onNodeWithTag("sessions.row.s-777").performClick();assertEquals(listOf("s-777"),opened)
         compose.onNodeWithTag("sessions.working").performClick()
         compose.onNodeWithText("No matching chats.").assertIsDisplayed()
         compose.onNodeWithTag("sessions.search").performTextReplacement("Thread 778")
-        compose.onNodeWithText("Thread 778").assertIsDisplayed()
-        compose.onNodeWithText("Thread 777").assertDoesNotExist()
+        compose.onNodeWithTag("sessions.row.s-778").assertIsDisplayed()
+        compose.onNodeWithTag("sessions.row.s-777").assertDoesNotExist()
     }
     @Test fun chatBrowserDistinguishesLoadingErrorsAndRetainsLoadedRows() {
         var rows by mutableStateOf(emptyList<SessionRow>())

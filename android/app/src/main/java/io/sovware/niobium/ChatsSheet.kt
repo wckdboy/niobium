@@ -84,7 +84,7 @@ internal fun ChatBrowser(owner: String, title: String, local: Boolean, rows: Lis
             }
             items(matches,key={it.sessionId}) {row ->
                 val current=row.sessionId==activeSession
-                Row(Modifier.fillMaxWidth().heightIn(min=72.dp).clip(PixelButtonShape)
+                Row(Modifier.fillMaxWidth().testTag("sessions.row.${row.sessionId}").heightIn(min=72.dp).clip(PixelButtonShape)
                     .background(if(current) Nb.Ion.copy(alpha=.08f) else Nb.FillSoft)
                     .border(1.dp,if(current) Nb.Ion.copy(alpha=.35f) else Nb.Line,PixelButtonShape)
                     .semantics {selected=current}.clickable(enabled=canOpen,role=Role.Button) {onOpen(row)}.padding(14.dp),
