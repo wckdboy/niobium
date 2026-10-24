@@ -592,3 +592,9 @@ the same eligibility predicates as their ViewModel mutations, including chat
 loading. Re-entry regressions verify automatic loads cannot unlock unconfirmed
 changes. A separate native dialog test opens the real IME, enters valid fields,
 checks that Create is above the keyboard and creates through the visible action.
+
+Catalog decoding rejects malformed object rows, skill category types and skill
+names before replacing any loaded inventory. Genuine empty catalogs remain valid.
+The native recovery case checks a malformed nested category retains known skills
+and keeps Reload disabled until a valid explicit refresh. The dialog/IME test
+compares the action's full boundary and keyboard in screen coordinates.

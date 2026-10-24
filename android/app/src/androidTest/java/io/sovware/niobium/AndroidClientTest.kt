@@ -175,7 +175,7 @@ class AndroidClientTest {
             val keyboard=android.graphics.Rect()
             automation.windows.first {it.type==android.view.accessibility.AccessibilityWindowInfo.TYPE_INPUT_METHOD}.getBoundsInScreen(keyboard)
             val action=compose.onNodeWithTag("routine.create").assertIsDisplayed().assertIsEnabled()
-            assertTrue("Create must remain above the real IME",action.fetchSemanticsNode().boundsInRoot.bottom<=keyboard.top)
+            assertTrue("Create must remain above the real IME",action.fetchSemanticsNode().let {it.positionOnScreen.y+it.size.height}<=keyboard.top)
             action.performClick()
             assertEquals(listOf(listOf("Daily review","Every day at 08:00","Check the workspace")),created)
         } finally { automation.serviceInfo=automation.serviceInfo.apply {flags=originalFlags} }

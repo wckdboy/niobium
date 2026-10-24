@@ -169,11 +169,15 @@ class InventoryOwnershipTest {
         delay(100)
         assertEquals(callsBefore,controller.request("fixture.inventory").objects("requests").size)
         assertNotNull(vm.state.toolsLoad.error);assertNotNull(vm.state.skillsLoad.error);assertNotNull(vm.state.routinesLoad.error)
-        inventory(script(false))
+        inventory(script(false).put("skills.manage",org.json.JSONArray()
+            .put(reply(JSONObject().put("skills",JSONObject().put("general","not an array")))).put(reply(skill("audit"))).put(reply(skill("audit")))))
         instrumentation.runOnMainSync {vm.refreshTools();vm.refreshSkills();vm.refreshRoutines(bot)};waitFor {idle(vm)}
-        assertNull(vm.state.toolsLoad.error);assertNull(vm.state.skillsLoad.error);assertNull(vm.state.routinesLoad.error)
+        assertNull(vm.state.toolsLoad.error);assertNotNull(vm.state.skillsLoad.error);assertNull(vm.state.routinesLoad.error)
+        assertEquals(listOf("audit"),vm.state.skills.values.flatten());assertFalse(vm.state.canReloadSkills)
+        instrumentation.runOnMainSync {vm.refreshSkills()};waitFor {idle(vm)}
+        assertNull(vm.state.skillsLoad.error)
         instrumentation.runOnMainSync {vm.toggleToolset(vm.state.toolsets.single());vm.reloadSkills();vm.deleteRoutine(vm.state.routines.single(),bot)}
-        waitFor {controller.request("fixture.inventory").objects("requests").size==9 && idle(vm)}
+        waitFor {controller.request("fixture.inventory").objects("requests").size==10 && idle(vm)}
         val calls=controller.request("fixture.inventory").objects("requests")
         assertEquals(1,calls.count {it.s("method")=="tools.configure"});assertEquals(1,calls.count {it.s("method")=="skills.reload"})
         assertEquals(1,calls.count {it.s("method")=="cron.manage" && it.o("params")?.s("action")=="remove"})
