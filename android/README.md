@@ -75,3 +75,10 @@ refresh failures/partial MCP status, mutation deduplication/owner changes, and
 explicit refresh recovery after unconfirmed changes. Malformed catalogs retain
 loaded rows and report a failure rather than unlocking mutable controls.
 The candidate APK is 2.2.2/code17; publication requires final-head review and checks.
+
+The routine editor constrains its scrollable fields to the space above the IME
+and keeps Create/Cancel in a fixed action row. A 320 dp-wide, 240 dp-high native
+form test at 1.3 text scale fills the fields and creates a routine through visible
+actions. The initial narrow-screen keyboard capture exposed hidden actions; the
+custom inset-aware editor replaces the unconstrained dialog. Action labels stay
+on one line, with text-only controls in the compact form.

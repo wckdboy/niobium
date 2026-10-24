@@ -138,4 +138,22 @@ class AndroidClientTest {
         compose.onNodeWithTag("sessions.error").assertIsDisplayed()
         compose.onNodeWithText("Your conversations will appear here.").assertDoesNotExist()
     }
+    @Test fun routineEditorKeepsActionsReachableWhenTheKeyboardLeavesLittleSpace() {
+        val created=mutableListOf<List<String>>()
+        content {
+            val density=androidx.compose.ui.platform.LocalDensity.current
+            CompositionLocalProvider(androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(density.density,1.3f)) {
+                Box(Modifier.width(320.dp).height(240.dp).padding(horizontal = 20.dp)) {
+                    RoutineEditorPanel(false,null,true,{}, {name,schedule,prompt -> created.add(listOf(name,schedule,prompt))})
+                }
+            }
+        }
+        compose.onNodeWithTag("routine.create").assertIsDisplayed().assertIsNotEnabled()
+        assertTrue("Compact form actions must stay on one line",compose.onNodeWithTag("routine.create").fetchSemanticsNode().boundsInRoot.height <= 64 * context.resources.displayMetrics.density)
+        compose.onNodeWithTag("routine.name").performScrollTo().performTextInput("Nightly review")
+        compose.onNodeWithTag("routine.prompt").performScrollTo().performTextInput("Check the workspace")
+        compose.onNodeWithTag("routine.create").assertIsDisplayed().assertIsEnabled().performClick()
+        assertEquals(listOf(listOf("Nightly review","Every day at 08:00","Check the workspace")),created)
+    }
+
 }

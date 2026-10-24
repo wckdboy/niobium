@@ -21,6 +21,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
@@ -79,7 +80,7 @@ private class PixelCornerShape : Shape {
 val PixelButtonShape: Shape = PixelCornerShape()
 
 @Composable
-fun PixelButton(label: String, glyph: PixelGlyph, modifier: Modifier = Modifier,
+fun PixelButton(label: String, glyph: PixelGlyph?, modifier: Modifier = Modifier,
                 secondary: Boolean = false, destructive: Boolean = false, enabled: Boolean = true, onClick: () -> Unit) {
     val tint = if (destructive) Nb.Rose else Nb.Ion
     val background = if (secondary) tint.copy(alpha = 0.09f) else tint
@@ -90,9 +91,12 @@ fun PixelButton(label: String, glyph: PixelGlyph, modifier: Modifier = Modifier,
         .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
         .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-        PixelIcon(glyph, if (enabled) foreground else Nb.Tertiary, 20.dp)
-        Spacer(Modifier.width(10.dp))
-        Text(label, color = if (enabled) foreground else Nb.Tertiary, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+        if (glyph != null) {
+            PixelIcon(glyph, if (enabled) foreground else Nb.Tertiary, 20.dp)
+            Spacer(Modifier.width(10.dp))
+        }
+        Text(label, color = if (enabled) foreground else Nb.Tertiary, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+            maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
