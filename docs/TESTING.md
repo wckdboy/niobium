@@ -48,6 +48,9 @@ that only literal loopback permits cleartext. Optional pathless Hermes uploads
 finish against their original session, while identified abandoned uploads detach.
 The local adapter's concurrent-detach regression fails before serialization and
 passes after it; stale upload handles cannot remove another image.
+Independent-session regressions hold one prompt open while another Pixel submits,
+preserve same-session ordering, enforce four concurrent image slots and release
+the bounded pending-operation budget after completion.
 Run `:app:connectedDebugAndroidTest` on ARM64 to execute these with the existing
 character and real DSH suites. Inspect the resulting XML test counts; a successful
 filtered invocation alone does not prove every intended class ran.

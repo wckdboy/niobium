@@ -220,6 +220,48 @@ test('an earlier detach settles before a concurrent prompt can consume its image
   assert.deepEqual(content,[{type:'text',text:'Text only'}]);
 });
 
+test('a slow Pixel does not block another session while its own prompts stay ordered', async () => {
+  let release,started;
+  const gate=new Promise(resolve=>{release=resolve});const entered=new Promise(resolve=>{started=resolve});
+  const calls=[];
+  const p=createProvider({rpc:async (method,payload)=>{
+    if(method==='session.list')return {items:[{sessionId:'a'},{sessionId:'b'}]};
+    calls.push(payload.content[0].text);
+    if(payload.content[0].text==='A1'){started();await gate;}
+    return {accepted:true};
+  }});
+  const first=p.request('prompt.submit',{session_id:'a',text:'A1'});await entered;
+  const second=p.request('prompt.submit',{session_id:'a',text:'A2'});
+  const other=p.request('prompt.submit',{session_id:'b',text:'B'});
+  let timer;
+  try {
+    await Promise.race([other,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Independent Pixel was blocked')),2000)})]);
+    assert.deepEqual(calls,['A1','B']);
+  } finally {clearTimeout(timer);release();await Promise.all([first,second,other]);}
+  assert.deepEqual(calls,['A1','B','A2']);
+});
+
+test('concurrent session uploads cannot exceed the shared four-image budget', async () => {
+  let release;const gate=new Promise(resolve=>{release=resolve});
+  const p=createProvider({rpc:async()=>{await gate;return {items:Array.from({length:5},(_,i)=>({sessionId:'s'+i}))};}});
+  const uploads=Array.from({length:5},(_,i)=>p.request('image.attach_bytes',{session_id:'s'+i,mime:'image/png',data:'photo'}));
+  await new Promise(setImmediate);release();const results=await Promise.allSettled(uploads);
+  assert.equal(results.filter(r=>r.status==='fulfilled').length,4);
+  assert.equal(results.filter(r=>r.status==='rejected'&&/current images/.test(r.reason.message)).length,1);
+});
+
+test('queued session work has a fixed budget and releases it after settling', async () => {
+  let release;const gate=new Promise(resolve=>{release=resolve});
+  const p=createProvider({rpc:async method=>{
+    if(method==='session.list'){await gate;return {items:[{sessionId:'sid'}]};}
+    return {accepted:true};
+  }});
+  const requests=Array.from({length:64},(_,i)=>p.request('prompt.submit',{session_id:'sid',text:'Turn '+i}));
+  try {await assert.rejects(p.request('prompt.submit',{session_id:'sid',text:'Over budget'}),/Too many pending session operations/);}
+  finally {release();await Promise.all(requests);}
+  assert.deepEqual(await p.request('prompt.submit',{session_id:'sid',text:'After settling'}),{accepted:true});
+});
+
 test('older history requests preserve the upstream cursor and next-page state', async () => {
   let received;
   const p = createProvider({rpc: async (method, payload) => {

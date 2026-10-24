@@ -180,6 +180,21 @@ function createProvider({rpc, postResponse, home = '/root/.dsh', workspace = '/r
   const providers = providerSetup(rpc);
   const metadataPath = path.join(home, 'niobium-pixels.json');
   let edits = Promise.resolve();
+  const sessionEdits = new Map();
+  let pendingSessionEdits = 0;
+  function editSession(sessionId, edit) {
+    if (typeof sessionId !== 'string' || !sessionId || sessionId.length > 1024) throw new Error('A valid session is required.');
+    if (pendingSessionEdits >= 64) throw new Error('Too many pending session operations. Wait for the current work.');
+    pendingSessionEdits++;
+    const operation = (sessionEdits.get(sessionId) || Promise.resolve()).then(edit);
+    const settled = operation.catch(() => {});
+    sessionEdits.set(sessionId, settled);
+    settled.then(() => {
+      pendingSessionEdits--;
+      if (sessionEdits.get(sessionId) === settled) sessionEdits.delete(sessionId);
+    });
+    return operation;
+  }
   const pending = new Map();
   const attachments = new Map();
   const approvalRPCs = new Map();
@@ -355,29 +370,29 @@ function createProvider({rpc, postResponse, home = '/root/.dsh', workspace = '/r
         return snapshot(p.session_id, p.omit_messages);
       }
       case 'image.attach_bytes': {
-        const operation = edits.then(async () => {
+        return editSession(p.session_id, async () => {
           if (typeof p.data !== 'string' || p.data.length > 8 * 1024 * 1024 ||
               !['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(p.mime)) throw new Error('Choose an image smaller than 6 MB.');
-          if (!attachments.has(p.session_id) && attachments.size >= 4) throw new Error('Send or discard the current images before attaching more.');
           await summary(p.session_id);
+          // Capacity check and insertion have no await between them: independent
+          // session queues still reserve the shared four-image budget atomically.
+          if (!attachments.has(p.session_id) && attachments.size >= 4) throw new Error('Send or discard the current images before attaching more.');
           const imagePath = 'niobium-image-' + crypto.randomUUID();
           attachments.set(p.session_id, {path: imagePath, image: {type: 'image', mediaType: p.mime, data: p.data, name: p.filename || 'image'}});
           return {attached: true, path: imagePath, count: 1};
         });
-        edits = operation.catch(() => {}); return operation;
       }
       case 'image.detach': {
         if (typeof p.path !== 'string' || !p.path.trim()) throw new Error('Image path is required.');
-        const operation = edits.then(async () => {
+        return editSession(p.session_id, async () => {
           await summary(p.session_id);
           const detached = attachments.get(p.session_id)?.path === p.path;
           if (detached) attachments.delete(p.session_id);
           return {detached, count: attachments.has(p.session_id) ? 1 : 0};
         });
-        edits = operation.catch(() => {}); return operation;
       }
       case 'prompt.submit': {
-        const operation = edits.then(async () => {
+        return editSession(p.session_id, async () => {
           const image = attachments.get(p.session_id)?.image;
           attachments.delete(p.session_id);
           const own = await summary(p.session_id);
@@ -385,7 +400,6 @@ function createProvider({rpc, postResponse, home = '/root/.dsh', workspace = '/r
           const receipt = await rpc('session.prompt', {sessionId: p.session_id, mode: 'queue', content: [{type: 'text', text: p.text}, ...(image ? [image] : [])]});
           return {accepted: receipt.accepted};
         });
-        edits = operation.catch(() => {}); return operation;
       }
       case 'session.history': {
         const h = await rpc('session.history', {sessionId: p.session_id, beforeSeq: p.before_seq, maxMessages: 250});
